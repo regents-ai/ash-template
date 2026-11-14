@@ -1,8 +1,8 @@
 defmodule AshTemplateWeb.PointsLive do
   @moduledoc """
-  Private Account Points presentation: the total, the actions left with where
-  Points stands, the leaderboard, the NFT bonus with each season and the bonus
-  added at its end, and the activity. The pieces are `Regent.Points`; this page
+  Private Account Points presentation: the total, every action by the site it
+  belongs to with where Points stands, the leaderboard, the NFT bonus with each
+  season and the bonus added at its end, and the activity. The pieces are `Regent.Points`; this page
   supplies their words.
   """
   use AshTemplateWeb, :html
@@ -41,6 +41,7 @@ defmodule AshTemplateWeb.PointsLive do
         summary: summary,
         groups: Enum.map(groups, &linked/1),
         left: PointsEntries.left(groups),
+        limit: summary && PointsEntries.daily_limit(summary),
         places: board,
         rows: if(summary, do: Enum.map(summary.entries, &row(&1, summary.agent_names)), else: [])
       )
@@ -76,6 +77,11 @@ defmodule AshTemplateWeb.PointsLive do
         <:main>
           <Regent.Points.todo :if={@summary} id="points-todo" left={@left} groups={@groups}>
             <p id="points-season" role="status">{PointsEntries.season_line(@summary.seasons)}</p>
+            <p :if={@limit} id="points-limit" class="rg-points-todo__limit rg-figure">
+              <span>{@limit.label}</span>
+              <progress max={@limit.of} value={@limit.used}>{@limit.value}</progress>
+              <span>{@limit.value}</span>
+            </p>
           </Regent.Points.todo>
           <Regent.Points.activity
             :if={@summary}

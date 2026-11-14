@@ -53,7 +53,7 @@ defmodule AshTemplate.LaunchGateTest do
     assert %{status: 503} = request("/api/v1/rooms")
   end
 
-  test "the MCP address says it is not open yet in JSON, whatever its caller accepts" do
+  test "the MCP address says it is not open yet in JSON-RPC, whatever its caller accepts" do
     closed =
       :get
       |> conn("/mcp")
@@ -61,6 +61,22 @@ defmodule AshTemplate.LaunchGateTest do
       |> AshTemplateWeb.Endpoint.call(AshTemplateWeb.Endpoint.init([]))
 
     assert closed.status == 503
-    assert %{"error" => %{"code" => "not_open_yet"}} = Jason.decode!(closed.resp_body)
+    assert Plug.Conn.get_resp_header(closed, "retry-after") == ["3600"]
+
+    assert %{"jsonrpc" => "2.0", "error" => %{"data" => %{"code" => "not_open_yet"}}} =
+             answer = Jason.decode!(closed.resp_body)
+
+    refute is_map_key(answer, "id")
+
+    call =
+      :post
+      |> conn("/mcp", Jason.encode!(%{"jsonrpc" => "2.0", "id" => 3, "method" => "tools/list"}))
+      |> Plug.Conn.put_req_header("content-type", "application/json")
+      |> AshTemplateWeb.Endpoint.call(AshTemplateWeb.Endpoint.init([]))
+
+    assert call.status == 503
+
+    assert %{"id" => 3, "error" => %{"data" => %{"code" => "not_open_yet"}}} =
+             Jason.decode!(call.resp_body)
   end
 end

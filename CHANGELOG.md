@@ -10723,6 +10723,798 @@ Tests only; no code changed.
   released commit: the style check, 13 report script tests, 155 script tests in 21 files, the
   browser walk (653 passed, 5 skipped for screen size), 282 server tests (272 tests, 10
   properties), required fixes, `cli/commands.json`, newest SIWA.
+## 2026-11-13 — regents-cli 1.10.28
+
+- regents-cli moves from `2f7eee7e` (1.10.27) to `1608c835` (1.10.28), which reached PyPI
+  on 13 Nov 22:56Z, so the newest-SIWA gate refused main. `1608c835` is the commit the
+  `v1.10.28` tag points at, which is what the gate compares against. The Makefile pin, the
+  install lines in `llms.md`, `agents.md` and `cli/COMMANDS.md`, the agent guide (release,
+  source commit `1608c83572425ff17dc535c01351b68ee5337e96` and wheel SHA256
+  `f071ef49d2911a810c1f744958fa1256270d5637d0b7480eeeb31ec4cb3920f8`, which the downloaded
+  wheel matches), `capabilities.json`'s `cli.release` and `cli/README.md` move together.
+- 1.10.28 pins this site at `eae88dc4`: its `commands.json`, `openapi.json`,
+  `api-contract.openapiv3.yaml` and `tool_manifest.json`, in the source and in the
+  published wheel, are byte for byte main's. No command changes here, and none against
+  1.10.27 either: 1.10.28 adds Patchbay's `threads search --needs-answer`, Keyfleet's
+  `atlas swarm` and `atlas things` with its money-waiting fields, and moves every site's
+  pin. `cli/COMMANDS.md` gains a dated line saying so, and the earlier dated lines stay as
+  written.
+- The per-action "and later" releases in `capabilities.json` stay as they are: no action
+  first arrives in 1.10.28.
+
+## 2026-11-13 — Released v246: Rooms like fix and regents-cli 1.10.28
+
+- `321215b0` is v246 on template.regents.sh, switched on 13 Nov with `scripts/deploy.sh`.
+  It carries the Rooms like change (`46e369ee`) and the move to regents-cli 1.10.28. No
+  migration, no library pin change; API 17.0.0 unchanged.
+- Rollback: v245 (`eae88dc4`) image.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 284 Elixir (10 properties).
+## 2026-11-13 — The notes API takes a session on this site or a paired agent (branch, not on main)
+
+Branch `tpl/sign-in-three-1113`, from main at `87efe70e`.
+
+- `/api/v1/notes` and its routes answer the person signed in on this site, with the
+  session cookie the site's own pages hold, or an agent the person paired, signing
+  its request with its own key. A change (create, list, edit, delete) from a session
+  also carries the session's forms token in `x-csrf-token`, as the site's pages send
+  it; without it the request counts as signed out. A read needs only the session.
+- A person's Privy access and identity tokens are no longer taken on these routes.
+  Without a session or an agent's signature the answer is 401
+  `authentication_required`, with a hint that names both ways in. The 403
+  `account_required` answer is gone: a session on this site always names an account.
+- `AshTemplateWeb.NotesController` reads the person through
+  `PrivySessionController.enforce_authority/1`, the same sign-in check every page
+  makes, behind `Plug.CSRFProtection` with `:clear_session`.
+  `AshTemplate.Accounts.VerifiedSession.account/1`, used only here, is gone.
+- The OpenAPI documents move to 18.0.0: the notes operations take `cookieSession`
+  (with `csrfToken` for a change) or `siwaProof`, the 403 points at the agent's
+  answers, and `account_required` leaves the error codes. Listed in the docs'
+  breaking changes, `cli/COMMANDS.md`, `/llms.txt` and the public changelog. Every
+  `regents ash-template notes` command is signed and works as before.
+- `GET /api/v1/profile` and its two writes (shared `RegentIdentity.HTTP`) still take
+  the Privy pair; they live in the shared library and are unchanged here.
+- Tests: `platform/test/ash_template_web/notes_sign_in_test.exs` signs in through
+  the site's own sign-in step, then creates, lists, reads, edits and deletes a note
+  with the session; every change without the forms token is refused and changes
+  nothing; Privy's tokens alone are refused even for that signed-in person. With the
+  forms check taken out, the test fails. The paired agent's notes stay covered by
+  `platform/test/ash_template/agents/signed_tools_test.exs`. The feature map gains a
+  row.
+
+## 2026-11-13 — A paired agent acts for its person while their sign-in names a wallet (branch, not on main)
+
+Branch `tpl/sign-in-three-1113`, after the notes API change.
+
+- A sign-in on this site with no linked wallet withdraws the account's wallet evidence
+  (`VerifiedSession.establish/1` clears `wallet_address` and `wallet_addresses`), and
+  the person's own session then counts as signed out. A paired agent now follows the
+  same rule: `AshTemplateWeb.Plugs.AgentWallet` makes it act for its person only while
+  `VerifiedSession.current?/1` holds, as the person's session and the Claude connector
+  already do. Otherwise it acts as itself with `person_not_here`, the status it has
+  before its person's first sign-in here.
+- `AshTemplate.Agents.PairedAccount.account/1` follows the same rule, so `GET
+  /api/agents/v1/whoami` answers `person_not_here` and `GET /api/agents/v1/me` is
+  refused with it. Every agent door reads the agent through `AgentWallet.actor_for/2`,
+  so signed requests, the hosted MCP server and check-in agree.
+- The person's next sign-in with a wallet restores the evidence, and the agent acts for
+  them again from its next request. The pairing itself is never touched.
+- `AgentWallet.recheck_before_send/2` still re-reads only the pairing: it keeps one
+  person's answer from reaching an agent that has changed hands during the request.
+  A withdrawal never changes whose agent it is. An open live feed keeps running until
+  it closes, as an open page does until its next press.
+- No answer changes shape and the OpenAPI documents stay at 18.0.0. The status
+  descriptions (OpenAPI, `cli/COMMANDS.md`, `/agents.md` and the status list the agent
+  guides share) now say the person may need to sign in again. The shared library's own
+  `person_not_here` words ("hasn't signed in on this site yet") are unchanged.
+- Test: in `platform/test/ash_template/agents/signed_tools_test.exs`, a paired agent
+  works, its person signs in with no wallet, its notes and check-in are refused with
+  `person_not_here` and whoami says so, and after the person signs in with a wallet
+  the agent works again. Taking either new check out fails the test. The feature map
+  gains a row.
+
+## 2026-11-13 — A sign-in lasts seven days, in a host-only secure cookie (branch, not on main)
+
+Branch `tpl/sign-in-three-1113`, after the paired agent change, made a sign-in last a
+day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
+
+- A sign-in on this site lasts seven days from the sign-in that made it, in place of
+  30 days. `config :ash_template, :session_options` sets `max_age: 7 * 24 * 60 * 60`,
+  which `AshTemplate.Accounts.SessionAuthority` reads as the sign-in's lifetime; a
+  refresh still never extends it, and the daily prune deletes rows untouched for a day
+  longer than that, eight days. Oban's own `pruner` (finished jobs after seven days) is
+  a different thing and is unchanged.
+- That is how Privy is asked again, with nothing new running: after the seven days,
+  the next page the person opens is signed out, and the browser's existing
+  sign-back-in (Privy still holds a session there) sends fresh tokens through
+  `/auth/privy/session`. Privy gives fresh tokens only while its own session in that
+  browser lasts, so a person whose Privy session has ended is signed out within seven
+  days and signs in again. The server never calls Privy: when Privy is down, only
+  people whose seven days end meanwhile show signed out, and the next page after Privy
+  answers signs them back in. A page left open across the end says the sign-in ended
+  at its next press, which changes nothing.
+- The session cookie is `__Host-ash_template_key`, `secure: true` everywhere (browsers
+  count localhost as secure), path `/`, no domain. The production-only `secure`
+  override in `platform/config/runtime.exs` is gone. At release every browser's old
+  cookie is no longer read, so everyone is signed out once; those whose Privy session
+  is alive are signed back in on their next page.
+- The OpenAPI documents' `cookieSession` names the new cookie. The browser walk plants
+  its signed-in cookie as secure.
+- `skills/ash-stack/references/privy-reconciliation.md` says the sign-in lasts seven
+  days and how that asks Privy again.
+- Test: `platform/test/ash_template_web/sign_in_lifetime_test.exs` signs in through the
+  site's own step; a minute before the configured lifetime ends the person is signed
+  in, at its end they are signed out; after it, tokens from a Privy sign-in that has
+  since ended are refused, and fresh ones sign the person back in. The test reads the
+  lifetime from `session_options`, so it holds whatever length is set. With sign-ins
+  that never end, both tests fail. The feature map gains a row.
+
+## 2026-11-13 — The Points protection command ran once and is removed
+
+- `/app/bin/protect-points` ran once on production, on 13 Nov at 22:43Z: every
+  `regent_points` table but its migration ledger is now on the shared database's
+  protected list, none allowing row deletes. The command has done its one job, so it
+  is gone: `AshTemplate.Release.protect_points/0` and `/1` with their table list and
+  helpers, `platform/rel/overlays/bin/protect-points`,
+  `platform/test/ash_template/protect_points_test.exs`, its feature map row and its
+  paragraph in `platform/README.md`.
+- `skills/ash-data/references/migrations-and-concurrency.md` now says the Points tables
+  are on the list, in place of how they would join it. No migration, no pin change.
+- The Credits removal migration (`20261112130000_remove_credits_schema.exs`) no longer
+  drops the Credits guard views or deletes their rows from the protected list: that ran
+  on production on 12 Nov, and under the list's coming guard such a delete is refused
+  even when it matches nothing, so a copied site that has not applied it could not
+  release.
+
+## 2026-11-13 — Released v247: seven-day sign-in, notes API and paired agents
+
+- `d621804e` is v247 on template.regents.sh, switched on 13 Nov with `scripts/deploy.sh`,
+  on the founder's letters for sign-in. It carries the notes API change (API 18.0.0), the
+  paired-agent rule, the host-only secure sign-in cookie with a seven-day sign-in, the
+  removal of the one-off Points protection command, and the Credits removal migration
+  without its protected-list steps. No new migration, no library pin change.
+- Rollback: v246 (`321215b0`) image; it signs everyone out once more and brings back the
+  30-day sign-in.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 287 Elixir (10 properties).
+
+## 2026-11-13 — The rename leaves the template's own names as written
+
+- `scripts/init.sh` no longer renames text that means the template itself, which a new
+  site (Chainagent) had to undo by hand. Everything in `skills/` stays as written, names
+  and contents: they are the shared Regent skills, which every site carries as the
+  template's text. The dated plans, `docs/*-plan.md` (app shell, gap map, visit-log
+  replay, regents-cli, standardization and wallet funds), stay as written too, like the
+  changelog's history. `platform/scripts/check_required_fixes.exs` keeps `ash-template`,
+  as the `Makefile` does, since both read the template's required fixes; its other
+  names are renamed. The review rules between `AGENTS.md`'s rollout review markers stay
+  as `skills/rollout-guidance-check/scripts/sync_review.py` writes them, so its
+  `--check` still matches in a new product. Every other doc is renamed as before.
+- `scripts/init.sh` also removes `scripts/regent-ui-update`, which moves the five Regent
+  sites onto one design-system commit; the changelog line it writes says so.
+- `docs/regents-cli-plan.md` points at the `regents` command line without naming the
+  template's command group, so it stays true in a new product.
+- `scripts/harvest.sh` names a site's file in `skills/` or a dated plan by the template's
+  path unchanged, as `scripts/init.sh` now leaves it. No such file carries the
+  template's name today, so today's reports for the five sites are unchanged.
+  `scripts/drift.sh` compares none of these files and is unchanged.
+- `README.md` and the script's opening comment say what the rename leaves as written.
+- Tests: the rename test in `scripts/tests/test_reports.py` checks that a skills file
+  and folder, a dated plan, the changelog's history, `check_required_fixes.exs`'s
+  `ash-template` and the review rules keep the template's names, that an ordinary doc
+  is renamed, and that `scripts/regent-ui-update` is gone; the harvest test checks a
+  skills file and a dated plan keep their template paths. Both fail on the old scripts.
+
+## 2026-11-14 — Released v248: the rename script change
+
+- v248 on template.regents.sh carries the `scripts/init.sh` change above. Repository
+  scripts, tests and docs only; nothing served changes. No migration, no pin change;
+  API 18.0.0 unchanged.
+- Rollback: v247 (`d621804e`) image.
+- Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — The browser walk makes its own Privy settings
+
+- The browser walk (`make check-browser`, and the end of `mix precommit`) now starts on
+  a machine with no Privy settings, such as a fresh worktree. Its server never talked to
+  Privy: its person is signed in by `platform/test/browser/support/sign_in.exs` and the
+  browser's Privy bridge is a stand-in. In walk mode `platform/config/runtime.exs` sets
+  a fixed app id and a verification key made as each command starts, with Erlang's own
+  key library, and throws the key's private half away, so no Privy sign-in can pass on
+  that server. The shell's `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` are ignored there.
+- Outside the walk nothing changes: a development server still refuses to start without
+  both settings, production reads them as before, tests keep `config/test.exs`, and
+  `make release` still needs the real settings for its image check.
+- `platform/README.md`, `platform/docs/local-privy-auth.md`, `platform/docs/showcase.md`
+  and the `Makefile`'s note on `check-browser` say so. No migration, no pin change, no
+  new dependency; nothing served changes. The walk itself is the check: it passes with
+  both settings unset.
+
+## 2026-11-14 — Released v249: the walk's own Privy settings
+
+- v249 on template.regents.sh carries the browser walk change above. Development
+  configuration and docs only; nothing served changes. No migration, no pin change;
+  API 18.0.0 unchanged.
+- Rollback: v248 (`cca17939`) image.
+- Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — The profile API takes a session on this site or a paired agent
+
+- `GET` and `PATCH /api/v1/profile` (the shared `RegentIdentity.HTTP`) answer the same
+  owner as the notes API: the person signed in on this site, with the session cookie
+  its pages hold, or the person an agent they paired acts for, while that person's
+  latest sign-in here names a wallet. A change from a session also carries the
+  session's forms token in `x-csrf-token`; without it the request counts as signed out.
+  Without a session or an agent's signature the answer is 401 `authentication_required`.
+- A paired agent may read its person's profile and set their public name (the founder's
+  decision) or their selected wallet, which must be one of the wallets their latest
+  sign-in named. An agent paired with no one gets 403 `agent_not_paired`; one whose
+  person's latest sign-in here names no wallet gets 403 `person_not_here`.
+- The rule lives in one place, `AshTemplateWeb.Plugs.PersonOrAgent`, lifted from
+  `AshTemplateWeb.NotesController`, which now uses it with its answers unchanged.
+  `AshTemplateWeb.Plugs.ProfileOwner` runs it on the profile routes (router pipeline
+  `:profile_owner`) and hands the owner to the library with
+  `RegentIdentity.HTTP.put_owner/2`.
+- A person's profile is made when they sign in
+  (`AshTemplate.Accounts.VerifiedSession.establish/1` calls `RegentIdentity.ensure/1`),
+  so `POST /api/v1/profile/sync` is gone. A person's Privy tokens are not taken on the
+  profile routes.
+- The Account page's name form saves with the page's session and forms token. Each save
+  keeps the forms token of its press, so a save pressed before a switch of account
+  changes nothing after it. The page's Privy bridge no longer opens the profile:
+  `openProfile` is gone from `platform/assets/js/auth_lazy.ts` and
+  `platform/assets/js/privy_bridge.tsx`.
+- The OpenAPI documents move to 19.0.0: the profile operations take `cookieSession`
+  (with `csrfToken` for a change) or `siwaProof`; the sync operation and the
+  `ExpectedSubject` parameter are gone; the 403 lists the agent's answers; and
+  `profile_unconfigured` and `identity_evidence_conflict` leave the error codes.
+  `platform/priv/capabilities.json` lists both operations for a paired agent over HTTP.
+  Listed in the docs' breaking changes, `cli/COMMANDS.md`, `/llms.txt`, `/agents.md`,
+  `/skill.md` and the public changelog; `docs/agent-parity.md` (G3) and
+  `platform/README.md` say so. No regents command calls the profile API.
+- **Library.** elixir-utils pin `2503f4fe` to `f2138718` (branch
+  `eu/profile-owner-1114`): profile contract 2.0.0, with `RegentIdentity.Owner` and
+  `RegentIdentity.HTTP.put_owner/2`; its browser client sends the page's session cookie
+  and, on a change, the forms token. No migration.
+- Tests: `platform/test/ash_template_web/public_name_test.exs` signs people in through
+  the site's own sign-in step. The person reads and sets their name, which shows on the
+  Account page; a change without the forms token is refused and changes nothing. With
+  no sign-in, a read and a change are refused. A paired agent reads and sets its
+  person's name, which reads back for that person and not for another. A paired agent
+  whose person's latest sign-in names no wallet is refused on both, and acts again
+  after a sign-in with one. With the forms check taken out, the test fails.
+  `platform/assets/test/public_name.test.ts` drives the form's save path against a
+  stand-in site, including a switch of account; `platform/test/browser/public_name.spec.ts`
+  saves a name in a real browser at both widths. The lifted rule's notes callers stay
+  covered by `notes_sign_in_test.exs` and `signed_tools_test.exs`. The feature map's
+  rows say so.
+
+## 2026-11-14 — Released v250: the profile API takes the site's own sign-in
+
+- v250 on template.regents.sh carries the profile API change above (founder's letters
+  55 a, 56 a, 57 a, 58 a). Pin: elixir-utils `f2138718` (profile contract 2.0.0);
+  template API 19.0.0. No migration; nobody is signed out.
+- Read signed out after the release: a profile read and a change both answer
+  `authentication_required`; the home, docs, rooms, account and agent guide pages answer.
+- Rollback: v249 (`846a7bb5`) image.
+- Full check exit 0 by the chief on the same tree (`d2202cdb`).
+
+## 2026-11-14 — Fixes from the sites: job age, live-page crash lines, form words, test waits, the hosted MCP address count
+
+- **Job age** (Autolaunch `261ca7c6`). The gauge of each running queue's oldest
+  unfinished job (`[:ash_template, :jobs, :oldest_unfinished]`,
+  `health.job.oldest_age.seconds`) counts from when the job was due to run, its
+  scheduled time, which a retry moves to the next attempt; a job not due yet counts 0.
+  `platform/test/ash_template_web/telemetry_test.exs` starts two queues and reads a job
+  due a minute ago (made an hour ago) and one between attempts.
+- **Live-page crash lines** (Keyfleet `dc79e244f`). `AshTemplateWeb.LiveCrashes`, a
+  `:logger` primary filter attached as the site starts beside
+  `AshTemplate.IdleDisconnects`, rewrites a failing live page's report before Elixir
+  prints it: the join message becomes `{Phoenix.Channel, :join}` and each stack line
+  keeps its function's arity instead of its arguments. The line still names the page,
+  the exception and where it was raised, and holds none of the browser's session (form
+  token, live socket id, sign-in lineage) or the page's assigns.
+  `platform/test/ash_template_web/live_crashes_test.exs` covers a mount that raises, a
+  mount no head matches and a press no head matches, in the log and the saved error;
+  without the filter all three fail. The rest of that Keyfleet commit was already here.
+- **Form words** (Chainagent `de5e1de4`). Ash's "must be present" reads "Fill this in."
+  under a field and in an API refusal's `details` (`AshTemplateWeb.FormErrors`), as
+  "is required" already did.
+- **Test waits** (Autolaunch `73920220`). `assert_receive` and LiveViewTest's
+  `render_async/2` wait 2 seconds by default (`platform/test/test_helper.exs`), so a
+  test's wait holds on a busy machine. The agent feed test's own
+  waits that only repeated it, or were shorter, are gone; the chat reply test's 5
+  seconds stays.
+- **Hosted MCP address count** (Autolaunch `881b0269`). Only the Claude connector gives
+  tokens, so while it is off every request to `/mcp` counts against its address's 120 a
+  minute (`mcp_address`), whatever headers it carries, a token on a body that cannot be
+  read included, and once only. While the connector is on, a request with a token
+  counts against the address's 600 as before (`AshTemplateWeb.Plugs.McpAgent`). A test
+  in `platform/test/ash_template_web/claude_connector_test.exs` sends a token with the
+  connector off, then 119 unreadable bodies, and the 121st is refused 429 under
+  `mcp_address` alone; without the connector check in the plug it fails. That
+  commit's other two fixes
+  belong to code the template does not have: here the hosted identity's wallet is kept
+  with Nebulex (`AshTemplate.Agents.HostedAddress`), not `Cachex.fetch`, and a tool's
+  input is checked by casting it through its action (`AshTemplateWeb.ToolErrors`), not
+  by a list of JSON types. `docs/oauth-reference.md`, `platform/README.md` and the
+  feature map say so.
+- **NUL characters** (as Keyfleet `92f188122` and Patchbay `540f0fe3` met them). A NUL
+  in a note's title or body, a room message, a direct message, a message to the
+  assistant, a poll's question or choice, or a public name is already refused as a
+  hidden character (`RegentFormat.Text` and `RegentFormat.Name` leave out every control
+  character), before anything reaches Postgres: the API answers its ordinary 422
+  naming the field (`invalid_note`, `invalid_message`, `invalid_poll`,
+  `invalid_display_name`), the page's form marks the field, and nothing is saved.
+  `platform/test/ash_template_web/nul_text_test.exs` checks each through the API and
+  each page's form; with the room post's text check taken out, it fails. No code
+  changed.
+- **Not taken:** Autolaunch's 50-second Oban shutdown grace (`453e35b0`). Here the
+  endpoint stops before Oban: open pages drain for up to 25 seconds and the server
+  waits up to 15 for what is still open, while running jobs go on, then Oban waits its
+  default 15, which is 55 seconds inside `fly.toml`'s 60 (`AshTemplateWeb.Endpoint`).
+  A 50-second grace would end past the kill timeout.
+- Nothing an agent or visitor relies on changed, so the OpenAPI documents stay at
+  19.0.0 and the public changelog, capabilities and agent pages are unchanged. No
+  migration.
+## 2026-11-14 — What a new site needs, both install parts, addresses, one visit line
+
+- **New site (from Chainagent).** `scripts/init.sh` takes the new site's address:
+  `scripts/init.sh <snake_name> <ModuleName> <host> ["Display Name"]`. It writes the
+  host wherever `template.regents.sh` means the site itself: the legal pages, the
+  command list's `base_url` and agent-guide link, the sign-in hint in a refused signed
+  request and in the served API documents, the live check and its Makefile line, and
+  the feature map. Outside `skills/`, the dated plans and the changelog it rewrites
+  every one, so the few lines that meant the template itself (the WebMCP origin trial
+  token's comment, the OAuth notes, the showcase's `public` row) name its address in
+  other words. It also keeps `regents-ai/ash-template`, the template's repository by
+  its GitHub name, wherever it is written.
+- The list of what a new site replaces by hand left the passage the rename drops:
+  it is `AGENTS.md`'s "New site", which the new site keeps with its own names. Chosen
+  over `init.sh` writing a file, since the list then stays in one place, readable in
+  the template, and the rename already rewrites its paths. It now also names the
+  homepage's dark theme (`homeThemeLocked`, the template's artwork choice), the Fly app
+  in the deploy example, the WebMCP origin trial token, the compile-connected limit
+  and how a site raises it, `mix format` and the route digest (still printed by
+  `init.sh`, which runs no Mix: it renames a clean checkout before any dependency is
+  fetched), and what lives outside the repository (elixir-utils' list of sites, the
+  sign-in service's settings for the audience).
+- `AGENTS.md`, `README.md` and `platform/README.md` read true in the template and in
+  a renamed site: shared skills change in regents-ai/ash-template, which keeps the
+  required-fixes list, and `make check-required-fixes` reads that repository's
+  `main`. `cli/README.md` names `base_url` as the site's own address.
+- **Install line (from Keyfleet).** `/agents.md`, `/llms.txt` and `cli/COMMANDS.md`
+  print `uv tool install --python 3.14 'regents-cli[browser,mcp]==1.10.28'`: the line
+  regents-cli 1.10.28 prints for itself, pinned to the release. A later
+  `uv tool install` drops the parts an earlier one chose. `/agents.md`'s browser
+  tools point at that install. `scripts/check-siwa-latest.sh` reads the install line
+  in this form.
+- **Addresses (from Keyfleet).** `/skill.md` lists the addresses an agent reaches
+  (this site, sign-in at siwa.regents.sh, and pypi.org and files.pythonhosted.org for
+  `uv`), and says that when its network refuses one it tells its person once which to
+  allow and never routes around it; `/llms.txt` points there. Muse's page uses the
+  other sign-in address only when the sign-in server is down. The guide carries no
+  version of its own, so there is none to move.
+- **One visit line (from Techtree).** The release smoke check calls the home page once
+  and fails unless the server wrote exactly one JSON visit line for it.
+- Tests: `scripts/tests/test_reports.py` renames a fixture with the new address and
+  checks the address is written in the site's files and kept in the skills, and that
+  the real `AGENTS.md`'s "New site" survives the rename whole, under the new names.
+
+## 2026-11-14 — Released v251: fixes taken from the sites
+
+- v251 on template.regents.sh carries the two entries above: the fixes from the sites and
+  what a new site needs. No migration, no pin change; API 19.0.0 unchanged.
+- Rollback: v250 (`85c6e6dc`) image.
+- Full check exit 0 by the chief on the exact commit.
+## 2026-11-14 — Rollback script, deploy dry run, gates side by side
+
+Brought up from Autolaunch (the rollback script and the deploy dry run) and Regents
+(the side-by-side check).
+
+- **Rollback (from Autolaunch).** `scripts/rollback.sh <fly-app> <release>` puts an
+  app back on an earlier release's image. It refuses a release Fly does not list as
+  complete, one whose image label names no commit the checkout holds, and one whose
+  commit holds other migrations in `platform/priv/repo/migrations` than the live
+  commit: that rollback needs a person. Otherwise it switches to the image with that
+  commit's own `platform/fly.toml`, under the app's lock and a place on the shared
+  database as a deploy does, then reads `https://<app>.fly.dev/capabilities.json`
+  until `build.commit` names the commit, and fails when it never does. The shared
+  libraries' migrations are not compared: no release applies them. Autolaunch's own
+  parts (its deployment descriptions, their compaction, its app names) stay there.
+- **Deploy dry run (from Autolaunch).** `scripts/deploy.sh --dry-run <fly-app>` and
+  `scripts/rollback.sh --dry-run <fly-app> <release>` make every check and read what
+  is live, then print the commands they would run and run none that change anything,
+  taking no lock. Both scripts share `scripts/release-lib.sh`: the dry run, the switch
+  and the live commit.
+- **One way to read the live commit.** Both read the label of the image the app runs,
+  from `fly image show`, as the deploy already did, rather than Autolaunch's read of
+  the site's health answer. Fly answers even when the site does not, which is when a
+  rollback is needed, and the app's name is all it takes: no table of each app's
+  address. `/capabilities.json` is read only after a rollback's switch, to confirm the
+  site runs the release's commit.
+- **Gates side by side (from Regents).** `make check` runs its gates at once, each
+  writing `platform/_build/check/<gate>.log`, then prints every gate's log, the failed
+  ones last, and one line per gate with its time, and fails when any gate failed. The
+  style check, `mix precommit` and `mix test` still run in turn: the first two compile
+  `_build/dev` and copy the design system's files into `assets/vendor` afresh, which
+  `mix test`'s script build reads, and that build writes the scripts the browser walk
+  serves. On this Mac, under other agents' load, the old check took 303 seconds and
+  the new one 253 (the platform's three gates, 2 + 205 + 46 seconds, are the whole
+  run). A site with contracts runs them under `nice` (`contracts/README.md`).
+- `make check-scripts` runs every test in `scripts/tests`: the reports' tests and
+  the new `scripts/tests/test_release.py`, which runs both scripts on a fixture
+  repository with stand-ins for Fly, the site and the locks. It is no longer a
+  template-only target, so a new site keeps the release tests.
+- `scripts/drift.sh` lists `scripts/rollback.sh`, `scripts/release-lib.sh` and
+  `scripts/tests/test_release.py` among the files that deploy every site. The
+  committed permissions ask before `scripts/rollback.sh` runs and allow
+  `make check-scripts`. The release checklist in
+  `skills/regent-workflow/references/release.md` names the rollback script.
+
+## 2026-11-14 — The hosted MCP address refuses in JSON-RPC, with the request's id
+
+- From Patchbay `b8f71c75` and `f64da10e` (`PatchbayWeb.MCP.Refusal`). Every refusal at
+  `/mcp` keeps its HTTP status and headers (401 with the `WWW-Authenticate` challenge,
+  429 with `Retry-After` and the RateLimit headers, 405 with `Allow`, 503 with
+  `Retry-After` while the site is closed) and answers a JSON-RPC error with the
+  request's id, `{"jsonrpc": "2.0", "id", "error": {"code": -31000, "message", "data":
+  {"code", "message", "hint"}}}`, so an MCP client can match it to its call and an
+  agent still reads the hint. Past a budget `data` carries `retry_after` in seconds.
+  The JSON-RPC code is -31000 for every refusal the site makes, outside the range
+  JSON-RPC and MCP keep (MCP 2026-07-28 asks new servers not to use -32000 to
+  -32019); -32700 for a body that is not JSON and -32603 for a failure of the site's
+  own. An id that could not be read (refused before the body was read, a form body, a
+  batch, a null or non-scalar id) is left out, as MCP's error responses allow (`id?`).
+  A notification gets the status with no body, since MCP never answers one.
+- Unlike Patchbay, a refusal keeps its status instead of 200: the authorization rules
+  need 401 with the challenge for Claude's sign-in to start, and the MCP Python client
+  reads a JSON-RPC error from a 4xx or 5xx answer (and only an error: a tool result
+  there is dropped). So a refused `tools/call` before the call runs is a JSON-RPC error
+  too. Once a call has run, a refusal replaces its answer as it leaves: when a paired
+  agent's pairing ends during the call (an agent signing its own calls, or a connected
+  app acting as its paired agent), a `tools/call` answers a tool result at 200 with
+  `isError: true`, `resultType: "complete"` and the text `{"error": {"code":
+  "agent_not_paired", …}}`, the tools' own refusal shape; any other request answers
+  the 403 refusal with its id.
+- `AshTemplateWeb.McpRefusal` (new) makes each answer; `AshTemplateWeb.Plugs.McpAgent`
+  uses it for its own refusals, for the agent's sign-in (it is now the sign-in plug's
+  hooks module, through `AgentWallet.siwa_options/1`, `verified_actor/2` and
+  `refusal/1`, which the API's refusals keep using unchanged) and for its budgets,
+  which it counts with the site's `RequestRateLimiter` and the RateLimit headers of
+  `RegentAgentAccess.RateLimit.put_headers/3`. `AgentWallet.recheck_before_send/3`
+  takes how to replace the answer. `AshTemplateWeb.ErrorJSON` answers `/mcp` (a body
+  too large or not JSON, `/mcp/`, a failure) through `McpRefusal.failed/3`, and the
+  launch gate's closed `/mcp` through `McpRefusal.refuse/3`. A visit line reads a
+  refusal's code from `error.data.code`.
+- The OpenAPI documents move to 20.0.0, the docs' rule for a breaking change to what
+  a client reads; the docs' breaking changes and Hosted MCP section,
+  `cli/COMMANDS.md`, the public changelog, `docs/oauth-reference.md`,
+  `platform/README.md` and the feature map say so. No migration.
+- Tests: `platform/test/ash_template_web/mcp_agent_test.exs` reads every refusal as a
+  JSON-RPC error with the request's id or none: string, integer and zero ids carried;
+  null, decimal and object ids left out; a notification refused with no body, a
+  forged signature's included; the 429 before the body is read with `Retry-After`,
+  the RateLimit headers and `retry_after`; `/mcp/`, a form body, 413 and a body that
+  is not JSON (-32700); a pairing that ends during a call (a tool result with
+  `isError` for `tools/call`, 403 with its id for `tools/list`, an ordinary answer for
+  a pairing that stays); and a refusal's visit line naming its code.
+  `claude_connector_test.exs` reads `connection_required` with the challenge,
+  `identity_unavailable` and the address budgets' 429s the same way, and a connected
+  app's paired agent unpaired during a call. `launch_gate_test.exs` reads the closed
+  address's 503 with and without an id.
+
+## 2026-11-14 — Released v252: release tools, /mcp refusals as JSON-RPC
+
+- v252 on template.regents.sh carries the two entries above: the rollback script, the
+  deploy dry run and the side-by-side check; and every /mcp refusal as a JSON-RPC answer.
+  No migration, no pin change; API 20.0.0.
+- Rollback: v251 (`6d6ef4e2`) image.
+- Full check exit 0 by the chief on the exact commit.
+## 2026-11-14 — Outside authors' Skills carried in skills/third-party
+
+Someone who clones the template or a site made from it now has the outside Skills used
+for local work, kept apart from the Skills Regent writes.
+
+- `skills/third-party/` holds 17 Skills as exact, unmodified copies of their authors'
+  folders at a recorded commit: `emil-design-eng`, `animate`, `review-animations`,
+  `improve-animations`, `choreograph`, `gestures` and `animation-performance` from
+  emilkowalski/skills (MIT); `better-interface`, `better-accessibility`,
+  `better-colors`, `better-layout`, `better-typography`, `better-ui` and
+  `better-writing` from jakubkrehel/skills (MIT); `diagnosing-bugs` and
+  `resolving-merge-conflicts` from mattpocock/skills (MIT); and `oban-thinking` from
+  georgeguimaraes/claude-code-elixir (Apache-2.0). Each repository's licence is kept
+  word for word in `skills/third-party/LICENSES/`. `sentry-elixir-sdk` is not carried:
+  the template does not use Sentry.
+- `skills/third-party/README.md` names each Skill's author, source, folder, commit and
+  licence, says these are other people's work, notes the two Skills since retired or
+  renamed upstream (`resolving-merge-conflicts`, `oban-thinking`), says where the
+  template's own Skills win (wallet buttons, motion and pages, Oban jobs, design), and
+  lists Skills worth installing but not carried, with the reason for each.
+- The web app does not serve or list them (`AshTemplateWeb.AgentSkills` names only the
+  template's own build skills), and `scripts/init.sh` leaves them as written with the
+  rest of `skills/`. No code changed.
+- The design-system reference (`skills/regent-workflow/references/design-system.md`)
+  points at `skills/third-party/emil-design-eng/SKILL.md` instead of a path on one
+  person's machine. `AGENTS.md` and `README.md` introduce the folder.
+
+## 2026-11-14 — Guided tour, from Keyfleet, with a demo on the homepage
+
+Every site can now give a page a guided tour: a ring round one part at a time, the
+rest of the page dimmed, and a small card with a one-word title, one sentence, Skip,
+Back and Next and a dot for each step. The homepage carries a five-step demo.
+
+- `AshTemplateWeb.Components.Tour` (`tour/1`, `start_button/1`), the `Tour` hook
+  (`platform/assets/js/hooks/tour.ts`), its placement (`platform/assets/js/tour/place.ts`)
+  and its light (`tour/renderer.ts`, `tour/shader.ts`, a vgpu picture in the shared
+  canvas island), ported from Keyfleet's (5829e5b6b). A page passes its own steps;
+  Keyfleet's step lists, fleet selectors, its visitor and holder tours and its step
+  links are left out.
+- It plays once a browser, never over an open window, and the Tour button plays it
+  again. The browser alone remembers it was seen (`ash-template:tour:<name>`), and a
+  browser that keeps nothing shows it again. Escape and Skip end it. With less motion it
+  is simply there; without WebGPU or with less motion the ring is the page's own lines.
+- The tour only points: the dimming and the ring take no presses, so every button,
+  wallet buttons above all, takes its press while it shows. The card keeps off wallet
+  steps, toasts and notices wherever there is room.
+- Styles in `platform/assets/css/components/tour.css`, from the template's five colours;
+  the card's buttons read them too (`.tour` in `tokens/root.css`).
+- The homepage: five steps (App, Tools, Agents, Products, Tour) and a quiet Tour button
+  in the panel's header, before the X and GitHub icons. While a tour shows, the
+  datascape's hook holds the glass panel open (`tour:opened` until `tour:closed`); this
+  changes `hooks/datascape.ts`, which regents.sh shares.
+- Every browser walk starts with the tour seen (`playwright.config.ts`, the saved
+  sign-ins in `test/browser/support/sign_in.exs`, `playwright.live.config.ts`);
+  `tour.spec.ts` and `tour_light.spec.ts` start with nothing kept. `colourReader` in
+  `hooks/theme_switch.ts` is exported for the light.
+- `AGENTS.md`'s "New site" gains item 2: a new site replaces the demo steps.
+  `skills/ash-frontend` says how to write a step list.
+
+## 2026-11-14 — Released v253: guided tour, third-party Skills
+
+- v253 on template.regents.sh carries the entries above: the guided tour with its home
+  page demo, and other authors' Skills under `skills/third-party/`. No migration, no pin
+  change; API 20.0.0 unchanged.
+- Rollback: v252 (`ba0f4f5f`) image.
+- Full check exit 0 by the chief on the exact commit.
+## 2026-11-14 — Paired agents: one rule, checked in the feed, jobs and wallet sends
+
+- `AshTemplate.Agents.ForPerson` holds the one rule for whether a paired agent acts
+  for its person right now: its wallet's pairing is active and the person's latest
+  sign-in here named a wallet. The signed request (`AgentWallet.actor_for/2`), the
+  check before its answer leaves, the live feed, the job actor
+  (`AshTemplate.Actors.Persister`) and the check-in account
+  (`AshTemplate.Agents.PairedAccount`) all ask it. At `/mcp` the answer the check
+  replaces is the JSON-RPC refusal (`AshTemplateWeb.McpRefusal`): a tool call's
+  becomes a tool result with `isError: true`, naming `person_not_here` when the
+  person's latest sign-in had no wallet.
+- The live feed listens for its person's sign-ins as well as pairing changes, and
+  closes with `pairing_changed` once the agent no longer acts for its person. The
+  guide and the API document say so; API 20.0.0 unchanged.
+- A job that carried an agent acting for its person runs as the agent itself when
+  the rule no longer holds, so it ends as for an agent never paired: the reply ends
+  with a line saying it failed, the label question is not asked and the chat is not
+  named. The naming job reads its chat through its own read, which finds only the
+  chats of the person it acts for, so it ends at once.
+- The check-in callback answers as for a person not here when the account cannot
+  be read.
+- A profile change larger than 8 KB is refused with 413 before it is read, as the
+  API document says, from a person or an agent signing for them.
+- The endpoint's comment on the session options reads true.
+- Tests: the feed, the three jobs, the check before an answer leaves, the hosted MCP
+  address, a refresh keeping a sign-in's lifetime, a note under another person's
+  note id, and the profile body limit.
+## 2026-11-14 — Connected apps whose published identity signs its requests
+
+- **Sign-in (elixir-utils `oauth`).** A published identity may now authenticate at
+  `/oauth/token` and `/oauth/revoke` with an assertion signed by its own key
+  (`private_key_jwt`), beside a public client (`none`, as Claude's is). Consent keeps
+  such a document when its `jwks_uri` is on the document's own host, HTTPS on port
+  443, with no inline `jwks`; any other method is refused. The app then sends a
+  `client_assertion` with each token and revocation request: RS256 or ES256 by the
+  key its `kid` names, `iss` and `sub` its `client_id`, `aud` this site's issuer or
+  its `/oauth/token` address as the only value, `exp` at most an hour away and a
+  `jti` used once, spent as a row of the existing `oauth_tokens` table. Without a
+  valid one the request is refused `invalid_client` with a 401; a public client that
+  sends one is refused too; PKCE is still required. The keys are read only at those
+  two addresses, kept five minutes and read again once for an unknown key id, at most
+  once a minute; while the address does not answer the request gets a 503. The
+  authorization server's discovery lists `none` and `private_key_jwt` with RS256 and
+  ES256 for both addresses. No migration.
+- **Library.** elixir-utils pin `f2138718` to `48a40c56`, whose only change is the
+  `oauth` package above.
+- `client_assertion` is among Phoenix's filtered parameter names
+  (`platform/config/config.exs`).
+- Tests: `platform/test/ash_template_web/claude_connector_test.exs` connects a
+  stand-in app whose document names `private_key_jwt` through the site's own routes:
+  discovery lists both methods, consent reads only the document, the code is refused
+  without an assertion and then trades for tokens that work at `/mcp`, and a refresh
+  names the app by its assertion alone. The refusals are the library's tests. The
+  Claude test's consent and Allow steps moved to a helper both tests use.
+- `docs/oauth-reference.md`, `platform/README.md` and the feature map say what is
+  accepted. Only a stand-in app has signed its requests; none from a live app.
+- The OpenAPI documents stay at 19.0.0: they describe `/api` and not the sign-in
+  addresses, and the discovery only gains a method and fields. The public changelog,
+  capabilities and agent pages are unchanged.
+## 2026-11-14 — SIWA: Sites and Settings
+
+- A **SIWA** entry in the side menu opens the paid sign-in product's control pages, with
+  the tabs Sites (`/siwa/sites`) and Settings (`/siwa/settings`), and one site's page
+  (`/siwa/sites/:site_id`) under Sites (`AshTemplateWeb.SiwaLive`, a component of the
+  shell). A person with no company names it first, then lands on Sites. Sites lists
+  each site's name, audience, environment and proof, and adds a site from its name,
+  audience, environment and up to 10 origins, with the rules beside each box and a
+  refused field's reasons under it. Proof shows each value SIWA keeps: Not needed
+  (sandbox), Not proven, Proven; there is no proving step on the page. A site's page
+  renames it and changes its origins (a production site's warning says that sets its
+  proof back to Not proven), makes a key (shown once, with Copy key and a warning),
+  revokes one through the confirm window, shows a setup example for
+  `POST /api/shared/siwa/http-verify`, and archives the site through the confirm
+  window, which says the audience stays taken. Settings renames the company and shows
+  its owner (their wallet with its copy icon, and their name when they chose one) and
+  support at build@regents.sh. Each page shows loading, empty, the service's refusal,
+  Unavailable (SIWA out of reach, or its control API off), Busy (too many tries) and
+  signed out; neither Unavailable nor Busy is tried again until the person presses Try
+  again. Overview and Billing are not built.
+- The site keeps no SIWA data: no resource, table or migration. Every read and change
+  goes to the sign-in service's control API (`/api/control/v1` at
+  `config :regent_agents, :siwa` `url`) through `AshTemplate.SiwaControl`, one Req
+  client that answers `{:ok, data}`, `{:error, %Refusal{}}` or `{:error, :unavailable}`,
+  with no retries and no redirects, so no change is sent twice. A new key comes back
+  as `AshTemplate.SiwaControl.Secret`, which never prints.
+- `POST /siwa/session` (browser pipeline: session cookie and forms token) trades the
+  person's Privy pair at SIWA for a control token. The token is kept only in this
+  machine's memory (`AshTemplate.SiwaControl.Tokens`, a Nebulex cache), keyed by the
+  browser's sign-in topic with the account it was traded for, until SIWA says it ends;
+  it never reaches the browser, a log or an error, and it goes when the sign-in ends
+  (`AshTemplateWeb.PrivySessionController`). The answer is 204, or a refusal in the
+  site's own words: 401 `authentication_required` or `siwa_sign_in_refused` (no pair,
+  a pair SIWA refuses with `privy_proof_invalid`, or SIWA proves another person), 429
+  `rate_limited` (30 a minute for a person, or SIWA's own limit) or 503
+  `siwa_unavailable`. Added to the API contract (still 20.0.0; nothing changes shape). Kept per machine: with more than one machine, a page served
+  by a machine that did not make the trade finds no token and trades again, and a
+  sign-out forgets the token only where it was made, so another machine's copy lasts
+  until SIWA ends it (15 minutes at most) and the lapsed sign-in is refused there first.
+- The page asks for a trade only when it needs one: with no token, or when SIWA answers
+  `control_token_invalid` (its one answer for a token that is no longer good, a release
+  of the service voiding every token included), it sends the trade to the browser's
+  sign-in bridge, which the page already loaded (`exchangeControlSession` in
+  `platform/assets/js/privy_bridge.tsx`, `control()` on the lazy loader in
+  `platform/assets/js/auth_lazy.ts`, the `SiwaControl` hook), and runs what was waiting
+  once it is done; any other refusal is shown. Each read and change is tried again once
+  after a trade; one still refused says to sign in again. A trade refused with a 401 is
+  sent once more with the pair read from Privy again, then says to sign in again. The
+  account answer's fields the page does not use are left alone. A new key goes from
+  SIWA's answer to the browser alone and is never kept in the page's state.
+- The browser walk answers SIWA's control API with an in-memory stand-in under the
+  service's rules (`platform/test/browser/support/server/walk_control.ex`, through
+  `AshTemplate.WalkOffline`), and its Privy stand-in makes the trade as the bridge does.
+  `sign_in.exs` signs in a SIWA person with a name of their own for each width.
+  `pages.json` lists the three pages.
+- Tests: `platform/test/ash_template/siwa_control_test.exs` (answers, refusals,
+  unavailable, sent once, the key's secrecy); `platform/test/ash_template_web/siwa_session_test.exs`
+  (the trade: kept for that sign-in and person, never in the answer or a log, forgotten
+  at sign-out; refused without the forms token, a sign-in, a pair, the same person or a
+  token that has not ended; unavailable; this site's and SIWA's limits), which fails
+  with the token logged; `platform/test/ash_template_web/siwa_live_test.exs` (each page
+  connected: naming the company, a refused field, a new site, a key shown once and never
+  in the page's state, revoking, renaming, archiving, a trade and a second refusal, a
+  refusal that asks no trade, unavailable, busy and Try again, a refused site,
+  Settings, signed out), which fails with the key put in the page's state;
+  `platform/test/browser/siwa.spec.ts` at both widths. The feature map says so, and
+  `docs/agent-parity.md` marks the pages person-only for good (G13): SIWA plans no agent
+  credential, so no agent tool or command is built for them.
+
+## 2026-11-14 — SIWA: Overview
+
+- The SIWA pages gain Overview (`/siwa`), first of the three tabs (Overview, Sites,
+  Settings), and the side menu's SIWA opens it. It reads the company from SIWA's
+  `GET /account` each visit, which now carries the customer's `capCents` and the
+  current billing period's `usage`; the site keeps none of it.
+- With no period running (`usage` null, as for every paid company today), Overview
+  says billing hasn't started: sandbox sites work now and are never counted. With a
+  period it shows the period's first and last days (UTC; the service's end is
+  exclusive), then three figures: the agents counted against the 1,000 included with a
+  bar, the fee so far and the cap with the most agents it pays for. The fee comes as a
+  decimal string and stays exact: `AshTemplate.SiwaControl` turns it into a `Decimal`,
+  a fee in any other shape is unavailable, and the page shows tenths of a cent when
+  there are any ($119.196).
+- The cap (SIWA fees in a period, before tax) is set, changed or removed on the page
+  (`PUT /cap`, whole cents, null for none; removing asks first). An amount that isn't
+  dollars is never sent, nor one past the service's largest. SIWA's 422
+  `control_fields_invalid` on `capCents` shows beside the field in the page's words,
+  with the least cap it takes now: $99.00 with no period, or the fee so far rounded up
+  to a whole cent.
+- Once a period has agents, a second read lists them newest first (`GET /agents`, 50
+  a page) into a LiveView stream, with More reading after the service's cursor. Each
+  row shows the wallet short with its copy icon and explorer link, its chain, the name
+  of the site it was first seen at (from the company's sites, read once with the first
+  page; a site no longer listed shows as archived) and the day; on a phone the chain,
+  site and day share one quiet line under the wallet. A row that isn't a wallet on
+  Base or Ethereum leaves the list unavailable with Try again. A period with no agents
+  asks for none.
+- The walk's SIWA stand-in answers the cap, the agents and `usage` under the service's
+  rules and price, and bills any person whose DID starts
+  `did:privy:browser-walk-siwa-billed-` with a period this UTC month of 1,204 agents,
+  a production site and an archived one; `sign_in.exs` signs in one such person for
+  each width. `pages.json` lists `/siwa`. The route handoff is regenerated.
+- Tests: `platform/test/ash_template/siwa_control_test.exs` (the exact fee, the cap's
+  body, the cursor); `platform/test/ash_template_web/siwa_live_test.exs` (Overview
+  before billing, a billed period, More, the refusals beside the cap, no agents, an
+  agent on another chain); `platform/test/browser/siwa.spec.ts` at both widths for both
+  people. The feature map and `docs/agent-parity.md` say so; Overview is person-only
+  (G13). The API contract is unchanged.
+
+## 2026-11-14 — A paired agent keeps working after its person signs out
+
+- Sean's decision (63 a): a paired agent acts for its person while the pairing is active and
+  the person's latest sign-in named a wallet; signing out, or the sign-in's seven days
+  ending, does not stop it. Unpairing stops it at once. Two public sentences said "must sign
+  in again" and now say what the rule is (`AshTemplateWeb.PublicDocuments`,
+  `platform/priv/public/agents.md`). No behaviour change.
+
+## 2026-11-14 — Released v254: paired-agent rule everywhere, signed connector sign-in, SIWA pages
+
+- v254 on template.regents.sh carries the entries above, each on Sean's letter of 14 Nov
+  (59 a, 60 a, 62 a, 63 a; 61 a keeps the template's pairing to Claude). Library pin
+  `48a40c56`; no migration; API 20.0.0 unchanged.
+- Rollback: v253 (`05be3f21`) image.
+- Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — Design system d4075655; Patchbay updates Skill reads every event
+
+- Design-system pin `c9071e2c` → `d4075655` (`platform/mix.exs`, `platform/mix.lock`). The
+  Points page gains: a large total no longer runs into Today or pushes Rank off the card, the
+  leaderboard's You tag never runs into the points, a wallet stays readable on a narrow
+  leaderboard, and an address sits on the text line beside it. A site can now move the Points
+  total's figure alone (design-system `CONSUMERS.md`); the template does not.
+- `skills/patchbay-check-updates/SKILL.md`: `by_you` stops an agent responding, never reading.
+  The agent fetches the thread for every new event ID and drops repeats by that ID.
+
+## 2026-11-14 — Shared-package registry lists regent_near_intents
+
+- `security/required-fixes.json` lists `regent_near_intents` (elixir-utils `near_intents`), so a
+  site that pins it passes `make check-required-fixes`. The template itself does not use it.
+
+## 2026-11-14 — Released v255: design system d4075655, Patchbay updates Skill
+
+- v255 on template.regents.sh carries the entry above. Design-system pin `d4075655`; library
+  pin `48a40c56` unchanged; no migration; API 20.0.0 unchanged.
+- Rollback: v254 (`5cde3605`) image.
+- Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — Points page lists every action, by site
+
+- Sean's decisions 68 b and 69 a. `/account/points` lists every action a Points page shows
+  (`RegentPoints.Rules.groups/0`) under the name of the site it belongs to: Account,
+  Autolaunch, Keyfleet, Patchbay, Cloak. It lists them whether or not this site records them
+  and whether or not they can earn yet. A one-time action shows done once it was earned on any
+  site; a daily one shows today's times against its daily count. The first-note action stays
+  hidden and still earns. The list no longer reads `Rules.tracked/0`; earning is unchanged.
+- The shared to-do component draws the site groups as it drew Once and Daily; the design
+  system is unchanged. The daily limit every daily action shares moves from the old Daily
+  group to one line under the season line, shown while a daily action earns on this site.
+- Library pin `48a40c56` → `5f662718` (elixir-utils `eu/points-catalog-1114`): the 14 Nov
+  catalog (new Autolaunch, Keyfleet and Cloak actions; three gone), `Rules.listed/0` and
+  `groups/0`, and the summary's `done` as `%{times, here}` for every listed rule. None of the
+  removed actions was in the template's settings or documents.
+- API 21.0.0: `GET /api/v1/account/points` (the `account points` command and its agent tools)
+  answers `to_do` as one group per site, `{site, actions}`, each action with the fields a
+  `to_do` item had. `platform/priv/public/docs.md`, the OpenAPI documents,
+  `cli/COMMANDS.md`, `cli/commands.json`, `docs/points-foundation.md`, the agent guide and
+  the feature map say so.
+
+## 2026-11-14 — Released v256: Points page grouped by site
+
+- v256 on template.regents.sh carries the entry above (Sean's letters 68 b and 69 a of 14 Nov).
+  Library pin `5f662718`; design-system pin `d4075655` unchanged; no migration; API 21.0.0.
+- Rollback: v255 (`175a1379`) image.
+- Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — Shared-package registry no longer lists regent_near_intents
+
+- `security/required-fixes.json` drops the `regent_near_intents` entry added earlier today. The
+  package is off elixir-utils main and stays on its branch `eu/near-intents-1114`; no site pins it.
 
 ## 2026-11-13 — Conversations: someone else's new message rises into place
 

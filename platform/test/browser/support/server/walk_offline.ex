@@ -2,7 +2,8 @@ defmodule AshTemplate.WalkOffline do
   @moduledoc """
   The browser walk's server never leaves the machine. With `ASH_TEMPLATE_WALK` set
   (playwright.config.ts), every request the server makes through Req comes here
-  first: one to this machine goes ahead, each Regent site's published tool list
+  first: one to this machine goes ahead, except the SIWA control API's, which
+  `AshTemplate.WalkControl` answers; each Regent site's published tool list
   and IndexNow's receipt of the site's pages are answered here, and any other is written to the walk's list of outside
   requests and refused by raising, so a quick call fails the walk as surely as
   one that holds a connection open.
@@ -19,8 +20,11 @@ defmodule AshTemplate.WalkOffline do
     "https://keyfleet.ai/capabilities.json"
   ]
 
-  def run(%Req.Request{url: %URI{host: host}} = request) when host in @this_machine,
-    do: Req.Finch.run(request)
+  def run(%Req.Request{url: %URI{host: host}} = request) when host in @this_machine do
+    if AshTemplate.WalkControl.control?(request, AshTemplate.SiwaControl.url()),
+      do: AshTemplate.WalkControl.run(request),
+      else: Req.Finch.run(request)
+  end
 
   def run(%Req.Request{method: :get, url: url} = request) do
     if URI.to_string(url) in @tool_lists,

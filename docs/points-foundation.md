@@ -148,14 +148,18 @@ See the package README for the adapter contract, actor policy and migration inst
 - **Total**, large, on the site's band colour, with what the account earned today
   and yesterday (UTC days), its rank, and one sentence saying Points are a record
   of activity. It says nothing about value.
-- **To do**: `RegentPoints.Rules.tracked/0`, only the catalog rules this site has an
-  adapter for and that are approved, so it never offers an action nothing records.
-  One-time actions and daily ones are listed apart, each with its points; the ones
-  left come first with a link to where each is done, the ones done are ticked. A daily
-  action shows how much of today's count is used. Under the title, one line says where
-  Points stands: not started, its start date, the season running and its days left,
-  or the last season over. After the last season nothing earns and no action is
-  listed. Before the start, each start rule
+- **To do**: every rule a Points page shows (`RegentPoints.Rules.groups/0`), under the
+  name of the site it belongs to (Account, Autolaunch, Keyfleet, Patchbay, Cloak),
+  whether or not this site records it and whether or not it can earn yet.
+  `template.first_agent_note` is hidden: it earns, and no page lists it. Each action
+  shows its points; inside a site the ones left come first, with a link to where this
+  site does it, and the ones done are ticked. A one-time action is done once earned on
+  any site (`times` in the summary's `done`); a daily one shows today's times against
+  its daily count. Under the title, one line says where Points stands: not started,
+  its start date, the season running and its days left, or the last season over; while
+  a daily action earns on this site, a second line shows how much of the daily limit
+  every daily action shares is used today. After the last season nothing earns and no
+  action is listed. Before the start, each start rule
   (`RegentPoints.Rules.start_rules/0`) the account already meets is ticked and marked
   as added at the start. Each start adapter's `held/2` answers that for the one
   account, from the same tables its `existing/2` reads for the start itself.
@@ -201,10 +205,11 @@ See the package README for the adapter contract, actor policy and migration inst
 
 The agent tool `account_points` answers with the same figures: `points`,
 `earned_today`, `earned_yesterday`, `rank`, `to_do`, `daily_limits`, `leaderboard`,
-`entries` and `seasons`, each `to_do` item marking `at_start`. Both read
+`entries` and `seasons`, `to_do` grouped by site as the page groups it
+(`{site, actions}`), each action marking `at_start`. Both read
 `AshTemplate.Points.my_points/1`: the library's summary, each season with what was
 earned in it and its bonus, and before the start the start rules the account already
-meets. A site that adds an adapter shows its rule without changing the page; a start
+meets. An adapter decides only what this site earns, never what is listed; a start
 rule's adapter also needs `held/2`.
 
 ## Local development and launch

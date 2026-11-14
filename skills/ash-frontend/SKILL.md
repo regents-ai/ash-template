@@ -22,6 +22,8 @@ the installed version.
   read once and shared by every open page, through the row's own publication or
   `AshTemplate.SharedReading`; quiet pages; memory for each open page.
 - [UI review](references/ui-review.md): accessibility, responsive states, hooks.
+- [Guided tour](references/guided-tour.md): a page's tour and how to write its
+  step list.
 
 ## Regent UI conventions (Sean, 19 Oct)
 

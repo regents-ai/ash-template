@@ -38,7 +38,7 @@ identity tools behind its switch.
 | Sign out | Account box | — | — | — | — | sign-in | G1 |
 | Agent's own identity (register, whoami, status) | — | `agents_whoami`, `agents_status` | — | `register_identity`, `get_identity`, `check_in` | `agents whoami`, `agents status` | no | G5 |
 | Agent's public profile (read, edit) | — | `agents_profile`, `agents_edit_profile`, `agents_get` | — | — | `agents profile`, `agents edit-profile`, `agents get` | no | G5 |
-| Account public name | `/account` | — | — | — | — | no | G3 |
+| Account public name (read, set) | `/account`; a paired agent's signed `GET` and `PATCH /api/v1/profile` | — | — | — | — | no | G3 |
 | Verified connections (start, refresh) | `/account` | — | — | — | — | sign-in | G4 |
 | Apps connected by sign-in (list, revoke) | `/account/connections` | — | — | — | — | sign-in | G4 |
 | Linked wallets (read, link another) | `/account/wallets` | — | — | — | — | wallet | G4 |
@@ -75,6 +75,22 @@ identity tools behind its switch.
 | Search notes and messages together | page search box | `notes_search` and `rooms_search` separately | — | — | `notes search`, `rooms search` | no | G5 |
 | Chat with the site's assistant: list, read, send | `/chat` | `chat_list`, `chat_read`, `chat_send` | — | — | `chat list`, `chat read`, `chat send` | no | G5 |
 
+## SIWA
+
+The paid sign-in product's control pages, read from the sign-in service each time
+(`AshTemplateWeb.SiwaLive`, 14 Nov). The site trades the person's Privy pair for a
+control token it keeps itself (`POST /siwa/session`). Person-only for good (G13):
+these rows have no agent surface and get none.
+
+| Action | Page | WebMCP | MCP | Connector | CLI | Protected | Gap |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Read the billing period: its dates, the agents counted, the fee so far; list its agents a page at a time | `/siwa` | — | — | — | — | no | person-only (G13) |
+| Set, change or remove the cap on a period's fees | `/siwa` | — | — | — | — | money | person-only (G13) |
+| Name the company, rename it | `/siwa`, `/siwa/sites` (first visit), `/siwa/settings` | — | — | — | — | sign-in | person-only (G13) |
+| Sites: list, add, open, rename, change origins, archive | `/siwa/sites`, `/siwa/sites/:site_id` | — | — | — | — | sign-in | person-only (G13) |
+| A site's keys: list, make (shown once), revoke | `/siwa/sites/:site_id` | — | — | — | — | secrets | person-only (G13) |
+| Read the company's owner and where to get help | `/siwa/settings` | — | — | — | — | no | person-only (G13) |
+
 ## Gaps
 
 - **G1. An agent can't own an account yet.** Sign-in is Privy in a browser only.
@@ -92,10 +108,12 @@ identity tools behind its switch.
   out of reach of a *paired helper* agent (one agent must not unpair another or pair
   more agents for its person), so they open only to the owner from G1. Owner: the
   account thread is reshaping pairing on `/account` now; tools follow its change.
-- **G3. Public name.** The account's public name is saved by the page through the
-  shared profile (`RegentIdentity.HTTP`, Privy proof pair). An owner agent needs the
-  same through a signed request. Library change in elixir-utils `identity`. Owner:
-  this lane after G1.
+- **G3. Public name.** The page saves the account's public name through the shared
+  profile (`RegentIdentity.HTTP`) with the person's session, and a paired agent reads
+  and sets it with a signed request to `GET` and `PATCH /api/v1/profile` (14 Nov,
+  `AshTemplateWeb.Plugs.ProfileOwner`). No signed browser tool, hosted MCP tool or
+  regents command calls it yet. Owner: this lane, with the agent-access lane for the
+  hosted tool (G5).
 - **G4. Connections and wallets.** Verified connections, connected apps and linked
   wallets are sign-in and wallet settings. Protected; planned after G1.
 - **G5. No hosted MCP or connector for the tools that exist.** Every WebMCP tool above
@@ -134,3 +152,9 @@ identity tools behind its switch.
   `--wake`): `GET /api/v1/feed` is a stream that stays open, and `cli/COMMANDS.md`
   ("feed") describes the command. A browser tool and a hosted MCP tool answer once, so
   neither carries a feed; an agent in the browser already sees the page change live.
+- **G13. SIWA is person-only, for good.** The siwa-server chief settled it on 14 Nov:
+  SIWA's control API proves a company's owner only by a person's Privy sign-in,
+  traded for a control token, and no agent credential is planned. The SIWA pages act
+  only for a person signed in with Privy in a browser, and no WebMCP tool, hosted MCP
+  tool, connector tool or regents command reaches the control API. This is not a gap
+  to close: nothing here is built or planned for an agent.

@@ -15,7 +15,6 @@ import {
 } from "@privy-io/react-auth"
 import React from "react"
 import {createRoot} from "react-dom/client"
-import {createProfileClient, type ProfileAction} from "../vendor/regent_identity/profile_client.mjs"
 import {
   privyLoginFailure,
   privyPairHeaders,
@@ -27,6 +26,7 @@ import {
   AccountAuthFailure,
   acrossCookieRotation,
   announceCsrfRotation,
+  browserCsrfToken,
   browserSessionMutations,
   clearLocalSession,
   finishWalletSignOut,
@@ -39,6 +39,7 @@ import {
   showAccountAuthFailure,
   IDENTITY_STATE_EVENT,
   type AccountRequest,
+  type ControlOutcome,
   type IdentityProvider,
   type IdentityRequest,
   type IdentityState,
@@ -380,6 +381,41 @@ function createPrivyTokenPairSource({
   }
 }
 
+// A SIWA page's control token. The person's Privy pair goes to this site, which
+// trades it at SIWA and keeps the token itself; the answer only says how it
+// went. It writes no cookie, so it waits behind any sign-in still settling, with
+// that sign-in's forms token, and a sign-out cancels it. A pair refused (401)
+// may have gone stale, so the pair is read from Privy once more and sent once
+// more; refused again, the person signs in again.
+export async function exchangeControlSession(
+  acquireTokens: () => Promise<PrivyPair>,
+  fetcher: typeof fetch = fetch,
+  sessionMutations: SessionMutationCoordinator = browserSessionMutations,
+): Promise<ControlOutcome> {
+  const send = async () => {
+    const tokens = await acquireTokens()
+    return sessionMutations
+      .establish(signal =>
+        fetcher("/siwa/session", {
+          method: "POST",
+          credentials: "same-origin",
+          redirect: "error",
+          signal,
+          headers: {...privyPairHeaders(tokens), "x-csrf-token": browserCsrfToken()},
+        }),
+      )
+      .catch(() => null)
+  }
+
+  const first = await send()
+  const response = first?.status === 401 ? await send() : first
+
+  if (response?.ok) return "ready"
+  if (response?.status === 429) return "busy"
+  if (!response || response.status === 503) return "unavailable"
+  return "signed-out"
+}
+
 async function createLocalSession(
   tokens: PrivyPair,
   fetcher: typeof fetch = fetch,
@@ -625,21 +661,6 @@ type PrivyLoginCallbackOptions = {
   reportFailure?: (failure: SignInFailureDiagnostic) => void
 }
 
-type ProfileProof = {accessToken: string; identityToken: string; subject: string; isCurrent: () => boolean}
-
-// One change to the shared profile belongs to the person signed in when it was
-// opened, at the press of Save: a proof for anyone else is never handed on, so a
-// switch of account before or part way through it sends nothing.
-export function oneSignIn(
-  subject: string | null,
-  acquireProof: () => Promise<ProfileProof | null>,
-): () => Promise<ProfileProof | null> {
-  return async () => {
-    const proof = await acquireProof()
-    return proof && proof.subject === subject ? proof : null
-  }
-}
-
 // Privy runs this for its own provider bootstrap too, for a modal this page
 // never opened, and that entry shares the one in-flight completion with a
 // deliberate click. Only a modal this page opened may speak for it, so a
@@ -705,9 +726,9 @@ type AccountBridgeProps = {
   publishRequestHandler: (
     requestHandler: PrivyBridgeHandle["request"],
     identityHandler: NonNullable<PrivyBridgeHandle["identity"]>,
+    controlHandler: PrivyBridgeHandle["control"],
     finishSignOutOnly: () => void,
     ready: boolean,
-    openProfile: () => ProfileAction,
   ) => void
 }
 
@@ -880,29 +901,6 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
     [getAccessToken, providerState?.getIdentityToken, lifetime],
   )
   React.useEffect(() => { acquireTokensRef.current = acquireTokens }, [acquireTokens])
-  // The shared profile changes only with this sign-in's own proof, read when the
-  // change is asked for and never handed to the page. Each change opens its own
-  // client, so all of its calls belong to one person.
-  const openProfile = React.useCallback(
-    () =>
-      createProfileClient({
-        acquireProof: oneSignIn(provider.current.subject, async () => {
-          const state = provider.current
-          if (signOutOnly || lifetime.aborted || !state.ready || !state.authenticated || !state.subject) {
-            return null
-          }
-          const generation = identityGeneration.current
-          const tokens = await acquireTokensRef.current()
-          return {
-            ...tokens,
-            subject: state.subject,
-            isCurrent: () => !lifetime.aborted && provider.current.authenticated &&
-              provider.current.subject === state.subject && identityGeneration.current === generation,
-          }
-        }),
-      }),
-    [signOutOnly, lifetime],
-  )
   const notifyIdentityState = React.useCallback((state: IdentityState) => {
     if (lifetime.aborted) return
     window.dispatchEvent(new CustomEvent(IDENTITY_STATE_EVENT, {detail: state}))
@@ -1222,10 +1220,16 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
     ? signOutOnlyBridge.identity
     : ordinaryIdentityHandler
   const finishSignOutOnly = signOutOnlyBridge.finish
+  // The pair read now, from the person signed in to Privy now; with nobody
+  // signed in there is no pair, and the trade is refused before it is sent.
+  const controlHandler = React.useCallback(
+    () => exchangeControlSession(() => acquireTokensRef.current()),
+    [],
+  )
 
   React.useEffect(
-    () => publishRequestHandler(requestHandler, identityHandler, finishSignOutOnly, ready, openProfile),
-    [finishSignOutOnly, identityHandler, openProfile, publishRequestHandler, ready, requestHandler],
+    () => publishRequestHandler(requestHandler, identityHandler, controlHandler, finishSignOutOnly, ready),
+    [controlHandler, finishSignOutOnly, identityHandler, publishRequestHandler, ready, requestHandler],
   )
 
   return null
@@ -1249,8 +1253,8 @@ export function startPrivyBridge(
   return new Promise((resolve, reject) => {
     let currentRequestHandler: PrivyBridgeHandle["request"] | null = null
     let currentIdentityHandler: PrivyBridgeHandle["identity"] | null = null
+    let currentControlHandler: PrivyBridgeHandle["control"] | null = null
     let currentFinishSignOutOnly: (() => void) | null = null
-    let currentOpenProfile: (() => ProfileAction) | null = null
     let resolved = false
     let currentReady = false
     const controller = new AbortController()
@@ -1264,7 +1268,7 @@ export function startPrivyBridge(
       signal?.removeEventListener("abort", onAbort)
       currentRequestHandler = null
       currentIdentityHandler = null
-      currentOpenProfile = null
+      currentControlHandler = null
       root.unmount()
       host.remove()
       if (!resolved) reject(reason)
@@ -1287,27 +1291,28 @@ export function startPrivyBridge(
           ? currentIdentityHandler(request)
           : Promise.reject(new Error("Privy bridge is not ready"))
       },
+      control() {
+        return currentControlHandler
+          ? currentControlHandler()
+          : Promise.reject(new Error("Privy bridge is not ready"))
+      },
       finishSignOutOnly() {
         currentFinishSignOutOnly?.()
-      },
-      openProfile() {
-        if (!currentOpenProfile) throw new Error("Privy bridge is not ready")
-        return currentOpenProfile()
       },
     }
     const publishRequestHandler: AccountBridgeProps["publishRequestHandler"] = (
       requestHandler,
       identityHandler,
+      controlHandler,
       finishSignOutOnly,
       ready,
-      openProfile,
     ) => {
       if (controller.signal.aborted) return
       currentReady = ready
       currentRequestHandler = requestHandler
       currentIdentityHandler = identityHandler
+      currentControlHandler = controlHandler
       currentFinishSignOutOnly = finishSignOutOnly
-      currentOpenProfile = openProfile
       if (!ready || resolved) return
       clearTimeout(timeout)
       resolved = true

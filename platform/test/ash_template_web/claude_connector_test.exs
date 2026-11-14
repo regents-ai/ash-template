@@ -55,6 +55,45 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     end
   end
 
+  # An app whose published identity signs its token requests with its own key
+  # (`private_key_jwt`), its document and its key set served without a network;
+  # each read is sent to the test, which sets the key.
+  @app "https://app.example/oauth/a1b2c3/client.json"
+  @app_keys "https://app.example/oauth/jwks.json"
+  @app_callback "https://app.example/connector/oauth_callback"
+
+  defmodule SigningApp do
+    @moduledoc false
+    @app "https://app.example/oauth/a1b2c3/client.json"
+    @keys "https://app.example/oauth/jwks.json"
+
+    def request(:get, url, _opts) when url in [@app, @keys] do
+      {test, key} = Application.fetch_env!(:ash_template, __MODULE__)
+      send(test, {:read, url})
+
+      {:ok,
+       %{
+         status: 200,
+         headers: [{"content-type", "application/json"}],
+         body: Jason.encode!(body(url, key))
+       }}
+    end
+
+    defp body(@app, _key),
+      do: %{
+        "client_id" => @app,
+        "client_name" => "Signing App",
+        "redirect_uris" => ["https://app.example/connector/oauth_callback"],
+        "grant_types" => ["authorization_code", "refresh_token"],
+        "response_types" => ["code"],
+        "token_endpoint_auth_method" => "private_key_jwt",
+        "token_endpoint_auth_signing_alg" => "RS256",
+        "jwks_uri" => @keys
+      }
+
+    defp body(@keys, key), do: %{"keys" => [key]}
+  end
+
   # Every request the hosted signer may be asked to sign for this site.
   @agent_scopes "regent.identity.manage " <> AshTemplate.OAuth.agent_scope()
   @signable [
@@ -109,6 +148,20 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
 
       refute :claude in RegentAgents.Harness.offered()
       refute "claude" in Enum.map(PairingBox.choices(), & &1.value)
+    end
+
+    test "a token spends its address's 120 once, its body read or not, and the 121st is refused" do
+      from = {10, 9, 8, 4}
+      read = post_mcp(rpc("ping"), "any-token", from)
+      assert read.status == 401
+      assert policies(read) == ["mcp_address"]
+
+      for _ <- 2..120,
+          do: Phoenix.ConnTest.assert_error_sent(400, fn -> post_unreadable("any-token", from) end)
+
+      refused = post_unreadable("any-token", from)
+      assert refused.status == 429
+      assert policies(refused) == ["mcp_address"]
     end
 
     test "an agent's sign-in and pairing work as before, and a Claude pairing is refused" do
@@ -169,59 +222,79 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       metadata = @endpoint.call(conn(:get, "/.well-known/oauth-authorization-server"), [])
       assert json(metadata)["client_id_metadata_document_supported"] == true
 
-      page =
-        conn(:get, "/oauth/authorize?" <> authorize_query(@claude))
-        |> init_test_session(browser)
-        |> put_req_header("accept", "text/html")
-        |> @endpoint.call([])
-
-      assert page.status == 200
+      {page, code} = allow!(browser, @claude, @claude_callback)
       assert page.resp_body =~ "Connect Claude"
       assert_received {:read, @claude}
 
-      pending = get_session(page, :regent_oauth_request)
-      csrf = Plug.CSRFProtection.get_csrf_token()
-
-      approved =
-        conn(:post, "/oauth/authorize", %{
-          "approval_key" => pending["nonce"],
-          "decision" => "allow",
-          "_csrf_token" => csrf
-        })
-        |> init_test_session(
-          Map.merge(browser, %{
-            "regent_oauth_request" => pending,
-            "_csrf_token" => Plug.CSRFProtection.dump_state()
-          })
-        )
-        |> put_req_header("accept", "text/html")
-        |> @endpoint.call([])
-
-      assert approved.status == 303
-      [location] = get_resp_header(approved, "location")
-      assert String.starts_with?(location, @claude_callback <> "?")
-      code = URI.decode_query(URI.parse(location).query)["code"]
-
-      exchanged =
-        conn(:post, "/oauth/token", %{
-          "grant_type" => "authorization_code",
-          "client_id" => @claude,
-          "code" => code,
-          "code_verifier" => @verifier,
-          "redirect_uri" => @claude_callback,
-          "resource" => RegentOAuth.resource()
-        })
-        |> put_req_header("accept", "application/json")
-        |> @endpoint.call([])
-
-      assert exchanged.status == 200, exchanged.resp_body
-      %{"access_token" => access, "refresh_token" => refresh_token} = json(exchanged)
+      assert {200, %{"access_token" => access, "refresh_token" => refresh_token}} =
+               token(%{
+                 "grant_type" => "authorization_code",
+                 "client_id" => @claude,
+                 "code" => code,
+                 "code_verifier" => @verifier,
+                 "redirect_uri" => @claude_callback,
+                 "resource" => RegentOAuth.resource()
+               })
 
       assert "register_identity" in tool_names(access)
       assert {200, %{"access_token" => _}} = refresh(@claude, refresh_token)
 
       # Only consent reads the address; the token endpoint uses the record.
       refute_received {:read, @claude}
+    end
+
+    test "an app whose published identity signs its requests connects with its own key" do
+      key = JOSE.JWK.generate_key({:rsa, 2048})
+      {_, public} = JOSE.JWK.to_public_map(key)
+      public = Map.merge(public, %{"kid" => "app-1", "alg" => "RS256", "use" => "sig"})
+      put_env(:regent_http, :public_client, __MODULE__.SigningApp)
+      put_env(:ash_template, __MODULE__.SigningApp, {self(), public})
+      browser = sign_in!("did:privy:connector-signing")
+
+      metadata = json(@endpoint.call(conn(:get, "/.well-known/oauth-authorization-server"), []))
+      assert metadata["token_endpoint_auth_methods_supported"] == ["none", "private_key_jwt"]
+      assert metadata["token_endpoint_auth_signing_alg_values_supported"] == ["RS256", "ES256"]
+
+      # Consent reads the document only; the key set is read at the token address.
+      {_page, code} = allow!(browser, @app, @app_callback)
+      assert_received {:read, @app}
+      refute_received {:read, @app_keys}
+
+      grant = %{
+        "grant_type" => "authorization_code",
+        "client_id" => @app,
+        "code" => code,
+        "code_verifier" => @verifier,
+        "redirect_uri" => @app_callback,
+        "resource" => RegentOAuth.resource()
+      }
+
+      # Without its assertion the app is refused, and its code still works after.
+      assert {401, %{"error" => "invalid_client"}} = token(grant)
+
+      assert {200, %{"access_token" => access, "refresh_token" => refresh_token}} =
+               token(Map.merge(grant, signed_by(key, RegentOAuth.issuer())))
+
+      assert "register_identity" in tool_names(access)
+
+      # A refresh may name the app by its assertion alone, here sent to the token
+      # address.
+      assert {200, %{"access_token" => _}} =
+               token(
+                 Map.merge(
+                   %{
+                     "grant_type" => "refresh_token",
+                     "refresh_token" => refresh_token,
+                     "resource" => RegentOAuth.resource()
+                   },
+                   signed_by(key, RegentOAuth.token_endpoint())
+                 )
+               )
+
+      # The key set was read once, and the document not again.
+      assert_received {:read, @app_keys}
+      refute_received {:read, @app_keys}
+      refute_received {:read, @app}
     end
 
     test "one address may open consent 30 times a minute, as it may register; the 31st waits" do
@@ -243,7 +316,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       for body <- [rpc("initialize", %{"protocolVersion" => "2025-06-18"}), rpc("tools/list")] do
         refused = post_mcp(body, nil)
         assert refused.status == 401
-        assert json(refused)["error"]["code"] == "connection_required"
+        assert refusal(refused, 1)["code"] == "connection_required"
 
         assert get_resp_header(refused, "www-authenticate") ==
                  [RegentOAuth.challenge(Enum.join(RegentOAuth.scopes(), " "))]
@@ -523,6 +596,61 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       refute "rooms_post" in tool_names(token)
     end
 
+    test "after a sign-in with no wallet the app is asked to connect, and works as the agent again after one with a wallet" do
+      subject = "did:privy:agent-withdrawn"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+      assert %{"isError" => false} = post_room(token)
+
+      sign_in_without_wallet!(subject)
+
+      for call <- [rpc("tools/list"), room_call()] do
+        refused = post_mcp(call, token)
+        assert refused.status == 401
+        assert refusal(refused, 1)["code"] == "connection_required"
+      end
+
+      sign_in!(subject)
+      assert "rooms_post" in tool_names(token)
+      assert %{"isError" => false} = post_room(token)
+    end
+
+    test "unpairing while a call runs answers that call a tool result with isError" do
+      subject = "did:privy:agent-unpair-during"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+
+      [agent] = agents(subject)
+      when_accepted(fn -> :ok = RegentAgents.unpair_agent!(agent, actor: person(subject)) end)
+
+      answered = post_mcp(room_call(), token)
+      assert answered.status == 200
+
+      assert %{"id" => 1, "result" => %{"isError" => true, "content" => [%{"text" => text}]}} =
+               json(answered)
+
+      assert Jason.decode!(text)["error"]["code"] == "agent_not_paired"
+    end
+
+    test "a sign-in with no wallet while a call runs answers that call a tool result with isError" do
+      subject = "did:privy:agent-withdrawn-during"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+
+      when_accepted(fn -> sign_in_without_wallet!(subject) end)
+
+      answered = post_mcp(room_call(), token)
+      assert answered.status == 200
+
+      assert %{"id" => 1, "result" => %{"isError" => true, "content" => [%{"text" => text}]}} =
+               json(answered)
+
+      assert Jason.decode!(text)["error"]["code"] == "person_not_here"
+    end
+
     test "the hosted signer is asked for the app's address once, not on every call" do
       subject = "did:privy:agent-once"
       sign_in!(subject)
@@ -545,7 +673,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       for _ <- 1..3 do
         refused = post_mcp(rpc("ping"), token)
         assert refused.status == 503
-        assert json(refused)["error"]["code"] == "identity_unavailable"
+        assert refusal(refused, 1)["code"] == "identity_unavailable"
       end
 
       assert signer_asked() == 3
@@ -589,6 +717,12 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
                refused = post_mcp(rpc("ping"), "not-this-sites", from)
                assert refused.status == 429
                assert policies(refused) == ["mcp_address"]
+               assert [seconds] = get_resp_header(refused, "retry-after")
+
+               assert %{"code" => "too_many_requests", "retry_after" => retry_after} =
+                        refusal(refused, nil)
+
+               assert Integer.to_string(retry_after) == seconds
              end) == 0
     end
 
@@ -610,6 +744,8 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       refused = post_unreadable("any-token", from)
       assert refused.status == 429
       assert policies(refused) == ["mcp_connected_address"]
+      assert [_seconds] = get_resp_header(refused, "retry-after")
+      assert %{"code" => "too_many_requests"} = refusal(refused, nil)
     end
 
     test "every answer is private and never kept, a tool's, a stream's and a refusal" do
@@ -736,6 +872,21 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     SessionAuthority.session(bound)
   end
 
+  # The same person signing in again, now with no wallet on their sign-in.
+  defp sign_in_without_wallet!(subject) do
+    assert {:error, :missing_linked_wallet} =
+             VerifiedSession.establish(%RegentPrivy.Session{
+               app_id: "test-app",
+               session_id: subject,
+               privy_user_id: subject,
+               wallet_address: nil,
+               wallet_addresses: [],
+               linked_socials: [],
+               issued_at: System.system_time(:second),
+               expires_at: System.system_time(:second) + 3600
+             })
+  end
+
   # An app connected by `subject`, as consent leaves it: its client id and the
   # plain access and refresh tokens it holds.
   defp connect!(subject, scope \\ "regent.identity.manage") do
@@ -759,10 +910,10 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     %{client_id: client.id, access: token.value, refresh: token.refresh_token}
   end
 
-  defp authorize_query(client_id) do
+  defp authorize_query(client_id, callback \\ @claude_callback) do
     URI.encode_query(%{
       "client_id" => client_id,
-      "redirect_uri" => @claude_callback,
+      "redirect_uri" => callback,
       "response_type" => "code",
       "scope" => RegentOAuth.scope(),
       "state" => "state",
@@ -772,19 +923,82 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     })
   end
 
-  defp refresh(client_id, refresh_token) do
-    conn =
-      conn(:post, "/oauth/token", %{
-        "grant_type" => "refresh_token",
-        "client_id" => client_id,
-        "refresh_token" => refresh_token,
-        "resource" => RegentOAuth.resource()
+  # A person's consent at /oauth/authorize for `client_id` and their Allow: the
+  # consent page and the code the app's callback receives.
+  defp allow!(browser, client_id, callback) do
+    page =
+      conn(:get, "/oauth/authorize?" <> authorize_query(client_id, callback))
+      |> init_test_session(browser)
+      |> put_req_header("accept", "text/html")
+      |> @endpoint.call([])
+
+    assert page.status == 200
+    pending = get_session(page, :regent_oauth_request)
+    csrf = Plug.CSRFProtection.get_csrf_token()
+
+    approved =
+      conn(:post, "/oauth/authorize", %{
+        "approval_key" => pending["nonce"],
+        "decision" => "allow",
+        "_csrf_token" => csrf
       })
+      |> init_test_session(
+        Map.merge(browser, %{
+          "regent_oauth_request" => pending,
+          "_csrf_token" => Plug.CSRFProtection.dump_state()
+        })
+      )
+      |> put_req_header("accept", "text/html")
+      |> @endpoint.call([])
+
+    assert approved.status == 303
+    [location] = get_resp_header(approved, "location")
+    assert String.starts_with?(location, callback <> "?")
+    {page, URI.decode_query(URI.parse(location).query)["code"]}
+  end
+
+  # What an app that signs its requests sends to authenticate: an assertion by
+  # its own key, for `aud`, used once.
+  defp signed_by(key, aud) do
+    now = System.system_time(:second)
+
+    claims = %{
+      "iss" => @app,
+      "sub" => @app,
+      "aud" => aud,
+      "iat" => now,
+      "exp" => now + 60,
+      "jti" => Ecto.UUID.generate()
+    }
+
+    {_, assertion} =
+      key
+      |> JOSE.JWT.sign(%{"alg" => "RS256", "kid" => "app-1"}, claims)
+      |> JOSE.JWS.compact()
+
+    %{
+      "client_assertion_type" => "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+      "client_assertion" => assertion
+    }
+  end
+
+  defp token(params) do
+    conn =
+      conn(:post, "/oauth/token", params)
       |> put_req_header("accept", "application/json")
       |> @endpoint.call([])
 
     {conn.status, json(conn)}
   end
+
+  defp refresh(client_id, refresh_token),
+    do:
+      token(%{
+        "grant_type" => "refresh_token",
+        "client_id" => client_id,
+        "refresh_token" => refresh_token,
+        "resource" => RegentOAuth.resource()
+      })
 
   # AshAi takes a tool's arguments as its action's input.
   # A call as tools/list lists the tool: one with no inputs is sent empty
@@ -922,4 +1136,28 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   end
 
   defp json(conn), do: Jason.decode!(conn.resp_body)
+
+  # Runs `change` once, as the next call is let in, before it runs; the request
+  # runs in the test's process.
+  defp when_accepted(change) do
+    handler = "connector-test-when-accepted"
+    :ok = :telemetry.attach(handler, [:ash_template, :mcp, :auth], &__MODULE__.accepted/4, nil)
+    on_exit(fn -> :telemetry.detach(handler) end)
+    Process.put(:when_accepted, change)
+  end
+
+  @doc false
+  def accepted(_event, _measurements, %{outcome: :accepted}, _config) do
+    with change when is_function(change, 0) <- Process.delete(:when_accepted), do: change.()
+  end
+
+  def accepted(_event, _measurements, _metadata, _config), do: :ok
+
+  # The site's refusal: the `data` of the JSON-RPC error that answered, with the
+  # request's `id`, or none when `id` is nil.
+  defp refusal(conn, id) do
+    assert %{"jsonrpc" => "2.0", "error" => %{"data" => data}} = answer = json(conn)
+    assert Map.fetch(answer, "id") == if(is_nil(id), do: :error, else: {:ok, id})
+    data
+  end
 end

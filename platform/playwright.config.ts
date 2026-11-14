@@ -15,6 +15,9 @@ import {defineConfig, devices} from "@playwright/test"
 // not meet a cold server (test/browser/support/warm_up.ts).
 // Each run's port and database are its own, so two walks at once, from two
 // checkouts, never reach each other's server or data.
+// Every walk starts with the homepage's guided tour seen, so it never opens over what
+// a walk presses; the saved sign-ins say the same (support/sign_in.exs), and
+// tour.spec.ts starts with nothing seen.
 const port = Number(process.env.ASH_TEMPLATE_WALK_PORT)
 const baseURL = `http://127.0.0.1:${port}`
 
@@ -30,6 +33,10 @@ export default defineConfig({
   use: {
     baseURL,
     trace: "retain-on-failure",
+    storageState: {
+      cookies: [],
+      origins: [{origin: baseURL, localStorage: [{name: "ash-template:tour:home", value: "seen"}]}],
+    },
   },
   webServer: {
     command:

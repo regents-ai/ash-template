@@ -1,4 +1,3 @@
-import {loadProfileAction, type ProfileAction} from "../vendor/regent_identity/profile_client.mjs"
 import {disconnectEveryEthereumWallet, invalidateWalletWork, rememberWalletDisconnected,
   walletDisconnected, walletDisconnectedStorageKey} from "./wallet_actions/connected_wallet"
 
@@ -47,11 +46,21 @@ export type IdentityState = {
 export const IDENTITY_STATE_EVENT = "ash:identity-state"
 export const IDENTITY_REQUEST_EVENT = "ash:identity-request"
 
+/**
+ * How a SIWA page's trade for its control token ended: the server holds one
+ * now, there were too many tries in a short time, SIWA is not available, or the
+ * person must sign in again.
+ */
+export type ControlOutcome = "ready" | "busy" | "unavailable" | "signed-out"
+
+export const CONTROL_REQUEST_EVENT = "ash:siwa-control-request"
+export const CONTROL_STATE_EVENT = "ash:siwa-control-state"
+
 export type PrivyBridgeHandle = {
   dispose?: () => void
   request: (request: AccountRequest) => Promise<void>
   identity?: (request: IdentityRequest) => Promise<void>
-  openProfile?: () => ProfileAction
+  control: () => Promise<ControlOutcome>
   finishSignOutOnly?: () => void
 }
 
@@ -917,26 +926,14 @@ export function createLazyAuthLoader(
       if (handle) return deliverPending()
       return preparing ?? prepare()
     },
-    // One change to the shared profile, answered by the page's one bridge, started
-    // here when nothing has started it. The change opens as it is asked for, so it
-    // belongs to whoever is signed in then, and every call of it uses that client.
-    openProfile(): ProfileAction {
-      const ready = () => {
-        assertActive()
-        if (state !== "ordinary") throw new Error("Provider sign out is still in progress.")
-      }
-      const opening = (async () => {
-        ready()
-        if (!handle) await (preparing ?? prepare())
-        if (!handle?.openProfile) throw new Error("Privy profile bridge is not ready")
-        return handle.openProfile()
-      })()
-      // A change that is never used still settles quietly; each use reports its own failure.
-      opening.catch(() => {})
-      return (...args) => loadProfileAction(async () => {
-        ready()
-        return opening
-      }, ...args)
+    // The same bridge, loaded once for the page, makes the trade.
+    async control(): Promise<ControlOutcome> {
+      assertActive()
+      if (state !== "ordinary") throw new Error("Provider sign out is still in progress.")
+      if (!handle) await (preparing ?? prepare())
+      assertActive()
+      if (!handle) throw new Error("Privy bridge is not ready")
+      return handle.control()
     },
     finishHandoff(): void {
       if (state !== "handoff-preterminal") return
@@ -945,15 +942,6 @@ export function createLazyAuthLoader(
       handle?.finishSignOutOnly?.()
     },
   }
-}
-
-// The Account page's name form saves through the page's own sign-in loader.
-const profileOpeners = new WeakMap<Document, () => ProfileAction>()
-
-export function openProfile(documentRoot: Document = document): ProfileAction {
-  const open = profileOpeners.get(documentRoot)
-  if (!open) throw new Error("The account loader is not installed")
-  return open()
 }
 
 export function installAccountAuthLazyLoader(
@@ -979,8 +967,6 @@ export function installAccountAuthLazyLoader(
     importBridge,
     consumedHandoff ? {mode: "sign-out-only"} : {},
   )
-  // Read at each save, since a retried sign-in replaces the loader.
-  profileOpeners.set(documentRoot, () => loader.openProfile())
   const clearStatus = () => {
     const status = documentRoot.querySelector<HTMLElement>("#account-auth-status")
     if (!status) return
@@ -1147,6 +1133,17 @@ export function installAccountAuthLazyLoader(
   // mounts, so a returning customer sees their wallet without a click. Nothing
   // is shown when that cannot happen: the page still offers the connection.
   const onWalletSync = () => void loader.request("sync").catch(() => undefined)
+  // A SIWA page asks for its control token. A trade that cannot even start is
+  // answered as one the person must sign in again for, so the page never waits
+  // on silence.
+  const onControlRequest = () => {
+    void loader
+      .control()
+      .catch((): ControlOutcome => "signed-out")
+      .then(outcome => {
+        if (installed) walletEvents.dispatchEvent(new CustomEvent(CONTROL_STATE_EVENT, {detail: outcome}))
+      })
+  }
   const reconcileSignedInStartup = () => {
     clearStatus()
     void withinWindow(
@@ -1159,6 +1156,7 @@ export function installAccountAuthLazyLoader(
   documentRoot.addEventListener("click", onClick)
   walletEvents.addEventListener(IDENTITY_REQUEST_EVENT, onIdentityRequest)
   walletEvents.addEventListener("ash:wallet-sync", onWalletSync)
+  walletEvents.addEventListener(CONTROL_REQUEST_EVENT, onControlRequest)
   if (consumedHandoff) {
     // The page that signed out could not finish Privy's logout. It is waited
     // for here, never cut short, before this page acts on anything else.
@@ -1175,7 +1173,6 @@ export function installAccountAuthLazyLoader(
   }
   return () => {
     installed = false
-    profileOpeners.delete(documentRoot)
     loader.dispose()
 
     walletEvents.removeEventListener("storage", onWalletStorage)
@@ -1185,6 +1182,7 @@ export function installAccountAuthLazyLoader(
     documentRoot.removeEventListener("click", onClick)
     walletEvents.removeEventListener(IDENTITY_REQUEST_EVENT, onIdentityRequest)
     walletEvents.removeEventListener("ash:wallet-sync", onWalletSync)
+    walletEvents.removeEventListener(CONTROL_REQUEST_EVENT, onControlRequest)
   }
 }
 

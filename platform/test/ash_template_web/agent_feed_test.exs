@@ -161,7 +161,7 @@ defmodule AshTemplateWeb.AgentFeedTest do
     second = open_feed(url, "proof-paired")
 
     assert next_event(first).data == %{"kind" => "closed", "reason" => "replaced"}
-    assert_receive {:feed_done, ref}, 1_000
+    assert_receive {:feed_done, ref}
     assert ref == first.ref
     assert next_frame(second) == ": keep-alive"
   end
@@ -182,7 +182,25 @@ defmodule AshTemplateWeb.AgentFeedTest do
     )
 
     assert next_event(feed).data == %{"kind" => "closed", "reason" => "pairing_changed"}
-    assert_receive {:feed_done, ref}, 1_000
+    assert_receive {:feed_done, ref}
+    assert ref == feed.ref
+  end
+
+  test "a sign-in by its person with no wallet closes the feed; one with their wallet leaves it open",
+       %{url: url} do
+    did = "did:privy:feed-withdrawn"
+    paired_person(did)
+    feed = open_feed(url, "proof-paired")
+    assert next_frame(feed) == ": keep-alive"
+
+    assert {:ok, _account, []} = VerifiedSession.establish(session(did))
+    assert next_frame(feed) == ": keep-alive"
+
+    assert {:error, :missing_linked_wallet} =
+             VerifiedSession.establish(%{session(did) | wallet_address: nil, wallet_addresses: []})
+
+    assert next_event(feed).data == %{"kind" => "closed", "reason" => "pairing_changed"}
+    assert_receive {:feed_done, ref}
     assert ref == feed.ref
   end
 
@@ -285,7 +303,7 @@ defmodule AshTemplateWeb.AgentFeedTest do
   end
 
   defp next_frame(%{ref: ref}) do
-    assert_receive {:feed_frame, ^ref, 200, frame}, 2_000
+    assert_receive {:feed_frame, ^ref, 200, frame}
     frame
   end
 
@@ -307,29 +325,32 @@ defmodule AshTemplateWeb.AgentFeedTest do
   end
 
   defp paired_person(privy_user_id) do
-    wallet = @wallets["proof-paired"]
-
-    {:ok, account, []} =
-      VerifiedSession.establish(%RegentPrivy.Session{
-        app_id: "test-app",
-        session_id: "test-session",
-        privy_user_id: privy_user_id,
-        wallet_address: wallet,
-        wallet_addresses: [wallet],
-        linked_socials: [],
-        issued_at: System.system_time(:second),
-        expires_at: System.system_time(:second) + 3600
-      })
-
+    {:ok, account, []} = VerifiedSession.establish(session(privy_user_id))
     person = %RegentAgents.Person{privy_user_id: privy_user_id}
     code = RegentAgents.issue_pairing_code!(actor: person)
 
     pairing =
       RegentAgents.pair_agent!(code.code, "Fixture", :codex,
-        actor: %RegentAgents.Agent{wallet: wallet}
+        actor: %RegentAgents.Agent{wallet: @wallets["proof-paired"]}
       )
 
     {Human.for_account(account), pairing}
+  end
+
+  # The person's sign-in with the paired agent's wallet linked.
+  defp session(privy_user_id) do
+    wallet = @wallets["proof-paired"]
+
+    %RegentPrivy.Session{
+      app_id: "test-app",
+      session_id: "test-session",
+      privy_user_id: privy_user_id,
+      wallet_address: wallet,
+      wallet_addresses: [wallet],
+      linked_socials: [],
+      issued_at: System.system_time(:second),
+      expires_at: System.system_time(:second) + 3600
+    }
   end
 
   defp people(ids) do

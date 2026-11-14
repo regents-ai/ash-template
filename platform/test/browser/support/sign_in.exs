@@ -5,7 +5,8 @@
 # agent pairs, a note for each width whose label waits to be rated (notes.spec.ts),
 # and the signed cookie the walk sends; the friend who writes in General
 # gets one too, starts a quiet room for each width's busy room (busy_room.spec.ts) and
-# has a page and one more of notes (notes.spec.ts).
+# has a page and one more of notes (notes.spec.ts); and a person for each width who
+# sets up SIWA from nothing and one whose SIWA company is billed (siwa.spec.ts).
 # Run by playwright.config.ts
 # before the server starts; it refuses any database but a walk's own local one.
 alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
@@ -173,6 +174,10 @@ options = Plug.Session.init(Application.fetch_env!(:ash_template, :session_optio
 
 File.mkdir_p!("test/browser/.auth")
 
+# The walk's own address, where its browser keeps the homepage's guided tour seen, as
+# playwright.config.ts does for a walk that is not signed in.
+walk_origin = "http://127.0.0.1:" <> System.fetch_env!("PORT")
+
 # Signs `account` in through the site's own sign-in step with a fresh session and
 # writes the cookie in Playwright's own saved-sign-in shape, which a test loads.
 save_sign_in = fn account, verified, file ->
@@ -205,11 +210,16 @@ save_sign_in = fn account, verified, file ->
           path: "/",
           expires: -1,
           httpOnly: true,
-          secure: false,
+          secure: true,
           sameSite: "Lax"
         }
       ],
-      origins: []
+      origins: [
+        %{
+          origin: walk_origin,
+          localStorage: [%{name: "ash-template:tour:home", value: "seen"}]
+        }
+      ]
     })
   )
 end
@@ -229,3 +239,48 @@ save_sign_in.(
   },
   "friend.json"
 )
+
+# A person for each width, with a name of their own, who sets up SIWA from nothing
+# (siwa.spec.ts), so every other page the walk opens as the person above still
+# finds no SIWA company; and one for each width whose company the walk's SIWA
+# already bills (AshTemplate.WalkControl), for the Overview of a running period.
+for {width, digit} <- [
+      {"desktop", "1"},
+      {"phone", "2"},
+      {"billed-desktop", "3"},
+      {"billed-phone", "4"}
+    ] do
+  did = "did:privy:browser-walk-siwa-#{width}"
+  siwa_wallet = "0x" <> String.duplicate(digit, 40)
+
+  Ash.Seed.upsert!(
+    RegentIdentity.Profile,
+    %{
+      app_id: app_id,
+      privy_user_id: did,
+      display_name: "Walk SIWA #{String.capitalize(width)}",
+      wallet_addresses: [siwa_wallet],
+      proof_issued_at: System.system_time(:second)
+    },
+    identity: :privy_subject
+  )
+
+  siwa_person =
+    AshTemplate.Accounts.register_verified!(did, siwa_wallet, [siwa_wallet],
+      actor: %AshTemplate.Actors.System{}
+    )
+
+  save_sign_in.(
+    siwa_person,
+    %RegentPrivy.Session{
+      app_id: app_id,
+      privy_user_id: did,
+      session_id: "browser-walk-siwa-#{width}",
+      wallet_address: siwa_wallet,
+      wallet_addresses: [siwa_wallet],
+      user_wallet_address: siwa_wallet,
+      linked_socials: []
+    },
+    "siwa-#{width}.json"
+  )
+end

@@ -5,9 +5,10 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   signs every request after that over its exact method, path and body. The service
   checks the signature and the sign-in (`Siwa.AgentAuthPlug`), so only a wallet
   it vouches for becomes the actor, as itself (`AshTemplate.Actors.Agent`).
-  Cookies grant nothing here. A paired agent's pairing is checked again just
-  before the answer leaves, so an unpairing during the request never sends the
-  person's data. Every refusal answers
+  Cookies grant nothing here. Whether a paired agent still acts for its person
+  (`AshTemplate.Agents.ForPerson`) is checked again just before the answer
+  leaves, so a change during the request never sends the person's data. Every
+  refusal answers
   `{"error": {"code", "message", "hint"}}`, with the service's own words when it
   refused.
   """
@@ -19,8 +20,9 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   require Logger
 
-  alias AshTemplate.{Accounts, Agents}
   alias AshTemplate.Actors.{Agent, System}
+  alias AshTemplate.Agents
+  alias AshTemplate.Agents.ForPerson
   alias RegentHttp.UnexpectedFailure
 
   @hint "Sign in with regents auth login --site ash-template (how: https://template.regents.sh/agents.md), then send the request again."
@@ -58,13 +60,16 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   def init(opts), do: opts
 
   @impl Plug
-  def call(conn, _opts) do
-    Siwa.AgentAuthPlug.call(conn,
-      client: RegentAgents.Broker,
-      hooks: __MODULE__,
-      audience: RegentAgents.Broker.audience()
-    )
-  end
+  def call(conn, _opts), do: Siwa.AgentAuthPlug.call(conn, siwa_options(__MODULE__))
+
+  @doc """
+  The shared plug's options, with `hooks` signing in and refusing: this module,
+  or a door that answers in its own shape with `verified_actor/2` and
+  `refusal/1` (`AshTemplateWeb.Plugs.McpAgent`).
+  """
+  @spec siwa_options(module()) :: keyword()
+  def siwa_options(hooks),
+    do: [client: RegentAgents.Broker, hooks: hooks, audience: RegentAgents.Broker.audience()]
 
   # The shared plug has already refused a query string and a body it did not
   # capture whole. A body sent here is JSON.
@@ -76,7 +81,17 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   end
 
   @impl Siwa.AgentAuthPlug.Hooks
-  def accept(
+  def accept(conn, data, _context) do
+    with {:ok, actor} <- verified_actor(conn, data),
+         do: {:ok, conn |> assign(:actor, actor) |> recheck_before_send(actor)}
+  end
+
+  @doc """
+  The actor the wallet the sign-in service verified (`data`, its answer) signs
+  in as, or the refusal `deny/2` takes when it can't.
+  """
+  @spec verified_actor(Plug.Conn.t(), map()) :: {:ok, Agent.t()} | {:error, map()}
+  def verified_actor(
         conn,
         %{
           "verified" => true,
@@ -88,99 +103,95 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
             "chain_id" => 8453,
             "audience" => audience
           }
-        },
-        _context
+        }
       ) do
     if audience == RegentAgents.Broker.audience(),
       do: sign_in(conn, address, book),
       else: refused(:unsupported_principal)
   end
 
-  def accept(_conn, _data, _context), do: refused(:unsupported_principal)
+  def verified_actor(_conn, _data), do: refused(:unsupported_principal)
 
   defp sign_in(conn, address, book) do
-    case actor_for(address, book) do
-      {:ok, actor} ->
-        {:ok, conn |> assign(:actor, actor) |> recheck_before_send(actor)}
-
-      {:error, error} ->
-        UnexpectedFailure.log(conn, error)
-        refused(:agent_unavailable)
+    with {:error, error} <- actor_for(address, book) do
+      UnexpectedFailure.log(conn, error)
+      refused(:agent_unavailable)
     end
   end
 
   @doc """
   The actor a wallet the sign-in service vouches for acts as here: the agent as
-  itself, or acting for its person while it is paired. `book` is the service's
-  World ID reading, or nil. The hosted MCP server uses it too, for the wallet of
-  a connected app's own identity (`AshTemplateWeb.Plugs.McpAgent`).
+  itself, or acting for its person while it may (`ForPerson.resolve/1`). `book`
+  is the service's World ID reading, or nil. The hosted MCP server uses it too,
+  for the wallet of a connected app's own identity
+  (`AshTemplateWeb.Plugs.McpAgent`).
   """
   @spec actor_for(String.t(), map() | nil) :: {:ok, Agent.t()} | {:error, term()}
   def actor_for(address, book \\ nil) do
     with {:ok, agent} <- Agents.sign_in_agent(address, actor: %System{}) do
       agent = with_backing(agent, book)
 
-      case RegentAgents.Authority.resolve(AshTemplate.Repo, agent.wallet_address) do
-        {:ok, pairing} -> paired(agent, pairing)
+      case ForPerson.resolve(agent.wallet_address) do
+        {:ok, pairing, account} -> for_person(agent, account, pairing)
         {:error, :not_paired} -> {:ok, Agent.for_agent(agent)}
+        {:error, :person_not_here} -> {:ok, Agent.for_agent(agent, :person_not_here)}
         {:error, error} -> {:error, error}
       end
     end
   end
 
-  defp paired(agent, pairing) do
-    case Accounts.get_by_privy_did(pairing.privy_user_id, actor: %System{}) do
-      {:ok, %{} = account} ->
-        app_id = :ash_template |> Application.fetch_env!(:privy) |> Keyword.fetch!(:app_id)
+  defp for_person(agent, account, pairing) do
+    app_id = :ash_template |> Application.fetch_env!(:privy) |> Keyword.fetch!(:app_id)
 
-        with {:ok, profile_id} <- RegentIdentity.profile_id(app_id, pairing.privy_user_id),
-             do: {:ok, Agent.paired(agent, account, pairing, profile_id)}
-
-      {:ok, nil} ->
-        {:ok, Agent.for_agent(agent, :person_not_here)}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    with {:ok, profile_id} <- RegentIdentity.profile_id(app_id, pairing.privy_user_id),
+         do: {:ok, Agent.paired(agent, account, pairing, profile_id)}
   end
 
   @doc """
-  Checks a paired agent's pairing again just before the answer leaves, and
-  replaces the answer when it has ended or changed hands meanwhile.
+  Checks again, just before the answer leaves, that a paired agent still acts
+  for its person, and replaces the answer when it no longer does: with
+  `replace`, given the conn, the refusal's status and its
+  `{code, message, hint}`, or in this site's `{"error": ...}` shape.
   """
-  @spec recheck_before_send(Plug.Conn.t(), Agent.t()) :: Plug.Conn.t()
-  def recheck_before_send(conn, %Agent{pairing: :active} = actor),
-    do: register_before_send(conn, &recheck(&1, actor))
+  @spec recheck_before_send(
+          Plug.Conn.t(),
+          Agent.t(),
+          (Plug.Conn.t(), pos_integer(), map() -> Plug.Conn.t())
+        ) :: Plug.Conn.t()
+  def recheck_before_send(conn, actor, replace \\ &replace/3)
 
-  def recheck_before_send(conn, _actor), do: conn
+  def recheck_before_send(conn, %Agent{pairing: :active} = actor, replace),
+    do: register_before_send(conn, &recheck(&1, actor, replace))
 
-  # The request ran after the pairing was read. Before anything is sent, the
-  # wallet's current pairing must still be this one, with the same person;
-  # otherwise the answer is replaced, so an unpairing or a new pairing during
-  # the request never sends the former person's data.
-  defp recheck(conn, %Agent{} = actor) do
-    case RegentAgents.Authority.resolve(AshTemplate.Repo, actor.wallet_address) do
-      {:ok, %{id: id, privy_user_id: person}}
-      when id == actor.pairing_id and person == actor.privy_user_id ->
+  def recheck_before_send(conn, _actor, _replace), do: conn
+
+  # The request ran after the agent was read as acting for its person. Before
+  # anything is sent it must still act for that person under that pairing
+  # (`ForPerson.still/1`); otherwise the answer is replaced, so an unpairing, a
+  # new pairing or the person's sign-in with no wallet during the request never
+  # sends the person's data.
+  defp recheck(conn, %Agent{} = actor, replace) do
+    case ForPerson.still(actor) do
+      :ok ->
         conn
 
       {:error, :not_paired} ->
-        replace(conn, "agent_not_paired")
+        not_person(conn, "agent_not_paired", replace)
 
-      {:ok, _other_pairing} ->
-        replace(conn, "agent_not_paired")
+      {:error, :person_not_here} ->
+        not_person(conn, "person_not_here", replace)
 
       {:error, error} when conn.status in 200..299 ->
-        conn |> UnexpectedFailure.log(error) |> replace(503, @unavailable)
+        conn |> UnexpectedFailure.log(error) |> replace.(503, @unavailable)
 
       {:error, _error} ->
         conn
     end
   end
 
-  defp replace(conn, code) do
+  defp not_person(conn, code, replace) do
     {status, message, hint} = Map.fetch!(@not_person, code)
-    replace(conn, status, %{code: code, message: message, hint: hint})
+    replace.(conn, status, %{code: code, message: message, hint: hint})
   end
 
   defp replace(conn, status, body) do
@@ -230,27 +241,33 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   defp failure_kinds(error), do: [error.__struct__]
 
   @impl Siwa.AgentAuthPlug.Hooks
-  def deny(conn, %{reason: reason}) when is_map_key(@refusals, reason) do
-    {status, message, hint} = Map.fetch!(@refusals, reason)
-    refuse(conn, status, %{code: to_string(reason), message: message, hint: hint})
-  end
+  def deny(conn, failure) do
+    {status, error} = refusal(failure)
 
-  # The sign-in service refused: its status and its own words.
-  def deny(conn, %{siwa_status: status} = failure) do
-    body = %{
-      code: failure[:siwa_code] || "sign_in_refused",
-      message: failure[:siwa_message] || "The request's wallet signature was not accepted.",
-      hint: failure[:siwa_hint] || @hint
-    }
-
-    refuse(conn, status, body)
-  end
-
-  defp refuse(conn, status, body) do
     conn
     |> put_status(status)
-    |> Phoenix.Controller.json(%{error: body})
+    |> Phoenix.Controller.json(%{error: error})
     |> halt()
+  end
+
+  @doc """
+  The status and `{code, message, hint}` of a refused sign-in (`deny/2`'s
+  `failure`), made here or by the shared plug, or the sign-in service's status
+  and its own words.
+  """
+  @spec refusal(map()) :: {pos_integer(), map()}
+  def refusal(%{reason: reason}) when is_map_key(@refusals, reason) do
+    {status, message, hint} = Map.fetch!(@refusals, reason)
+    {status, %{code: to_string(reason), message: message, hint: hint}}
+  end
+
+  def refusal(%{siwa_status: status} = failure) do
+    {status,
+     %{
+       code: failure[:siwa_code] || "sign_in_refused",
+       message: failure[:siwa_message] || "The request's wallet signature was not accepted.",
+       hint: failure[:siwa_hint] || @hint
+     }}
   end
 
   defp json?(conn) do

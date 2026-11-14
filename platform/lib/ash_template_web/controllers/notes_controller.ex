@@ -1,33 +1,29 @@
 defmodule AshTemplateWeb.NotesController do
   @moduledoc """
-  The notes API: the notes page's own Ash actions and policies, for a caller
-  presenting the Privy proof pair `/api/v1/profile` takes, or for an agent the
-  person paired, signing its request with its wallet
-  (`AshTemplateWeb.Plugs.AgentWallet`), which acts as them. A change made here
-  appears at once on every notes page its writer has open.
+  The notes API: the notes page's own Ash actions and policies, for the person
+  signed in on this site, with the browser session its pages use, or for an
+  agent the person paired, signing its request with its wallet, which acts as
+  them (`AshTemplateWeb.Plugs.PersonOrAgent`). A change made here appears at once
+  on every notes page its writer has open.
   """
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.Accounts.VerifiedSession
-  alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
   alias AshTemplateWeb.{FormErrors, NotesJSON}
-  alias AshTemplateWeb.Plugs.AgentWallet
+  alias AshTemplateWeb.Plugs.PersonOrAgent
   alias RegentHttp.UnexpectedFailure
 
-  plug :authenticate
+  plug PersonOrAgent
+  plug :require_actor
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
   @errors %{
     "authentication_required" =>
       {401, "Sign in to read or change your notes.",
-       "Send the access token as a Bearer token and the identity token in privy-id-token, both from the same sign-in."},
-    "account_required" =>
-      {403, "This sign-in hasn't been used on this site yet.",
-       "Sign in on this site once, then retry."},
+       "Sign in on this site and send the request from its pages, with the forms token in x-csrf-token, or have an agent you paired send it, signed with its own key."},
     "note_not_found" =>
       {404, "You have no note with that id.", "List your notes with POST /api/v1/notes/list."},
     "invalid_cursor" =>
@@ -42,7 +38,6 @@ defmodule AshTemplateWeb.NotesController do
     "notes_unavailable" =>
       {503, "Your notes could not be reached right now.", "Try again in a moment."}
   }
-  @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
   # A page of the person's notes, 50 at a time: `{}` for the first, or the
   # previous page's cursor as `{"after": ...}`, since a signed request carries it
@@ -126,43 +121,10 @@ defmodule AshTemplateWeb.NotesController do
   defp refuse_delete(conn, error),
     do: conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
 
-  defp authenticate(conn, _opts) do
-    conn = put_resp_header(conn, "cache-control", "no-store")
+  defp require_actor(%{assigns: %{actor: nil}} = conn, _opts),
+    do: conn |> refuse("authentication_required") |> halt()
 
-    if Siwa.AgentAuthPlug.signed_request?(conn),
-      do: authenticate_agent(conn),
-      else: authenticate_person(conn)
-  end
-
-  # An agent's signed request acts as the person it is paired with, or not at all.
-  defp authenticate_agent(conn) do
-    case AgentWallet.call(conn, []) do
-      %{halted: true} = conn -> conn
-      %{assigns: %{actor: %Agent{pairing: :active}}} = conn -> conn
-      conn -> conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
-    end
-  end
-
-  defp authenticate_person(conn) do
-    with {:ok, pair} <- RegentPrivy.Proof.pair(conn),
-         {:ok, verified} <-
-           RegentPrivy.Session.verify(pair, Application.get_env(:ash_template, :privy, [])),
-         {:ok, account} <- VerifiedSession.account(verified) do
-      assign(conn, :actor, Human.for_account(account))
-    else
-      {:error, :account_required} ->
-        conn |> refuse("account_required") |> halt()
-
-      {:error, {:configuration, _reason} = error} ->
-        conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable") |> halt()
-
-      {:error, {_stage, _reason}} ->
-        conn |> refuse("authentication_required") |> halt()
-
-      {:error, error} ->
-        conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable") |> halt()
-    end
-  end
+  defp require_actor(conn, _opts), do: conn
 
   # Another account's note reads as absent, exactly like an id that names none.
   defp with_note(conn, id, respond) do

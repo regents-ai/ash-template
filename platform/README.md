@@ -31,7 +31,7 @@ commit: `regent_identity` names `regent_privy` (see `mix.exs`),
 `../security/required-fixes.json` lists every shared library with its one
 repository and folder, and the security fixes every Regent site must carry.
 `make check-required-fixes` fetches that list and `scripts/check_required_fixes.exs`
-from this repository's `main` on GitHub and runs the script, printing the
+from regents-ai/ash-template's `main` on GitHub and runs the script, printing the
 revision it used. It fails when a shared library loads from a local folder or a
 vendored copy, names another URL or folder, is not pinned to a full commit, has
 no fetched history, or lacks a listed fix, and when a Hex package's locked version
@@ -95,8 +95,8 @@ JSON-RPC batch, so one signature covers one call. Then every request carries exa
 one credential; there is no anonymous MCP, and public reads are on the HTTP API and the
 browser tools:
 
-- an agent's signature (`Siwa.AgentAuthPlug.signed_request?/1`) is checked by
-  `AshTemplateWeb.Plugs.AgentWallet`, unchanged, and the agent is the actor;
+- an agent's signature (`Siwa.AgentAuthPlug.signed_request?/1`) is checked as
+  `AshTemplateWeb.Plugs.AgentWallet` checks it on the API, and the agent is the actor;
 - a Bearer token must be the connector's, for this site's `/mcp`, and the connected app
   is the actor, under its account's budget; any other token gets 401 with the
   challenge that starts sign-in, and while the connector is off 401
@@ -108,7 +108,13 @@ browser tools:
 
 Ash policies decide the rest: a connected app sees and runs only its identity tools,
 and `rooms_post` and `messages_leave` only an agent. Every call carries the client's address key
-(`client_key`). Answers are `cache-control: private, no-store`. A tool's own refusal is
+(`client_key`). Answers are `cache-control: private, no-store`. Each refusal keeps its
+HTTP status and headers and answers a JSON-RPC error with the request's id, code -31000
+and the site's `{code, message, hint}` as its `data`; one whose id could not be read has
+none, and a notification gets the status alone (`AshTemplateWeb.McpRefusal`, which
+`AshTemplateWeb.ErrorJSON` and the launch gate use at `/mcp` too). A pairing that ends
+while its call runs turns a tool call's answer into a tool result with `isError: true`.
+A tool's own refusal is
 its error, whose text is the HTTP refusal's JSON, `{"error": {"code", "message",
 "hint"}}` (`AshTemplateWeb.ToolErrors`); an input the action cannot take is checked
 before the tool runs (`ToolErrors.check_input/3`) and refused with the code the HTTP
@@ -161,7 +167,9 @@ they come from. Put real values only in the ignored `.env.local`, never in
 
 Without `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` the site refuses to start. A
 worktree has no settings files of its own, so start it from the worktree's
-`platform` folder with `direnv exec <main checkout>/platform mix phx.server`.
+`platform` folder with `direnv exec <main checkout>/platform mix phx.server`. The
+browser walk's server is the exception: it makes its own Privy settings, whatever
+the shell sets, and nobody can sign in to it through Privy.
 
 The local server keeps its data in one loopback PostgreSQL database,
 `ash_template_dev`, on `127.0.0.1`. It leaves the machine to verify sign-in with
@@ -246,7 +254,7 @@ cache.
 | Route | Method | Purpose |
 | --- | --- | --- |
 | `/healthz` | GET | Liveness check; plain text `ok`. |
-| `/api/v1/profile`, `/api/v1/profile/sync` | GET, PATCH, POST | The signed-in person's shared profile, served by the `regent_identity` package with paired Privy proofs. |
+| `/api/v1/profile` | GET, PATCH | The person's shared profile, served by the `regent_identity` package for the person signed in on this site (a change with the forms token) or a paired agent's signed request (`AshTemplateWeb.Plugs.ProfileOwner`). |
 | `/auth/csrf`, `/auth/session`, `/auth/privy/session`, `/auth/privy/failure` | GET, POST, DELETE | Browser session start, read and end. |
 | `/openapi.json`, `/llms.txt`, `/sitemap.xml`, `/robots.txt` | GET | Discovery documents. |
 | `/`, `/docs`, `/about`, `/privacy`, `/terms` | GET | Public pages; `Accept: text/markdown` returns Markdown. |
@@ -254,10 +262,10 @@ cache.
 | `/agents/<agent>/skill.md` | GET | That agent's skill: the agent guide with its set-up notes. |
 | `/app`, `/account` | GET | The signed-in shell. The `/app` home carries the Agent Message button with the topic `app`, its form running in the page itself. |
 | `/api/v1/feed` | GET | A signed agent's live feed (`AshTemplateWeb.FeedController`, `AshTemplate.Feed`): server-sent events, open until either side closes it, telling the agent of a direct message to its person and of posts by others in rooms it posted in, heard on the same topics the pages listen to. Each event names the route that reads it, never the words. The signature is checked once, as it opens. `Last-Event-ID` gets up to 100 missed events, else a `resync` event; a `: keep-alive` line every 25 seconds; one feed per agent, a newer one closing the older on any machine; at most 200 open on one machine (`max_open`), of which at most 20 from agents not paired with a person (`max_unpaired`), past which it answers 503 `feed_full`. |
-| `/mcp` | POST | The hosted MCP server (`AshAi.Mcp.Router`, after `AshTemplateWeb.Plugs.McpAgent`): an agent signing each call reads a room with `rooms_messages`, posts with `rooms_post` and leaves a message for the site's team with `messages_leave`; the Claude connector's Bearer token (`regent.identity.manage`) runs only its identity tools, which keep an identity for the connection, pair it, read the pairing and check in. A bad token, or none, gets 401 with the challenge that starts sign-in; a token or no signature while `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is off, and a token beside a signature, get 401 with none. A query string, a batch, a body that is not JSON and a page from another site are refused before any credential is read. 120 requests a minute from one address for agents' signed requests; requests with a Bearer token share a ceiling of 600 a minute per address, since Claude's connector calls from shared servers, then 120 a minute for each connected account. Other methods answer 405; not logged. |
+| `/mcp` | POST | The hosted MCP server (`AshAi.Mcp.Router`, after `AshTemplateWeb.Plugs.McpAgent`): an agent signing each call reads a room with `rooms_messages`, posts with `rooms_post` and leaves a message for the site's team with `messages_leave`; the Claude connector's Bearer token (`regent.identity.manage`) runs only its identity tools, which keep an identity for the connection, pair it, read the pairing and check in. A bad token, or none, gets 401 with the challenge that starts sign-in; a token or no signature while `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is off, and a token beside a signature, get 401 with none. A query string, a batch, a body that is not JSON and a page from another site are refused before any credential is read. 120 requests a minute from one address for agents' signed requests; while the connector is on, requests with a Bearer token share a ceiling of 600 a minute per address, since Claude's connector calls from shared servers, then 120 a minute for each connected account; while it is off, every request counts against the address's 120. Other methods answer 405; not logged. |
 | `/api/v1/messages/{topic}` | POST | A signed agent leaves a private message for the site's team under a topic (`leaveMessage`, `AshTemplateWeb.MessagesController`): 201 with its receipt, 200 with the first receipt when its `operation_id` is used again for the same text, 409 `idempotency_conflict` for other text. 10 an hour for each sender and 30 for each address; past that, 429 `too_many_requests` with `Retry-After`. |
 | `/admin/messages` | GET | The team's inbox (`AshTemplateWeb.AdminMessagesLive`): every message, newest first, 50 a page, for the site's admins only, behind the same check as `/admin/errors`; anyone else gets the not-found page. |
-| `/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/mcp`, `/.well-known/oauth-authorization-server`, `/oauth/register`, `/oauth/token`, `/oauth/revoke` | GET, POST | The connector's sign-in discovery, app registration, tokens and revocation (`RegentOAuth.Protocol`). Registration (30 a minute) and token and revocation requests (120 a minute) are limited by address and never logged. 404 while the connector is off. |
+| `/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/mcp`, `/.well-known/oauth-authorization-server`, `/oauth/register`, `/oauth/token`, `/oauth/revoke` | GET, POST | The connector's sign-in discovery, app registration, tokens and revocation (`RegentOAuth.Protocol`). An app whose published identity signs its requests (`private_key_jwt`) sends a client assertion with each token and revocation request, else 401 `invalid_client`; its keys are read from its own `jwks_uri` there, and a 503 answers while that address does not. Registration (30 a minute) and token and revocation requests (120 a minute) are limited by address and never logged. 404 while the connector is off. |
 | `/oauth/authorize`, `/oauth/connections`, `/oauth/connections/revoke` | GET, POST | The consent page under the signed-in browser session, and Connected apps, where a person sees and disconnects their apps (`RegentOAuth.Consent`). They refuse while the connector is off. Opening consent is limited to 30 requests a minute by address, as registering is, since it may read a connecting app's published identity and record the app; allowing or cancelling has 120. |
 
 ## Visit lines
@@ -299,12 +307,12 @@ which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:
 | Setting | Where | What happens |
 | --- | --- | --- |
 | `local` | Development (the default when unset) | The showcase pages answer only a visitor on this machine at `localhost` or `127.0.0.1`, and are never cached or indexed. The motion lab is open. The home page links to them. |
-| `public` | The hosted demo at template.regents.sh | Every page above is public, listed in the sitemap and `/llms.txt`, and linked from the home page. |
+| `public` | The template's hosted demo | Every page above is public, listed in the sitemap and `/llms.txt`, and linked from the home page. |
 | `off` | A new site's production | None of them exist: each answers 404 and the home page does not link to them. |
 
 Production must set it to `off` or `public`; `fly.toml` leaves it out, so each
 deployment says which it is with `fly secrets set ASH_TEMPLATE_SHOWCASE=off` (or
-`public`). A new site built from this template chooses `off`.
+`public`). A new site made from the template chooses `off`.
 
 The wallet page at `/showcase/wallet` runs the wallet buttons with real sign-in
 and a real wallet on the chain set as `:wallet_chain` in `config/config.exs`
@@ -406,14 +414,24 @@ mix test
 
 `mix precommit` ends by copying the shared libraries' assets, then runs `npm run
 typecheck`, `npm test` and the browser walk (`npm run test:browser`). `make
-check-browser` runs the walk alone. Start either with the site's settings loaded,
-as the walk's server needs them.
+check-browser` runs the walk alone. Neither needs the site's Privy settings: the
+walk's server makes its own (`config/runtime.exs`), since the walk signs its person
+in on its own and never talks to Privy.
 
 `make check` also runs the design system's style check first (`make check-style`:
 each break of a STYLE.md rule in this site's CSS, scripts and templates, by file and
-line), the required-fixes check (see
-[Shared dependencies](#shared-dependencies)) and the command description check
-(see [cli/README.md](../cli/README.md)).
+line), the deploy and rollback scripts' tests (`make check-scripts`, on a fixture
+repository with stand-ins for Fly and the site), the required-fixes check (see
+[Shared dependencies](#shared-dependencies)), the command description check
+(see [cli/README.md](../cli/README.md)) and the SIWA check.
+
+It runs its gates side by side, each writing its output to
+`_build/check/<gate>.log`, then prints every gate's log, the failed ones last, and
+one line per gate with its time, and fails when any gate failed. The style check,
+`mix precommit` and `mix test` run in turn, in that order: the first two both
+compile `_build/dev` and copy the design system's files into `assets/vendor`
+afresh, which `mix test`'s script build reads, and that build writes the scripts
+the browser walk serves. The other gates write nothing another reads.
 
 `mix precommit` compiles with warnings as errors, checks unused dependency
 locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the
@@ -502,14 +520,6 @@ message the next time it loads.
 site carries the same command; after the founder's go, the site whose release
 first carries a shared change runs it from the new image before deploying.
 
-`/app/bin/protect-points` puts every table of the shared Points ledger but its
-migration ledger on the shared database's protected list
-(`skills/ash-data/references/migrations-and-concurrency.md`), none of them
-allowing row deletes, and prints each listed table. It runs on the release login,
-in one transaction that gives up after waiting five seconds for a table, and when
-one of them is already listed it changes nothing. It runs once, on the founder's
-go.
-
 `/app/bin/top-queries [count]` (locally `mix db.top_queries [count]`) prints the
 statements on this site's schema that took the most database time, 20 unless a
 count from 1 to 100 is given, from `pg_stat_statements`, with calls, total and mean
@@ -531,23 +541,47 @@ credentials. The Fly configuration lives in `fly.toml` and `fly.staging.toml`;
 Deploy from the repository root with the app's name, for the hosted demo:
 
 ```sh
+scripts/deploy.sh --dry-run template-regents-sh   # every check, then the commands it would run
 scripts/deploy.sh template-regents-sh
 ```
 
 It refuses a working tree with any change, a commit that is not on
-`origin/main`, and a commit that does not contain the commit already live (the
-live image's label, read with `fly image show`), so two crossing releases never
-take live work back out. The whole run holds `/tmp/regent-release-<app>.lock`, so two
-deploys of one app take turns and the second reads the first's image; another site's
-deploy never waits on it, so run the script as it is, never inside `lockf`. It builds
+`origin/main`, and a commit that does not contain the commit already live, so two
+crossing releases never take live work back out. The live commit is the label of
+the image the app runs, read with `fly image show`: the deploy sets that label, and
+Fly answers it even when the site itself does not. The whole run holds
+`/tmp/regent-release-<app>.lock`, so two deploys of one app take turns and the
+second reads the first's image; another site's deploy never waits on it, so run the
+script as it is, never inside `lockf`. It builds
 with `fly deploy . --config platform/fly.toml --app <app> --build-only --push
 --remote-only --image-label <short commit>`, so both folders reach the build and the
 image names the commit it came from, with no shared lock. Then it switches the app to
 `registry.fly.io/<app>:<short commit>` with `--ha=false`: the release command runs and a
 second machine briefly adds its connections to the database every site shares, so the
 switch takes one of two places, `/tmp/regent-shared-db-release.lock` or
-`/tmp/regent-shared-db-release-2.lock`. Staging deploys with
+`/tmp/regent-shared-db-release-2.lock`. With `--dry-run` it makes every check and
+reads what is live, then prints the build and the switch instead of running them,
+and takes no lock. Staging deploys with
 `fly deploy . --config platform/fly.staging.toml`.
+
+To go back to an earlier release, name it as `fly releases --app <app>` lists it:
+
+```sh
+scripts/rollback.sh --dry-run template-regents-sh v249   # every check, then the switch it would run
+scripts/rollback.sh template-regents-sh v249
+```
+
+It refuses a release Fly does not list as complete, one whose image label names no
+commit this checkout holds, and one whose commit holds other migrations in
+`priv/repo/migrations` than the live commit (read as the deploy reads it): the
+database would no longer match the older code, so that rollback needs a person.
+The shared libraries' migrations are not compared, since no release applies them
+(`/app/bin/migrate-shared` does, on its own go). Otherwise it switches the app to
+that release's image with that commit's own `fly.toml`, under the same two locks as
+a deploy, then reads `https://<app>.fly.dev/capabilities.json` until `build.commit`
+names the release's commit, for up to two minutes, and fails if it never does.
+Its tests (`make check-scripts`, `scripts/tests/test_release.py`) run it and the
+deploy against stand-ins for Fly and the site.
 
 A new staging database is empty and has no copy of the shared
 `regent_names.platform_human_users` table, so `bin/migrate` fails on it. Its
@@ -580,7 +614,8 @@ its own Docker network, answering to the staging database hostname, and runs
 the image as staging with the showcase `public` against it:
 `bin/bootstrap-staging`, `bin/migrate` and `bin/pending-migrations` (which must
 print `none`), then the server, whose `/healthz`, home page, fingerprinted
-stylesheet, build skills index and own database connection it checks. It removes the database and the network afterwards, keeps the image,
+stylesheet, build skills index and own database connection it checks, and that
+the home page's one request wrote exactly one JSON visit line (it needs `jq`). It removes the database and the network afterwards, keeps the image,
 and prints the app commit, the shared-library commits from `mix.lock` and the
 image digest. It never deploys.
 

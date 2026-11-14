@@ -9,7 +9,7 @@ explicitly; neither a file list nor this map proves that every string was review
 
 | Repository / location | Guidance it owns | Copies and consumers to trace |
 |---|---|---|
-| `repos/ash-template/skills/` | Regent-authored developer and workflow Skills, references, examples, helper descriptions | `.agents/skills/`, `.claude/skills/` aliases; selected public build Skills through `platform/lib/ash_template_web/agent_skills.ex`; plugins where packaged |
+| `repos/ash-template/skills/` | Regent-authored developer and workflow Skills, references, examples, helper descriptions; other authors' Skills, unmodified and under their own licences, in `skills/third-party/` | `.agents/skills/`, `.claude/skills/` aliases; selected public build Skills through `platform/lib/ash_template_web/agent_skills.ex`; plugins where packaged |
 | `repos/ash-template/platform/priv/public/`, `priv/capabilities.json`, `priv/tool_manifest.json` | Generic product onboarding, discovery, docs, capabilities and tool descriptions | Public routes, generated OpenAPI, `platform/lib/ash_template_web/capabilities.ex`, browser registration, six site command descriptions |
 | `repos/ash-template/platform/priv/public/agents/`, `lib/ash_template_web/agent_guides.ex`, `components/`, `live/` | Each agent's page and skill, pairing instructions, labels, tips, account explanations, error/empty/loading states | Rendered `/agents` and `/agents/<agent>`, account pages, human-to-agent copy buttons, site adoptions |
 | `repos/design-system/regent_ui/lib/regent/` and `regent_ui/assets/` | Shared account/profile/primitives copy, help, accessibility labels, tooltips and CSS-generated text | Each host's `regent_ui` pin; `mix regent_ui.assets`; copied `assets/vendor/regent_ui` and static assets |

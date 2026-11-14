@@ -1,9 +1,10 @@
 defmodule AshTemplateWeb.BodyLimitTest do
   # Every address that takes a body reads it up to its limit and refuses one byte
-  # more with 413, before anything acts on it: 64 KB for what an agent signs (the
-  # API and the hosted MCP server, under /api or /mcp), 256 KB for everything else
-  # (a connected app's registration and token, sign-in, the browser's visit
-  # reports). A body of any other type is never read here, and no page takes a file.
+  # more with 413, before anything acts on it: 8 KB for a profile change, 64 KB
+  # for the rest of what an agent signs (the API and the hosted MCP server, under
+  # /api or /mcp), 256 KB for everything else (a connected app's registration and
+  # token, sign-in, the browser's visit reports). A body of any other type is
+  # never read here, and no page takes a file.
   use ExUnit.Case, async: false
 
   import Plug.Conn
@@ -11,6 +12,7 @@ defmodule AshTemplateWeb.BodyLimitTest do
 
   @endpoint AshTemplateWeb.Endpoint
 
+  @profile 8192
   @signed 65_536
   @unsigned 262_144
 
@@ -19,27 +21,28 @@ defmodule AshTemplateWeb.BodyLimitTest do
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
   end
 
-  for {path, limit, type} <- [
-        {"/mcp", @signed, :json},
-        {"/api/v1/notes", @signed, :json},
-        {"/oauth/register", @unsigned, :json},
-        {"/oauth/token", @unsigned, :form},
-        {"/auth/privy/session", @unsigned, :json},
-        {"/visit-log", @unsigned, :json}
+  for {method, path, limit, type} <- [
+        {:patch, "/api/v1/profile", @profile, :json},
+        {:post, "/mcp", @signed, :json},
+        {:post, "/api/v1/notes", @signed, :json},
+        {:post, "/oauth/register", @unsigned, :json},
+        {:post, "/oauth/token", @unsigned, :form},
+        {:post, "/auth/privy/session", @unsigned, :json},
+        {:post, "/visit-log", @unsigned, :json}
       ] do
-    test "POST #{path} reads #{limit} bytes and refuses one more" do
-      assert answer(unquote(path), unquote(type), unquote(limit)) != 413
-      assert answer(unquote(path), unquote(type), unquote(limit) + 1) == 413
+    test "#{method |> Atom.to_string() |> String.upcase()} #{path} reads #{limit} bytes and refuses one more" do
+      assert answer(unquote(method), unquote(path), unquote(type), unquote(limit)) != 413
+      assert answer(unquote(method), unquote(path), unquote(type), unquote(limit) + 1) == 413
     end
   end
 
   # A body of exactly `size` bytes, padded inside one field.
-  defp answer(path, type, size) do
+  defp answer(method, path, type, size) do
     {content_type, body} = body(type, size)
     assert byte_size(body) == size
 
     conn =
-      conn(:post, path, body)
+      conn(method, path, body)
       |> Map.put(:remote_ip, {10, :rand.uniform(250), :rand.uniform(250), :rand.uniform(250)})
       |> put_req_header("content-type", content_type)
 

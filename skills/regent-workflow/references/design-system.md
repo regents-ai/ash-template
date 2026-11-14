@@ -167,6 +167,6 @@ current founder request overrides older rollout notes. Re-read the working tree:
   in a handoff/work record, not as timeless skill rules. Reconcile delayed agent reports
   against current source and newer founder corrections before acting on them.
 
-For visual craft, also read `/Users/sean/.agents/skills/emil-design-eng/SKILL.md` and
+For visual craft, also read `skills/third-party/emil-design-eng/SKILL.md` and
 canonical `ash-frontend` guidance. Retain the founder's explicit motion/design choices
 when general design advice differs; keep auth/transaction semantics unchanged by polish.

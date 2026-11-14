@@ -26,6 +26,12 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
     ["skills"]
   ]
 
+  @not_open_yet %{
+    code: "not_open_yet",
+    message: "This part of the site isn't open yet.",
+    hint: "Ask again after the number of seconds in Retry-After."
+  }
+
   @doc "True while the product surfaces are open."
   def app_surfaces_enabled?, do: Application.fetch_env!(:ash_template, :app_surfaces)
 
@@ -43,21 +49,16 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
     if app_surfaces_enabled?(), do: conn, else: conn |> closed(response_format(conn)) |> halt()
   end
 
-  # The session endpoints ride the browser pipeline but answer JSON callers.
+  # The session endpoints ride the browser pipeline but answer JSON callers; the
+  # MCP address answers in JSON-RPC.
   defp response_format(%Plug.Conn{path_info: ["auth" | _]}), do: "json"
+  defp response_format(%Plug.Conn{path_info: ["mcp" | _]}), do: "mcp"
   defp response_format(conn), do: get_format(conn)
 
-  defp closed(conn, "json") do
-    conn
-    |> unavailable()
-    |> json(%{
-      error: %{
-        code: "not_open_yet",
-        message: "This part of the site isn't open yet.",
-        hint: "Ask again after the number of seconds in Retry-After."
-      }
-    })
-  end
+  defp closed(conn, "json"), do: conn |> unavailable() |> json(%{error: @not_open_yet})
+
+  defp closed(conn, "mcp"),
+    do: conn |> unavailable() |> AshTemplateWeb.McpRefusal.refuse(503, @not_open_yet)
 
   defp closed(conn, "html"), do: conn |> unavailable() |> HoldingController.call(:show)
 

@@ -40,6 +40,13 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/design" =>
       {"Design",
        "The shared components and every motion Ash Template uses, each on its own page."},
+    "/siwa" =>
+      {"SIWA overview",
+       "Your company's SIWA billing period: the agents counted, the fee so far and your cap."},
+    "/siwa/sites" =>
+      {"SIWA sites", "Your company's sites where agents sign in with SIWA, and their keys."},
+    "/siwa/settings" =>
+      {"SIWA settings", "Your company's name, its owner and where to get help."},
     "/account" => {"Account", "Your profile and the session on this browser."},
     "/account/agents" => {"Agents", "The agents you paired, and pairing a new one."},
     "/account/points" => {"Points", "Your points and activity."},
@@ -424,7 +431,8 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   @statuses [
     {"not_paired", "no person has paired you with their account"},
-    {"person_not_here", "paired, but your person hasn't signed in on this site yet"},
+    {"person_not_here",
+     "paired, but your person hasn't signed in on this site yet, or last signed in without a wallet"},
     {"paired", "you act for your person"}
   ]
 

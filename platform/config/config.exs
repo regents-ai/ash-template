@@ -58,6 +58,13 @@ config :ash_template, AshTemplate.Agents.HostedAddress,
   gc_interval: :timer.hours(12),
   max_size: 100_000
 
+# Each signed-in browser's SIWA control token, which the sign-in service ends
+# fifteen minutes after it gives it. One that leaves sooner with a collected
+# generation is traded for again by the page.
+config :ash_template, AshTemplate.SiwaControl.Tokens,
+  gc_interval: :timer.minutes(15),
+  max_size: 100_000
+
 # Background jobs live in the site's own schema, beside its tables. Queues hear
 # about new jobs through Erlang process groups. Each queue holds one class of work
 # (skills/elixir-stack/references/oban.md, "Queues"), so a slow or failing service
@@ -227,16 +234,20 @@ config :ash_template, :chain_nodes, %{
   8453 => "https://mainnet.base.org"
 }
 
-# A sign-in lasts 30 days: the cookie expires then, and
-# `AshTemplate.Accounts.SessionAuthority` reads this same limit.
+# A sign-in lasts seven days: the cookie expires then, and
+# `AshTemplate.Accounts.SessionAuthority` reads this same limit. After it, the
+# next page the person opens signs them back in with fresh tokens, which Privy
+# gives only while its own sign-in in that browser lasts; once that has ended,
+# the person signs in again. The `__Host-` name keeps the cookie to this one
+# host and to secure connections, which browsers count localhost as.
 config :ash_template, :session_options,
   store: :cookie,
-  key: "_ash_template_key",
+  key: "__Host-ash_template_key",
   signing_salt: "OLoeAaio",
   same_site: "Lax",
-  secure: false,
+  secure: true,
   http_only: true,
-  max_age: 30 * 24 * 60 * 60
+  max_age: 7 * 24 * 60 * 60
 
 # A signed agent's live feed (`GET /api/v1/feed`): how many one machine holds open
 # at once, how many of those may be agents not paired with a person, and how often a
@@ -346,6 +357,7 @@ config :phoenix, :filter_parameters, [
   "access_token",
   "refresh_token",
   "client_secret",
+  "client_assertion",
   "id_token",
   "_csrf_token"
 ]

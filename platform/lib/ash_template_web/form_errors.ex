@@ -25,6 +25,7 @@ defmodule AshTemplateWeb.FormErrors do
   # Ash's own words for a missing value, a list too short or text of the wrong
   # length name the rule a value broke; these say what to do about it.
   defp message({"is required", _values}), do: "Fill this in."
+  defp message({"must be present", _values}), do: "Fill this in."
 
   defp message({"must have %{min} or more items", values}),
     do: fill("Add at least %{min}.", values)

@@ -12,14 +12,32 @@ account. Consent uses the browser pipeline's session authority and CSRF protecti
 No request header or account parameter can establish a person. Nothing here grants
 a paired-agent or wallet actor, and no new account store is introduced.
 
-An app names itself in one of two ways. Claude's "Use Claude's published
-identity" option uses its HTTPS address
-(`https://claude.ai/oauth/mcp-oauth-client-metadata`) as the `client_id`; server
-metadata says `client_id_metadata_document_supported: true`, and consent reads
-and checks that document, records it as an ordinary public client
+An app names itself in one of two ways. It may use the HTTPS address of its
+published identity as the `client_id`, as Claude's "Use Claude's published
+identity" option does with `https://claude.ai/oauth/mcp-oauth-client-metadata`;
+server metadata says `client_id_metadata_document_supported: true`, and consent
+reads and checks that document, records it as an ordinary client
 (`oauth_client_documents`, migration `20261111060000`) and reads it again once
 its cache lifetime passes (`RegentOAuth.ClientDocuments`). Other apps still
 register themselves at `/oauth/register`. Neither kind is ever taken for the other.
+
+A published identity is a public client (`none`, as Claude's is) or signs its
+token and revocation requests with its own key (`private_key_jwt`). Such a
+document names a `jwks_uri` on its own host, HTTPS on port 443, and no inline
+`jwks`; any other method is refused. The app then sends a `client_assertion`
+with each token and revocation request: RS256 or ES256 by the key its `kid`
+names, `iss` and `sub` its `client_id`, `aud` this site's issuer or its
+`/oauth/token` address as the only value, `exp` at most an hour away and a `jti`
+used once (`RegentOAuth.ClientAssertion`). Without a valid one the request is
+refused `invalid_client` with a 401, and a public client that sends one is
+refused too; PKCE is still required. Its keys are read only at the token and
+revocation addresses, kept five minutes and read again once for an unknown key
+id, at most once a minute (`RegentOAuth.ClientKeys`); when the address does not
+answer the request gets a 503. Server metadata lists `none` and
+`private_key_jwt` with the algorithms RS256 and ES256. The assertion is spent as
+a row of the existing `oauth_tokens` table, so this needs no migration, and
+`client_assertion` is among Phoenix's filtered parameter names. The signing
+method is checked here only against a stand-in app.
 
 API routes expose resource/server metadata (the resource's also at
 `/.well-known/oauth-protected-resource/mcp`, where RFC 9728 places it),
@@ -73,8 +91,24 @@ account, and take their titles, words and hints from `RegentMCPAgents.Tools`. Th
 same server offers the room tools (`rooms_messages` and `rooms_post`) and `messages_leave`
 to an agent signing each call, which a connected app neither sees nor runs.
 
-Before any credential is looked at, McpAgent refuses, in the site's
-`{"error": {"code", "message", "hint"}}` shape: a query string
+Every refusal at `/mcp` keeps its HTTP status and headers (401 with the
+`WWW-Authenticate` challenge, 429 with `Retry-After` and the RateLimit headers,
+405 with `Allow`, 503 with `Retry-After` while the site is closed) and answers in
+JSON-RPC (`AshTemplateWeb.McpRefusal`):
+`{"jsonrpc": "2.0", "id": <the request's id>, "error": {"code": -31000, "message", "data": {"code", "message", "hint"}}}`.
+`data` is the site's own refusal, with `retry_after` in seconds past a budget. The
+JSON-RPC code is -31000 for every refusal the site makes, outside the range
+JSON-RPC and MCP keep for themselves; -32700 for a body that is not JSON and
+-32603 for a failure of the site's own. The id is the request's; a request whose
+id could not be read (refused before its body was read, a form body, a batch) gets
+an error with no `id`, as MCP's error responses allow. A notification gets the
+status with no body, since a notification is never answered. When a paired agent's
+pairing ends while its call runs, the answer is replaced as it leaves: a
+`tools/call` with a tool result, `isError: true` at 200, its text
+`{"error": {"code": "agent_not_paired", …}}` as a tool's own refusal is; any other
+request with the refusal above.
+
+Before any credential is looked at, McpAgent refuses: a query string
 (`unsupported_query`, 400), any address but `/mcp` itself (404) and any method but
 POST (405), a page on another site (`origin_not_allowed`, 403: any `Origin` but the
 site's own, `null` included; no `Origin`, as MCP clients send, goes on), a body
@@ -97,12 +131,14 @@ codes. AshAi serves each POST as one JSON-RPC message in the version the client
 asks for, `initialize`, `ping`, `tools/list` and `tools/call` among them, and keeps
 nothing between requests.
 
-Budgets, all through `RegentAgentAccess.RateLimit` and the site's
-`RequestRateLimiter`. In the endpoint, before its body is read, a request with no
+Budgets, all counted by the site's `RequestRateLimiter` with the RateLimit
+headers of `RegentAgentAccess.RateLimit`. In the endpoint, before its body is read, a request with no
 token counts 120 a minute against its address (`mcp_address`, the API's figure),
-and one with a token counts against its address's ceiling of 600 a minute
-(`mcp_connected_address`), since Claude's connector calls from Anthropic's shared
-servers and one address carries many accounts. A token `RegentOAuth.verify/3`
+and while the switch is on, one with a token counts against its address's ceiling
+of 600 a minute (`mcp_connected_address`), since Claude's connector calls from
+Anthropic's shared servers and one address carries many accounts. While it is off,
+no token is this site's, so every request counts against the 120 alone, whatever
+headers it carries, its body read or not. A token `RegentOAuth.verify/3`
 accepts then counts against its connected account's own 120 under its OAuth subject
 (`mcp`); one that isn't this site's counts against its address's 120 as well when
 McpAgent refuses it. Once an address has spent its 120, its next request with a
@@ -123,8 +159,8 @@ lengths the library takes.
 
 The issuer is the site's own address and the resource is its `/mcp`, set at
 runtime: `https://PHX_HOST` in production, the endpoint's address elsewhere
-(`http://localhost:4000` in development). Nothing names `template.regents.sh` in
-code, so a site cut from the template, and its staging, get their own.
+(`http://localhost:4000` in development). Nothing names the template's own address
+in code, so a site cut from the template, and its staging, get their own.
 
 Tokens freeze that binding at issuance: the provider writes the running site's
 issuer and resource on each code and token as it is issued
@@ -153,7 +189,7 @@ Authorization codes stay as Boruta keeps them.
 ## Rollout to the sites
 
 This is a shared change under the "Shared changes" rule (regent-workflow): built
-and tested here, released on template.regents.sh with the switch on only after
+and tested in the template, released on its hosted demo with the switch on only after
 Sean's letter for the migration, then signed off by Sean as a numbered decision
 with the template link and the checks below, and only then handed to all five
 sites at once in one rollout file. Each site makes its own version (its own

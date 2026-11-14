@@ -14,10 +14,11 @@
 # The smoke check starts the image against a throwaway PostgreSQL 17 on its own
 # Docker network and removes both afterwards. It runs the staging release
 # commands against it, starts the server, and checks the health endpoint, the
-# home page, a built stylesheet, the build skills index and the running server's
-# database connection. It runs with the showcase public so the skills answer.
-# It runs as staging because that role admits only the staging database
-# hostnames, which the throwaway database answers to on its network.
+# home page, a built stylesheet, the one JSON visit line the home page's request
+# writes, the build skills index and the running server's database connection.
+# It runs with the showcase public so the skills answer. It runs as staging
+# because that role admits only the staging database hostnames, which the
+# throwaway database answers to on its network. Needs Docker, curl, openssl and jq.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -119,6 +120,19 @@ stylesheet="$(grep -oE '/assets/[^"]+-[0-9a-f]{32}\.css' <<<"$home" | head -n 1)
 stylesheet_answer="$(curl --silent --fail --output /dev/null --write-out '%{http_code} %{content_type} %{size_download} bytes' "$base$stylesheet")"
 [[ $stylesheet_answer == "200 text/css"* ]] || fail "$stylesheet answered $stylesheet_answer"
 
+# The one request for the home page above is one JSON visit line in the server's
+# output, as Fly Sentinel reads it: visit lines have a handler of their own
+# (AshTemplateWeb.VisitLog) and the default handler leaves them to it, so the line
+# is written once, never twice and never dropped.
+home_visit_lines() {
+  docker logs "$run-app" 2>&1 | { grep -F '"where":"/"' || true; } |
+    jq -c 'select(.metadata.event.name == "request" and .metadata.event.where == "/")' | wc -l | tr -d ' '
+}
+home_visit_written() { [[ $(home_visit_lines) -ge 1 ]]; }
+wait_for "the home page's visit line" home_visit_written
+visit_lines="$(home_visit_lines)"
+[[ $visit_lines == 1 ]] || fail "the home page's one request wrote $visit_lines visit lines"
+
 skills_answer="$(curl --silent --fail --output /dev/null --write-out '%{http_code} %{content_type}' "$base/.well-known/agent-skills/index.json")"
 [[ $skills_answer == "200 application/json"* ]] || fail "the build skills index answered $skills_answer"
 
@@ -137,5 +151,6 @@ echo "  migrations      bootstrap-staging and migrate succeeded; pending-migrati
 echo "  health          $base/healthz answered $health"
 echo "  sign-in config  rendered Privy app id length: $privy_app_id_length"
 echo "  static asset    $stylesheet answered $stylesheet_answer"
+echo "  visit line      the home page's request wrote one JSON line"
 echo "  build skills    /.well-known/agent-skills/index.json answered $skills_answer"
 echo "  database        the running server queried $connected_database"

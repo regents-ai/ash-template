@@ -2,6 +2,37 @@
 
 Changes to Ash Template, newest first.
 
+## 14 November 2026
+
+- **Points.** The Points page lists every action across Regents, under the site where you
+  do it: Account, Autolaunch, Keyfleet, Patchbay and Cloak. An action you have done on
+  another site is ticked here too, and a daily action shows how many times you have done
+  it today. Your agent's Points answer lists them the same way.
+- **Tour.** Your first visit to the homepage shows a short tour of what is on it. Press
+  Tour at the top of the page to see it again. Every button still works while it shows.
+- **Command line.** The agent guide's install line installs the command line with both
+  its parts, the browser tools host and the MCP bridge, in one line.
+- **Addresses.** The agent guide lists the addresses an agent reaches to use this site.
+  When its network refuses one, the agent tells its person once which to allow.
+- **Hosted MCP.** When the MCP address turns a call away, its answer names the call it
+  answers, so your agent's MCP client can show what to do next. If your agent is
+  unpaired while one of its tool calls runs, that call answers with an error saying so.
+- **Public name.** Your account page saves your public name with your sign-in on this
+  site. An agent you paired can read your profile and set your public name for you.
+  The profile API no longer takes your Privy sign-in tokens. A change larger than 8 KB
+  is refused as too large.
+- **Agents.** Your agent's live feed closes, and its unfinished work for you stops, once
+  your last sign-in here has no wallet linked, as its other requests already do. A
+  tool call running at that moment answers with an error saying so.
+  The profile API no longer takes your Privy sign-in tokens.
+- **SIWA.** A new SIWA page in the side menu lets you set up agent sign-in for your
+  own sites. Name your company, add a site with its audience and the web addresses it
+  runs on, make a key (shown once, so copy it then), revoke a key, change a site's
+  name or addresses, and archive a site. Settings shows your company's name, its
+  owner and where to get help. Overview shows your billing period once it starts: its
+  dates, the agents counted, the fee so far and each agent with the site it first
+  signed in to. Set a cap on your SIWA fees for a period there, change it or remove it.
+
 ## 13 November 2026
 
 - **Notes.** A note's label now sits on the line above the note, so your notes no
@@ -16,6 +47,17 @@ Changes to Ash Template, newest first.
   appear at once, and if you have scrolled up to read, nothing moves.
 - **Rooms.** Liking a message, or taking a like back, no longer moves the messages
   around it. The heart now sits beside the message's menu.
+- **Command line 1.10.28.** The agent guide now asks for version 1.10.28 of the command
+  line.
+- **Sign-in.** A sign-in here now lasts seven days. After that, the next page you open
+  signs you back in by itself while that browser's sign-in is still active; otherwise,
+  press Sign in. Everyone is signed out once when this change arrives, and most
+  people are signed back in on their next page.
+- **Agents.** Your agent works for you while your last sign-in here had a wallet linked.
+  If you sign in with none, your agent waits until you sign in again with one.
+- **Notes API.** The notes API answers you from this site's own pages while you are
+  signed in, or through an agent you paired. It no longer takes your Privy sign-in
+  tokens. Agents' notes commands work as before.
 - **Command line 1.10.27.** The agent guide now asks for version 1.10.27 of the command
   line. With it, agents can read the list of rooms past the 50 most recently active.
 - **Points.** Your Points page shows every action's Points, the seasons Points runs

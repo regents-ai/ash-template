@@ -9,9 +9,10 @@ defmodule AshTemplateWeb.Telemetry do
   press the browser reported as not sent or not confirmed (`wallet_failed/2`).
   Background jobs report each run's outcome and time from Oban's own events, and
   `[:ash_template, :jobs, :oldest_unfinished]` carries `age_ms` of the oldest
-  available, running or retrying job in each running `queue`, 0 when there is
-  none, every ten seconds. A paused queue keeps its jobs waiting on purpose, so it
-  is not measured.
+  available, running or retrying job in each running `queue`, counted from when
+  the job was due to run (its scheduled time, which a retry moves to the next
+  attempt), 0 when there is none or none is due yet, every ten seconds. A paused
+  queue keeps its jobs waiting on purpose, so it is not measured.
   A site's chain event reader reports each pass with `[:ash_template, :indexer, :lag]`:
   `blocks` between the head it follows and the last block it has read, for its
   fixed `indexer` name and `chain_id` (the chain-events skill). A site that sends
@@ -255,7 +256,7 @@ defmodule AshTemplateWeb.Telemetry do
       from(j in Oban.Job,
         where: j.state in ["available", "executing", "retryable"],
         group_by: j.queue,
-        select: {j.queue, min(j.inserted_at)}
+        select: {j.queue, min(j.scheduled_at)}
       )
       # Oban's job table has no Ash resource; this only reads it.
       |> AshTemplate.Repo.all(prefix: prefix)
@@ -267,7 +268,8 @@ defmodule AshTemplateWeb.Telemetry do
       age_ms =
         case oldest[queue] do
           nil -> 0
-          inserted_at -> DateTime.diff(now, inserted_at, :millisecond)
+          # A job waiting for its next attempt is due later than now.
+          due_at -> max(DateTime.diff(now, due_at, :millisecond), 0)
         end
 
       :telemetry.execute([:ash_template, :jobs, :oldest_unfinished], %{age_ms: age_ms}, %{
@@ -419,7 +421,7 @@ defmodule AshTemplateWeb.Telemetry do
         unit: {:millisecond, :second},
         tags: [:queue],
         description:
-          "Age of the oldest unfinished background job in the queue, counted from when it was added"
+          "Age of the oldest unfinished background job in the queue, counted from when it was due"
       ),
       last_value("health.indexer.lag.blocks",
         event_name: [:ash_template, :indexer, :lag],

@@ -1,7 +1,23 @@
 defmodule AshTemplateWeb.ErrorJSON do
-  @moduledoc "Errors on JSON requests, in the site's `error: code, message, hint` shape."
+  @moduledoc """
+  Errors on JSON requests, in the site's `error: code, message, hint` shape; at
+  the MCP address, the same words in a JSON-RPC error.
+  """
 
-  alias AshTemplateWeb.PublicDocuments
+  alias AshTemplateWeb.{McpRefusal, PublicDocuments}
+
+  # Anything the MCP address cannot take, such as a body too large, or an
+  # address under it that names nothing, points at its own section of the docs.
+  def render(template, %{conn: %Plug.Conn{path_info: ["mcp" | _]} = conn} = assigns) do
+    %{error: error} =
+      template
+      |> Phoenix.Controller.status_message_from_template()
+      |> RegentAgentAccess.Recovery.json(
+        "The Hosted MCP section of #{PublicDocuments.url("/docs")} says what the MCP address takes."
+      )
+
+    McpRefusal.failed(conn, assigns[:reason], error)
+  end
 
   # An address that names nothing says so, and where to find what exists.
   def render("404.json", _assigns) do
@@ -13,16 +29,6 @@ defmodule AshTemplateWeb.ErrorJSON do
           "List the rooms with GET #{PublicDocuments.url("/api/v1/rooms")}. Every endpoint is described at #{PublicDocuments.url("/openapi.json")}. Sending the same request again will not help."
       }
     }
-  end
-
-  # A body the MCP address cannot take, such as one too large, points at its own
-  # section of the docs.
-  def render(template, %{conn: %Plug.Conn{path_info: ["mcp" | _]}}) do
-    template
-    |> Phoenix.Controller.status_message_from_template()
-    |> RegentAgentAccess.Recovery.json(
-      "The Hosted MCP section of #{PublicDocuments.url("/docs")} says what the MCP address takes."
-    )
   end
 
   def render(template, _assigns) do

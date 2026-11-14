@@ -5,12 +5,18 @@ defmodule AshTemplateWeb.McpAgentTest do
   #   both, and a signature the sign-in service refuses is refused;
   # - an agent's signed call runs rooms_post as that agent;
   # - a query string, a page from another site, a batch, a body that is not JSON
-  #   and any other method or address are refused in the site's shape, before
-  #   any signature is checked;
+  #   and any other method or address are refused before any signature is
+  #   checked;
+  # - each refusal keeps its HTTP status and answers in JSON-RPC with the
+  #   request's id, the site's code, message and hint as the error's data; a
+  #   notification gets the status alone;
+  # - a pairing that ends while a call runs turns a tool call's answer into a
+  #   tool result with isError, and any other request's into a refusal;
   # - input a tool cannot take gets the code HTTP gives it;
   # - a post past the allowance is refused as HTTP refuses it, too_many_requests,
   #   with the seconds to wait;
-  # - one address gets the API's 120 requests a minute;
+  # - one address gets the API's 120 requests a minute, refused before its body
+  #   is read with the rate-limit headers;
   # - an operation_id reused through /mcp answers as it does over HTTP, whichever
   #   of the two each call comes through.
   # A connected app's own calls are in AshTemplateWeb.ClaudeConnectorTest. The
@@ -92,12 +98,12 @@ defmodule AshTemplateWeb.McpAgentTest do
       )
 
     assert both.status == 401
-    assert error(both)["code"] == "ambiguous_credentials"
+    assert refusal(both)["code"] == "ambiguous_credentials"
     assert posts() == []
 
     token = mcp(call("rooms_messages", %{room: "general"}), from: from, token: "a-token")
     assert token.status == 401
-    assert error(token)["code"] == "delegated_access_not_enabled"
+    assert refusal(token)["code"] == "delegated_access_not_enabled"
   end
 
   test "a signature the sign-in service refuses is refused, even for a read", %{from: from} do
@@ -109,7 +115,7 @@ defmodule AshTemplateWeb.McpAgentTest do
       )
 
     assert refused.status == 401
-    assert error(refused)["code"] == "http_signature_invalid"
+    assert refusal(refused)["code"] == "http_signature_invalid"
   end
 
   test "an agent's signed call posts in a room as that agent, and never as anyone else", %{
@@ -150,7 +156,7 @@ defmodule AshTemplateWeb.McpAgentTest do
     for body <- [initialize, rpc("tools/list"), call("rooms_messages", %{room: "general"})] do
       refused = mcp(body, from: from)
       assert refused.status == 401
-      assert error(refused)["code"] == "agent_auth_required"
+      assert refusal(refused)["code"] == "agent_auth_required"
       assert get_resp_header(refused, "www-authenticate") == []
     end
 
@@ -161,6 +167,90 @@ defmodule AshTemplateWeb.McpAgentTest do
 
     read = mcp(call("rooms_messages", %{room: "general"}), from: from, proof: wallet())
     assert %{"isError" => false, "structuredContent" => %{"messages" => _}} = result(read)
+  end
+
+  test "a refusal answers with the request's own id, none when it can't be read, and a notification with no body",
+       %{from: from} do
+    read = call("rooms_messages", %{room: "general"})
+
+    for id <- ["call-7", 42, 0] do
+      refused = mcp(%{read | "id" => id}, from: from)
+      assert refused.status == 401
+      assert refusal(refused, id)["code"] == "agent_auth_required"
+      assert Jason.decode!(refused.resp_body)["error"]["code"] == -31_000
+    end
+
+    for id <- [nil, 1.5, %{"n" => 1}] do
+      refused = mcp(%{read | "id" => id}, from: from)
+      assert refused.status == 401
+      assert refusal(refused, nil)["code"] == "agent_auth_required"
+    end
+
+    notification = mcp(%{"jsonrpc" => "2.0", "method" => "notifications/initialized"}, from: from)
+    assert notification.status == 401
+    assert notification.resp_body == ""
+
+    forged =
+      mcp(%{"jsonrpc" => "2.0", "method" => "notifications/initialized"},
+        from: from,
+        proof: wallet(),
+        signature: "forged"
+      )
+
+    assert forged.status == 401
+    assert forged.resp_body == ""
+  end
+
+  test "a refusal's visit line names the site's code", %{from: from} do
+    # Visit lines are info; the suite's logger keeps warnings and above.
+    Logger.put_module_level(AshTemplateWeb.VisitLog, :info)
+    :ok = :logger.add_handler(:mcp_agent_test_visits, __MODULE__, %{config: %{test: self()}})
+
+    on_exit(fn ->
+      :logger.remove_handler(:mcp_agent_test_visits)
+      Logger.delete_module_level(AshTemplateWeb.VisitLog)
+    end)
+
+    mcp(rpc("tools/list"), from: from, proof: wallet(), signature: "forged")
+
+    assert_receive {:visit, %{name: "tool.call", outcome: "http_signature_invalid"}}
+  end
+
+  test "a pairing that ends while the call runs: a tool call answers a tool result with isError, any other request a refusal",
+       %{from: from} do
+    handler = "mcp-agent-test-unpair"
+    :ok = :telemetry.attach(handler, [:ash_template, :mcp, :auth], &__MODULE__.unpair/4, nil)
+    on_exit(fn -> :telemetry.detach(handler) end)
+
+    {agent, pairing, did} = pair()
+    Process.put(:unpair_when_accepted, {pairing, did})
+    read = mcp(call("rooms_messages", %{room: "general"}), from: from, proof: agent)
+
+    assert read.status == 200
+
+    assert %{
+             "jsonrpc" => "2.0",
+             "id" => 1,
+             "result" => %{
+               "isError" => true,
+               "content" => [%{"type" => "text", "text" => text}],
+               "resultType" => "complete"
+             }
+           } = Jason.decode!(read.resp_body)
+
+    assert Jason.decode!(text)["error"]["code"] == "agent_not_paired"
+
+    {agent, pairing, did} = pair()
+    Process.put(:unpair_when_accepted, {pairing, did})
+    listed = mcp(rpc("tools/list"), from: from, proof: agent)
+
+    assert listed.status == 403
+    assert refusal(listed)["code"] == "agent_not_paired"
+    assert get_resp_header(listed, "cache-control") == ["private, no-store"]
+
+    {agent, _pairing, _did} = pair()
+    kept = mcp(call("rooms_messages", %{room: "general"}), from: from, proof: agent)
+    assert %{"isError" => false, "structuredContent" => %{"messages" => _}} = result(kept)
   end
 
   test "a query string is refused for every caller before anything else runs", %{from: from} do
@@ -175,7 +265,7 @@ defmodule AshTemplateWeb.McpAgentTest do
         ] do
       refused = mcp(post, [from: from, query: "room=general"] ++ opts)
       assert refused.status == 400
-      assert error(refused)["code"] == "unsupported_query"
+      assert refusal(refused)["code"] == "unsupported_query"
     end
 
     assert posts() == []
@@ -187,7 +277,7 @@ defmodule AshTemplateWeb.McpAgentTest do
     for origin <- ["https://evil.example", "null"] do
       refused = mcp(read, from: from, origin: origin, proof: wallet(), signature: "forged")
       assert refused.status == 403
-      assert error(refused)["code"] == "origin_not_allowed"
+      assert refusal(refused)["code"] == "origin_not_allowed"
     end
 
     own = mcp(read, from: from, origin: AshTemplateWeb.PublicDocuments.url(""), proof: wallet())
@@ -212,7 +302,7 @@ defmodule AshTemplateWeb.McpAgentTest do
       )
 
     assert batch.status == 400
-    assert error(batch)["code"] == "batch_not_supported"
+    assert refusal(batch, nil)["code"] == "batch_not_supported"
     assert posts() == []
 
     read =
@@ -283,7 +373,7 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert posts() == []
   end
 
-  test "only POST /mcp is served; anything else answers in the site's shape", %{from: from} do
+  test "only POST /mcp is served; anything else is refused in JSON-RPC", %{from: from} do
     for {method, path} <- [
           {:options, "/mcp"},
           {:put, "/mcp"},
@@ -298,11 +388,20 @@ defmodule AshTemplateWeb.McpAgentTest do
         |> @endpoint.call([])
 
       assert conn.status in [404, 405]
-      assert %{"code" => _, "message" => _, "hint" => _} = error(conn)
+      assert %{"code" => _, "message" => _, "hint" => _} = refusal(conn, nil)
     end
 
+    slash =
+      conn(:post, "/mcp/", Jason.encode!(rpc("tools/list")))
+      |> Map.put(:remote_ip, from)
+      |> put_req_header("content-type", "application/json")
+      |> @endpoint.call([])
+
+    assert slash.status == 404
+    assert %{"code" => "not_found"} = refusal(slash, nil)
+
     form =
-      conn(:post, "/mcp", "jsonrpc=2.0&method=tools%2Flist")
+      conn(:post, "/mcp", "jsonrpc=2.0&id=7&method=tools%2Flist")
       |> Map.put(:remote_ip, from)
       |> put_req_header("content-type", "application/x-www-form-urlencoded")
       |> put_req_header("accept", "application/json")
@@ -311,7 +410,7 @@ defmodule AshTemplateWeb.McpAgentTest do
       |> @endpoint.call([])
 
     assert form.status == 415
-    assert %{"code" => _, "hint" => hint} = error(form)
+    assert %{"code" => _, "hint" => hint} = refusal(form, nil)
     assert hint =~ AshTemplateWeb.PublicDocuments.url("/docs")
 
     {413, _headers, body} =
@@ -323,7 +422,20 @@ defmodule AshTemplateWeb.McpAgentTest do
         |> @endpoint.call([])
       end)
 
-    assert Jason.decode!(body)["error"]["hint"] =~ AshTemplateWeb.PublicDocuments.url("/docs")
+    assert %{"jsonrpc" => "2.0", "error" => %{"data" => %{"hint" => hint}}} = answer = Jason.decode!(body)
+    refute is_map_key(answer, "id")
+    assert hint =~ AshTemplateWeb.PublicDocuments.url("/docs")
+
+    {400, _headers, body} =
+      assert_error_sent(400, fn ->
+        conn(:post, "/mcp", ~s({"jsonrpc": "2.0", "id": 1, "method": ))
+        |> Map.put(:remote_ip, from)
+        |> put_req_header("content-type", "application/json")
+        |> @endpoint.call([])
+      end)
+
+    assert %{"jsonrpc" => "2.0", "error" => %{"code" => -32_700}} = answer = Jason.decode!(body)
+    refute is_map_key(answer, "id")
   end
 
   test "a GET for an event stream is answered 405, and a body that is not JSON 415, whatever it accepts",
@@ -336,7 +448,7 @@ defmodule AshTemplateWeb.McpAgentTest do
 
     assert stream.status == 405
     assert get_resp_header(stream, "allow") == ["POST"]
-    assert %{"code" => "method_not_allowed"} = error(stream)
+    assert %{"code" => "method_not_allowed"} = refusal(stream, nil)
 
     form =
       conn(:post, "/mcp", "jsonrpc=2.0&method=tools%2Flist")
@@ -346,13 +458,24 @@ defmodule AshTemplateWeb.McpAgentTest do
       |> @endpoint.call([])
 
     assert form.status == 415
-    assert %{"code" => "unsupported_media_type"} = error(form)
+    assert %{"code" => "unsupported_media_type"} = refusal(form, nil)
   end
 
-  test "one address gets 120 requests a minute here, as on the API", %{from: from} do
-    statuses = for _ <- 1..121, do: mcp(rpc("tools/list"), from: from).status
-    assert Enum.take(statuses, 120) |> Enum.uniq() == [401]
-    assert List.last(statuses) == 429
+  test "one address gets 120 requests a minute here, as on the API, refused before the body is read",
+       %{from: from} do
+    answers = for _ <- 1..121, do: mcp(rpc("tools/list"), from: from)
+    assert answers |> Enum.take(120) |> Enum.map(& &1.status) |> Enum.uniq() == [401]
+
+    limited = List.last(answers)
+    assert limited.status == 429
+    assert [seconds] = get_resp_header(limited, "retry-after")
+    assert [~s("mcp_address";q=120;w=60)] = get_resp_header(limited, "ratelimit-policy")
+    assert [~s("mcp_address";r=0;) <> _] = get_resp_header(limited, "ratelimit")
+
+    assert %{"code" => "too_many_requests", "retry_after" => retry_after} =
+             refusal(limited, nil)
+
+    assert Integer.to_string(retry_after) == seconds
   end
 
   test "a token that isn't checked spends the same 120 from its address, each request once",
@@ -501,24 +624,50 @@ defmodule AshTemplateWeb.McpAgentTest do
   end
 
   defp result(conn), do: Jason.decode!(conn.resp_body)["result"]
-  defp error(conn), do: Jason.decode!(conn.resp_body)["error"]
+
+  # The site's refusal: the `data` of the JSON-RPC error that answered, with the
+  # request's `id`, or none when `id` is nil.
+  defp refusal(conn, id \\ 1) do
+    assert %{"jsonrpc" => "2.0", "error" => %{"message" => message, "data" => data}} =
+             answer = Jason.decode!(conn.resp_body)
+
+    assert Map.fetch(answer, "id") == if(is_nil(id), do: :error, else: {:ok, id})
+    assert message == data["message"]
+    data
+  end
 
   defp posts, do: Ash.read!(Message, authorize?: false)
 
   # An agent's wallet, paired with a person's account here.
-  defp paired_wallet do
+  defp paired_wallet, do: elem(pair(), 0)
+
+  defp pair do
     did = "did:privy:mcp-" <> Ecto.UUID.generate()
     person = wallet()
     agent = wallet()
     Accounts.register_verified!(did, person, [person], actor: %System{})
     code = RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: did})
 
-    RegentAgents.pair_agent!(code.code, "Agent", :codex,
-      actor: %RegentAgents.Agent{wallet: agent}
-    )
+    pairing =
+      RegentAgents.pair_agent!(code.code, "Agent", :codex,
+        actor: %RegentAgents.Agent{wallet: agent}
+      )
 
-    agent
+    {agent, pairing, did}
   end
+
+  # Ends the pairing the test put in the process, once, as the call it signed is
+  # let in; the request runs in the test's process.
+  def unpair(_event, _measurements, %{outcome: :accepted}, _config) do
+    with {pairing, did} <- Process.delete(:unpair_when_accepted),
+         do: :ok = RegentAgents.unpair_agent(pairing, actor: %RegentAgents.Person{privy_user_id: did})
+  end
+
+  def unpair(_event, _measurements, _metadata, _config), do: :ok
+
+  # A logger handler that sends each visit line to the test that added it.
+  def log(%{meta: %{event: event}}, %{config: %{test: test}}), do: send(test, {:visit, event})
+  def log(_event, _config), do: :ok
 
   defp wallet, do: "0x" <> Base.encode16(:crypto.strong_rand_bytes(20), case: :lower)
 end
