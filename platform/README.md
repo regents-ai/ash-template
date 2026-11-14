@@ -95,8 +95,8 @@ JSON-RPC batch, so one signature covers one call. Then every request carries exa
 one credential; there is no anonymous MCP, and public reads are on the HTTP API and the
 browser tools:
 
-- an agent's signature (`Siwa.AgentAuthPlug.signed_request?/1`) is checked by
-  `AshTemplateWeb.Plugs.AgentWallet`, unchanged, and the agent is the actor;
+- an agent's signature (`Siwa.AgentAuthPlug.signed_request?/1`) is checked as
+  `AshTemplateWeb.Plugs.AgentWallet` checks it on the API, and the agent is the actor;
 - a Bearer token must be the connector's, for this site's `/mcp`, and the connected app
   is the actor, under its account's budget; any other token gets 401 with the
   challenge that starts sign-in, and while the connector is off 401
@@ -108,7 +108,13 @@ browser tools:
 
 Ash policies decide the rest: a connected app sees and runs only its identity tools,
 and `rooms_post` and `messages_leave` only an agent. Every call carries the client's address key
-(`client_key`). Answers are `cache-control: private, no-store`. A tool's own refusal is
+(`client_key`). Answers are `cache-control: private, no-store`. Each refusal keeps its
+HTTP status and headers and answers a JSON-RPC error with the request's id, code -31000
+and the site's `{code, message, hint}` as its `data`; one whose id could not be read has
+none, and a notification gets the status alone (`AshTemplateWeb.McpRefusal`, which
+`AshTemplateWeb.ErrorJSON` and the launch gate use at `/mcp` too). A pairing that ends
+while its call runs turns a tool call's answer into a tool result with `isError: true`.
+A tool's own refusal is
 its error, whose text is the HTTP refusal's JSON, `{"error": {"code", "message",
 "hint"}}` (`AshTemplateWeb.ToolErrors`); an input the action cannot take is checked
 before the tool runs (`ToolErrors.check_input/3`) and refused with the code the HTTP
@@ -414,9 +420,18 @@ in on its own and never talks to Privy.
 
 `make check` also runs the design system's style check first (`make check-style`:
 each break of a STYLE.md rule in this site's CSS, scripts and templates, by file and
-line), the required-fixes check (see
-[Shared dependencies](#shared-dependencies)) and the command description check
-(see [cli/README.md](../cli/README.md)).
+line), the deploy and rollback scripts' tests (`make check-scripts`, on a fixture
+repository with stand-ins for Fly and the site), the required-fixes check (see
+[Shared dependencies](#shared-dependencies)), the command description check
+(see [cli/README.md](../cli/README.md)) and the SIWA check.
+
+It runs its gates side by side, each writing its output to
+`_build/check/<gate>.log`, then prints every gate's log, the failed ones last, and
+one line per gate with its time, and fails when any gate failed. The style check,
+`mix precommit` and `mix test` run in turn, in that order: the first two both
+compile `_build/dev` and copy the design system's files into `assets/vendor`
+afresh, which `mix test`'s script build reads, and that build writes the scripts
+the browser walk serves. The other gates write nothing another reads.
 
 `mix precommit` compiles with warnings as errors, checks unused dependency
 locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the
@@ -526,23 +541,47 @@ credentials. The Fly configuration lives in `fly.toml` and `fly.staging.toml`;
 Deploy from the repository root with the app's name, for the hosted demo:
 
 ```sh
+scripts/deploy.sh --dry-run template-regents-sh   # every check, then the commands it would run
 scripts/deploy.sh template-regents-sh
 ```
 
 It refuses a working tree with any change, a commit that is not on
-`origin/main`, and a commit that does not contain the commit already live (the
-live image's label, read with `fly image show`), so two crossing releases never
-take live work back out. The whole run holds `/tmp/regent-release-<app>.lock`, so two
-deploys of one app take turns and the second reads the first's image; another site's
-deploy never waits on it, so run the script as it is, never inside `lockf`. It builds
+`origin/main`, and a commit that does not contain the commit already live, so two
+crossing releases never take live work back out. The live commit is the label of
+the image the app runs, read with `fly image show`: the deploy sets that label, and
+Fly answers it even when the site itself does not. The whole run holds
+`/tmp/regent-release-<app>.lock`, so two deploys of one app take turns and the
+second reads the first's image; another site's deploy never waits on it, so run the
+script as it is, never inside `lockf`. It builds
 with `fly deploy . --config platform/fly.toml --app <app> --build-only --push
 --remote-only --image-label <short commit>`, so both folders reach the build and the
 image names the commit it came from, with no shared lock. Then it switches the app to
 `registry.fly.io/<app>:<short commit>` with `--ha=false`: the release command runs and a
 second machine briefly adds its connections to the database every site shares, so the
 switch takes one of two places, `/tmp/regent-shared-db-release.lock` or
-`/tmp/regent-shared-db-release-2.lock`. Staging deploys with
+`/tmp/regent-shared-db-release-2.lock`. With `--dry-run` it makes every check and
+reads what is live, then prints the build and the switch instead of running them,
+and takes no lock. Staging deploys with
 `fly deploy . --config platform/fly.staging.toml`.
+
+To go back to an earlier release, name it as `fly releases --app <app>` lists it:
+
+```sh
+scripts/rollback.sh --dry-run template-regents-sh v249   # every check, then the switch it would run
+scripts/rollback.sh template-regents-sh v249
+```
+
+It refuses a release Fly does not list as complete, one whose image label names no
+commit this checkout holds, and one whose commit holds other migrations in
+`priv/repo/migrations` than the live commit (read as the deploy reads it): the
+database would no longer match the older code, so that rollback needs a person.
+The shared libraries' migrations are not compared, since no release applies them
+(`/app/bin/migrate-shared` does, on its own go). Otherwise it switches the app to
+that release's image with that commit's own `fly.toml`, under the same two locks as
+a deploy, then reads `https://<app>.fly.dev/capabilities.json` until `build.commit`
+names the release's commit, for up to two minutes, and fails if it never does.
+Its tests (`make check-scripts`, `scripts/tests/test_release.py`) run it and the
+deploy against stand-ins for Fly and the site.
 
 A new staging database is empty and has no copy of the shared
 `regent_names.platform_human_users` table, so `bin/migrate` fails on it. Its

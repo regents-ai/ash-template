@@ -43,9 +43,13 @@ keeps.
 | [contracts/](contracts/README.md) | An optional Foundry workspace. Empty until the product needs contracts. | `make check-contracts` |
 | [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |
 | [skills/](skills/) | Every shared agent skill Regent writes, as regents-ai/ash-template keeps them; change them there. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing, WebMCP and signals skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, `chain-events` watching a chain and saving its events, and `payments` taking USDC payments through the shared Regents library. The web app serves all of them except `regent-workflow`, `regent-notion` and `checkpoint` as its [build skills](platform/README.md#showcase). | None |
+| [skills/third-party/](skills/third-party/README.md) | Other authors' Skills for local work (design, motion, interface review, debugging, Oban), unmodified copies under their own licences; not Regent's work, and never served. Its README lists each source, commit and licence, plus Skills worth installing yourself. | None |
 
-`make check` runs every component's check in turn; the
-[platform README](platform/README.md#checks) explains the platform's.
+`make check` runs every component's check side by side, each writing its output to
+`platform/_build/check/<gate>.log`, and fails when any fails; the
+[platform README](platform/README.md#checks) explains the platform's and which run in
+turn. `make check-scripts` tests the deploy and rollback scripts on a fixture
+repository.
 `make release` runs them on the committed tree, then builds and starts the release
 image; see [Release](platform/README.md#release).
 

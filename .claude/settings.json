@@ -31,6 +31,7 @@
       "Bash(make check)",
       "Bash(make check-platform)",
       "Bash(make check-browser)",
+      "Bash(make check-scripts)",
       "Bash(make live-check)",
       "Bash(mix precommit)",
       "Bash(mix test *)",
@@ -41,6 +42,7 @@
     ],
     "ask": [
       "Bash(*deploy.sh*)",
+      "Bash(*rollback.sh*)",
       "Bash(make release*)",
       "Bash(fly)",
       "Bash(fly *)",

@@ -27,8 +27,9 @@ again before a release.
      site shares, `/tmp/regent-shared-db-release.lock` if it is free, otherwise
      `/tmp/regent-shared-db-release-2.lock`. The database takes 97 connections, about 64
      to 76 are in use and one switch adds up to 8, so two fit and a third could fill it.
-     A hand-run `fly deploy`, rollback, `fly machine restart` or `fly secrets set`
-     without `--stage` takes a place the same way.
+     `scripts/rollback.sh` takes its place as the deploy does; a hand-run `fly deploy`,
+     `fly machine restart` or `fly secrets set` without `--stage` takes one the same
+     way.
    - **Three full checks at once.** `make check`, `mix precommit` and whole test or
      Playwright suites share the Mac's 48 GB, so each takes one of three places:
 
@@ -56,7 +57,9 @@ again before a release.
    accelerating safe but not overengineered code deployment and live testing"). Ship the
    smallest change that works, then test the changed behaviour on the live site,
    read-only, as "Live checks" says. Name the rollback before the release goes out: the
-   previous Fly release and image.
+   previous Fly release and image. `scripts/rollback.sh <fly app> <release>` goes back
+   to it when its migrations match the live commit's and refuses otherwise, which then
+   needs a person; run it with `--dry-run` first to see which.
 6. **Sentinel.** Ask Sentinel for a read after every production release, and before a
    protected one. A read is never a reason to hold an ordinary release. Every request
    has one shape: repository, previous released commit, candidate commit, release

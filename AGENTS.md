@@ -38,7 +38,9 @@ site still replaces by hand; keep it outside this passage, which the rename drop
   never in a copy in another repository. The web app serves the `ash-*`, `animejs`,
   `onchain-buttons` and `chain-events` skills publicly as its build skills
   (`AshTemplateWeb.AgentSkills` names them), so a change to one is published
-  with the app's next release.
+  with the app's next release. `skills/third-party/` holds other authors' Skills,
+  unmodified under their own licences and never served; its README names each
+  source, and the template's own skills win where they differ.
 - Motion: every Regent site shares the kit in `platform/assets/js/hooks/motion/`
   and `platform/assets/js/motion.ts`, with the standard version of each part in
   `AshTemplateWeb.Motion`. Pages join in through markup (`data-press-label` on
@@ -65,16 +67,25 @@ site still replaces by hand; keep it outside this passage, which the rename drop
   is published and push it to its `main`; every site's `make
   check-required-fixes` reads that `main` and fails until the site takes it. A
   new shared library is listed there before any site can use it.
-- `make check` runs every gate: the design system's style check (`make check-style`),
-  the platform's `mix precommit` (which ends with the
-  TypeScript typecheck, the script tests and the browser walk) and `mix test`, the
-  required-fixes check, then the command description check against the
-  site's OpenAPI documents (regents-cli's checker at the commit the `Makefile` pins).
-  `make check-style`, `check-platform`, `check-required-fixes`, `check-cli` and
+- `make check` runs every gate side by side, each writing its output to
+  `platform/_build/check/<gate>.log`, then prints every gate's log, the failed ones
+  last, and one line per gate, and fails when any gate failed. The gates: the
+  design system's style check (`make check-style`), the platform's `mix precommit`
+  (which ends with the TypeScript typecheck and tests and the browser walk) and
+  `mix test`, which three run in turn because they share the build and the copied
+  assets; the deploy and rollback scripts' tests (`make check-scripts`); the
+  required-fixes check; the command description check against the site's OpenAPI
+  documents (regents-cli's checker at the commit the `Makefile` pins); the SIWA
+  check; and the contracts. `make check-style`, `check-platform`,
+  `check-scripts`, `check-required-fixes`, `check-cli`, `check-siwa-latest` and
   `check-contracts` run one component.
 - `make release` is the one release path: it refuses uncommitted changes, runs
   `make check`, builds HEAD's `platform/` into an image and starts it against a
   throwaway database (`scripts/release.sh`). It never deploys.
+  `scripts/deploy.sh <fly-app>` deploys; `scripts/rollback.sh <fly-app> <release>`
+  goes back to an earlier release's image when the migrations are the same, and
+  refuses otherwise. Both take `--dry-run` first, to make every check and print
+  the commands without running them (`platform/README.md`, "Deployment").
 - Follow the workspace's `regent-workflow`; use one integrating owner for this
   repository. Scope verification to observable acceptance and preserve useful
   regression coverage.
@@ -121,9 +132,10 @@ names and address, and replaces these by hand:
    in `platform/lib/ash_template_web/components/layouts/root.html.heex` point at
    the Regents accounts; keep them unless the product has its own.
 6. The Fly app names: `app` in `platform/fly.staging.toml`, and the production
-   app, which `platform/fly.toml` leaves to the deploy command. The deploy
-   example in `platform/README.md` and the opening comment of
-   `scripts/deploy.sh` name the template's own app, `template-regents-sh`.
+   app, which `platform/fly.toml` leaves to the deploy command. The deploy and
+   rollback examples in `platform/README.md` and the opening comments of
+   `scripts/deploy.sh` and `scripts/rollback.sh` name the template's own app,
+   `template-regents-sh`.
 7. The database cluster, hosts and refused identities in
    `platform/lib/ash_template/database_config.ex`.
 8. The WebMCP origin trial token, `@webmcp_origin_trial` in

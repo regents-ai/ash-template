@@ -183,13 +183,18 @@ defmodule AshTemplateWeb.VisitLog.Events do
 
   defp answer(conn) do
     with body when not is_nil(body) <- conn.resp_body,
-         {:ok, %{"error" => %{"code" => code}}} when is_binary(code) <-
-           Jason.decode(IO.iodata_to_binary(body)) do
+         {:ok, %{"error" => error}} <- Jason.decode(IO.iodata_to_binary(body)),
+         code when is_binary(code) <- error_code(error) do
       code
     else
       _no_code -> "status_#{conn.status}"
     end
   end
+
+  # The site's code, named in a JSON-RPC error's `data` at `/mcp`.
+  defp error_code(%{"data" => %{"code" => code}}), do: code
+  defp error_code(%{"code" => code}), do: code
+  defp error_code(_error), do: nil
 
   defp wallet("step_sent", _params), do: "sent"
   defp wallet("step_signed", _params), do: "signed"
