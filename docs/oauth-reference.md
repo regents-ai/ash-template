@@ -73,8 +73,24 @@ account, and take their titles, words and hints from `RegentMCPAgents.Tools`. Th
 same server offers the room tools (`rooms_messages` and `rooms_post`) and `messages_leave`
 to an agent signing each call, which a connected app neither sees nor runs.
 
-Before any credential is looked at, McpAgent refuses, in the site's
-`{"error": {"code", "message", "hint"}}` shape: a query string
+Every refusal at `/mcp` keeps its HTTP status and headers (401 with the
+`WWW-Authenticate` challenge, 429 with `Retry-After` and the RateLimit headers,
+405 with `Allow`, 503 with `Retry-After` while the site is closed) and answers in
+JSON-RPC (`AshTemplateWeb.McpRefusal`):
+`{"jsonrpc": "2.0", "id": <the request's id>, "error": {"code": -31000, "message", "data": {"code", "message", "hint"}}}`.
+`data` is the site's own refusal, with `retry_after` in seconds past a budget. The
+JSON-RPC code is -31000 for every refusal the site makes, outside the range
+JSON-RPC and MCP keep for themselves; -32700 for a body that is not JSON and
+-32603 for a failure of the site's own. The id is the request's; a request whose
+id could not be read (refused before its body was read, a form body, a batch) gets
+an error with no `id`, as MCP's error responses allow. A notification gets the
+status with no body, since a notification is never answered. When a paired agent's
+pairing ends while its call runs, the answer is replaced as it leaves: a
+`tools/call` with a tool result, `isError: true` at 200, its text
+`{"error": {"code": "agent_not_paired", …}}` as a tool's own refusal is; any other
+request with the refusal above.
+
+Before any credential is looked at, McpAgent refuses: a query string
 (`unsupported_query`, 400), any address but `/mcp` itself (404) and any method but
 POST (405), a page on another site (`origin_not_allowed`, 403: any `Origin` but the
 site's own, `null` included; no `Origin`, as MCP clients send, goes on), a body
@@ -97,8 +113,8 @@ codes. AshAi serves each POST as one JSON-RPC message in the version the client
 asks for, `initialize`, `ping`, `tools/list` and `tools/call` among them, and keeps
 nothing between requests.
 
-Budgets, all through `RegentAgentAccess.RateLimit` and the site's
-`RequestRateLimiter`. In the endpoint, before its body is read, a request with no
+Budgets, all counted by the site's `RequestRateLimiter` with the RateLimit
+headers of `RegentAgentAccess.RateLimit`. In the endpoint, before its body is read, a request with no
 token counts 120 a minute against its address (`mcp_address`, the API's figure),
 and while the switch is on, one with a token counts against its address's ceiling
 of 600 a minute (`mcp_connected_address`), since Claude's connector calls from
