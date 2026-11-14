@@ -45,7 +45,7 @@ afterEach(() => vi.unstubAllGlobals())
 // answers how often what steered the picture was let go, and the root's flag.
 async function runIsland(
   load: LoadRenderer<IslandRenderer>,
-  screen: {devicePixelRatio?: number; maxDevicePixelRatio?: number} = {},
+  screen: {devicePixelRatio?: number; maxDevicePixelRatio?: number; maxDrawingBufferPixels?: number} = {},
 ) {
   let released = 0
   const root = {dataset: {} as Record<string, string>, querySelector: () => ({
@@ -68,6 +68,7 @@ async function runIsland(
     motionSensitive: false,
     continuous: false,
     maxDevicePixelRatio: screen.maxDevicePixelRatio,
+    maxDrawingBufferPixels: screen.maxDrawingBufferPixels,
     interact: () => () => void (released += 1),
   }).mount()
 
@@ -111,4 +112,15 @@ it("keeps to the default ceiling when an island does not ask for more", async ()
   let size: readonly number[] = []
   await runIsland(async (_, given) => ((size = given), drawing), {devicePixelRatio: 3})
   expect(size).toEqual([450, 300])
+})
+
+// Invariant: the pixel budget shrinks a sharp picture evenly, and an island that
+// asks for a larger budget draws that much sharper.
+it("draws within the pixel budget an island asks for", async () => {
+  let size: readonly number[] = []
+  const sharp = {devicePixelRatio: 6, maxDevicePixelRatio: 6}
+  await runIsland(async (_, given) => ((size = given), drawing), sharp)
+  expect(size).toEqual([1500, 1000])
+  await runIsland(async (_, given) => ((size = given), drawing), {...sharp, maxDrawingBufferPixels: 3_000_000})
+  expect(size).toEqual([1800, 1200])
 })

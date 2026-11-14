@@ -37,7 +37,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/grain" => "Harbour water in fine grain",
     "/animations/cards" => "A moving picture on every card",
     "/animations/particles" => "Grains that take any shape",
-    "/animations/cells" => "A meter of twinkling cells"
+    "/animations/cells" => "A meter of twinkling cells",
+    "/animations/icons" => "Small diagrams on slow loops"
   }
 
   def page(assigns) do

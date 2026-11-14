@@ -1,0 +1,190 @@
+@layer regents-product {
+/* The icon sheet (`/animations/icons`, `AshTemplateWeb.IconsLabLive`): seven sections
+   of small diagram icons over one GPU picture (the `IconSheet` hook), which draws each
+   icon in its cell's art box. The words and numbers are the page's own text over it.
+   Eight across on a wide sheet, four on a phone and three on the narrowest; each
+   word fits its cell at every width. Until the picture has drawn the art boxes are
+   empty; without WebGPU a line says the drawings need a newer browser. */
+.motion-lab--icons {
+  width: 100%;
+  align-content: start;
+}
+
+/* Registration marks at the sheet's four corners. */
+.icons-lab {
+  --icons-mark: var(--color-fg-muted);
+  --icons-mark-arm: 12px;
+  position: relative;
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  background:
+    linear-gradient(in oklch, var(--icons-mark), var(--icons-mark)) top left / var(--icons-mark-arm) var(--rg-rule-width) no-repeat,
+    linear-gradient(in oklch, var(--icons-mark), var(--icons-mark)) top left / var(--rg-rule-width) var(--icons-mark-arm) no-repeat,
+    linear-gradient(in oklch, var(--icons-mark), var(--icons-mark)) top right / var(--icons-mark-arm) var(--rg-rule-width) no-repeat,
+    linear-gradient(in oklch, var(--icons-mark), var(--icons-mark)) top right / var(--rg-rule-width) var(--icons-mark-arm) no-repeat,
+    linear-gradient(in oklch, var(--icons-mark), var(--icons-mark)) bottom left / var(--icons-mark-arm) var(--rg-rule-width) no-repeat,
+    linear-gradient(in oklch, var(--icons-mark), var(--icons-mark)) bottom left / var(--rg-rule-width) var(--icons-mark-arm) no-repeat,
+    linear-gradient(in oklch, var(--icons-mark), var(--icons-mark)) bottom right / var(--icons-mark-arm) var(--rg-rule-width) no-repeat,
+    linear-gradient(in oklch, var(--icons-mark), var(--icons-mark)) bottom right / var(--rg-rule-width) var(--icons-mark-arm) no-repeat;
+}
+
+.icons-lab__stage,
+.icons-lab__stage canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.icons-lab__stage {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.icons-lab[data-icons-ready="true"] .icons-lab__stage {
+  opacity: 1;
+}
+
+.icons-lab__note {
+  display: none;
+  color: var(--color-fg-muted);
+}
+
+.icons-lab[data-icons-ready="false"] .icons-lab__note {
+  display: block;
+}
+
+/* Each section is the box its columns are chosen against. Positioned after the
+   picture, the words paint over it. */
+.icons-lab__section {
+  position: relative;
+  display: grid;
+  gap: var(--space-2);
+  container: icon-sheet / inline-size;
+}
+
+.icons-lab .icons-lab__title {
+  color: var(--color-fg-muted);
+  font: 0.72rem/1 var(--font-family-ui);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+}
+
+.icons-lab__grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A cell: its art box, then its word with its number beside it, or under it where the
+   cell is narrow. Two corner ticks mark it out. */
+.icon-cell {
+  --icon-tracking: var(--tracking-microlabel);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  column-gap: var(--space-1);
+  padding: var(--space-1);
+  cursor: default;
+}
+
+.icon-cell::before,
+.icon-cell::after {
+  position: absolute;
+  inline-size: var(--space-1);
+  block-size: var(--space-1);
+  border: 0 solid var(--hairline);
+  content: "";
+  pointer-events: none;
+}
+
+.icon-cell::before {
+  inset: 0 auto auto 0;
+  border-block-start-width: var(--rg-rule-width);
+  border-inline-start-width: var(--rg-rule-width);
+}
+
+.icon-cell::after {
+  inset: auto 0 0 auto;
+  border-block-end-width: var(--rg-rule-width);
+  border-inline-end-width: var(--rg-rule-width);
+}
+
+.icon-cell:focus-visible {
+  outline: var(--rg-rule-width) solid var(--color-focus);
+  outline-offset: calc(var(--rg-rule-width) * -1);
+}
+
+.icon-cell__art {
+  grid-column: 1 / -1;
+  aspect-ratio: 1;
+  margin-block-end: var(--space-1);
+}
+
+.icon-cell__word,
+.icon-cell__number {
+  color: var(--color-fg-muted);
+  font: 0.72rem/1.4 var(--font-family-mono);
+  letter-spacing: var(--icon-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.icon-cell__word {
+  transition: color var(--duration-base) var(--ease-out);
+}
+
+.icon-cell:is(:hover, :focus-visible) .icon-cell__word {
+  color: var(--color-fg);
+}
+
+/* Narrower cells set the number under the word, and the letters a little closer. */
+@container icon-sheet (width < 1000px) {
+  .icon-cell {
+    --icon-tracking: 0.04em;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container icon-sheet (width < 640px) {
+  .icons-lab__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  /* The art and the word take the cell's whole width, so the longest word fits. */
+  .icon-cell {
+    padding-inline: 0;
+  }
+}
+
+@container icon-sheet (width < 320px) {
+  .icons-lab__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .icons-lab {
+    padding: var(--space-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icons-lab__stage,
+  .icon-cell__word {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .icons-lab__stage {
+    display: none;
+  }
+}
+}

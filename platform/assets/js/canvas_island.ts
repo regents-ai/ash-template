@@ -77,6 +77,11 @@ type IslandKind<Renderer extends IslandRenderer> = {
    * picture may go past the usual ceiling; the pixel budget still holds.
    */
   readonly maxDevicePixelRatio?: number
+  /**
+   * The most device pixels the picture is drawn with. A large picture of hairlines
+   * (the icon sheet) may ask for more than the usual budget, or it draws soft.
+   */
+  readonly maxDrawingBufferPixels?: number
   /** Listeners the island keeps for as long as it is watching. */
   interact?(island: IslandInteraction<Renderer>): () => void
 }
@@ -108,11 +113,11 @@ export function drawingBufferSize(
   height: number,
   devicePixelRatio: number,
   maxDevicePixelRatio: number = MAX_DEVICE_PIXEL_RATIO,
+  maxPixels: number = MAX_DRAWING_BUFFER_PIXELS,
 ): readonly [number, number] {
   const ratio = Math.min(maxDevicePixelRatio, Math.max(1, devicePixelRatio))
   const requested = width * height * ratio * ratio
-  const fit =
-    requested > MAX_DRAWING_BUFFER_PIXELS ? Math.sqrt(MAX_DRAWING_BUFFER_PIXELS / requested) : 1
+  const fit = requested > maxPixels ? Math.sqrt(maxPixels / requested) : 1
   return [
     Math.max(1, Math.floor(width * ratio * fit)),
     Math.max(1, Math.floor(height * ratio * fit)),
@@ -179,7 +184,13 @@ export const createCanvasIsland = <Renderer extends IslandRenderer>(
    */
   const measure = (): readonly [number, number] => {
     const view = canvas()
-    return drawingBufferSize(view.clientWidth, view.clientHeight, devicePixelRatio(), kind.maxDevicePixelRatio)
+    return drawingBufferSize(
+      view.clientWidth,
+      view.clientHeight,
+      devicePixelRatio(),
+      kind.maxDevicePixelRatio,
+      kind.maxDrawingBufferPixels,
+    )
   }
 
   const stopFrame = () => {
