@@ -46,10 +46,20 @@ export type IdentityState = {
 export const IDENTITY_STATE_EVENT = "ash:identity-state"
 export const IDENTITY_REQUEST_EVENT = "ash:identity-request"
 
+/**
+ * How a SIWA page's trade for its control token ended: the server holds one
+ * now, SIWA could not be reached, or the person must sign in again.
+ */
+export type ControlOutcome = "ready" | "unavailable" | "signed-out"
+
+export const CONTROL_REQUEST_EVENT = "ash:siwa-control-request"
+export const CONTROL_STATE_EVENT = "ash:siwa-control-state"
+
 export type PrivyBridgeHandle = {
   dispose?: () => void
   request: (request: AccountRequest) => Promise<void>
   identity?: (request: IdentityRequest) => Promise<void>
+  control: () => Promise<ControlOutcome>
   finishSignOutOnly?: () => void
 }
 
@@ -915,6 +925,15 @@ export function createLazyAuthLoader(
       if (handle) return deliverPending()
       return preparing ?? prepare()
     },
+    // The same bridge, loaded once for the page, makes the trade.
+    async control(): Promise<ControlOutcome> {
+      assertActive()
+      if (state !== "ordinary") throw new Error("Provider sign out is still in progress.")
+      if (!handle) await (preparing ?? prepare())
+      assertActive()
+      if (!handle) throw new Error("Privy bridge is not ready")
+      return handle.control()
+    },
     finishHandoff(): void {
       if (state !== "handoff-preterminal") return
       state = "handoff-terminal"
@@ -1113,6 +1132,17 @@ export function installAccountAuthLazyLoader(
   // mounts, so a returning customer sees their wallet without a click. Nothing
   // is shown when that cannot happen: the page still offers the connection.
   const onWalletSync = () => void loader.request("sync").catch(() => undefined)
+  // A SIWA page asks for its control token. A trade that cannot even start is
+  // answered as one the person must sign in again for, so the page never waits
+  // on silence.
+  const onControlRequest = () => {
+    void loader
+      .control()
+      .catch((): ControlOutcome => "signed-out")
+      .then(outcome => {
+        if (installed) walletEvents.dispatchEvent(new CustomEvent(CONTROL_STATE_EVENT, {detail: outcome}))
+      })
+  }
   const reconcileSignedInStartup = () => {
     clearStatus()
     void withinWindow(
@@ -1125,6 +1155,7 @@ export function installAccountAuthLazyLoader(
   documentRoot.addEventListener("click", onClick)
   walletEvents.addEventListener(IDENTITY_REQUEST_EVENT, onIdentityRequest)
   walletEvents.addEventListener("ash:wallet-sync", onWalletSync)
+  walletEvents.addEventListener(CONTROL_REQUEST_EVENT, onControlRequest)
   if (consumedHandoff) {
     // The page that signed out could not finish Privy's logout. It is waited
     // for here, never cut short, before this page acts on anything else.
@@ -1150,6 +1181,7 @@ export function installAccountAuthLazyLoader(
     documentRoot.removeEventListener("click", onClick)
     walletEvents.removeEventListener(IDENTITY_REQUEST_EVENT, onIdentityRequest)
     walletEvents.removeEventListener("ash:wallet-sync", onWalletSync)
+    walletEvents.removeEventListener(CONTROL_REQUEST_EVENT, onControlRequest)
   }
 }
 

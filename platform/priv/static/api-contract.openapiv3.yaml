@@ -533,6 +533,54 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/Session"}
+  /siwa/session:
+    post:
+      operationId: createSiwaControlSession
+      summary: The SIWA pages' sign-in at the sign-in service, for the person signed in on this browser.
+      description: >-
+        The browser's sign-in bridge sends the person's Privy pair with the session cookie and the
+        forms token. The site trades the pair at SIWA for a control token, which it keeps itself
+        for this browser's sign-in and never sends back; the answer only says whether it worked.
+      security: [{privyAccessToken: [], privyIdentityToken: [], csrfToken: []}]
+      responses:
+        "204":
+          description: SIWA proved the person signed in here; the site holds the control token
+          headers:
+            Cache-Control: {schema: {type: string, const: no-store}}
+        "401":
+          description: Nobody is signed in here, or SIWA didn't prove the person signed in here
+          headers:
+            Cache-Control: {schema: {type: string, const: no-store}}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/RecoveryError"}
+              examples:
+                signedOut:
+                  value: {error: {code: authentication_required, message: "Sign in to use SIWA.", hint: "Sign in, then try again."}}
+                refused:
+                  value: {error: {code: siwa_sign_in_refused, message: "SIWA couldn't confirm your sign-in.", hint: "Sign in again."}}
+        "403": {$ref: "#/components/responses/CsrfForbidden"}
+        "429":
+          description: More than 30 trades from this account in a minute
+          headers:
+            Retry-After: {schema: {type: string, const: "60"}}
+            Cache-Control: {schema: {type: string, const: no-store}}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/RecoveryError"}
+              examples:
+                rateLimited:
+                  value: {error: {code: rate_limited, message: "Too many tries in a short time.", hint: "Wait the number of seconds in Retry-After, then try again."}}
+        "503":
+          description: SIWA didn't answer, or can't take sign-ins right now
+          headers:
+            Cache-Control: {schema: {type: string, const: no-store}}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/RecoveryError"}
+              examples:
+                unavailable:
+                  value: {error: {code: siwa_unavailable, message: "SIWA isn't available right now.", hint: "Try again in a moment."}}
   /api/agents/v1/whoami:
     get:
       operationId: getAgentIdentity

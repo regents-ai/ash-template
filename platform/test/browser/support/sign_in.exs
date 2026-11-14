@@ -4,7 +4,8 @@
 # signed-in page proves a long name fits the screen), three agents paired the way an
 # agent pairs, and the signed cookie the walk sends; the friend who writes in General
 # gets one too, starts a quiet room for each width's busy room (busy_room.spec.ts) and
-# has a page and one more of notes (notes.spec.ts).
+# has a page and one more of notes (notes.spec.ts); and a person for each width who
+# sets up SIWA from nothing (siwa.spec.ts).
 # Run by playwright.config.ts
 # before the server starts; it refuses any database but a walk's own local one.
 alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
@@ -208,3 +209,42 @@ save_sign_in.(
   },
   "friend.json"
 )
+
+# A person for each width, with a name of their own, who sets up SIWA from nothing
+# (siwa.spec.ts), so every other page the walk opens as the person above still
+# finds no SIWA company.
+for {width, digit} <- [{"desktop", "1"}, {"phone", "2"}] do
+  did = "did:privy:browser-walk-siwa-#{width}"
+  siwa_wallet = "0x" <> String.duplicate(digit, 40)
+
+  Ash.Seed.upsert!(
+    RegentIdentity.Profile,
+    %{
+      app_id: app_id,
+      privy_user_id: did,
+      display_name: "Walk SIWA #{String.capitalize(width)}",
+      wallet_addresses: [siwa_wallet],
+      proof_issued_at: System.system_time(:second)
+    },
+    identity: :privy_subject
+  )
+
+  siwa_person =
+    AshTemplate.Accounts.register_verified!(did, siwa_wallet, [siwa_wallet],
+      actor: %AshTemplate.Actors.System{}
+    )
+
+  save_sign_in.(
+    siwa_person,
+    %RegentPrivy.Session{
+      app_id: app_id,
+      privy_user_id: did,
+      session_id: "browser-walk-siwa-#{width}",
+      wallet_address: siwa_wallet,
+      wallet_addresses: [siwa_wallet],
+      user_wallet_address: siwa_wallet,
+      linked_socials: []
+    },
+    "siwa-#{width}.json"
+  )
+end

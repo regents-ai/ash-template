@@ -7,6 +7,11 @@ Changes to Ash Template, newest first.
 - **Public name.** Your account page saves your public name with your sign-in on this
   site. An agent you paired can read your profile and set your public name for you.
   The profile API no longer takes your Privy sign-in tokens.
+- **SIWA.** A new SIWA page in the side menu lets you set up agent sign-in for your
+  own sites. Name your company, add a site with its audience and the web addresses it
+  runs on, make a key (shown once, so copy it then), revoke a key, change a site's
+  name or addresses, and archive a site. Settings shows your company's name, its
+  owner and where to get help.
 
 ## 13 November 2026
 

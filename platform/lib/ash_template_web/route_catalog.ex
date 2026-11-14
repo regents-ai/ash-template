@@ -13,6 +13,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{id: :dms, label: "Messages", path: "/dms", icon: "mail"},
     %{id: :polls, label: "Polls", path: "/polls", icon: "chart-column"},
     %{id: :chat, label: "Chat", path: "/chat", icon: "sparkles"},
+    %{id: :siwa, label: "SIWA", path: "/siwa/sites", icon: "key-round"},
     %{id: :design, label: "Design", path: "/design", icon: "shapes"},
     %{id: :settings, label: "Account", path: "/account", icon: "settings"}
   ]
@@ -92,6 +93,7 @@ defmodule AshTemplateWeb.RouteCatalog do
         %{route_id: :cells_lab, label: "Cells", path: "/animations/cells"}
       ]
     },
+    siwa: Map.put(@help, :id, :siwa),
     settings: Map.put(@help, :id, :settings),
     # The reading pages have no place on the rail: each opens from a link.
     help: Map.put(@help, :id, :help)
@@ -101,6 +103,10 @@ defmodule AshTemplateWeb.RouteCatalog do
     home: [
       %{route_id: :app, label: "Overview", path: "/app"},
       %{route_id: :activity, label: "Activity", path: "/app/activity"}
+    ],
+    siwa: [
+      %{route_id: :siwa_sites, label: "Sites", path: "/siwa/sites"},
+      %{route_id: :siwa_settings, label: "Settings", path: "/siwa/settings"}
     ],
     settings: [
       %{route_id: :account, label: "Account", path: "/account"},
@@ -156,6 +162,14 @@ defmodule AshTemplateWeb.RouteCatalog do
       {:chat,
        %{route_id: :chat, destination: "/chat/:conversation_id", page_display_label: "Chat"}},
     design: {:design, %{route_id: :design, destination: "/design", page_display_label: "Design"}},
+    siwa_sites:
+      {:siwa, %{route_id: :siwa_sites, destination: "/siwa/sites", page_display_label: "Sites"}},
+    siwa_site:
+      {:siwa,
+       %{route_id: :siwa_sites, destination: "/siwa/sites/:site_id", page_display_label: "Sites"}},
+    siwa_settings:
+      {:siwa,
+       %{route_id: :siwa_settings, destination: "/siwa/settings", page_display_label: "Settings"}},
     account:
       {:settings, %{route_id: :account, destination: "/account", page_display_label: "Account"}},
     account_agents:
@@ -213,6 +227,8 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{label: "Messages", path: "/dms"},
     %{label: "Polls", path: "/polls"},
     %{label: "Chat", path: "/chat"},
+    %{label: "SIWA sites", path: "/siwa/sites"},
+    %{label: "SIWA settings", path: "/siwa/settings"},
     %{label: "Account", path: "/account"},
     %{label: "Agents", path: "/account/agents"},
     %{label: "Wallets", path: "/account/wallets"},
@@ -260,8 +276,8 @@ defmodule AshTemplateWeb.RouteCatalog do
   end
 
   @doc """
-  The spec of a live action; a room's, conversation's, poll's or agent's
-  destination is the one its `params` name.
+  The spec of a live action; a room's, conversation's, poll's, agent's or SIWA
+  site's destination is the one its `params` name.
   """
   def fetch!(:room, %{"room" => room}), do: %{fetch!(:room) | destination: "/rooms/#{room}"}
 
@@ -271,6 +287,9 @@ defmodule AshTemplateWeb.RouteCatalog do
   def fetch!(:dm, %{"conversation_id" => id}), do: %{fetch!(:dm) | destination: "/dms/#{id}"}
   def fetch!(:poll, %{"poll_id" => id}), do: %{fetch!(:poll) | destination: "/polls/#{id}"}
   def fetch!(:agent, %{"agent" => agent}), do: %{fetch!(:agent) | destination: "/agents/#{agent}"}
+
+  def fetch!(:siwa_site, %{"site_id" => id}),
+    do: %{fetch!(:siwa_site) | destination: "/siwa/sites/#{id}"}
 
   def fetch!(action, _params), do: fetch!(action)
 
@@ -321,6 +340,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     do: %{conversation_id: %{type: "string", format: "uuid"}}
 
   defp parameter_schema(:poll), do: %{poll_id: %{type: "string", format: "uuid"}}
+  defp parameter_schema(:siwa_site), do: %{site_id: %{type: "string", format: "uuid"}}
 
   defp parameter_schema(:agent),
     do: %{agent: %{type: "string", pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"}}

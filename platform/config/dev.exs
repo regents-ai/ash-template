@@ -16,8 +16,9 @@ config :ash_template, :chain_nodes, %{
 
 # The browser walk's server (test/browser/walk.sh) never leaves the machine. Its
 # chain nodes and sign-in service are a closed port on this machine, so their reads
-# fail at once, and any other request outside it is refused and fails the walk
-# (AshTemplate.WalkOffline).
+# fail at once, except the sign-in service's control API, which the walk answers
+# itself (AshTemplate.WalkControl), and any other request outside it is refused and
+# fails the walk (AshTemplate.WalkOffline).
 walk? = System.get_env("ASH_TEMPLATE_WALK") == "true"
 
 if walk? do

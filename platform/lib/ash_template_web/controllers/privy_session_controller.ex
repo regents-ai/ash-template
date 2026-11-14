@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.PrivySessionController do
   @moduledoc "The browser session endpoints: CSRF bootstrap, Privy sign-in, sign-out and failure reports."
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.AccessContext
+  alias AshTemplate.{AccessContext, SiwaControl}
   alias AshTemplate.Accounts.{RequestRateLimiter, SessionAuthority, VerifiedSession}
   alias AshTemplateWeb.ClientAddress
 
@@ -228,9 +228,11 @@ defmodule AshTemplateWeb.PrivySessionController do
   end
 
   # The answer is sent before the lineage's sockets are told to disconnect, so
-  # the browser reads it rather than a dropped connection.
+  # the browser reads it rather than a dropped connection. The SIWA control token
+  # kept for the lineage on this machine goes with it.
   defp disconnect_after(conn, topic, respond) do
     %Plug.Conn{state: :sent} = conn = conn |> drop_session() |> respond.()
+    SiwaControl.Tokens.forget(topic)
     if topic, do: AshTemplateWeb.Endpoint.broadcast(topic, "disconnect", %{})
     conn
   end

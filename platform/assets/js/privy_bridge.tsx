@@ -26,6 +26,7 @@ import {
   AccountAuthFailure,
   acrossCookieRotation,
   announceCsrfRotation,
+  browserCsrfToken,
   browserSessionMutations,
   clearLocalSession,
   finishWalletSignOut,
@@ -38,6 +39,7 @@ import {
   showAccountAuthFailure,
   IDENTITY_STATE_EVENT,
   type AccountRequest,
+  type ControlOutcome,
   type IdentityProvider,
   type IdentityRequest,
   type IdentityState,
@@ -379,6 +381,32 @@ function createPrivyTokenPairSource({
   }
 }
 
+// A SIWA page's control token. The person's Privy pair goes to this site, which
+// trades it at SIWA and keeps the token itself; the answer only says how it
+// went. It writes no cookie, so it waits behind any sign-in still settling, with
+// that sign-in's forms token, and a sign-out cancels it.
+export async function exchangeControlSession(
+  tokens: PrivyPair,
+  fetcher: typeof fetch = fetch,
+  sessionMutations: SessionMutationCoordinator = browserSessionMutations,
+): Promise<ControlOutcome> {
+  const response = await sessionMutations
+    .establish(signal =>
+      fetcher("/siwa/session", {
+        method: "POST",
+        credentials: "same-origin",
+        redirect: "error",
+        signal,
+        headers: {...privyPairHeaders(tokens), "x-csrf-token": browserCsrfToken()},
+      }),
+    )
+    .catch(() => null)
+
+  if (response?.ok) return "ready"
+  if (!response || response.status === 429 || response.status === 503) return "unavailable"
+  return "signed-out"
+}
+
 async function createLocalSession(
   tokens: PrivyPair,
   fetcher: typeof fetch = fetch,
@@ -689,6 +717,7 @@ type AccountBridgeProps = {
   publishRequestHandler: (
     requestHandler: PrivyBridgeHandle["request"],
     identityHandler: NonNullable<PrivyBridgeHandle["identity"]>,
+    controlHandler: PrivyBridgeHandle["control"],
     finishSignOutOnly: () => void,
     ready: boolean,
   ) => void
@@ -1182,10 +1211,16 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
     ? signOutOnlyBridge.identity
     : ordinaryIdentityHandler
   const finishSignOutOnly = signOutOnlyBridge.finish
+  // The pair read now, from the person signed in to Privy now; with nobody
+  // signed in there is no pair, and the trade is refused before it is sent.
+  const controlHandler = React.useCallback(
+    async () => exchangeControlSession(await acquireTokensRef.current()),
+    [],
+  )
 
   React.useEffect(
-    () => publishRequestHandler(requestHandler, identityHandler, finishSignOutOnly, ready),
-    [finishSignOutOnly, identityHandler, publishRequestHandler, ready, requestHandler],
+    () => publishRequestHandler(requestHandler, identityHandler, controlHandler, finishSignOutOnly, ready),
+    [controlHandler, finishSignOutOnly, identityHandler, publishRequestHandler, ready, requestHandler],
   )
 
   return null
@@ -1209,6 +1244,7 @@ export function startPrivyBridge(
   return new Promise((resolve, reject) => {
     let currentRequestHandler: PrivyBridgeHandle["request"] | null = null
     let currentIdentityHandler: PrivyBridgeHandle["identity"] | null = null
+    let currentControlHandler: PrivyBridgeHandle["control"] | null = null
     let currentFinishSignOutOnly: (() => void) | null = null
     let resolved = false
     let currentReady = false
@@ -1223,6 +1259,7 @@ export function startPrivyBridge(
       signal?.removeEventListener("abort", onAbort)
       currentRequestHandler = null
       currentIdentityHandler = null
+      currentControlHandler = null
       root.unmount()
       host.remove()
       if (!resolved) reject(reason)
@@ -1245,6 +1282,11 @@ export function startPrivyBridge(
           ? currentIdentityHandler(request)
           : Promise.reject(new Error("Privy bridge is not ready"))
       },
+      control() {
+        return currentControlHandler
+          ? currentControlHandler()
+          : Promise.reject(new Error("Privy bridge is not ready"))
+      },
       finishSignOutOnly() {
         currentFinishSignOutOnly?.()
       },
@@ -1252,6 +1294,7 @@ export function startPrivyBridge(
     const publishRequestHandler: AccountBridgeProps["publishRequestHandler"] = (
       requestHandler,
       identityHandler,
+      controlHandler,
       finishSignOutOnly,
       ready,
     ) => {
@@ -1259,6 +1302,7 @@ export function startPrivyBridge(
       currentReady = ready
       currentRequestHandler = requestHandler
       currentIdentityHandler = identityHandler
+      currentControlHandler = controlHandler
       currentFinishSignOutOnly = finishSignOutOnly
       if (!ready || resolved) return
       clearTimeout(timeout)

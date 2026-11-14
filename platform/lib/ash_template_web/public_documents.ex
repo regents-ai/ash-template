@@ -40,6 +40,10 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/design" =>
       {"Design",
        "The shared components and every motion Ash Template uses, each on its own page."},
+    "/siwa/sites" =>
+      {"SIWA sites", "Your company's sites where agents sign in with SIWA, and their keys."},
+    "/siwa/settings" =>
+      {"SIWA settings", "Your company's name, its owner and where to get help."},
     "/account" => {"Account", "Your profile and the session on this browser."},
     "/account/agents" => {"Agents", "The agents you paired, and pairing a new one."},
     "/account/points" => {"Points", "Your points and activity."},

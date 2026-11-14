@@ -39,7 +39,8 @@ defmodule AshTemplateWeb.ShellLive do
     Read,
     RoomsLive,
     RouteCatalog,
-    Showcase
+    Showcase,
+    SiwaLive
   }
 
   @actions %{"link" => :link, "unlink" => :unlink}
@@ -103,7 +104,8 @@ defmodule AshTemplateWeb.ShellLive do
      |> open_conversation(conversation)
      |> assign(:dm, dm)
      |> hear_polls(route_spec, poll_id)
-     |> assign(:poll_id, poll_id)}
+     |> assign(:poll_id, poll_id)
+     |> assign(:siwa_site_id, params["site_id"])}
   end
 
   @impl true
@@ -399,6 +401,17 @@ defmodule AshTemplateWeb.ShellLive do
 
         <DesignLive.page :if={@route_spec.route_id == :design} />
 
+        <.live_component
+          :if={@route_spec.route_id in [:siwa_sites, :siwa_settings]}
+          module={SiwaLive}
+          id="siwa"
+          lease={@session_lease}
+          account={current_account(@access_context)}
+          signed_out_reason={@signed_out_reason}
+          page={@live_action}
+          site_id={@siwa_site_id}
+        />
+
         <AccountLive.profile
           :if={@route_spec.route_id == :account}
           signed_out_reason={@signed_out_reason}
@@ -566,10 +579,12 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp page_meta(nil, path), do: PublicDocuments.page(path)
 
-  # Every conversation shares the chat page's title.
+  # Every conversation shares the chat page's title, and every SIWA site the
+  # sites page's.
   defp page_path(:conversation, _uri), do: "/chat"
   defp page_path(:dm, _uri), do: "/dms"
   defp page_path(:poll, _uri), do: "/polls"
+  defp page_path(:siwa_site, _uri), do: "/siwa/sites"
   defp page_path(_action, uri), do: URI.parse(uri).path
 
   defp on_conversation?(%{assigns: %{conversation: %{id: id}}}, id), do: true

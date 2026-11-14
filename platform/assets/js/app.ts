@@ -39,6 +39,7 @@ import {OnchainSteps} from "./hooks/onchain_steps"
 import {MenuAgents} from "./hooks/menu_agents"
 import {PublicName} from "./hooks/public_name"
 import {ProductsMenu} from "./hooks/products_menu"
+import {SiwaControl} from "./hooks/siwa_control"
 import {ThemeSwitch} from "./hooks/theme_switch"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
@@ -329,6 +330,7 @@ const hooks = {
   PublicName,
   Conversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
+  SiwaControl,
   ThemeSwitch,
   VerifiedConnections,
 }

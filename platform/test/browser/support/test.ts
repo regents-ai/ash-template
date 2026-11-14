@@ -4,11 +4,29 @@ import {type BrowserContext, test as base, expect} from "@playwright/test"
 // that talks to Privy, is answered by a stand-in that holds no Privy sign-in, as
 // a browser without one does; any other outside address is refused and fails the
 // check that reached for it. The server's side: playwright.config.ts.
-const bridge = /^\/assets\/js\/privy_bridge(-[0-9a-f]+)?\.js$/
+export const bridge = /^\/assets\/js\/privy_bridge(-[0-9a-f]+)?\.js$/
 
-const standIn = `
+// The stand-in trades for the SIWA pages' control token as the real bridge does,
+// with a Privy pair that names `did` (the walk's own SIWA stand-in takes the
+// identity token as the DID, AshTemplate.WalkControl) and `access` as the bearer.
+export const standIn = (did = "did:privy:browser-walk", access = "walk-access") => `
 export async function startPrivyBridge() {
-  return {request: async () => {}}
+  return {
+    request: async () => {},
+    control: async () => {
+      const response = await fetch("/siwa/session", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          authorization: "Bearer ${access}",
+          "privy-id-token": "${did}",
+          "x-csrf-token": document.querySelector("meta[name='csrf-token']").content
+        }
+      })
+      if (response.ok) return "ready"
+      return response.status === 429 || response.status === 503 ? "unavailable" : "signed-out"
+    }
+  }
 }
 `
 
@@ -23,7 +41,7 @@ export async function onThisMachine(context: BrowserContext, baseURL: string) {
       return route.abort("blockedbyclient")
     }
     if (bridge.test(url.pathname))
-      return route.fulfill({contentType: "text/javascript", body: standIn})
+      return route.fulfill({contentType: "text/javascript", body: standIn()})
     return route.continue()
   })
   return outside

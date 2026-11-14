@@ -394,6 +394,7 @@ defmodule AshTemplateWeb.Router do
     post "/auth/privy/session", PrivySessionController, :create
     get "/auth/session", PrivySessionController, :show
     delete "/auth/privy/session", PrivySessionController, :delete
+    post "/siwa/session", SiwaSessionController, :create
 
     live_session :product_shell,
       session: {Session, :render_context, []},
@@ -409,6 +410,9 @@ defmodule AshTemplateWeb.Router do
       live "/chat", ShellLive, :chat
       live "/chat/:conversation_id", ShellLive, :conversation
       live "/design", ShellLive, :design
+      live "/siwa/sites", ShellLive, :siwa_sites
+      live "/siwa/sites/:site_id", ShellLive, :siwa_site
+      live "/siwa/settings", ShellLive, :siwa_settings
       live "/account", ShellLive, :account
       live "/account/agents", ShellLive, :account_agents
       live "/account/points", ShellLive, :points

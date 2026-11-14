@@ -43,6 +43,8 @@ defmodule AshTemplate.Application do
         AshTemplate.Agents.ActivityReading,
         # The wallet of each connected app's own identity, asked for once.
         AshTemplate.Agents.HostedAddress,
+        # Each signed-in browser's SIWA control token, held only here.
+        AshTemplate.SiwaControl.Tokens,
         # Each agent's reading for an open account menu, unlinked from the page.
         {Task.Supervisor, name: AshTemplate.Agents.Reads},
         # The chain is read, rooms counted and the Points board read only where

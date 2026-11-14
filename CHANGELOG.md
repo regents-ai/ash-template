@@ -10998,3 +10998,62 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   `authentication_required`; the home, docs, rooms, account and agent guide pages answer.
 - Rollback: v249 (`846a7bb5`) image.
 - Full check exit 0 by the chief on the same tree (`d2202cdb`).
+
+## 2026-11-14 — SIWA: Sites and Settings
+
+- A **SIWA** entry in the side menu opens the paid sign-in product's control pages, with
+  the tabs Sites (`/siwa/sites`) and Settings (`/siwa/settings`), and one site's page
+  (`/siwa/sites/:site_id`) under Sites (`AshTemplateWeb.SiwaLive`, a component of the
+  shell). A person with no company names it first, then lands on Sites. Sites lists
+  each site's name, audience, environment and proof, and adds a site from its name,
+  audience, environment and up to 10 origins, with the rules beside each box and a
+  refused field's reasons under it. A site's page renames it and changes its origins
+  (a production site's warning says the origins must be proved again), makes a key
+  (shown once, with Copy key and a warning), revokes one through the confirm window,
+  shows a setup example for `POST /api/shared/siwa/http-verify`, and archives the site
+  through the confirm window, which says the audience stays taken. Settings renames
+  the company and shows its owner and support at build@regents.sh. Each page shows
+  loading, empty, the service's refusal, Unavailable (SIWA out of reach, or its
+  control API off) and signed out. Overview and Billing are not built.
+- The site keeps no SIWA data: no resource, table or migration. Every read and change
+  goes to the sign-in service's control API (`/api/control/v1` at
+  `config :regent_agents, :siwa` `url`) through `AshTemplate.SiwaControl`, one Req
+  client that answers `{:ok, data}`, `{:error, %Refusal{}}` or `{:error, :unavailable}`,
+  with no retries and no redirects, so no change is sent twice. A new key comes back
+  as `AshTemplate.SiwaControl.Secret`, which never prints.
+- `POST /siwa/session` (browser pipeline: session cookie and forms token) trades the
+  person's Privy pair at SIWA for a control token. The token is kept only in this
+  machine's memory (`AshTemplate.SiwaControl.Tokens`, a Nebulex cache), keyed by the
+  browser's sign-in topic with the account it was traded for, until SIWA says it ends;
+  it never reaches the browser, a log or an error, and it goes when the sign-in ends
+  (`AshTemplateWeb.PrivySessionController`). The answer is 204, or a refusal in the
+  site's own words: 401 `authentication_required` or `siwa_sign_in_refused` (no pair,
+  a pair SIWA refuses, or SIWA proves another person), 429 `rate_limited` (30 a minute
+  for a person) or 503 `siwa_unavailable`. Added to the API contract (still 19.0.0;
+  nothing changes shape). Kept per machine: with more than one machine, a page served
+  by a machine that did not make the trade finds no token and trades again, and a
+  sign-out forgets the token only where it was made, so another machine's copy lasts
+  until SIWA ends it (15 minutes at most) and the lapsed sign-in is refused there first.
+- The page asks for a trade only when it needs one: with no token, or when SIWA says
+  the token has ended, it sends the trade to the browser's sign-in bridge, which the
+  page already loaded (`exchangeControlSession` in `platform/assets/js/privy_bridge.tsx`,
+  `control()` on the lazy loader in `platform/assets/js/auth_lazy.ts`, the
+  `SiwaControl` hook), and runs what was waiting once it is done. Each read and change
+  is tried again once after a trade; one still refused says to sign in again. A new key
+  goes from SIWA's answer to the browser alone and is never kept in the page's state.
+- The browser walk answers SIWA's control API with an in-memory stand-in under the
+  service's rules (`platform/test/browser/support/server/walk_control.ex`, through
+  `AshTemplate.WalkOffline`), and its Privy stand-in makes the trade as the bridge does.
+  `sign_in.exs` signs in a SIWA person for each width. `pages.json` lists the three
+  pages.
+- Tests: `platform/test/ash_template/siwa_control_test.exs` (answers, refusals,
+  unavailable, sent once, the key's secrecy); `platform/test/ash_template_web/siwa_session_test.exs`
+  (the trade: kept for that sign-in and person, never in the answer or a log, forgotten
+  at sign-out; refused without the forms token, a sign-in, a pair, the same person or a
+  token that has not ended; unavailable; the rate limit), which fails with the token
+  logged; `platform/test/ash_template_web/siwa_live_test.exs` (each page connected:
+  naming the company, a refused field, a new site, a key shown once and never in the
+  page's state, revoking, renaming, archiving, a trade and a second refusal, unavailable
+  and Try again, a refused site, Settings, signed out), which fails with the key put in
+  the page's state; `platform/test/browser/siwa.spec.ts` at both widths. The feature map
+  and `docs/agent-parity.md` (G13: SIWA is person-only) say so.
