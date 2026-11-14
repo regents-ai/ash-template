@@ -62,7 +62,9 @@ defmodule AshTemplate.Points.SignInMilestonesTest do
     x = %{provider: :x, subject: "x-" <> Ecto.UUID.generate(), username: "first"}
 
     assert {:ok, account, []} = did |> session([x]) |> VerifiedSession.establish()
-    assert {:ok, _account, []} = did |> session([%{x | username: "renamed"}]) |> VerifiedSession.establish()
+
+    assert {:ok, _account, []} =
+             did |> session([%{x | username: "renamed"}]) |> VerifiedSession.establish()
 
     assert {:ok, %{username: "renamed", inserted_at: linked_at}} =
              Accounts.get_linked_identity_by_subject(:x, x.subject, actor: %System{})
@@ -125,7 +127,9 @@ defmodule AshTemplate.Points.SignInMilestonesTest do
              |> Ash.read!(actor: Store.system())
 
     assert %{name: name} = Enum.find(agents, &(&1.wallet == wallet))
-    assert {:ok, %{^wallet => ^name}} = AshTemplate.Points.Accounts.agent_names(account.id, [wallet])
+
+    assert {:ok, %{^wallet => ^name}} =
+             AshTemplate.Points.Accounts.agent_names(account.id, [wallet])
   end
 
   test "unpairing the agent and pairing it again earns the first-agent award once" do
@@ -170,6 +174,7 @@ defmodule AshTemplate.Points.SignInMilestonesTest do
 
     # Here the person links the same X account, and a newcomer links the other.
     assert {:ok, _account, []} = person |> session([mine]) |> VerifiedSession.establish()
+
     assert {:ok, %{id: newcomer_id}, []} =
              newcomer |> session([theirs]) |> VerifiedSession.establish()
 
@@ -226,7 +231,9 @@ defmodule AshTemplate.Points.SignInMilestonesTest do
       )
 
     assert {:ok, %{status: :confirmed}} =
-             RegentPoints.process_event(event.id, actor: Store.system())
+             AshTemplate.Test.OtherSiteSource.settle("social.x", fn ->
+               RegentPoints.process_event(event.id, actor: Store.system())
+             end)
   end
 
   defp events(account_id, rule) do

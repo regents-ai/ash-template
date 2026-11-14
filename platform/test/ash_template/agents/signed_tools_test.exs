@@ -20,6 +20,22 @@ defmodule AshTemplate.SignedToolsTest do
     on_exit(fn -> Application.put_env(:regent_points, :starts_at, starts_at) end)
     Application.put_env(:regent_points, :starts_at, ~U[2020-01-01 00:00:00Z])
 
+    # The events below are Patchbay's, whose own records this site cannot read.
+    adapters = Application.get_env(:regent_points, :adapters)
+    on_exit(fn -> Application.put_env(:regent_points, :adapters, adapters) end)
+
+    Application.put_env(
+      :regent_points,
+      :adapters,
+      Map.merge(
+        adapters,
+        Map.from_keys(
+          ~w(patchbay.reply_published patchbay.report_published),
+          AshTemplate.Test.OtherSiteSource
+        )
+      )
+    )
+
     account =
       AshTemplate.Accounts.register_verified!("did:privy:points-test", @wallet, [@wallet],
         actor: %AshTemplate.Actors.System{}
@@ -61,12 +77,14 @@ defmodule AshTemplate.SignedToolsTest do
     assert {:ok, %{status: :confirmed}} = Points.process_event(first.id, actor: Store.system())
     assert {:ok, %{status: :capped}} = Points.process_event(second.id, actor: Store.system())
     assert {:ok, %{status: :confirmed}} = Points.process_event(first.id, actor: Store.system())
+
     assert length(
              Points.read_entries!(
                query: Ash.Query.filter(RegentPoints.Entry, account_id == ^account.id),
                actor: Store.system()
              )
            ) == 2
+
     day_two = DateTime.add(at, 1, :day)
     cap = Store.cap(account.id, Rules.program(), "activity:account", Rules.window("day", day_two))
     Points.consume_cap!(cap, 95_000_000, actor: Store.system())
@@ -312,7 +330,10 @@ defmodule AshTemplate.SignedToolsTest do
     refute_receive {:proof_checked, _}
     note = Jason.decode!(created.resp_body)["note"]
     assert note["id"] == id
-    assert %{"id" => <<_::binary-size(36)>>, "wallet_address" => @wallet} = note["changed_by_agent"]
+
+    assert %{"id" => <<_::binary-size(36)>>, "wallet_address" => @wallet} =
+             note["changed_by_agent"]
+
     assert request(:get, "/api/v1/notes/" <> id).status == 200
     # The board every reader shares is read by its producer, which tests do not run.
     on_exit(fn -> AshTemplate.SharedReading.delete(AshTemplate.Points.Board.key()) end)
@@ -325,7 +346,8 @@ defmodule AshTemplate.SignedToolsTest do
     assert request(:post, "/api/v1/notes", Jason.encode!(%{title: "Missing operation"})).status ==
              422
 
-    assert [%{"id" => ^id}] = Jason.decode!(request(:post, "/api/v1/notes/list", "{}").resp_body)["notes"]
+    assert [%{"id" => ^id}] =
+             Jason.decode!(request(:post, "/api/v1/notes/list", "{}").resp_body)["notes"]
 
     assert :ok = RegentAgents.unpair_agent(paired, actor: person)
 
@@ -372,6 +394,7 @@ defmodule AshTemplate.SignedToolsTest do
       )
 
     other_human = AshTemplate.Actors.Human.for_account(other)
+
     message =
       Rooms.post_message!(%{room: "general", body: "Hello from the other side"},
         actor: other_human,
@@ -401,6 +424,7 @@ defmodule AshTemplate.SignedToolsTest do
         actor: human,
         context: %{client_key: "person"}
       )
+
     theirs = Rooms.mute_author!(own.id, actor: other_human)
     assert error_code(request(:delete, "/api/v1/mutes/" <> theirs.id)) == "mute_not_found"
     assert {:ok, %Rooms.Mute{}} = Rooms.get_my_mute(theirs.id, actor: other_human)
@@ -455,11 +479,15 @@ defmodule AshTemplate.SignedToolsTest do
     assert sent.status == 201, sent.resp_body
     retried = request(:post, "/api/v1/dms/#{id}/messages", send)
     assert retried.status == 200, retried.resp_body
-    assert Jason.decode!(retried.resp_body)["message"]["id"] == Jason.decode!(sent.resp_body)["message"]["id"]
+
+    assert Jason.decode!(retried.resp_body)["message"]["id"] ==
+             Jason.decode!(sent.resp_body)["message"]["id"]
 
     read = Jason.decode!(request(:post, "/api/v1/dms/#{id}/history", "{}").resp_body)["messages"]
     assert [%{"body" => "Hi there", "mine" => true}] = read
-    assert error_code(request(:post, "/api/v1/dms/#{id}/history", ~s({"after": 5}))) == "invalid_cursor"
+
+    assert error_code(request(:post, "/api/v1/dms/#{id}/history", ~s({"after": 5}))) ==
+             "invalid_cursor"
 
     # Nobody else reads or writes it.
     assert {:ok, nil} = AshTemplate.Dms.get_conversation(id, actor: stranger)
@@ -481,8 +509,14 @@ defmodule AshTemplate.SignedToolsTest do
     assert length(AshTemplate.Dms.list_dms!(id, actor: human).results) == 3
 
     # Nobody writes to themselves.
-    own = Rooms.post_message!(%{room: "general", body: "Mine"}, actor: human, context: %{client_key: "person"})
-    assert error_code(request(:post, "/api/v1/dms", Jason.encode!(%{message_id: own.id}))) == "invalid_open"
+    own =
+      Rooms.post_message!(%{room: "general", body: "Mine"},
+        actor: human,
+        context: %{client_key: "person"}
+      )
+
+    assert error_code(request(:post, "/api/v1/dms", Jason.encode!(%{message_id: own.id}))) ==
+             "invalid_open"
 
     assert :ok = RegentAgents.unpair_agent(paired, actor: person)
     assert request(:get, "/api/v1/dms").status == 403
@@ -510,23 +544,43 @@ defmodule AshTemplate.SignedToolsTest do
 
     started = request(:post, "/api/v1/polls", start)
     assert started.status == 201, started.resp_body
-    assert %{"id" => id, "open" => true, "counts" => nil, "votes_cast" => 0} = Jason.decode!(started.resp_body)["poll"]
+
+    assert %{"id" => id, "open" => true, "counts" => nil, "votes_cast" => 0} =
+             Jason.decode!(started.resp_body)["poll"]
+
     retried = request(:post, "/api/v1/polls", start)
     assert retried.status == 200, retried.resp_body
     assert Jason.decode!(retried.resp_body)["poll"]["id"] == id
 
-    same = Jason.encode!(%{question: "Lunch?", choices: ["Soup", "Soup"], minutes: 5, operation_id: Ecto.UUID.generate()})
+    same =
+      Jason.encode!(%{
+        question: "Lunch?",
+        choices: ["Soup", "Soup"],
+        minutes: 5,
+        operation_id: Ecto.UUID.generate()
+      })
+
     assert error_code(request(:post, "/api/v1/polls", same)) == "invalid_poll"
 
     voted = request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Soup"}))
     assert voted.status == 200, voted.resp_body
-    assert %{"vote" => %{"choice" => "Soup"}, "poll" => %{"votes_cast" => 1, "counts" => nil}} = Jason.decode!(voted.resp_body)
+
+    assert %{"vote" => %{"choice" => "Soup"}, "poll" => %{"votes_cast" => 1, "counts" => nil}} =
+             Jason.decode!(voted.resp_body)
+
     assert request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Soup"})).status == 200
-    assert error_code(request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Salad"}))) == "invalid_vote"
-    assert error_code(request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Pie"}))) == "invalid_vote"
+
+    assert error_code(request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Salad"}))) ==
+             "invalid_vote"
+
+    assert error_code(request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Pie"}))) ==
+             "invalid_vote"
 
     assert {:ok, _vote} = AshTemplate.Polls.vote(id, %{choice: "Salad"}, actor: other)
-    assert {:ok, %{my_choice: "Salad", votes_cast: 2, totals: nil}} = AshTemplate.Polls.get_poll(id, actor: other)
+
+    assert {:ok, %{my_choice: "Salad", votes_cast: 2, totals: nil}} =
+             AshTemplate.Polls.get_poll(id, actor: other)
+
     public = Jason.decode!(request(:get, "/api/v1/polls/#{id}", nil, false).resp_body)["poll"]
     assert %{"votes_cast" => 2, "counts" => nil} = public
 
@@ -535,19 +589,28 @@ defmodule AshTemplate.SignedToolsTest do
 
     ended = request(:post, "/api/v1/polls/#{id}/end", "{}")
     assert ended.status == 200, ended.resp_body
-    assert %{"open" => false, "counts" => [%{"choice" => "Soup", "votes" => 1}, %{"choice" => "Salad", "votes" => 1}]} =
+
+    assert %{
+             "open" => false,
+             "counts" => [
+               %{"choice" => "Soup", "votes" => 1},
+               %{"choice" => "Salad", "votes" => 1}
+             ]
+           } =
              Jason.decode!(ended.resp_body)["poll"]
 
     assert error_code(request(:post, "/api/v1/polls/#{id}/end", "{}")) == "poll_closed"
     # The vote already counted still answers; a first vote after the close is refused.
     assert request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Soup"})).status == 200
+
     late =
       AshTemplate.Accounts.register_verified!("did:privy:poll-late", @third, [@third],
         actor: %AshTemplate.Actors.System{}
       )
       |> AshTemplate.Actors.Human.for_account()
 
-    assert {:error, %Ash.Error.Invalid{}} = AshTemplate.Polls.vote(id, %{choice: "Soup"}, actor: late)
+    assert {:error, %Ash.Error.Invalid{}} =
+             AshTemplate.Polls.vote(id, %{choice: "Soup"}, actor: late)
 
     listed = Jason.decode!(request(:get, "/api/v1/polls", nil, false).resp_body)["polls"]
     assert [%{"id" => ^id, "started_by" => %{"name" => _}}] = listed
@@ -579,25 +642,39 @@ defmodule AshTemplate.SignedToolsTest do
     liked = request(:post, path, "{}")
     assert liked.status == 200, liked.resp_body
     assert %{"liked" => true, "message" => %{"like_count" => 1}} = Jason.decode!(liked.resp_body)
-    assert %{"liked" => true, "message" => %{"like_count" => 1}} = Jason.decode!(request(:post, path, "{}").resp_body)
+
+    assert %{"liked" => true, "message" => %{"like_count" => 1}} =
+             Jason.decode!(request(:post, path, "{}").resp_body)
 
     assert {:ok, _like} =
              Rooms.like_message(message.id, actor: other, context: %{client_key: "other"})
+
     public = request(:get, "/api/v1/rooms/general/messages/#{message.id}", nil, false)
     assert %{"like_count" => 2} = Jason.decode!(public.resp_body)["message"]
-    assert {:ok, %{liked_by_me: true, like_count: 2}} = Rooms.get_room_message("general", message.id, actor: human)
+
+    assert {:ok, %{liked_by_me: true, like_count: 2}} =
+             Rooms.get_room_message("general", message.id, actor: human)
 
     unliked = request(:delete, path)
-    assert %{"liked" => false, "message" => %{"like_count" => 1}} = Jason.decode!(unliked.resp_body)
-    assert %{"liked" => false, "message" => %{"like_count" => 1}} = Jason.decode!(request(:delete, path).resp_body)
+
+    assert %{"liked" => false, "message" => %{"like_count" => 1}} =
+             Jason.decode!(unliked.resp_body)
+
+    assert %{"liked" => false, "message" => %{"like_count" => 1}} =
+             Jason.decode!(request(:delete, path).resp_body)
+
     assert {:ok, %Rooms.Like{}} = Rooms.get_my_like(message.id, actor: other)
 
-    assert error_code(request(:post, "/api/v1/rooms/general/messages/#{Ecto.UUID.generate()}/like", "{}")) ==
+    assert error_code(
+             request(:post, "/api/v1/rooms/general/messages/#{Ecto.UUID.generate()}/like", "{}")
+           ) ==
              "public_message_not_found"
 
     assert :ok = RegentAgents.unpair_agent(paired, actor: person)
     assert request(:post, path, "{}").status == 403
-    assert {:ok, %{liked_by_me: false, like_count: 1}} = Rooms.get_room_message("general", message.id, actor: human)
+
+    assert {:ok, %{liked_by_me: false, like_count: 1}} =
+             Rooms.get_room_message("general", message.id, actor: human)
   end
 
   test "a post or a like past the person's allowance answers 429 with the seconds to wait" do
@@ -649,31 +726,48 @@ defmodule AshTemplate.SignedToolsTest do
       |> AshTemplate.Actors.Human.for_account()
 
     message =
-      Rooms.post_message!(%{room: "general", body: "Buy now"}, actor: other, context: %{client_key: "other"})
+      Rooms.post_message!(%{room: "general", body: "Buy now"},
+        actor: other,
+        context: %{client_key: "other"}
+      )
 
     path = "/api/v1/rooms/general/messages/#{message.id}/report"
     reported = request(:post, path, ~s({"reason":"spam"}))
     assert reported.status == 200, reported.resp_body
+
     assert %{"report" => %{"id" => id, "message_id" => message_id, "reason" => "spam"} = report} =
              Jason.decode!(reported.resp_body)
 
     assert message_id == message.id
     assert map_size(report) == 4
 
-    assert {:ok, %{id: ^id, reason: :spam}} = Rooms.report_message(message.id, :abuse, actor: human)
+    assert {:ok, %{id: ^id, reason: :spam}} =
+             Rooms.report_message(message.id, :abuse, actor: human)
+
     assert %{"report" => %{"id" => ^id, "reason" => "spam"}} =
              Jason.decode!(request(:post, path, ~s({"reason":"other"})).resp_body)
 
     assert error_code(request(:post, path, ~s({"reason":"rude"}))) == "invalid_report"
 
     own =
-      Rooms.post_message!(%{room: "general", body: "Mine"}, actor: human, context: %{client_key: "own"})
+      Rooms.post_message!(%{room: "general", body: "Mine"},
+        actor: human,
+        context: %{client_key: "own"}
+      )
 
-    refused = request(:post, "/api/v1/rooms/general/messages/#{own.id}/report", ~s({"reason":"abuse"}))
+    refused =
+      request(:post, "/api/v1/rooms/general/messages/#{own.id}/report", ~s({"reason":"abuse"}))
+
     assert error_code(refused) == "invalid_report"
     assert refused.resp_body =~ "You can't report your own message."
 
-    assert error_code(request(:post, "/api/v1/rooms/general/messages/#{Ecto.UUID.generate()}/report", ~s({"reason":"spam"}))) ==
+    assert error_code(
+             request(
+               :post,
+               "/api/v1/rooms/general/messages/#{Ecto.UUID.generate()}/report",
+               ~s({"reason":"spam"})
+             )
+           ) ==
              "public_message_not_found"
 
     assert :ok = RegentAgents.unpair_agent(paired, actor: person)
@@ -709,7 +803,10 @@ defmodule AshTemplate.SignedToolsTest do
 
     other_human = AshTemplate.Actors.Human.for_account(other)
     theirs = AshTemplate.Notes.create_note!(%{title: "Theirs"}, actor: other_human)
-    assert error_code(request(:post, "/api/v1/notes/#{theirs.id}/archive", "{}")) == "note_not_found"
+
+    assert error_code(request(:post, "/api/v1/notes/#{theirs.id}/archive", "{}")) ==
+             "note_not_found"
+
     assert AshTemplate.Notes.get_my_note!(theirs.id, actor: other_human).archived_at == nil
   end
 
@@ -757,10 +854,14 @@ defmodule AshTemplate.SignedToolsTest do
     assert retried.status == 200, retried.resp_body
     assert Jason.decode!(retried.resp_body)["room"]["slug"] == "book-club"
 
-    assert error_code(request(:post, "/api/v1/rooms", Jason.encode!(%{name: "HELP", topic: "Mine"}))) ==
+    assert error_code(
+             request(:post, "/api/v1/rooms", Jason.encode!(%{name: "HELP", topic: "Mine"}))
+           ) ==
              "room_name_taken"
 
-    changed = request(:patch, "/api/v1/rooms/book-club", Jason.encode!(%{topic: "Short stories."}))
+    changed =
+      request(:patch, "/api/v1/rooms/book-club", Jason.encode!(%{topic: "Short stories."}))
+
     assert %{"topic" => "Short stories."} = Jason.decode!(changed.resp_body)["room"]
 
     assert error_code(request(:patch, "/api/v1/rooms/general", Jason.encode!(%{topic: "Mine"}))) ==
@@ -802,7 +903,9 @@ defmodule AshTemplate.SignedToolsTest do
     hidden = Jason.encode!(%{name: "Fix​ture"})
     assert error_code(request(:patch, "/api/v1/agents/me", hidden)) == "invalid_profile"
 
-    set = request(:patch, "/api/v1/agents/me", Jason.encode!(%{name: " Scout ", status: "Reading"}))
+    set =
+      request(:patch, "/api/v1/agents/me", Jason.encode!(%{name: " Scout ", status: "Reading"}))
+
     assert set.status == 200, set.resp_body
     own = Jason.decode!(set.resp_body)["agent"]
     assert %{"name" => "Scout", "status" => "Reading", "wallet_address" => @wallet} = own
@@ -833,7 +936,9 @@ defmodule AshTemplate.SignedToolsTest do
     unnamed = AshTemplate.Agents.sign_in_agent!(@third, actor: %AshTemplate.Actors.System{})
 
     assert %{message: %{author_name: nil, author_wallet: @third}} =
-             Rooms.agent_post!("general", %{body: "No name yet", operation_id: Ecto.UUID.generate()},
+             Rooms.agent_post!(
+               "general",
+               %{body: "No name yet", operation_id: Ecto.UUID.generate()},
                actor: AshTemplate.Actors.Agent.for_agent(unnamed),
                context: %{client_key: "unnamed"}
              )
@@ -844,6 +949,7 @@ defmodule AshTemplate.SignedToolsTest do
 
     own = request(:post, "/api/v1/rooms/general/messages", post.())
     assert own.status == 201, own.resp_body
+
     assert %{"author_name" => "Scout", "author_wallet" => @wallet, "author_kind" => "agent"} =
              Jason.decode!(own.resp_body)["message"]
 
@@ -903,7 +1009,10 @@ defmodule AshTemplate.SignedToolsTest do
       )
 
     Ash.bulk_create!(
-      for(owner <- [account, account, other], do: %{human_account_id: owner.id, title: "Notice", path: "/notes"}),
+      for(
+        owner <- [account, account, other],
+        do: %{human_account_id: owner.id, title: "Notice", path: "/notes"}
+      ),
       AshTemplate.Activity.Notification,
       :notify,
       actor: %AshTemplate.Actors.System{}
@@ -959,15 +1068,25 @@ defmodule AshTemplate.SignedToolsTest do
 
     operation_id = Ecto.UUID.generate()
 
-    for body <- [%{text: "No id"}, %{text: " ", operation_id: Ecto.UUID.generate()}, %{operation_id: Ecto.UUID.generate()}] do
-      assert error_code(request(:post, "/api/v1/chat/messages", Jason.encode!(body))) == "invalid_message"
+    for body <- [
+          %{text: "No id"},
+          %{text: " ", operation_id: Ecto.UUID.generate()},
+          %{operation_id: Ecto.UUID.generate()}
+        ] do
+      assert error_code(request(:post, "/api/v1/chat/messages", Jason.encode!(body))) ==
+               "invalid_message"
     end
 
     send = Jason.encode!(%{text: "Hello there", operation_id: operation_id})
     sent = request(:post, "/api/v1/chat/messages", send)
     assert sent.status == 201, sent.resp_body
 
-    assert %{"id" => ^operation_id, "from" => "person", "complete" => true, "conversation_id" => chat} =
+    assert %{
+             "id" => ^operation_id,
+             "from" => "person",
+             "complete" => true,
+             "conversation_id" => chat
+           } =
              Jason.decode!(sent.resp_body)["message"]
 
     # The person's open chat page hears what the agent sends.
@@ -977,7 +1096,13 @@ defmodule AshTemplate.SignedToolsTest do
     assert retried.status == 200, retried.resp_body
     assert Jason.decode!(retried.resp_body)["message"]["id"] == operation_id
 
-    more = Jason.encode!(%{text: "And again", operation_id: Ecto.UUID.generate(), conversation_id: chat})
+    more =
+      Jason.encode!(%{
+        text: "And again",
+        operation_id: Ecto.UUID.generate(),
+        conversation_id: chat
+      })
+
     assert request(:post, "/api/v1/chat/messages", more).status == 201
     assert_receive %Phoenix.Socket.Broadcast{event: "create", payload: %{text: "And again"}}
 
@@ -986,14 +1111,23 @@ defmodule AshTemplate.SignedToolsTest do
 
     history = request(:post, "/api/v1/chat/#{chat}/history", "{}")
     assert history.status == 200, history.resp_body
-    %{"messages" => messages, "pagination" => %{"has_more" => false}} = Jason.decode!(history.resp_body)
+
+    %{"messages" => messages, "pagination" => %{"has_more" => false}} =
+      Jason.decode!(history.resp_body)
+
     assert Enum.count(messages, &(&1["from"] == "person")) == 2
     replies = Enum.filter(messages, &(&1["from"] == "assistant"))
     assert [_, _] = replies
-    assert Enum.all?(replies, &(&1["complete"] and &1["conversation_id"] == chat and &1["text"] =~ "You wrote"))
+
+    assert Enum.all?(
+             replies,
+             &(&1["complete"] and &1["conversation_id"] == chat and &1["text"] =~ "You wrote")
+           )
+
     assert operation_id in Enum.map(replies, & &1["response_to_id"])
 
-    assert [%{"id" => ^chat}] = Jason.decode!(request(:get, "/api/v1/chat").resp_body)["conversations"]
+    assert [%{"id" => ^chat}] =
+             Jason.decode!(request(:get, "/api/v1/chat").resp_body)["conversations"]
 
     for body <- [~s({"after": 5}), ~s({"after": "nope"}), ~s({"limit": 5})] do
       assert error_code(request(:post, "/api/v1/chat/#{chat}/history", body)) == "invalid_cursor"
@@ -1008,7 +1142,11 @@ defmodule AshTemplate.SignedToolsTest do
     assert documented_code("/api/v1/chat/messages", "404") == "chat_not_found"
 
     into_theirs =
-      Jason.encode!(%{text: "Let me in", operation_id: Ecto.UUID.generate(), conversation_id: theirs.conversation_id})
+      Jason.encode!(%{
+        text: "Let me in",
+        operation_id: Ecto.UUID.generate(),
+        conversation_id: theirs.conversation_id
+      })
 
     assert error_code(request(:post, "/api/v1/chat/messages", into_theirs)) == "chat_not_found"
 
@@ -1018,7 +1156,9 @@ defmodule AshTemplate.SignedToolsTest do
     assert [%{text: "Mine alone"}] = Enum.filter(their_chat, &(&1.source == :user))
 
     assert {:ok, %{results: [%{id: ^chat}]}} =
-             AshTemplate.Chat.my_conversations(actor: AshTemplate.Actors.Human.for_account(account))
+             AshTemplate.Chat.my_conversations(
+               actor: AshTemplate.Actors.Human.for_account(account)
+             )
 
     assert :ok = RegentAgents.unpair_agent(paired, actor: person)
     assert request(:get, "/api/v1/chat").status == 403
@@ -1047,6 +1187,7 @@ defmodule AshTemplate.SignedToolsTest do
 
     human = AshTemplate.Actors.Human.for_account(account)
     sent = AshTemplate.Chat.get_earlier_message!(operation_id, actor: human)
+
     assert [reply, %{id: ^operation_id}] =
              AshTemplate.Chat.message_history!(sent.conversation_id, actor: human).results
 
@@ -1069,14 +1210,19 @@ defmodule AshTemplate.SignedToolsTest do
     named = send_chat("Name this chat")
     assert %{success: 1} = Oban.drain_queue(queue: :chat_responses)
     assert %{success: 1} = Oban.drain_queue(queue: :conversations)
-    assert %{title: <<_, _::binary>>} = AshTemplate.Chat.get_conversation!(conversation_of(named, human), actor: human)
+
+    assert %{title: <<_, _::binary>>} =
+             AshTemplate.Chat.get_conversation!(conversation_of(named, human), actor: human)
 
     unnamed = send_chat("Leave this unnamed")
     assert %{success: 1} = Oban.drain_queue(queue: :chat_responses)
     unanswered = send_chat("Answer this")
 
     note_id = Ecto.UUID.generate()
-    noted = request(:post, "/api/v1/notes", Jason.encode!(%{title: "Label me", operation_id: note_id}))
+
+    noted =
+      request(:post, "/api/v1/notes", Jason.encode!(%{title: "Label me", operation_id: note_id}))
+
     assert noted.status == 201, noted.resp_body
 
     withdraw(did)
@@ -1095,15 +1241,23 @@ defmodule AshTemplate.SignedToolsTest do
              AshTemplate.Chat.get_conversation!(conversation_of(unnamed, human), actor: human)
 
     assert %{failure: 0, discard: 0} = Oban.drain_queue(queue: :default, with_scheduled: true)
-    assert [] = Ash.read!(Ash.Query.filter(AshTemplate.Notes.Decision, note_id == ^note_id), authorize?: false)
+
+    assert [] =
+             Ash.read!(Ash.Query.filter(AshTemplate.Notes.Decision, note_id == ^note_id),
+               authorize?: false
+             )
   end
 
   test "an answer to a paired agent is replaced when its person signs in with no wallet while the request runs" do
     did = "did:privy:withdrawn-mid-request"
     paired_person(did)
-    assert {:ok, %{pairing: :active} = actor} = AshTemplateWeb.Plugs.AgentWallet.actor_for(@wallet)
 
-    conn = :get |> conn("/api/v1/notes") |> AshTemplateWeb.Plugs.AgentWallet.recheck_before_send(actor)
+    assert {:ok, %{pairing: :active} = actor} =
+             AshTemplateWeb.Plugs.AgentWallet.actor_for(@wallet)
+
+    conn =
+      :get |> conn("/api/v1/notes") |> AshTemplateWeb.Plugs.AgentWallet.recheck_before_send(actor)
+
     withdraw(did)
     sent = send_resp(conn, 200, ~s({"notes": []}))
 
@@ -1120,7 +1274,9 @@ defmodule AshTemplate.SignedToolsTest do
       )
       |> AshTemplate.Actors.Human.for_account()
 
-    theirs = AshTemplate.Notes.create_note!(%{title: "Theirs alone", body: "Private"}, actor: other)
+    theirs =
+      AshTemplate.Notes.create_note!(%{title: "Theirs alone", body: "Private"}, actor: other)
+
     taken = Jason.encode!(%{title: "Mine now", body: "Replaced", operation_id: theirs.id})
     refused = request(:post, "/api/v1/notes", taken)
 
@@ -1139,7 +1295,14 @@ defmodule AshTemplate.SignedToolsTest do
   # The agent's new chat message, by its operation_id.
   defp send_chat(text) do
     operation_id = Ecto.UUID.generate()
-    sent = request(:post, "/api/v1/chat/messages", Jason.encode!(%{text: text, operation_id: operation_id}))
+
+    sent =
+      request(
+        :post,
+        "/api/v1/chat/messages",
+        Jason.encode!(%{text: text, operation_id: operation_id})
+      )
+
     assert sent.status == 201, sent.resp_body
     operation_id
   end
@@ -1164,10 +1327,13 @@ defmodule AshTemplate.SignedToolsTest do
 
   defp documented_code(path, status) do
     document = Application.app_dir(:ash_template, "priv/public/openapi.json")
+
     %{"paths" => %{^path => %{"post" => %{"responses" => %{^status => response}}}}} =
       document |> File.read!() |> Jason.decode!()
 
-    response["content"]["application/json"]["schema"]["properties"]["error"]["properties"]["code"]["const"]
+    response["content"]["application/json"]["schema"]["properties"]["error"]["properties"]["code"][
+      "const"
+    ]
   end
 
   defp paired_person(privy_user_id) do
