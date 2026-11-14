@@ -13,7 +13,8 @@ defmodule AshTemplateWeb.PointsPageTest do
   alias AshTemplate.{Accounts, SharedReading}
   alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
   alias AshTemplate.Actors.System
-  alias AshTemplate.Points.Board
+  alias AshTemplate.Points.{AgentNote, Board}
+  alias RegentPoints.{Rules, Store}
 
   @endpoint AshTemplateWeb.Endpoint
   @wallet "0x" <> String.duplicate("b", 40)
@@ -23,7 +24,10 @@ defmodule AshTemplateWeb.PointsPageTest do
     owner = Ecto.Adapters.SQL.Sandbox.start_owner!(AshTemplate.Repo, shared: true)
 
     previous =
-      Map.new([:starts_at, :approved_rules], &{&1, Application.get_env(:regent_points, &1)})
+      Map.new(
+        [:starts_at, :approved_rules, :adapters],
+        &{&1, Application.get_env(:regent_points, &1)}
+      )
 
     Application.put_env(:regent_points, :starts_at, DateTime.add(DateTime.utc_now(), -1, :day))
     Application.put_env(:regent_points, :approved_rules, ~w(account.activated social.x))
@@ -76,13 +80,14 @@ defmodule AshTemplateWeb.PointsPageTest do
     assert text(page, "#points-total dl") =~ "#1"
 
     # The account's own award is ticked; the social link is open and says where to go.
-    assert text(page, ~s(#points-todo li[data-done="true"])) =~ "Account activated"
+    assert text(page, ~s(#points-todo li[data-done="true"])) =~ Rules.label("account.activated")
 
-    assert LazyHTML.attribute(
-             LazyHTML.query(page, ~s(#points-todo li[data-done="false"] a)),
-             "href"
-           ) ==
-             ["/account/connections"]
+    assert [x] =
+             page
+             |> LazyHTML.query(~s(#points-todo li[data-done="false"] a))
+             |> Enum.filter(&(LazyHTML.text(&1) == Rules.label("social.x")))
+
+    assert LazyHTML.attribute(x, "href") == ["/account/connections"]
 
     # Two accounts level on points share first place; only the reader's row is marked.
     # Other tests' awards commit on purpose and sit below them.
@@ -95,6 +100,79 @@ defmodule AshTemplateWeb.PointsPageTest do
     assert Enum.count(ranks, &(&1 == "1")) == 2
     assert page |> LazyHTML.query(~s(#points-board li[data-you="true"])) |> Enum.count() == 1
     refute text(page, "#points-page") =~ "Loading"
+  end
+
+  # Every action a Points page lists shows under its site, whichever site earns it:
+  # a one-time action is done once earned anywhere, a daily one shows today's count,
+  # and the hidden rule never shows. The agent gets the same groups.
+  test "every listed action shows under its site, done wherever it was earned", %{
+    conn: conn,
+    person: person
+  } do
+    count!(person.id, "keyfleet.first_vote", 1)
+    count!(person.id, "keyfleet.key_bought", 2)
+    of = Enum.find(Rules.catalog(), &(&1["id"] == "keyfleet.key_bought"))["count"]
+
+    page = conn |> get("/account/points") |> html_response(200) |> LazyHTML.from_document()
+    answer = agent_answer(person)
+
+    shown =
+      for group <- LazyHTML.query(page, "#points-todo .rg-points-todo__group"),
+          do: {text(group, "h3"), todo_labels(group)}
+
+    assert shown ==
+             for(
+               %{site: site, rules: rules} <- Rules.groups(),
+               do: {site, rules |> Enum.map(&Rules.label(&1["id"])) |> Enum.sort()}
+             )
+
+    refute Rules.label("template.first_agent_note") in todo_labels(page)
+    assert Enum.empty?(LazyHTML.query(page, "#points-limit"))
+
+    assert page |> todo_row("keyfleet.first_vote") |> LazyHTML.attribute("data-done") == ["true"]
+
+    keys = todo_row(page, "keyfleet.key_bought")
+    assert LazyHTML.attribute(keys, "data-done") == ["false"]
+    assert keys |> LazyHTML.query("progress") |> LazyHTML.attribute("value") == ["2"]
+
+    actions =
+      for group <- answer["to_do"],
+          action <- group["actions"],
+          into: %{},
+          do: {action["label"], action}
+
+    assert %{"done" => true, "left" => false, "repeats" => "once"} =
+             actions[Rules.label("keyfleet.first_vote")]
+
+    assert %{"done" => false, "left" => true, "repeats" => "daily", "today" => today} =
+             actions[Rules.label("keyfleet.key_bought")]
+
+    assert today == %{"done" => 2, "of" => of}
+  end
+
+  # While a daily action earns on this site, the one limit every daily action shares
+  # shows under the list's title with what is used of it today, as the agent gets it.
+  test "the shared daily limit shows while a daily action earns here", %{
+    conn: conn,
+    person: person
+  } do
+    daily = "patchbay.reply_published"
+    adapters = Application.get_env(:regent_points, :adapters)
+    Application.put_env(:regent_points, :approved_rules, ["account.activated", daily])
+    Application.put_env(:regent_points, :adapters, Map.put(adapters, daily, AgentNote))
+
+    window = Rules.window("day", DateTime.utc_now())
+    spend!(person.id, Rules.program(), "activity:account", window, 10 * Rules.unit())
+
+    page = conn |> get("/account/points") |> html_response(200) |> LazyHTML.from_document()
+    bar = LazyHTML.query(page, "#points-limit progress")
+    limit = Rules.daily_cap("activity:account")
+
+    assert LazyHTML.attribute(bar, "value") == ["10"]
+    assert LazyHTML.attribute(bar, "max") == [to_string(div(limit, Rules.unit()))]
+
+    assert [%{"remaining" => remaining}] = agent_answer(person)["daily_limits"]
+    assert remaining == RegentPoints.Amount.format(limit - 10 * Rules.unit())
   end
 
   # Names are not unique, and everyone who has only the first award is level on points:
@@ -170,13 +248,16 @@ defmodule AshTemplateWeb.PointsPageTest do
     assert "#" <> to_string(answer["rank"]) == "#1"
     assert answer["earned_today"] == "25"
 
+    actions = for group <- answer["to_do"], action <- group["actions"], do: action
+
     assert %{"done" => true, "left" => false} =
-             Enum.find(answer["to_do"], &(&1["label"] == "Account activated"))
+             Enum.find(actions, &(&1["label"] == Rules.label("account.activated")))
 
     assert %{"done" => false, "left" => true} =
-             Enum.find(answer["to_do"], &(&1["label"] == "X account linked"))
+             Enum.find(actions, &(&1["label"] == Rules.label("social.x")))
 
-    assert Enum.map(answer["to_do"], & &1["label"]) |> Enum.sort() == todo_labels(page)
+    assert Enum.map(answer["to_do"], & &1["site"]) == todo_sites(page)
+    assert Enum.map(actions, & &1["label"]) |> Enum.sort() == todo_labels(page)
 
     # The seasons the page lists, each as it stands. Points started yesterday: the
     # first season runs and holds today's awards; the others have not begun.
@@ -299,9 +380,43 @@ defmodule AshTemplateWeb.PointsPageTest do
     |> get("/api/v1/account/points")
   end
 
+  defp todo_sites(page) do
+    page
+    |> LazyHTML.query("#points-todo .rg-points-todo__group > h3")
+    |> Enum.map(&String.trim(LazyHTML.text(&1)))
+  end
+
+  # How many times the account has had a rule, today for a daily one and ever for a
+  # one-time one, kept where the award keeps it, as if earned on another site.
+  defp count!(account_id, id, times) do
+    rule = Enum.find(Rules.catalog(), &(&1["id"] == id))
+    program = if rule["period"] == "lifetime", do: "lifetime", else: Rules.program()
+    window = Rules.window(rule["period"], DateTime.utc_now())
+
+    for _ <- 1..times, do: spend!(account_id, program, Rules.count_scope(rule), window, 0)
+  end
+
+  defp spend!(account_id, program, scope, {from, to}, points) do
+    %{
+      account_id: account_id,
+      program_id: program,
+      cap_scope: scope,
+      window_start: from,
+      window_end: to
+    }
+    |> RegentPoints.reserve_cap!(actor: Store.system())
+    |> RegentPoints.consume_cap!(points, actor: Store.system())
+  end
+
+  defp todo_row(page, id) do
+    page
+    |> LazyHTML.query("#points-todo li")
+    |> Enum.find(&(text(&1, ".rg-points-todo__label > :first-child") == Rules.label(id)))
+  end
+
   defp todo_labels(page) do
     page
-    |> LazyHTML.query("#points-todo li .rg-points-todo__label > :first-child")
+    |> LazyHTML.query("li .rg-points-todo__label > :first-child")
     |> Enum.map(&String.trim(LazyHTML.text(&1)))
     |> Enum.sort()
   end
