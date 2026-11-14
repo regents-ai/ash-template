@@ -39,7 +39,9 @@ signature.
 To sign in for real, use the configured development server and a Privy-allowed
 localhost origin with `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` set. Prepare
 the local database (`ash_template_dev`), run `mix ash_template.setup_local_auth`,
-then `mix assets.build` and `mix phx.server`.
+then `mix assets.build` and `mix phx.server`. The browser walk's server reads
+neither: it makes Privy settings of its own, so the page shows as configured there
+while no Privy sign-in can pass.
 
 ## Wallet buttons
 

@@ -161,7 +161,9 @@ they come from. Put real values only in the ignored `.env.local`, never in
 
 Without `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` the site refuses to start. A
 worktree has no settings files of its own, so start it from the worktree's
-`platform` folder with `direnv exec <main checkout>/platform mix phx.server`.
+`platform` folder with `direnv exec <main checkout>/platform mix phx.server`. The
+browser walk's server is the exception: it makes its own Privy settings, whatever
+the shell sets, and nobody can sign in to it through Privy.
 
 The local server keeps its data in one loopback PostgreSQL database,
 `ash_template_dev`, on `127.0.0.1`. It leaves the machine to verify sign-in with
@@ -406,8 +408,9 @@ mix test
 
 `mix precommit` ends by copying the shared libraries' assets, then runs `npm run
 typecheck`, `npm test` and the browser walk (`npm run test:browser`). `make
-check-browser` runs the walk alone. Start either with the site's settings loaded,
-as the walk's server needs them.
+check-browser` runs the walk alone. Neither needs the site's Privy settings: the
+walk's server makes its own (`config/runtime.exs`), since the walk signs its person
+in on its own and never talks to Privy.
 
 `make check` also runs the design system's style check first (`make check-style`:
 each break of a STYLE.md rule in this site's CSS, scripts and templates, by file and

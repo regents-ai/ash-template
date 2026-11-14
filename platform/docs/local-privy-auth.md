@@ -21,6 +21,9 @@ export PRIVY_VERIFICATION_KEY='-----BEGIN PUBLIC KEY-----
 the PEM exactly as Privy shows it, with real line breaks; `\n` written out as two characters is not
 a line break and the key will not load.
 
+The browser walk (`make check-browser`) needs none of this. Its server makes its own Privy settings
+and ignores these two, since the walk signs its person in on its own and never talks to Privy.
+
 ## Before the first sign in
 
 Turn identity tokens on for this app in the Privy Dashboard, under the app's user-data settings.
