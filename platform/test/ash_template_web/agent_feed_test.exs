@@ -161,7 +161,7 @@ defmodule AshTemplateWeb.AgentFeedTest do
     second = open_feed(url, "proof-paired")
 
     assert next_event(first).data == %{"kind" => "closed", "reason" => "replaced"}
-    assert_receive {:feed_done, ref}, 1_000
+    assert_receive {:feed_done, ref}
     assert ref == first.ref
     assert next_frame(second) == ": keep-alive"
   end
@@ -182,7 +182,7 @@ defmodule AshTemplateWeb.AgentFeedTest do
     )
 
     assert next_event(feed).data == %{"kind" => "closed", "reason" => "pairing_changed"}
-    assert_receive {:feed_done, ref}, 1_000
+    assert_receive {:feed_done, ref}
     assert ref == feed.ref
   end
 
@@ -285,7 +285,7 @@ defmodule AshTemplateWeb.AgentFeedTest do
   end
 
   defp next_frame(%{ref: ref}) do
-    assert_receive {:feed_frame, ^ref, 200, frame}, 2_000
+    assert_receive {:feed_frame, ^ref, 200, frame}
     frame
   end
 
