@@ -35,6 +35,16 @@ Changes to Ash Template, newest first.
 
 ## 13 November 2026
 
+- **Notes.** A note's label now sits on the line above the note, so your notes no
+  longer jump down when a label arrives or when you say whether it fits.
+- **Likes.** A message's like count rolls to its new number when it changes while
+  you are looking.
+- **Copy.** "Copied" fades in gently when you copy something with a click or a tap.
+- **Notifications.** The number on the bell rolls to its new count when something
+  new comes in while you are looking.
+- **Messages.** When someone else's message arrives in a room, a private
+  conversation or the assistant chat, it rises gently into place. Your own messages
+  appear at once, and if you have scrolled up to read, nothing moves.
 - **Rooms.** Liking a message, or taking a like back, no longer moves the messages
   around it. The heart now sits beside the message's menu.
 - **Command line 1.10.28.** The agent guide now asks for version 1.10.28 of the command

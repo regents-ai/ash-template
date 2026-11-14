@@ -34,6 +34,58 @@ test("the longest note the boxes take is saved, and a hidden character is refuse
   await problems.expect()
 })
 
+// The walk's person has a note for each width whose label waits to be rated
+// (sign_in.exs). The label floats on the line above the note: it asks, the answer
+// takes its place, and neither moves the note or covers anything that can be pressed.
+// Other checks add notes above at the same time, so the note is measured from its own
+// top.
+test("a note's label gives way to its answer without moving the note", async ({page, hasTouch}, info) => {
+  const problems = watch(page)
+  await page.goto("/notes")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+
+  const note = page.locator(".notes-item", {has: page.getByRole("heading", {name: `Walk label ${info.project.name}`})})
+  const asking = note.getByRole("group")
+  const shown = note.locator(".notes-label__state[data-on]")
+  const layout = () =>
+    note.evaluate((item: HTMLElement) => [
+      [item.offsetWidth, item.offsetHeight],
+      ...[...item.querySelectorAll<HTMLElement>(":scope > :not(.notes-label)")].map(child => [
+        child.offsetLeft,
+        child.offsetTop,
+        child.offsetWidth,
+        child.offsetHeight,
+      ]),
+    ])
+  const covered = () =>
+    shown.evaluate(state => {
+      const box = state.getBoundingClientRect()
+      return [...document.querySelectorAll("#notes-page :is(button, a[href], input, textarea, select)")]
+        .filter(control => !state.closest(".notes-label")!.contains(control))
+        .filter(control => {
+          const other = control.getBoundingClientRect()
+          return other.width > 0 && box.left < other.right && other.left < box.right && box.top < other.bottom && other.top < box.bottom
+        })
+        .map(control => control.outerHTML.slice(0, 80))
+    })
+
+  await note.scrollIntoViewIfNeeded()
+  await expect(asking).toBeVisible()
+  await expect(shown).toHaveCount(1)
+  expect(await covered()).toEqual([])
+  const before = await layout()
+
+  const yes = asking.getByRole("button", {name: "Yes"})
+  await (hasTouch ? yes.tap() : yes.click())
+  await expect(asking).toHaveCount(0)
+  await expect(shown).toHaveCount(1)
+  await expect(shown).toBeVisible()
+  await expect(shown.getByRole("button")).toHaveCount(0)
+  expect(await covered()).toEqual([])
+  expect(await layout()).toEqual(before)
+  await problems.expect()
+})
+
 // The walk's friend has 51 notes (sign_in.exs): the list shows the newest 50, and
 // Older notes adds the last one and goes away.
 test("Older notes adds the notes after the first fifty", async ({browser, baseURL, extraHTTPHeaders}) => {

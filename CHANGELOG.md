@@ -11577,3 +11577,101 @@ no migration.
   second at 1440 and 390, under 0.5 ms of script a frame, no long tasks.
 - Checks: `platform/assets/test/icon_sheet.test.ts` (names, seamless loops, every
   drawing inside its box) and the walk `platform/test/browser/icons.spec.ts`.
+## 2026-11-13 — Conversations: someone else's new message rises into place
+
+- Before: in rooms, private messages and the assistant chat, a message arriving while
+  the page was open appeared at once, like every message shown on opening.
+- Now `platform/lib/ash_template_web/live/rooms_live.ex`, `dms_live.ex` and
+  `chat_live.ex` name a message that someone else sends while the page is open (in
+  chat, the assistant's reply as it starts) with `conversation:arrived`, and
+  `platform/assets/js/hooks/conversation.ts` lets it rise 6px and fade in over 200ms
+  with the house ease-out, from the next frame. The person's own message, every
+  message shown on opening, after a lost connection or loaded above, and every
+  message under reduced motion are simply there. Each page names its messages'
+  places with the stream's own ids (`messages-<id>`).
+- The rise waits a frame for `group` to mark a message that continues the one before:
+  measured sooner, with its name still showing, Chrome kept a scrolled-up reader's
+  place by the message's full height and moved the list under them by 24px on a
+  desktop and 12px on a phone.
+- Measured in headless Chromium at 1280 and 390 wide, light and dark: the arriving
+  message starts at opacity 0 and 6px down and settles in about 150ms of drawn
+  frames; its neighbours do not move; a room resting on its newest message stays
+  there; a reader scrolled up keeps their place to the pixel, with motion on and off;
+  nothing moves on opening, reloading, reconnecting, the person's own message or
+  under reduced motion.
+- Not measured: older messages loaded above (the read that loads them names no
+  message, so none rises).
+
+## 2026-11-13 — Shell: the bell's unread count rolls
+
+- Before: `platform/lib/ash_template_web/components/shell.ex` swapped the bell's
+  unread count to its new number at once.
+- Now the bell carries the kit's `MotionCount` in the site's standard count motion
+  ("roll"), and the count is a `Regent.Primitives.figure` (tabular numerals). A
+  count that changes while the person watches rolls to its new number; from nothing
+  to 1 the badge simply appears, and a change in the number of figures (9 to 10, 99
+  to "99+") simply swaps. The bell's label still carries the true count, and the
+  figure stays hidden from screen readers.
+- Measured in headless Chromium at 1280 and 390 wide, light and dark: nothing to 1
+  appears with no roll; 1 to 2 through 6 to 7 each roll in 264 to 279ms; the bell,
+  its badge and the button beside it do not move by a pixel; no roll on opening,
+  reloading, reconnecting with no change, or under reduced motion.
+- Not measured: 9 to 10 and 99 to "99+" (the kit swaps a figure whose length
+  changes; the badge sits above the bell, so it moves nothing).
+
+## 2026-11-13 — Rooms and copy buttons: the like count rolls, "Copied" fades in
+
+- Before: a message's like count in
+  `platform/lib/ash_template_web/live/rooms_live/heart.ex` swapped to its new number
+  at once, and a copy button's "Copied" or "Selected" in
+  `platform/assets/js/copy_buttons.ts` appeared at once.
+- Now the heart carries the kit's `MotionCount` in the standard count motion
+  ("roll"): a count that changes while the reader watches rolls to its new figure,
+  and the first like's count and the last one taken back simply come and go. The
+  heart's place stays 44px wide and as tall as the menu's button.
+- "Copied" and "Selected" fade in over 200ms with the house ease-out (the kit's
+  `fadeIn`) when a mouse or finger pressed the button. From a key, on a repeat press
+  while the word still shows, and under reduced motion, they are simply there. The
+  copy icon's tick and "Couldn't copy" with its shake are unchanged.
+- Measured in headless Chromium at 1280 and 390 wide, light and dark: each like and
+  like taken back rolled in 265 to 282ms; the heart's place (44 by 32, 44 by 44 on a
+  phone) and the message's height did not change; with the friend's likes, the heart
+  and its figure did not move at all; the person's own press moves them under 2px,
+  which is the existing press. No roll for the first like, on opening, reloading,
+  reconnecting or under reduced motion. "Copied" faded in over about 150ms of drawn
+  frames, and the button returned to its exact size.
+- Known limit: the heart's count also rolls when the person likes with a key; the
+  kit's `MotionCount` cannot tell what changed the count.
+
+## 2026-11-13 — Notes: a note's label floats on the line above it
+
+- Before: `platform/lib/ash_template_web/live/notes_live.ex` drew a note's label
+  ("Choosing a label…", "No label this time.", the chosen label with "Does it fit?"
+  and Fits / Doesn't fit, or "You said this label fits.") as a line inside the note,
+  between its words and its buttons. A label that arrived, failed or was rated added
+  or changed that line and pushed the note's buttons, and every note below, down.
+- Now the label floats on the hairline above its note, at its end
+  (`platform/assets/css/pages/notes.css`): one line over the gap between two notes,
+  where only padding lies, on the page's own background, so the hairline stops at its
+  edge. It takes no room. Every state is drawn in that one place and only the current
+  one shows (`data-on`): the new one fades in rising 4px over 200ms as the old one
+  fades out over 140ms, on the house ease-out; nothing moves on opening, on
+  reconnecting or under reduced motion. Presses pass through it except on its own
+  buttons. To fit one line at 320 wide, the question reads "Fits?" with Yes and No,
+  named for screen readers by the label and the question together, and the answer
+  reads "Fits" or "Doesn't fit" beside the label. Screen readers meet it where they
+  did, in the note after its words.
+- Test: `platform/test/browser/notes.spec.ts` presses Yes on a note whose label
+  waits to be rated (seeded in `platform/test/browser/support/sign_in.exs`), at 1280
+  and 390 wide: the question goes, the answer shows, nothing in the note moves and
+  the label covers nothing that can be pressed.
+- Measured in headless Chromium at 320, 360, 390 and 1280 wide, light and dark, with
+  labels driven through choosing, chosen, rated by a press and failed while the page
+  was open: nothing else on the page moved (0px over 116 boxes at each step); no
+  shown label covered a control or any words (up to 413 label and control pairs per
+  view); every label stayed one line, 26px tall; Yes and No each answered their own
+  press. The transitions ran 200ms in and 140ms out on cubic-bezier(0.23, 1, 0.32,
+  1); none ran on opening, on reconnecting, or with reduced motion.
+- Known limit: on a touch screen Yes and No each take a 44px press, which reaches
+  15px down into the top of the note's title (words, no control); a tap there rates
+  the label.

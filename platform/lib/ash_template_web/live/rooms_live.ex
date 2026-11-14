@@ -101,6 +101,7 @@ defmodule AshTemplateWeb.RoomsLive do
        reported?: false,
        author_key: :crypto.strong_rand_bytes(16)
      )
+     |> stream_configure(:messages, dom_id: &message_id/1)
      |> stream(:messages, [])
      |> stream_configure(:rooms, dom_id: &"room-link-#{&1.slug}")
      |> stream(:rooms, [])
@@ -1011,21 +1012,33 @@ defmodule AshTemplateWeb.RoomsLive do
       stale?(socket, message) ->
         socket
 
-      event == "post" or after_latest?(socket, message) ->
-        latest =
-          if after_latest?(socket, message),
-            do: message.inserted_at,
-            else: socket.assigns.latest
-
+      after_latest?(socket, message) ->
         socket
         |> stream_insert(:messages, message, at: -1)
-        |> assign(:latest, latest)
+        |> assign(:latest, message.inserted_at)
         |> shown(message)
+        |> arrived(message)
+
+      event == "post" ->
+        socket |> stream_insert(:messages, message, at: -1) |> shown(message)
 
       event == "edit" ->
         socket |> stream_insert(:messages, message, update_only: true) |> shown(message)
     end
   end
+
+  # A message newer than every one shown has just arrived: the reader's own is
+  # simply there, and anyone else's rises into place (`Conversation`).
+  defp arrived(
+         %{assigns: %{actor: %Human{human_account_id: id}}} = socket,
+         %{agent_id: nil, human_account_id: id}
+       ),
+       do: socket
+
+  defp arrived(socket, message),
+    do: push_event(socket, "conversation:arrived", %{id: message_id(message)})
+
+  defp message_id(%{id: id}), do: "messages-#{id}"
 
   defp stale?(%{assigns: %{shown: shown}}, %{id: id, edited_at: edited_at}) do
     case shown do
