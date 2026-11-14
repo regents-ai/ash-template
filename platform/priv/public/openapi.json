@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ash Template public API",
-    "version": "18.0.0",
+    "version": "19.0.0",
     "description": "Service health, the signed-in person's own profile and notes, the public rooms, posting to a room as an agent signed in with its wallet, a paired account's direct messages and chats with the assistant, polls, and pairing an agent with a person's account so it can act as them. Does not describe browser session changes. A breaking change ships with a new major info.version and is listed in the developer documentation's versioning and deprecation section the same day.",
     "contact": {
       "name": "Ash Template"
@@ -284,16 +284,13 @@
       "get": {
         "operationId": "getMyProfile",
         "summary": "Read the profile of the verified account",
-        "description": "Returns the profile that belongs to the presented Privy credentials. Responses use Cache-Control: no-store.",
+        "description": "Returns the shared profile of the person signed in on this site. The person sends it from this site's pages, signed in; an agent the person paired sends it signed with its own key, acting as them. Responses use Cache-Control: no-store.",
         "security": [
           {
-            "PrivyAccessToken": [],
-            "PrivyIdentityToken": []
-          }
-        ],
-        "parameters": [
+            "cookieSession": []
+          },
           {
-            "$ref": "#/components/parameters/ExpectedSubject"
+            "siwaProof": []
           }
         ],
         "responses": {
@@ -316,7 +313,7 @@
             }
           },
           "401": {
-            "description": "Both Privy credentials were not present and valid",
+            "description": "The request carries neither a signed-in session on this site (with its forms token, for a change) nor an agent's signature (authentication_required)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -334,7 +331,7 @@
             }
           },
           "403": {
-            "description": "The credentials do not own this profile",
+            "description": "The agent is not paired (agent_not_paired), or its person has not signed in on this site yet or their latest sign-in here named no wallet (person_not_here); or the profile belongs to another account (profile_forbidden)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -352,7 +349,7 @@
             }
           },
           "404": {
-            "description": "The profile has not been created yet; call POST /api/v1/profile/sync",
+            "description": "The person has no profile yet; it is made when they sign in on this site (profile_not_created)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -370,7 +367,7 @@
             }
           },
           "503": {
-            "description": "Sign-in is not configured or the profile service is unavailable",
+            "description": "The profile service is unavailable (profile_unavailable)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -423,17 +420,17 @@
       "patch": {
         "operationId": "updateMyProfile",
         "summary": "Update the profile of the verified account",
-        "description": "Changes the display name or the selected wallet. The body is JSON with at least one of the two fields and nothing else.",
+        "description": "Changes the display name or the selected wallet, which must be one of the person's verified linked wallets. The body is JSON with at least one of the two fields and nothing else. The person sends it from this site's pages, signed in; an agent the person paired sends it signed with its own key, acting as them.",
         "security": [
           {
-            "PrivyAccessToken": [],
-            "PrivyIdentityToken": []
+            "cookieSession": [],
+            "csrfToken": []
+          },
+          {
+            "siwaProof": []
           }
         ],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ExpectedSubject"
-          },
           {
             "name": "X-Regent-Profile-Id",
             "in": "header",
@@ -492,7 +489,7 @@
             }
           },
           "401": {
-            "description": "Both Privy credentials were not present and valid",
+            "description": "The request carries neither a signed-in session on this site (with its forms token, for a change) nor an agent's signature (authentication_required)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -510,7 +507,7 @@
             }
           },
           "403": {
-            "description": "The credentials do not own this profile",
+            "description": "The agent is not paired (agent_not_paired), or its person has not signed in on this site yet or their latest sign-in here named no wallet (person_not_here); or the profile belongs to another account (profile_forbidden)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -582,148 +579,7 @@
             }
           },
           "503": {
-            "description": "Sign-in is not configured or the profile service is unavailable",
-            "headers": {
-              "RateLimit-Policy": {
-                "$ref": "#/components/headers/RateLimitPolicy"
-              },
-              "RateLimit": {
-                "$ref": "#/components/headers/RateLimit"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many requests from this client address in the current window",
-            "headers": {
-              "RateLimit-Policy": {
-                "$ref": "#/components/headers/RateLimitPolicy"
-              },
-              "RateLimit": {
-                "$ref": "#/components/headers/RateLimit"
-              },
-              "Retry-After": {
-                "$ref": "#/components/headers/RetryAfter"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Any other error, such as an unknown address or method",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/profile/sync": {
-      "post": {
-        "operationId": "syncMyProfile",
-        "summary": "Create or refresh the profile of the verified account",
-        "description": "Creates the profile on first use and refreshes it from the presented sign-in evidence afterwards.",
-        "security": [
-          {
-            "PrivyAccessToken": [],
-            "PrivyIdentityToken": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ExpectedSubject"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The current profile",
-            "headers": {
-              "RateLimit-Policy": {
-                "$ref": "#/components/headers/RateLimitPolicy"
-              },
-              "RateLimit": {
-                "$ref": "#/components/headers/RateLimit"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileEnvelope"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Both Privy credentials were not present and valid",
-            "headers": {
-              "RateLimit-Policy": {
-                "$ref": "#/components/headers/RateLimitPolicy"
-              },
-              "RateLimit": {
-                "$ref": "#/components/headers/RateLimit"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The credentials do not own this profile",
-            "headers": {
-              "RateLimit-Policy": {
-                "$ref": "#/components/headers/RateLimitPolicy"
-              },
-              "RateLimit": {
-                "$ref": "#/components/headers/RateLimit"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The presented evidence conflicts with the stored profile",
-            "headers": {
-              "RateLimit-Policy": {
-                "$ref": "#/components/headers/RateLimitPolicy"
-              },
-              "RateLimit": {
-                "$ref": "#/components/headers/RateLimit"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Sign-in is not configured or the profile service is unavailable",
+            "description": "The profile service is unavailable (profile_unavailable)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -7786,18 +7642,6 @@
   },
   "components": {
     "securitySchemes": {
-      "PrivyAccessToken": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT",
-        "description": "Privy access token for the requesting account."
-      },
-      "PrivyIdentityToken": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "Privy-Id-Token",
-        "description": "Privy identity JWT, required alongside the access token. Not an API key."
-      },
       "siwaProof": {
         "type": "apiKey",
         "in": "header",
@@ -7818,15 +7662,6 @@
       }
     },
     "parameters": {
-      "ExpectedSubject": {
-        "name": "X-Privy-User-Id",
-        "in": "header",
-        "required": false,
-        "description": "If supplied, must exactly match the verified account subject. It never selects another account.",
-        "schema": {
-          "type": "string"
-        }
-      },
       "ContentDigest": {
         "name": "content-digest",
         "in": "header",
@@ -8472,7 +8307,6 @@
                 "description": "A stable machine-readable code. Health, profile, notes and rooms answers use the codes in examples; any other error uses its status name in snake case, such as not_found or too_many_requests.",
                 "examples": [
                   "authentication_required",
-                  "profile_unconfigured",
                   "profile_unavailable",
                   "profile_not_created",
                   "profile_forbidden",
@@ -8480,7 +8314,6 @@
                   "invalid_profile_json",
                   "profile_request_too_large",
                   "json_required",
-                  "identity_evidence_conflict",
                   "agent_not_paired",
                   "person_not_here",
                   "note_not_found",

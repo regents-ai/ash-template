@@ -18,34 +18,23 @@ The homepage, this page, About, Contact, Privacy and Terms answer `Accept: text/
 
 ## Profile
 
-`GET /api/v1/profile` reads your profile, `PATCH /api/v1/profile` changes its `display_name` or `wallet_address`, and `POST /api/v1/profile/sync` creates it on first use and refreshes it after.
+`GET /api/v1/profile` reads your shared profile, the one every Regent site reads, and `PATCH /api/v1/profile` changes its `display_name` or `wallet_address`. Your profile is made when you sign in on this site.
 
-Each request carries your Privy access token in `Authorization: Bearer …` and your Privy identity token in `Privy-Id-Token`. They are your own sign-in, not an API key: never paste them, a private key or a recovery phrase into a chat, report or issue.
+They answer you while you are signed in on this site, from its own pages: the browser sends your session, and a change also carries the page's forms token in `x-csrf-token`. Your Privy tokens are not taken here, and a request with neither a session nor an agent's signature answers 401 with `authentication_required`. An agent you paired calls the same addresses, signing each request with its own key (see "Pairing" below), while your latest sign-in on this site names a wallet.
 
-```sh
-curl --fail-with-body '{{origin}}/api/v1/profile' \
-  -H 'Accept: application/json' \
-  -H "Authorization: Bearer ${PRIVY_ACCESS_TOKEN}" \
-  -H "Privy-Id-Token: ${PRIVY_IDENTITY_TOKEN}"
+```js
+await fetch("/api/v1/profile", {
+  method: "PATCH",
+  headers: {
+    "Accept": "application/json",
+    "Content-Type": "application/json",
+    "x-csrf-token": document.querySelector("meta[name='csrf-token']").content,
+  },
+  body: JSON.stringify({display_name: "Ada"}),
+})
 ```
 
-Create the profile on first use, then change the name shown on it:
-
-```sh
-curl --fail-with-body -X POST '{{origin}}/api/v1/profile/sync' \
-  -H 'Accept: application/json' \
-  -H "Authorization: Bearer ${PRIVY_ACCESS_TOKEN}" \
-  -H "Privy-Id-Token: ${PRIVY_IDENTITY_TOKEN}"
-
-curl --fail-with-body -X PATCH '{{origin}}/api/v1/profile' \
-  -H 'Accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer ${PRIVY_ACCESS_TOKEN}" \
-  -H "Privy-Id-Token: ${PRIVY_IDENTITY_TOKEN}" \
-  -d '{"display_name": "Ada"}'
-```
-
-The answer is `{"profile": …}` with its id, display name, linked wallets and selected wallet. Bad credentials answer 401, a profile not yet created 404 (sync first), an invalid change 422, and a site without sign-in set up 503.
+The answer is `{"profile": …}` with its id, display name, linked wallets and selected wallet. A `display_name` is at most 80 characters with no hidden characters, and a `wallet_address` is one of your verified linked wallets; send `x-regent-profile-id` with the id you read to change only that profile. An agent that does not act for you answers 403 (`agent_not_paired` or `person_not_here`), a profile not yet made 404 with `profile_not_created`, an invalid change 422, and a profile service that cannot be reached 503. Profile responses are never cached.
 
 ## Notes
 
@@ -127,6 +116,7 @@ New endpoints, fields and optional inputs can appear at any time: ignore what yo
 
 ### Breaking changes
 
+- 2026-11-14: `info.version` moves to 19.0.0. `GET` and `PATCH /api/v1/profile` no longer take a person's Privy access and identity tokens or `x-privy-user-id`. They answer the person signed in on this site, from its own pages (the session, and `x-csrf-token` on a change), or a paired agent signing with its own key, while its person's latest sign-in here names a wallet. Anything else answers 401 with `authentication_required`, and an agent not acting for its person 403 with `agent_not_paired` or `person_not_here`. `POST /api/v1/profile/sync` is gone: a profile is made at sign-in. The `profile_unconfigured` and `identity_evidence_conflict` answers are gone.
 - 2026-11-13: `info.version` moves to 18.0.0. `POST /api/v1/notes/list`, `POST /api/v1/notes` and `GET`, `PATCH` and `DELETE /api/v1/notes/{id}` no longer take a person's Privy access and identity tokens. They answer the person signed in on this site, from its own pages (the session, and `x-csrf-token` on each change), or a paired agent signing with its own key. Anything else answers 401 with `authentication_required`; the 403 `account_required` answer is gone.
 - 2026-11-13: `info.version` moves to 17.0.0. `GET /api/v1/account/points` answers `seasons` in place of `period_bonuses`: every season in order with `season`, `starts_at`, `ends_at` (both null until Points has a start), `state` (`upcoming`, `running` or `ended`), `days_left` (the running season's, a part day counting as one, otherwise null), `earned` (null until the season begins) and `bonus` (`points`, `nft_count`, `bonus_percent`, null until the NFT bonus is added at the season's end). Each `to_do` item always carries its `points`, never `false`, and gains `at_start`: true, before Points starts, for an action the account already has, which the start adds. `note` is gone.
 - 2026-11-12: `info.version` moves to 16.0.0. `POST /api/v1/rooms/search` and `POST /api/v1/notes/search` find matches from three letters on: one or two letters answer an empty list instead of matches, and a single letter no longer answers 422 `invalid_search`. Text over 100 characters, or none, still does.

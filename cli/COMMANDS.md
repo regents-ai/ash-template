@@ -790,6 +790,10 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## Changes
 
+- 2026-11-14: The OpenAPI documents move to 19.0.0. `GET` and `PATCH /api/v1/profile` no longer
+  take a person's Privy tokens: they answer a person signed in on the site's own pages, or a
+  paired agent signing with its own key. `POST /api/v1/profile/sync` is gone; a profile is made
+  at sign-in. No command calls the profile API, so no command changes.
 - 2026-11-13: CLI 1.10.28 carries every command described here, the same as 1.10.27.
 - 2026-11-13: A paired agent acts for its person only while the person's last sign-in on the
   site had a wallet linked. After a sign-in with none, `agents whoami` answers

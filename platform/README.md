@@ -248,7 +248,7 @@ cache.
 | Route | Method | Purpose |
 | --- | --- | --- |
 | `/healthz` | GET | Liveness check; plain text `ok`. |
-| `/api/v1/profile`, `/api/v1/profile/sync` | GET, PATCH, POST | The signed-in person's shared profile, served by the `regent_identity` package with paired Privy proofs. |
+| `/api/v1/profile` | GET, PATCH | The person's shared profile, served by the `regent_identity` package for the person signed in on this site (a change with the forms token) or a paired agent's signed request (`AshTemplateWeb.Plugs.ProfileOwner`). |
 | `/auth/csrf`, `/auth/session`, `/auth/privy/session`, `/auth/privy/failure` | GET, POST, DELETE | Browser session start, read and end. |
 | `/openapi.json`, `/llms.txt`, `/sitemap.xml`, `/robots.txt` | GET | Discovery documents. |
 | `/`, `/docs`, `/about`, `/privacy`, `/terms` | GET | Public pages; `Accept: text/markdown` returns Markdown. |
