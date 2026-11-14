@@ -11452,3 +11452,11 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   ending, does not stop it. Unpairing stops it at once. Two public sentences said "must sign
   in again" and now say what the rule is (`AshTemplateWeb.PublicDocuments`,
   `platform/priv/public/agents.md`). No behaviour change.
+
+## 2026-11-14 — Released v254: paired-agent rule everywhere, signed connector sign-in, SIWA pages
+
+- v254 on template.regents.sh carries the entries above, each on Sean's letter of 14 Nov
+  (59 a, 60 a, 62 a, 63 a; 61 a keeps the template's pairing to Claude). Library pin
+  `48a40c56`; no migration; API 20.0.0 unchanged.
+- Rollback: v253 (`05be3f21`) image.
+- Full check exit 0 by the chief on the exact commit.
