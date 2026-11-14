@@ -111,6 +111,20 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       refute "claude" in Enum.map(PairingBox.choices(), & &1.value)
     end
 
+    test "a token spends its address's 120 once, its body read or not, and the 121st is refused" do
+      from = {10, 9, 8, 4}
+      read = post_mcp(rpc("ping"), "any-token", from)
+      assert read.status == 401
+      assert policies(read) == ["mcp_address"]
+
+      for _ <- 2..120,
+          do: Phoenix.ConnTest.assert_error_sent(400, fn -> post_unreadable("any-token", from) end)
+
+      refused = post_unreadable("any-token", from)
+      assert refused.status == 429
+      assert policies(refused) == ["mcp_address"]
+    end
+
     test "an agent's sign-in and pairing work as before, and a Claude pairing is refused" do
       subject = "did:privy:connector-off"
       sign_in!(subject)

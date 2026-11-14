@@ -31,7 +31,7 @@ commit: `regent_identity` names `regent_privy` (see `mix.exs`),
 `../security/required-fixes.json` lists every shared library with its one
 repository and folder, and the security fixes every Regent site must carry.
 `make check-required-fixes` fetches that list and `scripts/check_required_fixes.exs`
-from this repository's `main` on GitHub and runs the script, printing the
+from regents-ai/ash-template's `main` on GitHub and runs the script, printing the
 revision it used. It fails when a shared library loads from a local folder or a
 vendored copy, names another URL or folder, is not pinned to a full commit, has
 no fetched history, or lacks a listed fix, and when a Hex package's locked version
@@ -256,7 +256,7 @@ cache.
 | `/agents/<agent>/skill.md` | GET | That agent's skill: the agent guide with its set-up notes. |
 | `/app`, `/account` | GET | The signed-in shell. The `/app` home carries the Agent Message button with the topic `app`, its form running in the page itself. |
 | `/api/v1/feed` | GET | A signed agent's live feed (`AshTemplateWeb.FeedController`, `AshTemplate.Feed`): server-sent events, open until either side closes it, telling the agent of a direct message to its person and of posts by others in rooms it posted in, heard on the same topics the pages listen to. Each event names the route that reads it, never the words. The signature is checked once, as it opens. `Last-Event-ID` gets up to 100 missed events, else a `resync` event; a `: keep-alive` line every 25 seconds; one feed per agent, a newer one closing the older on any machine; at most 200 open on one machine (`max_open`), of which at most 20 from agents not paired with a person (`max_unpaired`), past which it answers 503 `feed_full`. |
-| `/mcp` | POST | The hosted MCP server (`AshAi.Mcp.Router`, after `AshTemplateWeb.Plugs.McpAgent`): an agent signing each call reads a room with `rooms_messages`, posts with `rooms_post` and leaves a message for the site's team with `messages_leave`; the Claude connector's Bearer token (`regent.identity.manage`) runs only its identity tools, which keep an identity for the connection, pair it, read the pairing and check in. A bad token, or none, gets 401 with the challenge that starts sign-in; a token or no signature while `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is off, and a token beside a signature, get 401 with none. A query string, a batch, a body that is not JSON and a page from another site are refused before any credential is read. 120 requests a minute from one address for agents' signed requests; requests with a Bearer token share a ceiling of 600 a minute per address, since Claude's connector calls from shared servers, then 120 a minute for each connected account. Other methods answer 405; not logged. |
+| `/mcp` | POST | The hosted MCP server (`AshAi.Mcp.Router`, after `AshTemplateWeb.Plugs.McpAgent`): an agent signing each call reads a room with `rooms_messages`, posts with `rooms_post` and leaves a message for the site's team with `messages_leave`; the Claude connector's Bearer token (`regent.identity.manage`) runs only its identity tools, which keep an identity for the connection, pair it, read the pairing and check in. A bad token, or none, gets 401 with the challenge that starts sign-in; a token or no signature while `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is off, and a token beside a signature, get 401 with none. A query string, a batch, a body that is not JSON and a page from another site are refused before any credential is read. 120 requests a minute from one address for agents' signed requests; while the connector is on, requests with a Bearer token share a ceiling of 600 a minute per address, since Claude's connector calls from shared servers, then 120 a minute for each connected account; while it is off, every request counts against the address's 120. Other methods answer 405; not logged. |
 | `/api/v1/messages/{topic}` | POST | A signed agent leaves a private message for the site's team under a topic (`leaveMessage`, `AshTemplateWeb.MessagesController`): 201 with its receipt, 200 with the first receipt when its `operation_id` is used again for the same text, 409 `idempotency_conflict` for other text. 10 an hour for each sender and 30 for each address; past that, 429 `too_many_requests` with `Retry-After`. |
 | `/admin/messages` | GET | The team's inbox (`AshTemplateWeb.AdminMessagesLive`): every message, newest first, 50 a page, for the site's admins only, behind the same check as `/admin/errors`; anyone else gets the not-found page. |
 | `/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/mcp`, `/.well-known/oauth-authorization-server`, `/oauth/register`, `/oauth/token`, `/oauth/revoke` | GET, POST | The connector's sign-in discovery, app registration, tokens and revocation (`RegentOAuth.Protocol`). Registration (30 a minute) and token and revocation requests (120 a minute) are limited by address and never logged. 404 while the connector is off. |
@@ -301,12 +301,12 @@ which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:
 | Setting | Where | What happens |
 | --- | --- | --- |
 | `local` | Development (the default when unset) | The showcase pages answer only a visitor on this machine at `localhost` or `127.0.0.1`, and are never cached or indexed. The motion lab is open. The home page links to them. |
-| `public` | The hosted demo at template.regents.sh | Every page above is public, listed in the sitemap and `/llms.txt`, and linked from the home page. |
+| `public` | The template's hosted demo | Every page above is public, listed in the sitemap and `/llms.txt`, and linked from the home page. |
 | `off` | A new site's production | None of them exist: each answers 404 and the home page does not link to them. |
 
 Production must set it to `off` or `public`; `fly.toml` leaves it out, so each
 deployment says which it is with `fly secrets set ASH_TEMPLATE_SHOWCASE=off` (or
-`public`). A new site built from this template chooses `off`.
+`public`). A new site made from the template chooses `off`.
 
 The wallet page at `/showcase/wallet` runs the wallet buttons with real sign-in
 and a real wallet on the chain set as `:wallet_chain` in `config/config.exs`
@@ -575,7 +575,8 @@ its own Docker network, answering to the staging database hostname, and runs
 the image as staging with the showcase `public` against it:
 `bin/bootstrap-staging`, `bin/migrate` and `bin/pending-migrations` (which must
 print `none`), then the server, whose `/healthz`, home page, fingerprinted
-stylesheet, build skills index and own database connection it checks. It removes the database and the network afterwards, keeps the image,
+stylesheet, build skills index and own database connection it checks, and that
+the home page's one request wrote exactly one JSON visit line (it needs `jq`). It removes the database and the network afterwards, keeps the image,
 and prints the app commit, the shared-library commits from `mix.lock` and the
 image digest. It never deploys.
 

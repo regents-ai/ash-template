@@ -18,11 +18,13 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   Before any of this, while the body is still unread, the endpoint counts each
   address (`limit_address/1`): 120 requests a minute (`mcp_address`, the API's
-  figure) for a request with no token, and a ceiling of 600 a minute
-  (`mcp_connected_address`) for one with a token, since Claude's connector calls
-  from Anthropic's shared servers and one address carries many accounts. A token
-  that isn't this site's spends the 120 as well, and once an address has spent
-  them its next token is refused before it is looked up.
+  figure) for a request with no token, and while connecting apps is on, a
+  ceiling of 600 a minute (`mcp_connected_address`) for one with a token, since
+  Claude's connector calls from Anthropic's shared servers and one address
+  carries many accounts. A token that isn't this site's spends the 120 as well,
+  and once an address has spent them its next token is refused before it is
+  looked up. While connecting apps is off, no token is this site's, so every
+  request counts against the 120 alone, whatever headers it carries.
 
   Then every request carries exactly one credential:
 
@@ -105,14 +107,20 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   @doc """
   Counts the request against its address before the body is read: one with no
-  token against its 120, one with a token against the 600 its address's tokens
-  share, unless its address has spent its 120.
+  token against its 120, and while connecting apps is on, one with a token
+  against the 600 its address's tokens share, unless its address has spent its
+  120.
   """
   def limit_address(conn) do
-    if get_req_header(conn, "authorization") == [] or spent?(conn, @address),
-      do: RateLimit.call(conn, @address),
-      else: RateLimit.call(conn, @connected_address)
+    if carries_token?(conn) and not spent?(conn, @address),
+      do: RateLimit.call(conn, @connected_address),
+      else: RateLimit.call(conn, @address)
   end
+
+  # Only the connector gives tokens, so while it is off every request is counted
+  # against its address's 120, whatever headers it carries.
+  defp carries_token?(conn),
+    do: AshTemplate.OAuth.enabled?() and get_req_header(conn, "authorization") != []
 
   defp spent?(conn, %{policy: policy, limit: limit, window: window, key: key}),
     do: RequestRateLimiter.spent?({policy, key.(conn)}, limit, window)
@@ -251,15 +259,12 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
     |> refusal("connection_required")
   end
 
-  # Refused before any token was checked. A request with one spends its address's
-  # 120 here, as one without did in the endpoint.
+  # Refused before any token was checked. While connecting apps is on, a request
+  # with one spends its address's 120 here, as every other did in the endpoint.
   defp refuse(conn, mode, code) when is_binary(code), do: refuse(conn, mode, &refusal(&1, code))
 
   defp refuse(conn, mode, refusal) do
-    conn =
-      if get_req_header(conn, "authorization") == [],
-        do: conn,
-        else: RateLimit.call(conn, @address)
+    conn = if carries_token?(conn), do: RateLimit.call(conn, @address), else: conn
 
     if conn.halted, do: counted(conn, mode), else: conn |> refusal.() |> counted(mode)
   end

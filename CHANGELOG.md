@@ -10999,6 +10999,108 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
 - Rollback: v249 (`846a7bb5`) image.
 - Full check exit 0 by the chief on the same tree (`d2202cdb`).
 
+## 2026-11-14 — Fixes from the sites: job age, live-page crash lines, form words, test waits, the hosted MCP address count
+
+- **Job age** (Autolaunch `261ca7c6`). The gauge of each running queue's oldest
+  unfinished job (`[:ash_template, :jobs, :oldest_unfinished]`,
+  `health.job.oldest_age.seconds`) counts from when the job was due to run, its
+  scheduled time, which a retry moves to the next attempt; a job not due yet counts 0.
+  `platform/test/ash_template_web/telemetry_test.exs` starts two queues and reads a job
+  due a minute ago (made an hour ago) and one between attempts.
+- **Live-page crash lines** (Keyfleet `dc79e244f`). `AshTemplateWeb.LiveCrashes`, a
+  `:logger` primary filter attached as the site starts beside
+  `AshTemplate.IdleDisconnects`, rewrites a failing live page's report before Elixir
+  prints it: the join message becomes `{Phoenix.Channel, :join}` and each stack line
+  keeps its function's arity instead of its arguments. The line still names the page,
+  the exception and where it was raised, and holds none of the browser's session (form
+  token, live socket id, sign-in lineage) or the page's assigns.
+  `platform/test/ash_template_web/live_crashes_test.exs` covers a mount that raises, a
+  mount no head matches and a press no head matches, in the log and the saved error;
+  without the filter all three fail. The rest of that Keyfleet commit was already here.
+- **Form words** (Chainagent `de5e1de4`). Ash's "must be present" reads "Fill this in."
+  under a field and in an API refusal's `details` (`AshTemplateWeb.FormErrors`), as
+  "is required" already did.
+- **Test waits** (Autolaunch `73920220`). `assert_receive` and LiveViewTest's
+  `render_async/2` wait 2 seconds by default (`platform/test/test_helper.exs`), so a
+  test's wait holds on a busy machine. The agent feed test's own
+  waits that only repeated it, or were shorter, are gone; the chat reply test's 5
+  seconds stays.
+- **Hosted MCP address count** (Autolaunch `881b0269`). Only the Claude connector gives
+  tokens, so while it is off every request to `/mcp` counts against its address's 120 a
+  minute (`mcp_address`), whatever headers it carries, a token on a body that cannot be
+  read included, and once only. While the connector is on, a request with a token
+  counts against the address's 600 as before (`AshTemplateWeb.Plugs.McpAgent`). A test
+  in `platform/test/ash_template_web/claude_connector_test.exs` sends a token with the
+  connector off, then 119 unreadable bodies, and the 121st is refused 429 under
+  `mcp_address` alone; without the connector check in the plug it fails. That
+  commit's other two fixes
+  belong to code the template does not have: here the hosted identity's wallet is kept
+  with Nebulex (`AshTemplate.Agents.HostedAddress`), not `Cachex.fetch`, and a tool's
+  input is checked by casting it through its action (`AshTemplateWeb.ToolErrors`), not
+  by a list of JSON types. `docs/oauth-reference.md`, `platform/README.md` and the
+  feature map say so.
+- **NUL characters** (as Keyfleet `92f188122` and Patchbay `540f0fe3` met them). A NUL
+  in a note's title or body, a room message, a direct message, a message to the
+  assistant, a poll's question or choice, or a public name is already refused as a
+  hidden character (`RegentFormat.Text` and `RegentFormat.Name` leave out every control
+  character), before anything reaches Postgres: the API answers its ordinary 422
+  naming the field (`invalid_note`, `invalid_message`, `invalid_poll`,
+  `invalid_display_name`), the page's form marks the field, and nothing is saved.
+  `platform/test/ash_template_web/nul_text_test.exs` checks each through the API and
+  each page's form; with the room post's text check taken out, it fails. No code
+  changed.
+- **Not taken:** Autolaunch's 50-second Oban shutdown grace (`453e35b0`). Here the
+  endpoint stops before Oban: open pages drain for up to 25 seconds and the server
+  waits up to 15 for what is still open, while running jobs go on, then Oban waits its
+  default 15, which is 55 seconds inside `fly.toml`'s 60 (`AshTemplateWeb.Endpoint`).
+  A 50-second grace would end past the kill timeout.
+- Nothing an agent or visitor relies on changed, so the OpenAPI documents stay at
+  19.0.0 and the public changelog, capabilities and agent pages are unchanged. No
+  migration.
+## 2026-11-14 — What a new site needs, both install parts, addresses, one visit line
+
+- **New site (from Chainagent).** `scripts/init.sh` takes the new site's address:
+  `scripts/init.sh <snake_name> <ModuleName> <host> ["Display Name"]`. It writes the
+  host wherever `template.regents.sh` means the site itself: the legal pages, the
+  command list's `base_url` and agent-guide link, the sign-in hint in a refused signed
+  request and in the served API documents, the live check and its Makefile line, and
+  the feature map. Outside `skills/`, the dated plans and the changelog it rewrites
+  every one, so the few lines that meant the template itself (the WebMCP origin trial
+  token's comment, the OAuth notes, the showcase's `public` row) name its address in
+  other words. It also keeps `regents-ai/ash-template`, the template's repository by
+  its GitHub name, wherever it is written.
+- The list of what a new site replaces by hand left the passage the rename drops:
+  it is `AGENTS.md`'s "New site", which the new site keeps with its own names. Chosen
+  over `init.sh` writing a file, since the list then stays in one place, readable in
+  the template, and the rename already rewrites its paths. It now also names the
+  homepage's dark theme (`homeThemeLocked`, the template's artwork choice), the Fly app
+  in the deploy example, the WebMCP origin trial token, the compile-connected limit
+  and how a site raises it, `mix format` and the route digest (still printed by
+  `init.sh`, which runs no Mix: it renames a clean checkout before any dependency is
+  fetched), and what lives outside the repository (elixir-utils' list of sites, the
+  sign-in service's settings for the audience).
+- `AGENTS.md`, `README.md` and `platform/README.md` read true in the template and in
+  a renamed site: shared skills change in regents-ai/ash-template, which keeps the
+  required-fixes list, and `make check-required-fixes` reads that repository's
+  `main`. `cli/README.md` names `base_url` as the site's own address.
+- **Install line (from Keyfleet).** `/agents.md`, `/llms.txt` and `cli/COMMANDS.md`
+  print `uv tool install --python 3.14 'regents-cli[browser,mcp]==1.10.28'`: the line
+  regents-cli 1.10.28 prints for itself, pinned to the release. A later
+  `uv tool install` drops the parts an earlier one chose. `/agents.md`'s browser
+  tools point at that install. `scripts/check-siwa-latest.sh` reads the install line
+  in this form.
+- **Addresses (from Keyfleet).** `/skill.md` lists the addresses an agent reaches
+  (this site, sign-in at siwa.regents.sh, and pypi.org and files.pythonhosted.org for
+  `uv`), and says that when its network refuses one it tells its person once which to
+  allow and never routes around it; `/llms.txt` points there. Muse's page uses the
+  other sign-in address only when the sign-in server is down. The guide carries no
+  version of its own, so there is none to move.
+- **One visit line (from Techtree).** The release smoke check calls the home page once
+  and fails unless the server wrote exactly one JSON visit line for it.
+- Tests: `scripts/tests/test_reports.py` renames a fixture with the new address and
+  checks the address is written in the site's files and kept in the skills, and that
+  the real `AGENTS.md`'s "New site" survives the rename whole, under the new names.
+
 ## 2026-11-14 — SIWA: Sites and Settings
 
 - A **SIWA** entry in the side menu opens the paid sign-in product's control pages, with
