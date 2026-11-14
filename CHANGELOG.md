@@ -11475,3 +11475,10 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
 
 - `security/required-fixes.json` lists `regent_near_intents` (elixir-utils `near_intents`), so a
   site that pins it passes `make check-required-fixes`. The template itself does not use it.
+
+## 2026-11-14 — Released v255: design system d4075655, Patchbay updates Skill
+
+- v255 on template.regents.sh carries the entry above. Design-system pin `d4075655`; library
+  pin `48a40c56` unchanged; no migration; API 20.0.0 unchanged.
+- Rollback: v254 (`5cde3605`) image.
+- Full check exit 0 by the chief on the exact commit.
