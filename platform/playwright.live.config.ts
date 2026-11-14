@@ -18,8 +18,17 @@ export default defineConfig({
   retries: 0,
   reporter: "line",
   // Global Privacy Control, so the check's pages start no visit in the site's log
-  // (AshTemplateWeb.VisitLog). No traces: they would keep signed headers on disk.
-  use: {baseURL, extraHTTPHeaders: {"sec-gpc": "1"}, trace: "off"},
+  // (AshTemplateWeb.VisitLog). No traces: they would keep signed headers on disk. The
+  // homepage's guided tour starts seen, so it never opens over what the check reads.
+  use: {
+    baseURL,
+    extraHTTPHeaders: {"sec-gpc": "1"},
+    trace: "off",
+    storageState: {
+      cookies: [],
+      origins: [{origin: new URL(baseURL).origin, localStorage: [{name: "ash-template:tour:home", value: "seen"}]}],
+    },
+  },
   projects: [
     {name: "desktop", use: {...devices["Desktop Chrome"], viewport: {width: 1280, height: 900}}},
     {name: "phone", use: {...devices["Pixel 7"], viewport: {width: 390, height: 844}}},

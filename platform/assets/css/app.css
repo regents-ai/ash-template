@@ -10,6 +10,7 @@
 @import "./components/onchain_steps.css";
 @import "./components/motion.css";
 @import "./components/value_cards.css";
+@import "./components/tour.css";
 @import "./pages/home.css";
 @import "./pages/legal.css";
 @import "./pages/reading.css";

@@ -10,10 +10,33 @@ defmodule AshTemplateWeb.HomeLive do
 
   use AshTemplateWeb, :live_view
 
-  alias AshTemplateWeb.Components.{AgentTools, RegentLinks}
+  alias AshTemplateWeb.Components.{AgentTools, RegentLinks, Tour}
   alias AshTemplateWeb.{PublicDocuments, RouteCatalog}
 
   @name "Ash Template"
+
+  # The demo tour of this page. A new site replaces these steps with its own: each
+  # names a part of the page, with a one-word title and one plain sentence
+  # (`AshTemplateWeb.Components.Tour` says how).
+  @tour [
+    %{target: "#home-enter-app", title: "App", text: "Open the app to sign in and get started."},
+    %{
+      target: "#home-agent-tools-button",
+      title: "Tools",
+      text: "See the tools an agent in your browser can use here."
+    },
+    %{
+      target: "#home-agents-link",
+      title: "Agents",
+      text: "Connect an agent that works from the command line."
+    },
+    %{
+      target: ".rl-product-tabs",
+      title: "Products",
+      text: "Visit the other Regents Labs products."
+    },
+    %{target: "#home-tour-start", title: "Tour", text: "Press Tour to see these steps again."}
+  ]
 
   @staking_summary "Stake $REGENT to share in Regents Labs' USDC revenue, in proportion to how much of all REGENT you stake, plus 20% a year in REGENT, for now."
 
@@ -54,9 +77,10 @@ defmodule AshTemplateWeb.HomeLive do
   # brings it in, and once it has stood for a moment, flying the picture sends it away
   # again. Without scripts, without WebGPU, or with less motion asked for, the
   # server's still picture stays and the panel stays open. The copyright stands at
-  # the window's foot throughout, under the panel where the two meet.
+  # the window's foot throughout, under the panel where the two meet. The tour plays
+  # once in a browser, and holds the panel open while it shows.
   def render(assigns) do
-    assigns = assign(assigns, name: @name, mission: @mission)
+    assigns = assign(assigns, name: @name, mission: @mission, tour: @tour)
 
     ~H"""
     <div
@@ -93,7 +117,7 @@ defmodule AshTemplateWeb.HomeLive do
             <p class="rl-statement__line">{@mission}</p>
           </div>
           <div class="rl-hero-actions">
-            <a href={~p"/app"} class="rg-button rg-button--no-arrow rl-hero-cta">
+            <a id="home-enter-app" href={~p"/app"} class="rg-button rg-button--no-arrow rl-hero-cta">
               <span class="rg-button__label">Enter App</span>
             </a>
             <AgentTools.button
@@ -105,7 +129,9 @@ defmodule AshTemplateWeb.HomeLive do
             </AgentTools.button>
           </div>
           <p class="rl-hero-agents">
-            <.link navigate={~p"/agents"}>Connect your agent from the command line</.link>
+            <.link id="home-agents-link" navigate={~p"/agents"}>
+              Connect your agent from the command line
+            </.link>
           </p>
         </main>
 
@@ -113,6 +139,7 @@ defmodule AshTemplateWeb.HomeLive do
       </div>
 
       <AgentTools.dialog id="home-agent-tools" />
+      <Tour.tour id="home-tour" name="home" steps={@tour} />
     </div>
     """
   end
@@ -133,6 +160,7 @@ defmodule AshTemplateWeb.HomeLive do
         </.link>
 
         <div class="rl-header-links">
+          <Tour.start_button for="home-tour" />
           <RegentLinks.header_links id="home-token-menu" />
         </div>
       </div>

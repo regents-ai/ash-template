@@ -77,11 +77,13 @@ type DatascapeHook = {
  * picture to press; pressing a panel in the picture opens it, and focus
  * moving into it opens it at once and holds it open. Once it has been open for
  * `GRACE` after the last press, and focus is elsewhere, steering squashes it and
- * sends it away again, until the next press. While it is open the pointer steers
- * nothing round it. The root's `data-datascape-glass-state` says `away` or
- * `open`, and the stylesheet holds both poses and decides when there is no
- * picture to press, so the panel simply stays: each move starts from wherever the
- * panel is and hands it back to the stylesheet when it ends.
+ * sends it away again, until the next press. A guided tour inside the root
+ * (`tour:opened` until `tour:closed`) opens it at once and holds it open in the
+ * same way. While it is open the pointer steers nothing round it. The root's
+ * `data-datascape-glass-state` says `away` or `open`, and the stylesheet holds
+ * both poses and decides when there is no picture to press, so the panel simply
+ * stays: each move starts from wherever the panel is and hands it back to the
+ * stylesheet when it ends.
  */
 export const Datascape = {
   mounted(this: DatascapeHook) {
@@ -180,6 +182,8 @@ export const Datascape = {
     let focused = !!glass?.contains(document.activeElement)
     let held = false
     let open = !!glass && poseOf(glass).opacity === 1
+    /** Whether a guided tour is pointing at what the glass holds. */
+    let touring = false
     if (glass) root.dataset.datascapeGlassState = open ? "open" : "away"
 
     /** The field's calm zone: round the glass while it is open, the field's own while it is away. */
@@ -196,9 +200,9 @@ export const Datascape = {
       calm()
       scope.methods[open ? "expand" : "compress"]!(glass, atOnce || still(glass!))
     }
-    /** An open glass goes away once the pointer steers, no press holds it and focus is elsewhere. */
+    /** An open glass goes away once the pointer steers, no press or tour holds it and focus is elsewhere. */
     const settle = () => {
-      if (open && steering && !held && !focused) show(false)
+      if (open && steering && !held && !focused && !touring) show(false)
     }
     /** A press holds the glass open for a while, starting again with each press. */
     let hold: Timer | undefined
@@ -268,6 +272,16 @@ export const Datascape = {
       focused = glass!.contains(event.relatedTarget as Node | null)
       settle()
     }
+    // A guided tour inside the root points at what the glass holds, so the glass is
+    // there at once as the tour opens, and stays until it closes.
+    const onTourOpened = () => {
+      touring = true
+      if (!open) show(true, true)
+    }
+    const onTourClosed = () => {
+      touring = false
+      settle()
+    }
     // The glass is measured by its layout size, which a running move does not change.
     const resized = new ResizeObserver(calm)
     // A picture that stops drawing, as when the visitor asks for less motion, steers nothing.
@@ -295,6 +309,8 @@ export const Datascape = {
           stopped.observe(root, {attributes: true, attributeFilter: ["data-datascape-ready"]})
           glass.addEventListener("focusin", onFocusIn)
           glass.addEventListener("focusout", onFocusOut)
+          root.addEventListener("tour:opened", onTourOpened)
+          root.addEventListener("tour:closed", onTourClosed)
         }
         canvas.addEventListener("pointermove", onPointerMove)
         canvas.addEventListener("pointerdown", onPointerDown)
@@ -316,6 +332,8 @@ export const Datascape = {
           stopped.disconnect()
           glass?.removeEventListener("focusin", onFocusIn)
           glass?.removeEventListener("focusout", onFocusOut)
+          root.removeEventListener("tour:opened", onTourOpened)
+          root.removeEventListener("tour:closed", onTourClosed)
           // A picture that has stopped steers nothing.
           steering = false
         }

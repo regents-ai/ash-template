@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 14 November 2026
 
+- **Tour.** Your first visit to the homepage shows a short tour of what is on it. Press
+  Tour at the top of the page to see it again. Every button still works while it shows.
 - **Command line.** The agent guide's install line installs the command line with both
   its parts, the browser tools host and the MCP bridge, in one line.
 - **Addresses.** The agent guide lists the addresses an agent reaches to use this site.
