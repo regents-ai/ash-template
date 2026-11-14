@@ -11100,3 +11100,10 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
 - Tests: `scripts/tests/test_reports.py` renames a fixture with the new address and
   checks the address is written in the site's files and kept in the skills, and that
   the real `AGENTS.md`'s "New site" survives the rename whole, under the new names.
+
+## 2026-11-14 — Released v251: fixes taken from the sites
+
+- v251 on template.regents.sh carries the two entries above: the fixes from the sites and
+  what a new site needs. No migration, no pin change; API 19.0.0 unchanged.
+- Rollback: v250 (`85c6e6dc`) image.
+- Full check exit 0 by the chief on the exact commit.
