@@ -37,7 +37,11 @@ for (const width of [320, 390]) {
       )
       expect(clipped).toEqual([])
 
-      const boxes = () => page.locator("#icons-sheet li[data-icon]").evaluateAll(cells => cells.map(cell => JSON.stringify(cell.getBoundingClientRect())))
+      // Each cell's box on the page, wherever the page is scrolled to.
+      const boxes = () => page.locator("#icons-sheet li[data-icon]").evaluateAll(cells => cells.map(cell => {
+        const {left, top, width, height} = cell.getBoundingClientRect()
+        return [left + scrollX, top + scrollY, width, height].join(" ")
+      }))
       const resting = await boxes()
       await page.locator('[data-icon="relay"]').hover()
       expect(await boxes()).toEqual(resting)
