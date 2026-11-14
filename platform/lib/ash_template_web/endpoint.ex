@@ -21,8 +21,9 @@ defmodule AshTemplateWeb.Endpoint do
   # The largest signed body is a note: 10,000 characters of text, as JSON.
   @signed_body_limit 65_536
 
-  # Chrome's WebMCP origin trial, issued to https://template.regents.sh and valid
-  # until 30 Mar 2027. The token is public; Chrome ignores it on any other host.
+  # Chrome's WebMCP origin trial, issued to the template's own address and valid
+  # until 30 Mar 2027. The token is public; Chrome ignores it on any other host, so a
+  # site made from the template registers its own address and puts its token here.
   @webmcp_origin_trial "Anjl5/zD6iF9O/lRuJbhbnuaTCH/1+x83KMsVLt4KEl5eI5kKV0yqXI+xOxti+nzSe7uQ0UUj1Ot3fi/WVyczwEAAABTeyJvcmlnaW4iOiJodHRwczovL3RlbXBsYXRlLnJlZ2VudHMuc2g6NDQzIiwiZmVhdHVyZSI6IldlYk1DUCIsImV4cGlyeSI6MTgwNjM2NDgwMH0="
 
   @rate_limit RegentAgentAccess.RateLimit.init(

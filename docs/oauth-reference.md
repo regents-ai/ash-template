@@ -125,8 +125,8 @@ lengths the library takes.
 
 The issuer is the site's own address and the resource is its `/mcp`, set at
 runtime: `https://PHX_HOST` in production, the endpoint's address elsewhere
-(`http://localhost:4000` in development). Nothing names `template.regents.sh` in
-code, so a site cut from the template, and its staging, get their own.
+(`http://localhost:4000` in development). Nothing names the template's own address
+in code, so a site cut from the template, and its staging, get their own.
 
 Tokens freeze that binding at issuance: the provider writes the running site's
 issuer and resource on each code and token as it is issued
@@ -155,7 +155,7 @@ Authorization codes stay as Boruta keeps them.
 ## Rollout to the sites
 
 This is a shared change under the "Shared changes" rule (regent-workflow): built
-and tested here, released on template.regents.sh with the switch on only after
+and tested in the template, released on its hosted demo with the switch on only after
 Sean's letter for the migration, then signed off by Sean as a numbered decision
 with the template link and the checks below, and only then handed to all five
 sites at once in one rollout file. Each site makes its own version (its own

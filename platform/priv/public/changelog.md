@@ -4,6 +4,10 @@ Changes to Ash Template, newest first.
 
 ## 14 November 2026
 
+- **Command line.** The agent guide's install line installs the command line with both
+  its parts, the browser tools host and the MCP bridge, in one line.
+- **Addresses.** The agent guide lists the addresses an agent reaches to use this site.
+  When its network refuses one, the agent tells its person once which to allow.
 - **Public name.** Your account page saves your public name with your sign-in on this
   site. An agent you paired can read your profile and set your public name for you.
   The profile API no longer takes your Privy sign-in tokens.

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Renames the Ash Template placeholder product to your product, in one pass.
+# Renames the Ash Template placeholder product to your product and gives it its own
+# address, in one pass.
 #
-#   scripts/init.sh <snake_name> <ModuleName> ["Display Name"]
+#   scripts/init.sh <snake_name> <ModuleName> <host> ["Display Name"]
 #
-# Example: scripts/init.sh night_owl NightOwl "Night Owl"
+# Example: scripts/init.sh night_owl NightOwl night-owl.example "Night Owl"
 #
 # Rewrites every spelling of the placeholder across the monorepo:
 #   ash_template  -> night_owl    (OTP app, Mix tasks, databases, schema, session key)
@@ -13,29 +14,33 @@
 #   ash-template  -> night-owl    (package and Fly names)
 #   Ash Template  -> Night Owl    (public copy; the display name, the module name by default)
 #   ASH TEMPLATE  -> NIGHT OWL    (capitalised legal copy; the display name in capitals)
+#   template.regents.sh -> night-owl.example  (the site's address: the legal pages, the
+#                    command list's base_url, the sign-in hint, the live check)
 # and renames the files and directories that carry the app name. Where a name means
 # the template itself it stays as written: everything in skills/, the shared Regent
 # skills every site carries as the template's text, names and contents; the dated
 # plans (docs/*-plan.md) and CHANGELOG.md's earlier entries, which are records; the
-# review rules AGENTS.md copies from skills/rollout-guidance-check; and ash-template
-# in the Makefile and platform/scripts/check_required_fixes.exs, where it names the
-# template's repository. It drops the Markdown passages fenced by
+# review rules AGENTS.md copies from skills/rollout-guidance-check; ash-template in
+# the Makefile and platform/scripts/check_required_fixes.exs, where it names the
+# template's repository; and regents-ai/ash-template, the template's repository by
+# its GitHub name, wherever it is written. It drops the Markdown passages fenced by
 # <!-- template-only --> and <!-- /template-only --> and the Makefile passages fenced
 # by "# template-only" and "# /template-only" that belong to the template itself,
 # removes the template's own scripts (its reports on Regent's sites, their daily
 # jobs' instructions and scripts/regent-ui-update), and records the rename at the end
-# of CHANGELOG.md. Run it once, from a clean checkout, before the first commit of the
-# new product.
+# of CHANGELOG.md. AGENTS.md's "New site" lists what is left to replace by hand. Run
+# it once, from a clean checkout, before the first commit of the new product.
 set -euo pipefail
 
-if [[ $# -lt 2 || $# -gt 3 ]]; then
-  echo "usage: scripts/init.sh <snake_name> <ModuleName> [\"Display Name\"]" >&2
+if [[ $# -lt 3 || $# -gt 4 ]]; then
+  echo "usage: scripts/init.sh <snake_name> <ModuleName> <host> [\"Display Name\"]" >&2
   exit 64
 fi
 
 snake="$1"
 module="$2"
-display="${3:-$2}"
+host="$3"
+display="${4:-$2}"
 
 if [[ ! "$snake" =~ ^[a-z][a-z0-9_]*$ ]]; then
   echo "snake_name must be lowercase letters, digits and underscores, starting with a letter" >&2
@@ -43,6 +48,10 @@ if [[ ! "$snake" =~ ^[a-z][a-z0-9_]*$ ]]; then
 fi
 if [[ ! "$module" =~ ^[A-Z][A-Za-z0-9]*$ ]]; then
   echo "ModuleName must be CamelCase letters and digits, starting with a capital" >&2
+  exit 64
+fi
+if [[ ! "$host" =~ ^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]([a-z0-9-]*[a-z0-9])?$ ]]; then
+  echo "host must be the site's address as a lowercase host name, such as night-owl.example" >&2
   exit 64
 fi
 
@@ -111,20 +120,21 @@ while IFS= read -r dir; do
 done < <(find . -type d \( -name '*ash_template*' -o -name '*ash-template*' \) -not -path './.git/*' -not -path './skills/*' -not -path '*/_build/*' -not -path '*/deps/*' -not -path '*/node_modules/*' | deepest_first)
 
 # Contents: every text file the rename reads, task names first, then the longest
-# spelling first. In the Makefile and platform/scripts/check_required_fixes.exs,
-# ash-template names the template's repository, whose required fixes every product
-# checks against, so it stays. The review rules between AGENTS.md's REGENT ROLLOUT
-# REVIEW markers stay as skills/rollout-guidance-check/scripts/sync_review.py writes
-# them.
+# spelling first, then the address. In the Makefile and
+# platform/scripts/check_required_fixes.exs, ash-template names the template's
+# repository, whose required fixes every product checks against, so it stays; so does
+# regents-ai/ash-template everywhere. The review rules between AGENTS.md's REGENT
+# ROLLOUT REVIEW markers stay as skills/rollout-guidance-check/scripts/sync_review.py
+# writes them.
 git ls-files -z -- "${renaming[@]}" | while IFS= read -r -d '' path; do
   [[ -f "$path" ]] || continue
   grep -Iq . "$path" || continue
   case "$path" in
     Makefile | platform/scripts/check_required_fixes.exs) kebab_rule="" ;;
-    *) kebab_rule="s/ash-template/$kebab/g;" ;;
+    *) kebab_rule="s{(?<!regents-ai/)ash-template}{$kebab}g;" ;;
   esac
-  if grep -q 'ash_template\|AshTemplate\|ashTemplate\|ASH_TEMPLATE\|ash-template\|Ash Template\|ASH TEMPLATE' "$path"; then
-    perl -pi -e "next if /^<!-- BEGIN REGENT ROLLOUT REVIEW -->/ .. /^<!-- END REGENT ROLLOUT REVIEW -->/; s/ash_template\.($tasks)\b/$task_prefix.\$1/g; s/ash_template/$snake/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; $kebab_rule s/Ash Template/$display/g; s/ASH TEMPLATE/$display_upper/g" "$path"
+  if grep -q 'ash_template\|AshTemplate\|ashTemplate\|ASH_TEMPLATE\|ash-template\|Ash Template\|ASH TEMPLATE\|template\.regents\.sh' "$path"; then
+    perl -pi -e "next if /^<!-- BEGIN REGENT ROLLOUT REVIEW -->/ .. /^<!-- END REGENT ROLLOUT REVIEW -->/; s/ash_template\.($tasks)\b/$task_prefix.\$1/g; s/ash_template/$snake/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; $kebab_rule s/Ash Template/$display/g; s/ASH TEMPLATE/$display_upper/g; s/template\.regents\.sh/$host/g" "$path"
   fi
 done
 
@@ -145,15 +155,16 @@ cat >> CHANGELOG.md <<EOF
 ## $(date -u +%F) — Renamed to $display
 
 - Renamed the Ash Template placeholder to $display (\`$snake\`, \`$module\`,
-  \`$kebab\`, \`${upper}_\`) with \`scripts/init.sh\`, which removed itself,
-  the template's reports on Regent's sites, its daily jobs' instructions and
-  \`scripts/regent-ui-update\`. The shared skills in \`skills/\`, the dated plans
-  in \`docs/\` and the entries above keep the template's names as written.
+  \`$kebab\`, \`${upper}_\`) at $host with \`scripts/init.sh\`, which removed
+  itself, the template's reports on Regent's sites, its daily jobs' instructions
+  and \`scripts/regent-ui-update\`. The shared skills in \`skills/\`, the dated
+  plans in \`docs/\` and the entries above keep the template's names and address
+  as written. \`AGENTS.md\`'s "New site" lists what is left to replace by hand.
 EOF
 
 git rm -q -- scripts/init.sh "${removed[@]}"
 cat <<EOF
-Renamed Ash Template to $display ($snake / $module).
+Renamed Ash Template to $display ($snake / $module) at $host.
 Review with: git status
 Then from platform/, with the shared dependencies in place:
   mix setup
@@ -161,4 +172,5 @@ Then from platform/, with the shared dependencies in place:
   mix format                        # shorter or longer names change line wrapping
   mix ${task_prefix}.route_handoff  # the route catalog digest includes the display name
   mix precommit
+AGENTS.md's "New site" lists what is left to replace by hand.
 EOF

@@ -10,24 +10,28 @@ the parts every product starts with. The placeholder product is called
 **Ash Template**; run the rename script before building anything on it:
 
 ```sh
-scripts/init.sh night_owl NightOwl "Night Owl"
+scripts/init.sh night_owl NightOwl night-owl.example "Night Owl"
 ```
 
-`scripts/init.sh <snake_name> <ModuleName> ["Display Name"]` replaces the
+`scripts/init.sh <snake_name> <ModuleName> <host> ["Display Name"]` replaces the
 OTP application `ash_template`, the Elixir modules `AshTemplate`, the
 camel-case name `ashTemplate`, the kebab-case name `ash-template`, the
 environment prefix `ASH_TEMPLATE_`, the display name "Ash Template" and its
 capitalised form "ASH TEMPLATE" everywhere they name the product, including the
-CLI package and command names. Where they name the template itself they stay as
-written: the shared skills in `skills/` (every site carries the template's text),
-the dated plans `docs/*-plan.md` and the changelog's history, the review rules in
-`AGENTS.md`, and `ash-template` in the `Makefile` and
-`platform/scripts/check_required_fixes.exs`, which read the template's required
-fixes. It drops the passages that describe the template itself and removes the
+CLI package and command names, and the template's address `template.regents.sh`
+with the new site's own (`<host>`, such as `night-owl.example`). Where they name
+the template itself they stay as written: the shared skills in `skills/` (every
+site carries the template's text), the dated plans `docs/*-plan.md` and the
+changelog's history, the review rules in `AGENTS.md`, `ash-template` in the
+`Makefile` and `platform/scripts/check_required_fixes.exs`, which read the
+template's required fixes, and `regents-ai/ash-template` wherever it is written.
+It drops the passages that describe the template itself and removes the
 template's own scripts (its reports on Regent's sites, their daily jobs'
 instructions and `scripts/regent-ui-update`), records the rename in the
 changelog and removes itself, then prints the follow-up commands: format the
-renamed code, regenerate the route catalog digest, run the gate.
+renamed code, regenerate the route catalog digest, run the gate. What it leaves to
+replace by hand is listed in [AGENTS.md](AGENTS.md#new-site), which the new site
+keeps.
 <!-- /template-only -->
 
 ## Components
@@ -38,7 +42,7 @@ renamed code, regenerate the route catalog digest, run the gate.
 | [cli/](cli/README.md) | `commands.json`, the description of every `regents ash-template` command: the pattern each site copies for its own commands, run by [regents-cli](https://github.com/regents-ai/regents-cli), which carries a pinned copy. | `make check-cli`, `make check-siwa-latest` |
 | [contracts/](contracts/README.md) | An optional Foundry workspace. Empty until the product needs contracts. | `make check-contracts` |
 | [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |
-| [skills/](skills/) | Every agent skill Regent writes. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing, WebMCP and signals skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, `chain-events` watching a chain and saving its events, and `payments` taking USDC payments through the shared Regents library. The web app serves all of them except `regent-workflow`, `regent-notion` and `checkpoint` as its [build skills](platform/README.md#showcase). | None |
+| [skills/](skills/) | Every shared agent skill Regent writes, as regents-ai/ash-template keeps them; change them there. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing, WebMCP and signals skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, `chain-events` watching a chain and saving its events, and `payments` taking USDC payments through the shared Regents library. The web app serves all of them except `regent-workflow`, `regent-notion` and `checkpoint` as its [build skills](platform/README.md#showcase). | None |
 
 `make check` runs every component's check in turn; the
 [platform README](platform/README.md#checks) explains the platform's.

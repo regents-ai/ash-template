@@ -11057,3 +11057,46 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
 - Nothing an agent or visitor relies on changed, so the OpenAPI documents stay at
   19.0.0 and the public changelog, capabilities and agent pages are unchanged. No
   migration.
+## 2026-11-14 — What a new site needs, both install parts, addresses, one visit line
+
+- **New site (from Chainagent).** `scripts/init.sh` takes the new site's address:
+  `scripts/init.sh <snake_name> <ModuleName> <host> ["Display Name"]`. It writes the
+  host wherever `template.regents.sh` means the site itself: the legal pages, the
+  command list's `base_url` and agent-guide link, the sign-in hint in a refused signed
+  request and in the served API documents, the live check and its Makefile line, and
+  the feature map. Outside `skills/`, the dated plans and the changelog it rewrites
+  every one, so the few lines that meant the template itself (the WebMCP origin trial
+  token's comment, the OAuth notes, the showcase's `public` row) name its address in
+  other words. It also keeps `regents-ai/ash-template`, the template's repository by
+  its GitHub name, wherever it is written.
+- The list of what a new site replaces by hand left the passage the rename drops:
+  it is `AGENTS.md`'s "New site", which the new site keeps with its own names. Chosen
+  over `init.sh` writing a file, since the list then stays in one place, readable in
+  the template, and the rename already rewrites its paths. It now also names the
+  homepage's dark theme (`homeThemeLocked`, the template's artwork choice), the Fly app
+  in the deploy example, the WebMCP origin trial token, the compile-connected limit
+  and how a site raises it, `mix format` and the route digest (still printed by
+  `init.sh`, which runs no Mix: it renames a clean checkout before any dependency is
+  fetched), and what lives outside the repository (elixir-utils' list of sites, the
+  sign-in service's settings for the audience).
+- `AGENTS.md`, `README.md` and `platform/README.md` read true in the template and in
+  a renamed site: shared skills change in regents-ai/ash-template, which keeps the
+  required-fixes list, and `make check-required-fixes` reads that repository's
+  `main`. `cli/README.md` names `base_url` as the site's own address.
+- **Install line (from Keyfleet).** `/agents.md`, `/llms.txt` and `cli/COMMANDS.md`
+  print `uv tool install --python 3.14 'regents-cli[browser,mcp]==1.10.28'`: the line
+  regents-cli 1.10.28 prints for itself, pinned to the release. A later
+  `uv tool install` drops the parts an earlier one chose. `/agents.md`'s browser
+  tools point at that install. `scripts/check-siwa-latest.sh` reads the install line
+  in this form.
+- **Addresses (from Keyfleet).** `/skill.md` lists the addresses an agent reaches
+  (this site, sign-in at siwa.regents.sh, and pypi.org and files.pythonhosted.org for
+  `uv`), and says that when its network refuses one it tells its person once which to
+  allow and never routes around it; `/llms.txt` points there. Muse's page uses the
+  other sign-in address only when the sign-in server is down. The guide carries no
+  version of its own, so there is none to move.
+- **One visit line (from Techtree).** The release smoke check calls the home page once
+  and fails unless the server wrote exactly one JSON visit line for it.
+- Tests: `scripts/tests/test_reports.py` renames a fixture with the new address and
+  checks the address is written in the site's files and kept in the skills, and that
+  the real `AGENTS.md`'s "New site" survives the rename whole, under the new names.

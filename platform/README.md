@@ -31,7 +31,7 @@ commit: `regent_identity` names `regent_privy` (see `mix.exs`),
 `../security/required-fixes.json` lists every shared library with its one
 repository and folder, and the security fixes every Regent site must carry.
 `make check-required-fixes` fetches that list and `scripts/check_required_fixes.exs`
-from this repository's `main` on GitHub and runs the script, printing the
+from regents-ai/ash-template's `main` on GitHub and runs the script, printing the
 revision it used. It fails when a shared library loads from a local folder or a
 vendored copy, names another URL or folder, is not pinned to a full commit, has
 no fetched history, or lacks a listed fix, and when a Hex package's locked version
@@ -301,12 +301,12 @@ which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:
 | Setting | Where | What happens |
 | --- | --- | --- |
 | `local` | Development (the default when unset) | The showcase pages answer only a visitor on this machine at `localhost` or `127.0.0.1`, and are never cached or indexed. The motion lab is open. The home page links to them. |
-| `public` | The hosted demo at template.regents.sh | Every page above is public, listed in the sitemap and `/llms.txt`, and linked from the home page. |
+| `public` | The template's hosted demo | Every page above is public, listed in the sitemap and `/llms.txt`, and linked from the home page. |
 | `off` | A new site's production | None of them exist: each answers 404 and the home page does not link to them. |
 
 Production must set it to `off` or `public`; `fly.toml` leaves it out, so each
 deployment says which it is with `fly secrets set ASH_TEMPLATE_SHOWCASE=off` (or
-`public`). A new site built from this template chooses `off`.
+`public`). A new site made from the template chooses `off`.
 
 The wallet page at `/showcase/wallet` runs the wallet buttons with real sign-in
 and a real wallet on the chain set as `:wallet_chain` in `config/config.exs`
@@ -575,7 +575,8 @@ its own Docker network, answering to the staging database hostname, and runs
 the image as staging with the showcase `public` against it:
 `bin/bootstrap-staging`, `bin/migrate` and `bin/pending-migrations` (which must
 print `none`), then the server, whose `/healthz`, home page, fingerprinted
-stylesheet, build skills index and own database connection it checks. It removes the database and the network afterwards, keeps the image,
+stylesheet, build skills index and own database connection it checks, and that
+the home page's one request wrote exactly one JSON visit line (it needs `jq`). It removes the database and the network afterwards, keeps the image,
 and prints the app commit, the shared-library commits from `mix.lock` and the
 image digest. It never deploys.
 
