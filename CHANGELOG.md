@@ -11503,3 +11503,10 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   `to_do` item had. `platform/priv/public/docs.md`, the OpenAPI documents,
   `cli/COMMANDS.md`, `cli/commands.json`, `docs/points-foundation.md`, the agent guide and
   the feature map say so.
+
+## 2026-11-14 — Released v256: Points page grouped by site
+
+- v256 on template.regents.sh carries the entry above (Sean's letters 68 b and 69 a of 14 Nov).
+  Library pin `5f662718`; design-system pin `d4075655` unchanged; no migration; API 21.0.0.
+- Rollback: v255 (`175a1379`) image.
+- Full check exit 0 by the chief on the exact commit.
