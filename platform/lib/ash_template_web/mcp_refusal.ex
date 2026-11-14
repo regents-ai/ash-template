@@ -35,8 +35,16 @@ defmodule AshTemplateWeb.McpRefusal do
   """
   @spec refuse(Plug.Conn.t(), pos_integer(), map()) :: Plug.Conn.t()
   def refuse(conn, status, error) do
-    {conn, body} = encode(conn, refusal(message(conn), error))
-    conn |> send_resp(status, body) |> halt()
+    case refusal(message(conn), error) do
+      nil ->
+        conn |> send_resp(status, "") |> halt()
+
+      answer ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(status, Jason.encode_to_iodata!(answer))
+        |> halt()
+    end
   end
 
   @doc """
