@@ -11203,3 +11203,30 @@ Brought up from Autolaunch (the rollback script and the deploy dry run) and Rege
   `identity_unavailable` and the address budgets' 429s the same way, and a connected
   app's paired agent unpaired during a call. `launch_gate_test.exs` reads the closed
   address's 503 with and without an id.
+
+## 2026-11-14 — Outside authors' Skills carried in skills/third-party
+
+Someone who clones the template or a site made from it now has the outside Skills used
+for local work, kept apart from the Skills Regent writes.
+
+- `skills/third-party/` holds 17 Skills as exact, unmodified copies of their authors'
+  folders at a recorded commit: `emil-design-eng`, `animate`, `review-animations`,
+  `improve-animations`, `choreograph`, `gestures` and `animation-performance` from
+  emilkowalski/skills (MIT); `better-interface`, `better-accessibility`,
+  `better-colors`, `better-layout`, `better-typography`, `better-ui` and
+  `better-writing` from jakubkrehel/skills (MIT); `diagnosing-bugs` and
+  `resolving-merge-conflicts` from mattpocock/skills (MIT); and `oban-thinking` from
+  georgeguimaraes/claude-code-elixir (Apache-2.0). Each repository's licence is kept
+  word for word in `skills/third-party/LICENSES/`. `sentry-elixir-sdk` is not carried:
+  the template does not use Sentry.
+- `skills/third-party/README.md` names each Skill's author, source, folder, commit and
+  licence, says these are other people's work, notes the two Skills since retired or
+  renamed upstream (`resolving-merge-conflicts`, `oban-thinking`), says where the
+  template's own Skills win (wallet buttons, motion and pages, Oban jobs, design), and
+  lists Skills worth installing but not carried, with the reason for each.
+- The web app does not serve or list them (`AshTemplateWeb.AgentSkills` names only the
+  template's own build skills), and `scripts/init.sh` leaves them as written with the
+  rest of `skills/`. No code changed.
+- The design-system reference (`skills/regent-workflow/references/design-system.md`)
+  points at `skills/third-party/emil-design-eng/SKILL.md` instead of a path on one
+  person's machine. `AGENTS.md` and `README.md` introduce the folder.
