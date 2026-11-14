@@ -12,14 +12,32 @@ account. Consent uses the browser pipeline's session authority and CSRF protecti
 No request header or account parameter can establish a person. Nothing here grants
 a paired-agent or wallet actor, and no new account store is introduced.
 
-An app names itself in one of two ways. Claude's "Use Claude's published
-identity" option uses its HTTPS address
-(`https://claude.ai/oauth/mcp-oauth-client-metadata`) as the `client_id`; server
-metadata says `client_id_metadata_document_supported: true`, and consent reads
-and checks that document, records it as an ordinary public client
+An app names itself in one of two ways. It may use the HTTPS address of its
+published identity as the `client_id`, as Claude's "Use Claude's published
+identity" option does with `https://claude.ai/oauth/mcp-oauth-client-metadata`;
+server metadata says `client_id_metadata_document_supported: true`, and consent
+reads and checks that document, records it as an ordinary client
 (`oauth_client_documents`, migration `20261111060000`) and reads it again once
 its cache lifetime passes (`RegentOAuth.ClientDocuments`). Other apps still
 register themselves at `/oauth/register`. Neither kind is ever taken for the other.
+
+A published identity is a public client (`none`, as Claude's is) or signs its
+token and revocation requests with its own key (`private_key_jwt`). Such a
+document names a `jwks_uri` on its own host, HTTPS on port 443, and no inline
+`jwks`; any other method is refused. The app then sends a `client_assertion`
+with each token and revocation request: RS256 or ES256 by the key its `kid`
+names, `iss` and `sub` its `client_id`, `aud` this site's issuer or its
+`/oauth/token` address as the only value, `exp` at most an hour away and a `jti`
+used once (`RegentOAuth.ClientAssertion`). Without a valid one the request is
+refused `invalid_client` with a 401, and a public client that sends one is
+refused too; PKCE is still required. Its keys are read only at the token and
+revocation addresses, kept five minutes and read again once for an unknown key
+id, at most once a minute (`RegentOAuth.ClientKeys`); when the address does not
+answer the request gets a 503. Server metadata lists `none` and
+`private_key_jwt` with the algorithms RS256 and ES256. The assertion is spent as
+a row of the existing `oauth_tokens` table, so this needs no migration, and
+`client_assertion` is among Phoenix's filtered parameter names. The signing
+method is checked here only against a stand-in app.
 
 API routes expose resource/server metadata (the resource's also at
 `/.well-known/oauth-protected-resource/mcp`, where RFC 9728 places it),

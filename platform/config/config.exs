@@ -350,6 +350,7 @@ config :phoenix, :filter_parameters, [
   "access_token",
   "refresh_token",
   "client_secret",
+  "client_assertion",
   "id_token",
   "_csrf_token"
 ]
