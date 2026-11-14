@@ -139,23 +139,23 @@
     {
       "operation": "getMyProfile",
       "effect": "read",
-      "authority": "owner_only",
+      "authority": "paired_agent",
       "conditions": [],
       "person_page": "/account",
-      "may": null,
+      "may": "Read and change your profile",
       "cli_release": null,
       "switch": "app_surfaces",
       "surfaces": {
-        "webmcp": "Not for agents yet.",
-        "hosted_mcp": "Not for agents yet.",
+        "webmcp": "Not a browser tool yet.",
+        "hosted_mcp": "Not on the hosted MCP server yet.",
         "http": true,
-        "cli": "Not for agents yet."
+        "cli": "Not a regents command yet."
       },
       "auth_modes": [
-        "privy_session"
+        "siwa_request"
       ],
-      "fresh_proof": false,
-      "actor": "person",
+      "fresh_proof": true,
+      "actor": "agent",
       "context": "none",
       "retry": "read_safe",
       "lifecycle": "immediate"
@@ -163,47 +163,23 @@
     {
       "operation": "updateMyProfile",
       "effect": "write",
-      "authority": "owner_only",
+      "authority": "paired_agent",
       "conditions": [],
       "person_page": "/account",
-      "may": null,
+      "may": "Read and change your profile",
       "cli_release": null,
       "switch": "app_surfaces",
       "surfaces": {
-        "webmcp": "Not for agents yet.",
-        "hosted_mcp": "Not for agents yet.",
+        "webmcp": "Not a browser tool yet.",
+        "hosted_mcp": "Not on the hosted MCP server yet.",
         "http": true,
-        "cli": "Not for agents yet."
+        "cli": "Not a regents command yet."
       },
       "auth_modes": [
-        "privy_session"
+        "siwa_request"
       ],
-      "fresh_proof": false,
-      "actor": "person",
-      "context": "none",
-      "retry": "none",
-      "lifecycle": "immediate"
-    },
-    {
-      "operation": "syncMyProfile",
-      "effect": "write",
-      "authority": "owner_only",
-      "conditions": [],
-      "person_page": "/account",
-      "may": null,
-      "cli_release": null,
-      "switch": "app_surfaces",
-      "surfaces": {
-        "webmcp": "Not for agents yet.",
-        "hosted_mcp": "Not for agents yet.",
-        "http": true,
-        "cli": "Not for agents yet."
-      },
-      "auth_modes": [
-        "privy_session"
-      ],
-      "fresh_proof": false,
-      "actor": "person",
+      "fresh_proof": true,
+      "actor": "agent",
       "context": "none",
       "retry": "none",
       "lifecycle": "immediate"

@@ -2,6 +2,12 @@
 
 Changes to Ash Template, newest first.
 
+## 14 November 2026
+
+- **Public name.** Your account page saves your public name with your sign-in on this
+  site. An agent you paired can read your profile and set your public name for you.
+  The profile API no longer takes your Privy sign-in tokens.
+
 ## 13 November 2026
 
 - **Rooms.** Liking a message, or taking a like back, no longer moves the messages

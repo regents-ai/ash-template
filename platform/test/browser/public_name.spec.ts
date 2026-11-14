@@ -1,19 +1,15 @@
 import {expect, test} from "./support/test"
 import {ready, signedIn, watch} from "./support/person"
 
-// The Public Display Name form on the Account page. A save needs the browser's own
-// sign-in with Privy, which the walk's browser never holds (support/test.ts), so
-// Save must finish, say why, send no change, and leave the form where it was. A
-// save that goes through is proved by test/ash_template_web/public_name_test.exs.
+// The Public Display Name form on the Account page saves with the page's own
+// sign-in: its session cookie and forms token. The walk's person saves the name
+// they already have (sign_in.exs), so every other page on the walk still shows it.
 test.use(signedIn)
 
-test("Save without the browser's sign-in refuses and changes nothing", async ({page}) => {
+const walkName = "W".repeat(80)
+
+test("Save keeps the name with the page's own sign-in", async ({page}) => {
   const problems = watch(page)
-  const changes: string[] = []
-  page.on("request", request => {
-    if (new URL(request.url()).pathname.startsWith("/api/v1/profile") && request.method() !== "GET")
-      changes.push(`${request.method()} ${request.url()}`)
-  })
   await page.goto("/account")
   await ready(page)
   const form = page.locator("#account-public-name")
@@ -26,11 +22,14 @@ test("Save without the browser's sign-in refuses and changes nothing", async ({p
     .then(([f, b]) => ({x: b!.x - f!.x, y: b!.y - f!.y, height: f!.height}))
   const before = await place()
 
-  await name.fill("Ada Lovelace")
+  await name.fill(walkName)
+  const change = page.waitForResponse(response =>
+    new URL(response.url()).pathname === "/api/v1/profile" && response.request().method() === "PATCH")
   await save.click()
+  expect((await change).status()).toBe(200)
   await expect(form.locator("form")).not.toHaveAttribute("aria-busy")
   await expect(form.getByRole("status")).not.toBeEmpty()
-  expect(changes).toEqual([])
+  await expect(name).toHaveValue(walkName)
   // The message sits beside Save without moving it.
   expect(await place()).toEqual(before)
   await problems.expect()

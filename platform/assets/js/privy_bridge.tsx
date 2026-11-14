@@ -15,7 +15,6 @@ import {
 } from "@privy-io/react-auth"
 import React from "react"
 import {createRoot} from "react-dom/client"
-import {createProfileClient, type ProfileAction} from "../vendor/regent_identity/profile_client.mjs"
 import {
   privyLoginFailure,
   privyPairHeaders,
@@ -625,21 +624,6 @@ type PrivyLoginCallbackOptions = {
   reportFailure?: (failure: SignInFailureDiagnostic) => void
 }
 
-type ProfileProof = {accessToken: string; identityToken: string; subject: string; isCurrent: () => boolean}
-
-// One change to the shared profile belongs to the person signed in when it was
-// opened, at the press of Save: a proof for anyone else is never handed on, so a
-// switch of account before or part way through it sends nothing.
-export function oneSignIn(
-  subject: string | null,
-  acquireProof: () => Promise<ProfileProof | null>,
-): () => Promise<ProfileProof | null> {
-  return async () => {
-    const proof = await acquireProof()
-    return proof && proof.subject === subject ? proof : null
-  }
-}
-
 // Privy runs this for its own provider bootstrap too, for a modal this page
 // never opened, and that entry shares the one in-flight completion with a
 // deliberate click. Only a modal this page opened may speak for it, so a
@@ -707,7 +691,6 @@ type AccountBridgeProps = {
     identityHandler: NonNullable<PrivyBridgeHandle["identity"]>,
     finishSignOutOnly: () => void,
     ready: boolean,
-    openProfile: () => ProfileAction,
   ) => void
 }
 
@@ -880,29 +863,6 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
     [getAccessToken, providerState?.getIdentityToken, lifetime],
   )
   React.useEffect(() => { acquireTokensRef.current = acquireTokens }, [acquireTokens])
-  // The shared profile changes only with this sign-in's own proof, read when the
-  // change is asked for and never handed to the page. Each change opens its own
-  // client, so all of its calls belong to one person.
-  const openProfile = React.useCallback(
-    () =>
-      createProfileClient({
-        acquireProof: oneSignIn(provider.current.subject, async () => {
-          const state = provider.current
-          if (signOutOnly || lifetime.aborted || !state.ready || !state.authenticated || !state.subject) {
-            return null
-          }
-          const generation = identityGeneration.current
-          const tokens = await acquireTokensRef.current()
-          return {
-            ...tokens,
-            subject: state.subject,
-            isCurrent: () => !lifetime.aborted && provider.current.authenticated &&
-              provider.current.subject === state.subject && identityGeneration.current === generation,
-          }
-        }),
-      }),
-    [signOutOnly, lifetime],
-  )
   const notifyIdentityState = React.useCallback((state: IdentityState) => {
     if (lifetime.aborted) return
     window.dispatchEvent(new CustomEvent(IDENTITY_STATE_EVENT, {detail: state}))
@@ -1224,8 +1184,8 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
   const finishSignOutOnly = signOutOnlyBridge.finish
 
   React.useEffect(
-    () => publishRequestHandler(requestHandler, identityHandler, finishSignOutOnly, ready, openProfile),
-    [finishSignOutOnly, identityHandler, openProfile, publishRequestHandler, ready, requestHandler],
+    () => publishRequestHandler(requestHandler, identityHandler, finishSignOutOnly, ready),
+    [finishSignOutOnly, identityHandler, publishRequestHandler, ready, requestHandler],
   )
 
   return null
@@ -1250,7 +1210,6 @@ export function startPrivyBridge(
     let currentRequestHandler: PrivyBridgeHandle["request"] | null = null
     let currentIdentityHandler: PrivyBridgeHandle["identity"] | null = null
     let currentFinishSignOutOnly: (() => void) | null = null
-    let currentOpenProfile: (() => ProfileAction) | null = null
     let resolved = false
     let currentReady = false
     const controller = new AbortController()
@@ -1264,7 +1223,6 @@ export function startPrivyBridge(
       signal?.removeEventListener("abort", onAbort)
       currentRequestHandler = null
       currentIdentityHandler = null
-      currentOpenProfile = null
       root.unmount()
       host.remove()
       if (!resolved) reject(reason)
@@ -1290,24 +1248,18 @@ export function startPrivyBridge(
       finishSignOutOnly() {
         currentFinishSignOutOnly?.()
       },
-      openProfile() {
-        if (!currentOpenProfile) throw new Error("Privy bridge is not ready")
-        return currentOpenProfile()
-      },
     }
     const publishRequestHandler: AccountBridgeProps["publishRequestHandler"] = (
       requestHandler,
       identityHandler,
       finishSignOutOnly,
       ready,
-      openProfile,
     ) => {
       if (controller.signal.aborted) return
       currentReady = ready
       currentRequestHandler = requestHandler
       currentIdentityHandler = identityHandler
       currentFinishSignOutOnly = finishSignOutOnly
-      currentOpenProfile = openProfile
       if (!ready || resolved) return
       clearTimeout(timeout)
       resolved = true

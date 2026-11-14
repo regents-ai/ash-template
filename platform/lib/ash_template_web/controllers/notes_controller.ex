@@ -2,26 +2,21 @@ defmodule AshTemplateWeb.NotesController do
   @moduledoc """
   The notes API: the notes page's own Ash actions and policies, for the person
   signed in on this site, with the browser session its pages use, or for an
-  agent the person paired, signing its request with its wallet
-  (`AshTemplateWeb.Plugs.AgentWallet`), which acts as them. A change made here
-  appears at once on every notes page its writer has open.
+  agent the person paired, signing its request with its wallet, which acts as
+  them (`AshTemplateWeb.Plugs.PersonOrAgent`). A change made here appears at once
+  on every notes page its writer has open.
   """
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
-  alias AshTemplateWeb.{FormErrors, NotesJSON, PrivySessionController}
-  alias AshTemplateWeb.Plugs.AgentWallet
+  alias AshTemplateWeb.{FormErrors, NotesJSON}
+  alias AshTemplateWeb.Plugs.PersonOrAgent
   alias RegentHttp.UnexpectedFailure
 
-  plug :authenticate
-
-  # A session's request that changes something carries the session's forms token
-  # in x-csrf-token, as the site's pages send it; one without it counts as signed
-  # out, so another site's page can never act with the person's cookie.
-  @forms_token Plug.CSRFProtection.init(with: :clear_session)
+  plug PersonOrAgent
+  plug :require_actor
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
@@ -43,7 +38,6 @@ defmodule AshTemplateWeb.NotesController do
     "notes_unavailable" =>
       {503, "Your notes could not be reached right now.", "Try again in a moment."}
   }
-  @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
   # A page of the person's notes, 50 at a time: `{}` for the first, or the
   # previous page's cursor as `{"after": ...}`, since a signed request carries it
@@ -127,36 +121,10 @@ defmodule AshTemplateWeb.NotesController do
   defp refuse_delete(conn, error),
     do: conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
 
-  defp authenticate(conn, _opts) do
-    conn = put_resp_header(conn, "cache-control", "no-store")
+  defp require_actor(%{assigns: %{actor: nil}} = conn, _opts),
+    do: conn |> refuse("authentication_required") |> halt()
 
-    if Siwa.AgentAuthPlug.signed_request?(conn),
-      do: authenticate_agent(conn),
-      else: authenticate_person(conn)
-  end
-
-  # An agent's signed request acts as the person it is paired with, or not at all.
-  defp authenticate_agent(conn) do
-    case AgentWallet.call(conn, []) do
-      %{halted: true} = conn -> conn
-      %{assigns: %{actor: %Agent{pairing: :active}}} = conn -> conn
-      conn -> conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
-    end
-  end
-
-  # The person's own sign-in on this site: the session cookie its pages hold.
-  defp authenticate_person(conn) do
-    conn =
-      conn
-      |> fetch_session()
-      |> Plug.CSRFProtection.call(@forms_token)
-      |> PrivySessionController.enforce_authority()
-
-    case conn.assigns.current_human_account do
-      %{} = account -> assign(conn, :actor, Human.for_account(account))
-      nil -> conn |> refuse("authentication_required") |> halt()
-    end
-  end
+  defp require_actor(conn, _opts), do: conn
 
   # Another account's note reads as absent, exactly like an id that names none.
   defp with_note(conn, id, respond) do

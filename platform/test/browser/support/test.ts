@@ -8,11 +8,7 @@ const bridge = /^\/assets\/js\/privy_bridge(-[0-9a-f]+)?\.js$/
 
 const standIn = `
 export async function startPrivyBridge() {
-  return {
-    request: async () => {},
-    openProfile: () => async () =>
-      ({ok: false, status: null, error: {code: "authentication_required", outcome_unknown: false}}),
-  }
+  return {request: async () => {}}
 }
 `
 

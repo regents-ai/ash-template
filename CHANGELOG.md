@@ -10937,3 +10937,54 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   API 18.0.0 unchanged.
 - Rollback: v248 (`cca17939`) image.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — The profile API takes a session on this site or a paired agent
+
+- `GET` and `PATCH /api/v1/profile` (the shared `RegentIdentity.HTTP`) answer the same
+  owner as the notes API: the person signed in on this site, with the session cookie
+  its pages hold, or the person an agent they paired acts for, while that person's
+  latest sign-in here names a wallet. A change from a session also carries the
+  session's forms token in `x-csrf-token`; without it the request counts as signed out.
+  Without a session or an agent's signature the answer is 401 `authentication_required`.
+- A paired agent may read its person's profile and set their public name (the founder's
+  decision) or their selected wallet, which must be one of the wallets their latest
+  sign-in named. An agent paired with no one gets 403 `agent_not_paired`; one whose
+  person's latest sign-in here names no wallet gets 403 `person_not_here`.
+- The rule lives in one place, `AshTemplateWeb.Plugs.PersonOrAgent`, lifted from
+  `AshTemplateWeb.NotesController`, which now uses it with its answers unchanged.
+  `AshTemplateWeb.Plugs.ProfileOwner` runs it on the profile routes (router pipeline
+  `:profile_owner`) and hands the owner to the library with
+  `RegentIdentity.HTTP.put_owner/2`.
+- A person's profile is made when they sign in
+  (`AshTemplate.Accounts.VerifiedSession.establish/1` calls `RegentIdentity.ensure/1`),
+  so `POST /api/v1/profile/sync` is gone. A person's Privy tokens are not taken on the
+  profile routes.
+- The Account page's name form saves with the page's session and forms token. Each save
+  keeps the forms token of its press, so a save pressed before a switch of account
+  changes nothing after it. The page's Privy bridge no longer opens the profile:
+  `openProfile` is gone from `platform/assets/js/auth_lazy.ts` and
+  `platform/assets/js/privy_bridge.tsx`.
+- The OpenAPI documents move to 19.0.0: the profile operations take `cookieSession`
+  (with `csrfToken` for a change) or `siwaProof`; the sync operation and the
+  `ExpectedSubject` parameter are gone; the 403 lists the agent's answers; and
+  `profile_unconfigured` and `identity_evidence_conflict` leave the error codes.
+  `platform/priv/capabilities.json` lists both operations for a paired agent over HTTP.
+  Listed in the docs' breaking changes, `cli/COMMANDS.md`, `/llms.txt`, `/agents.md`,
+  `/skill.md` and the public changelog; `docs/agent-parity.md` (G3) and
+  `platform/README.md` say so. No regents command calls the profile API.
+- **Library.** elixir-utils pin `2503f4fe` to `f2138718` (branch
+  `eu/profile-owner-1114`): profile contract 2.0.0, with `RegentIdentity.Owner` and
+  `RegentIdentity.HTTP.put_owner/2`; its browser client sends the page's session cookie
+  and, on a change, the forms token. No migration.
+- Tests: `platform/test/ash_template_web/public_name_test.exs` signs people in through
+  the site's own sign-in step. The person reads and sets their name, which shows on the
+  Account page; a change without the forms token is refused and changes nothing. With
+  no sign-in, a read and a change are refused. A paired agent reads and sets its
+  person's name, which reads back for that person and not for another. A paired agent
+  whose person's latest sign-in names no wallet is refused on both, and acts again
+  after a sign-in with one. With the forms check taken out, the test fails.
+  `platform/assets/test/public_name.test.ts` drives the form's save path against a
+  stand-in site, including a switch of account; `platform/test/browser/public_name.spec.ts`
+  saves a name in a real browser at both widths. The lifted rule's notes callers stay
+  covered by `notes_sign_in_test.exs` and `signed_tools_test.exs`. The feature map's
+  rows say so.

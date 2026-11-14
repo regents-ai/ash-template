@@ -108,6 +108,12 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.AgentWallet
   end
 
+  # The profile API's owner: the person signed in here, with the forms token on a
+  # change, or the person a paired agent acts for (AshTemplateWeb.Plugs.ProfileOwner).
+  pipeline :profile_owner do
+    plug AshTemplateWeb.Plugs.ProfileOwner
+  end
+
   # A signed agent's live feed: the agent pipeline with no `:accepts`, since the
   # answer is an event stream, which a JSON-only door would refuse.
   pipeline :agent_feed do
@@ -290,10 +296,10 @@ defmodule AshTemplateWeb.Router do
     get "/polls/:poll", PollsController, :show
   end
 
-  # The person's own profile, with the Privy proof pair (RegentIdentity.HTTP).
+  # The person's own shared profile (RegentIdentity.HTTP), for its owner.
   scope "/api/v1" do
-    pipe_through :api
-    forward "/profile", RegentIdentity.HTTP, otp_app: :ash_template
+    pipe_through [:api, :profile_owner]
+    forward "/profile", RegentIdentity.HTTP
   end
 
   # An agent pairs with the person who gave it a code, and checks in; both are

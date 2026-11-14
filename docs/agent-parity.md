@@ -38,7 +38,7 @@ identity tools behind its switch.
 | Sign out | Account box | — | — | — | — | sign-in | G1 |
 | Agent's own identity (register, whoami, status) | — | `agents_whoami`, `agents_status` | — | `register_identity`, `get_identity`, `check_in` | `agents whoami`, `agents status` | no | G5 |
 | Agent's public profile (read, edit) | — | `agents_profile`, `agents_edit_profile`, `agents_get` | — | — | `agents profile`, `agents edit-profile`, `agents get` | no | G5 |
-| Account public name | `/account` | — | — | — | — | no | G3 |
+| Account public name (read, set) | `/account`; a paired agent's signed `GET` and `PATCH /api/v1/profile` | — | — | — | — | no | G3 |
 | Verified connections (start, refresh) | `/account` | — | — | — | — | sign-in | G4 |
 | Apps connected by sign-in (list, revoke) | `/account/connections` | — | — | — | — | sign-in | G4 |
 | Linked wallets (read, link another) | `/account/wallets` | — | — | — | — | wallet | G4 |
@@ -92,10 +92,12 @@ identity tools behind its switch.
   out of reach of a *paired helper* agent (one agent must not unpair another or pair
   more agents for its person), so they open only to the owner from G1. Owner: the
   account thread is reshaping pairing on `/account` now; tools follow its change.
-- **G3. Public name.** The account's public name is saved by the page through the
-  shared profile (`RegentIdentity.HTTP`, Privy proof pair). An owner agent needs the
-  same through a signed request. Library change in elixir-utils `identity`. Owner:
-  this lane after G1.
+- **G3. Public name.** The page saves the account's public name through the shared
+  profile (`RegentIdentity.HTTP`) with the person's session, and a paired agent reads
+  and sets it with a signed request to `GET` and `PATCH /api/v1/profile` (14 Nov,
+  `AshTemplateWeb.Plugs.ProfileOwner`). No signed browser tool, hosted MCP tool or
+  regents command calls it yet. Owner: this lane, with the agent-access lane for the
+  hosted tool (G5).
 - **G4. Connections and wallets.** Verified connections, connected apps and linked
   wallets are sign-in and wallet settings. Protected; planned after G1.
 - **G5. No hosted MCP or connector for the tools that exist.** Every WebMCP tool above
