@@ -1,6 +1,6 @@
 /** Fleets: how a person and their agents pair, gather, decide and wear the crown. */
 import type {IconSet} from "../icon"
-import {TAU, clamp01, curve, mix, polar, pulse, span} from "../loop"
+import {TAU, clamp01, curve, mix, pulse, span} from "../loop"
 import {node} from "../marks"
 import type {Point} from "../pen"
 
@@ -14,6 +14,17 @@ const FORMATION = [
 
 const POLL_SHARES = [0.5, 0.3, 0.2] as const
 const POLL_GAP = 0.02
+
+// A key's stepped edge, the lock's the same: four steps across, each at its own height.
+const KEY_STEPS = [-2, -12, -4, -9] as const
+const KEY_STEP = 12
+const KEY_HALF = (KEY_STEPS.length * KEY_STEP) / 2
+const KEY_EDGE: readonly Point[] = KEY_STEPS.flatMap((top, k): Point[] => [
+  [-KEY_HALF + k * KEY_STEP, top],
+  [-KEY_HALF + (k + 1) * KEY_STEP, top],
+])
+const KEY: readonly Point[] = [[-KEY_HALF, 16], ...KEY_EDGE, [KEY_HALF, 16], [-KEY_HALF, 16]]
+const LOCK: readonly Point[] = [[-KEY_HALF, -26], ...KEY_EDGE, [KEY_HALF, -26], [-KEY_HALF, -26]]
 
 const VOTES = [-1, 1, -1, -1, 1] as const
 
@@ -48,16 +59,23 @@ export const fleets: IconSet = {
     },
   },
   key: {
-    period: 6,
-    still: 0.1,
+    period: 5.5,
+    still: 0.55,
     draw(pen, p) {
-      pen.circle(0, 0, 26, {tone: "quiet", dash: [36, 0.5]})
-      const [ax, ay] = polar(0, 0, 26, p - 0.125)
-      const [bx, by] = polar(0, 0, 26, p + 0.375)
-      pen.line(ax, ay, bx, by)
-      pen.dot(0, 0, 2.2)
-      node(pen, bx, by, 5.5)
-      pen.dot(ax, ay, 5, {tone: "accent"})
+      // The key slides across under the lock, rises into it, and the lock lights where
+      // every step meets; then it drops and slides back.
+      const across = span(p, 0.08, 0.34) - span(p, 0.82, 0.96)
+      const up = span(p, 0.34, 0.46) - span(p, 0.74, 0.82)
+      const fit = pulse(p, 0.44, 0.5, 0.7, 0.76)
+      const dx = -14 * (1 - across)
+      const dy = 10 * (1 - up)
+      pen.path(LOCK, {tone: "quiet"})
+      pen.path(LOCK, {tone: "accent", alpha: fit})
+      for (const [k, top] of KEY_STEPS.entries()) {
+        const x = -KEY_HALF + KEY_STEP * (k + 0.5) + dx
+        pen.rect(x, (top + 16) / 2 + dy, KEY_STEP / 2, (16 - top) / 2, {fill: "hatch", tone: "quiet"})
+      }
+      pen.path(KEY.map(([x, y]): Point => [x + dx, y + dy]))
     },
   },
   fleet: {
@@ -84,7 +102,8 @@ export const fleets: IconSet = {
       const t = span(p, 0.1, 0.45) - span(p, 0.66, 0.92)
       const end: Point = [mix(-28, 28, t), 16 - 30 * Math.sin(Math.PI * t)]
       if (t > 0.01) {
-        const top = Math.min(16, end[1]) - 22
+        // The cable bows only as far as its ends are apart, so it never loops on itself.
+        const top = Math.min(16, end[1]) - 22 * clamp01((end[0] + 28) / 24)
         const cable = curve([-28, 16], [(end[0] - 28) / 2, top], end, 18)
         pen.path(cable, {weight: 1.3})
       }

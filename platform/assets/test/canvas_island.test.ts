@@ -6,7 +6,7 @@
 // and stayed blurred once it had grown, as a transform never reaches a
 // ResizeObserver (found by the product tiles lane, 11 Nov).
 import {afterEach, beforeEach, expect, it, vi} from "vitest"
-import {createCanvasIsland, type IslandRenderer, type LoadRenderer} from "../js/canvas_island"
+import {createCanvasIsland, drawingBufferSize, type IslandRenderer, type LoadRenderer} from "../js/canvas_island"
 
 const drawing: IslandRenderer = {
   resize() {},
@@ -123,4 +123,10 @@ it("draws within the pixel budget an island asks for", async () => {
   expect(size).toEqual([1500, 1000])
   await runIsland(async (_, given) => ((size = given), drawing), {...sharp, maxDrawingBufferPixels: 3_000_000})
   expect(size).toEqual([1800, 1200])
+})
+
+// Invariant: no side is longer than every device can draw, however tall the picture.
+it("keeps a tall picture's longest side within what every device draws", () => {
+  expect(drawingBufferSize(400, 6000, 2, 2, 7_000_000)).toEqual([546, 8192])
+  expect(drawingBufferSize(400, 3000, 2, 2, 7_000_000)).toEqual([800, 6000])
 })

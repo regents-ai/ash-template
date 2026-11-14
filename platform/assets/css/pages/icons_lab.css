@@ -4,7 +4,8 @@
    icon in its cell's art box. The words and numbers are the page's own text over it.
    Eight across on a wide sheet, four on a phone and three on the narrowest; each
    word fits its cell at every width. Until the picture has drawn the art boxes are
-   empty; without WebGPU a line says the drawings need a newer browser. */
+   empty; without WebGPU, or in forced colours, the words stand alone, and without
+   WebGPU a line says the drawings need a newer browser. */
 .motion-lab--icons {
   width: 100%;
   align-content: start;
@@ -55,6 +56,11 @@
 
 .icons-lab[data-icons-ready="false"] .icons-lab__note {
   display: block;
+}
+
+/* With no drawings the sheet is a list of words, with no empty boxes above them. */
+.icons-lab[data-icons-ready="false"] .icon-cell__art {
+  display: none;
 }
 
 /* Each section is the box its columns are chosen against. Positioned after the
@@ -144,26 +150,29 @@
   color: var(--color-fg);
 }
 
-/* Narrower cells set the number under the word, and the letters a little closer. */
+/* Narrower cells set the number under the word, the letters a little closer, and the
+   art and the word across the cell's whole width, so the longest word fits. */
 @container icon-sheet (width < 1000px) {
   .icon-cell {
     --icon-tracking: 0.04em;
     grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@container icon-sheet (width < 640px) {
-  .icons-lab__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  /* The art and the word take the cell's whole width, so the longest word fits. */
-  .icon-cell {
     padding-inline: 0;
   }
 }
 
-@container icon-sheet (width < 320px) {
+/* Four across on a phone, a little apart, so neighbouring words never run together. */
+@container icon-sheet (width < 640px) {
+  .icons-lab__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: calc(var(--space-1) / 2);
+  }
+
+  .icon-cell {
+    --icon-tracking: 0.02em;
+  }
+}
+
+@container icon-sheet (width < 280px) {
   .icons-lab__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -183,7 +192,8 @@
 }
 
 @media (forced-colors: active) {
-  .icons-lab__stage {
+  .icons-lab__stage,
+  .icon-cell__art {
     display: none;
   }
 }

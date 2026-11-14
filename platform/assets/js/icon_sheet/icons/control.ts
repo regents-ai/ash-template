@@ -32,9 +32,9 @@ export const control: IconSet = {
       pen.circle(0, 0, 24, {tone: "quiet", dash: [28, 0.55]})
       pen.circle(0, 0, 10, {fill: "hatch"})
       pen.circle(0, 0, 10)
-      // In from above, turned away at the edge, and off below.
-      const [x, y] = along(GLANCE, span(p, 0.08, 0.92))
-      pen.rect(x, y, 3.5, 3.5, {fill: "solid", alpha: pulse(p, 0.04, 0.12, 0.86, 0.95)})
+      // In from above at a steady speed, turned away at the edge, and off below.
+      const [x, y] = along(GLANCE, clamp01((p - 0.08) / 0.84))
+      pen.rect(x, y, 3.5, 3.5, {fill: "solid", alpha: pulse(p, 0.08, 0.36, 0.64, 0.92)})
       const struck = pulse(p, 0.42, 0.5, 0.52, 0.7)
       pen.circle(0, 0, 24, {arc: [0.43, 0.14], tone: "accent", weight: 1.6, alpha: struck})
     },
@@ -71,7 +71,8 @@ export const control: IconSet = {
           const covered = clamp01((bar - x0) / (x1 - x0)) * (1 - back)
           const edge = mix(x0, x1, covered)
           if (covered < 0.999) pen.line(edge, y, x1, y, {tone: "quiet", weight: 1.3})
-          if (covered > 0.001) pen.rect((x0 + edge) / 2, y, (edge - x0) / 2, 3, {fill: "hatch"})
+          // A sliver of hatching would read as a mark of its own, so a block shows as it widens.
+          if (covered > 0.001) pen.rect((x0 + edge) / 2, y, (edge - x0) / 2, 3, {fill: "hatch", alpha: clamp01((edge - x0 - 3) / 6)})
         }
       }
       pen.line(bar, -30, bar, 30, {tone: "accent", alpha: pulse(p, 0.04, 0.1, 0.6, 0.68)})
