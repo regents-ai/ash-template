@@ -10929,3 +10929,11 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   and the `Makefile`'s note on `check-browser` say so. No migration, no pin change, no
   new dependency; nothing served changes. The walk itself is the check: it passes with
   both settings unset.
+
+## 2026-11-14 — Released v249: the walk's own Privy settings
+
+- v249 on template.regents.sh carries the browser walk change above. Development
+  configuration and docs only; nothing served changes. No migration, no pin change;
+  API 18.0.0 unchanged.
+- Rollback: v248 (`cca17939`) image.
+- Full check exit 0 by the chief on the exact commit.
