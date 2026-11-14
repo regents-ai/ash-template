@@ -12,7 +12,7 @@ stdin. Check the installed command's `--help` before use.
 ## Setup
 
 ```sh
-uv tool install --python 3.14 regents-cli==1.10.28
+uv tool install --python 3.14 'regents-cli[browser,mcp]==1.10.28'
 regents auth login --site ash-template
 regents ash-template doctor
 ```

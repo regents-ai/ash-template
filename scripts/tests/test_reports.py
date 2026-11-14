@@ -472,7 +472,9 @@ class Drift(Fixture):
 class Init(Fixture):
     # Text that names the template itself, in files the rename leaves as written.
     AS_WRITTEN = {
-        "skills/ash-stack/SKILL.md": "Shared behavior starts in ash-template (AshTemplate, ash_template).\n",
+        "skills/ash-stack/SKILL.md": (
+            "Shared behavior starts in ash-template (AshTemplate, ash_template), live at template.regents.sh.\n"
+        ),
         "skills/ash-template-guide/ash_template.md": "Ash Template is the baseline.\n",
         "docs/gap-map-plan.md": "Fix everything in the ash-template gap map (AshTemplateWeb.RouteCatalog).\n",
         "CHANGELOG.md": "# Changelog\n\n- ash-template's AshTemplate.Repo.\n",
@@ -483,17 +485,40 @@ class Init(Fixture):
         "<!-- END REGENT ROLLOUT REVIEW -->\n"
     )
 
-    def test_names_that_mean_the_template_stay_and_its_own_scripts_go(self):
+    REMOVED = ["scripts/drift.sh", "scripts/pins.sh", "scripts/github.sh", "scripts/shared-files.sh",
+               "scripts/harvest.sh", "scripts/stale-prs.sh", "scripts/tests/test_reports.py", "automation/harvest.md",
+               "automation/spread.md", "scripts/regent-ui-update"]
+    # Files that name the template's address where they mean the site itself.
+    ADDRESSED = {
+        "cli/commands.json": '{"base_url": "https://template.regents.sh"}\n',
+        "platform/lib/ash_template_web/plugs/agent_wallet.ex": (
+            '@hint "Sign in (how: https://template.regents.sh/agents.md)."\n'
+        ),
+        "platform/priv/legal/terms.md": "We operate Ash Template at `template.regents.sh`.\n",
+        "scripts/live-check.sh": 'live_url="https://template.regents.sh"\n',
+    }
+
+    def renamed(self, files):
+        """A template holding `files`, renamed to Night Owl at night-owl.example."""
         root = self.repo(self.base / "ash-template")
         (root / "scripts").mkdir()
         shutil.copy2(SCRIPTS / "init.sh", root / "scripts" / "init.sh")
-        removed = ["scripts/drift.sh", "scripts/pins.sh", "scripts/github.sh", "scripts/shared-files.sh",
-                   "scripts/harvest.sh", "scripts/stale-prs.sh", "scripts/tests/test_reports.py", "automation/harvest.md",
-                   "automation/spread.md", "scripts/regent-ui-update"]
         self.commit(root, "template", {
-            **{path: "report\n" for path in removed},
+            **{path: "report\n" for path in self.REMOVED},
+            "platform/lib/mix/tasks/ash_template.route_handoff.ex": "defmodule Mix.Tasks.AshTemplate.RouteHandoff do\nend\n",
+            **files,
+        })
+
+        done = self.run_script(root, "init.sh", "night_owl", "NightOwl", "night-owl.example", "Night Owl")
+
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return root
+
+    def test_names_that_mean_the_template_stay_and_its_own_scripts_go(self):
+        root = self.renamed({
             **self.AS_WRITTEN,
-            "AGENTS.md": "# Ash Template\n\n" + self.REVIEW,
+            **self.ADDRESSED,
+            "AGENTS.md": "# Ash Template\n\nShared skills change in regents-ai/ash-template.\n\n" + self.REVIEW,
             "docs/feature-map.md": "`regents ash-template doctor` reads AshTemplateWeb.Health.\n",
             "platform/scripts/check_required_fixes.exs": (
                 "# Reads ash-template's security/required-fixes.json; run from AshTemplate's platform folder.\n"
@@ -511,12 +536,14 @@ class Init(Fixture):
             "platform/fly.staging.toml": "app = \"ash-template-staging\"\n",
         })
 
-        done = self.run_script(root, "init.sh", "night_owl", "NightOwl", "Night Owl")
-
-        self.assertEqual(done.returncode, 0, done.stderr)
         for path, body in self.AS_WRITTEN.items():
             self.assertTrue((root / path).read_text().startswith(body), path)
-        self.assertEqual((root / "AGENTS.md").read_text(), "# Night Owl\n\n" + self.REVIEW)
+        for path, body in self.ADDRESSED.items():
+            site_path = path.replace("ash_template", "night_owl")
+            self.assertEqual((root / site_path).read_text(), body.replace("template.regents.sh", "night-owl.example")
+                             .replace("Ash Template", "Night Owl"), site_path)
+        self.assertEqual((root / "AGENTS.md").read_text(),
+                         "# Night Owl\n\nShared skills change in regents-ai/ash-template.\n\n" + self.REVIEW)
         self.assertEqual((root / "docs/feature-map.md").read_text(),
                          "`regents night-owl doctor` reads NightOwlWeb.Health.\n")
         self.assertEqual((root / "platform/scripts/check_required_fixes.exs").read_text(),
@@ -531,7 +558,25 @@ class Init(Fixture):
         ))
         self.assertEqual((root / "platform/fly.staging.toml").read_text(), "app = \"night-owl-staging\"\n")
         self.assertTrue((root / "platform/lib/mix/tasks/night_owl.route_handoff.ex").is_file())
-        self.assertEqual([path for path in removed if (root / path).exists()], [])
+        self.assertEqual([path for path in self.REMOVED if (root / path).exists()], [])
+
+    def test_the_new_site_keeps_the_list_of_what_it_replaces_by_hand(self):
+        agents = (SCRIPTS.parent / "AGENTS.md").read_text()
+        root = self.renamed({"AGENTS.md": agents})
+
+        def by_hand(text):
+            """The numbered items of the "New site" section."""
+            section = text.split("\n## New site\n", 1)[1].split("\n<!-- BEGIN REGENT ROLLOUT REVIEW -->", 1)[0]
+            return [line for line in section.splitlines() if line[:1].isdigit()]
+
+        renamed = (root / "AGENTS.md").read_text()
+        kept = by_hand(renamed)
+        self.assertNotIn("template-only", renamed)
+        self.assertEqual(len(kept), len(by_hand(agents)))
+        # Every name in the list is the new site's, except the template's repository.
+        named = "\n".join(kept).replace("regents-ai/ash-template", "")
+        for placeholder in ["ash_template", "AshTemplate", "ash-template", "Ash Template", "template.regents.sh"]:
+            self.assertNotIn(placeholder, named)
 
 
 class StalePrs(Fixture):

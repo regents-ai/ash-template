@@ -51,7 +51,8 @@ in and sign with, and the newest SIWA library the site checks them with.
 `make check-siwa-latest` (`scripts/check-siwa-latest.sh`) reads the newest release from PyPI
 and fails until `REGENTS_CLI_REV` is that release's tag commit,
 [the agent guide](../platform/priv/public/agents.md) names the release, its commit and its
-wheel's SHA256, every `uv tool install regents-cli==` line names it, and
+wheel's SHA256, every `uv tool install --python 3.14 'regents-cli[browser,mcp]==…'` line
+names it, and
 `platform/priv/capabilities.json` names it as `cli.release`. A new release therefore stops
 the next `make check` until those move together in one commit. It also fails until the
 elixir-utils commit `platform/mix.exs` pins contains the newest change to
@@ -107,4 +108,4 @@ under `/api/v1/`, apart from the shared agent sign-in under `/api/agents/v1/` an
 which stays open. Two commands have no browser tool: `agents pair`, since an agent pairs
 once, where it keeps its key, and `feed`, since a tool call answers once.
 
-Set `base_url` to the site's own address; the template's is its demo, template.regents.sh.
+`base_url` is the site's own address, https://template.regents.sh.
