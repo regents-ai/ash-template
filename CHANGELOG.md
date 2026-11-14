@@ -11100,3 +11100,36 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
 - Tests: `scripts/tests/test_reports.py` renames a fixture with the new address and
   checks the address is written in the site's files and kept in the skills, and that
   the real `AGENTS.md`'s "New site" survives the rename whole, under the new names.
+
+## 2026-11-14 — Connected apps whose published identity signs its requests
+
+- **Sign-in (elixir-utils `oauth`).** A published identity may now authenticate at
+  `/oauth/token` and `/oauth/revoke` with an assertion signed by its own key
+  (`private_key_jwt`), beside a public client (`none`, as Claude's is). Consent keeps
+  such a document when its `jwks_uri` is on the document's own host, HTTPS on port
+  443, with no inline `jwks`; any other method is refused. The app then sends a
+  `client_assertion` with each token and revocation request: RS256 or ES256 by the
+  key its `kid` names, `iss` and `sub` its `client_id`, `aud` this site's issuer or
+  its `/oauth/token` address as the only value, `exp` at most an hour away and a
+  `jti` used once, spent as a row of the existing `oauth_tokens` table. Without a
+  valid one the request is refused `invalid_client` with a 401; a public client that
+  sends one is refused too; PKCE is still required. The keys are read only at those
+  two addresses, kept five minutes and read again once for an unknown key id, at most
+  once a minute; while the address does not answer the request gets a 503. The
+  authorization server's discovery lists `none` and `private_key_jwt` with RS256 and
+  ES256 for both addresses. No migration.
+- **Library.** elixir-utils pin `f2138718` to `48a40c56`, whose only change is the
+  `oauth` package above.
+- `client_assertion` is among Phoenix's filtered parameter names
+  (`platform/config/config.exs`).
+- Tests: `platform/test/ash_template_web/claude_connector_test.exs` connects a
+  stand-in app whose document names `private_key_jwt` through the site's own routes:
+  discovery lists both methods, consent reads only the document, the code is refused
+  without an assertion and then trades for tokens that work at `/mcp`, and a refresh
+  names the app by its assertion alone. The refusals are the library's tests. The
+  Claude test's consent and Allow steps moved to a helper both tests use.
+- `docs/oauth-reference.md`, `platform/README.md` and the feature map say what is
+  accepted. Only a stand-in app has signed its requests; none from a live app.
+- The OpenAPI documents stay at 19.0.0: they describe `/api` and not the sign-in
+  addresses, and the discovery only gains a method and fields. The public changelog,
+  capabilities and agent pages are unchanged.
