@@ -100,9 +100,11 @@ nothing between requests.
 Budgets, all through `RegentAgentAccess.RateLimit` and the site's
 `RequestRateLimiter`. In the endpoint, before its body is read, a request with no
 token counts 120 a minute against its address (`mcp_address`, the API's figure),
-and one with a token counts against its address's ceiling of 600 a minute
-(`mcp_connected_address`), since Claude's connector calls from Anthropic's shared
-servers and one address carries many accounts. A token `RegentOAuth.verify/3`
+and while the switch is on, one with a token counts against its address's ceiling
+of 600 a minute (`mcp_connected_address`), since Claude's connector calls from
+Anthropic's shared servers and one address carries many accounts. While it is off,
+no token is this site's, so every request counts against the 120 alone, whatever
+headers it carries, its body read or not. A token `RegentOAuth.verify/3`
 accepts then counts against its connected account's own 120 under its OAuth subject
 (`mcp`); one that isn't this site's counts against its address's 120 as well when
 McpAgent refuses it. Once an address has spent its 120, its next request with a
