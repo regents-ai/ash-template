@@ -11151,3 +11151,55 @@ Brought up from Autolaunch (the rollback script and the deploy dry run) and Rege
   committed permissions ask before `scripts/rollback.sh` runs and allow
   `make check-scripts`. The release checklist in
   `skills/regent-workflow/references/release.md` names the rollback script.
+
+## 2026-11-14 — The hosted MCP address refuses in JSON-RPC, with the request's id
+
+- From Patchbay `b8f71c75` and `f64da10e` (`PatchbayWeb.MCP.Refusal`). Every refusal at
+  `/mcp` keeps its HTTP status and headers (401 with the `WWW-Authenticate` challenge,
+  429 with `Retry-After` and the RateLimit headers, 405 with `Allow`, 503 with
+  `Retry-After` while the site is closed) and answers a JSON-RPC error with the
+  request's id, `{"jsonrpc": "2.0", "id", "error": {"code": -31000, "message", "data":
+  {"code", "message", "hint"}}}`, so an MCP client can match it to its call and an
+  agent still reads the hint. Past a budget `data` carries `retry_after` in seconds.
+  The JSON-RPC code is -31000 for every refusal the site makes, outside the range
+  JSON-RPC and MCP keep (MCP 2026-07-28 asks new servers not to use -32000 to
+  -32019); -32700 for a body that is not JSON and -32603 for a failure of the site's
+  own. An id that could not be read (refused before the body was read, a form body, a
+  batch, a null or non-scalar id) is left out, as MCP's error responses allow (`id?`).
+  A notification gets the status with no body, since MCP never answers one.
+- Unlike Patchbay, a refusal keeps its status instead of 200: the authorization rules
+  need 401 with the challenge for Claude's sign-in to start, and the MCP Python client
+  reads a JSON-RPC error from a 4xx or 5xx answer (and only an error: a tool result
+  there is dropped). So a refused `tools/call` before the call runs is a JSON-RPC error
+  too. Once a call has run, a refusal replaces its answer as it leaves: when a paired
+  agent's pairing ends during the call (an agent signing its own calls, or a connected
+  app acting as its paired agent), a `tools/call` answers a tool result at 200 with
+  `isError: true`, `resultType: "complete"` and the text `{"error": {"code":
+  "agent_not_paired", …}}`, the tools' own refusal shape; any other request answers
+  the 403 refusal with its id.
+- `AshTemplateWeb.McpRefusal` (new) makes each answer; `AshTemplateWeb.Plugs.McpAgent`
+  uses it for its own refusals, for the agent's sign-in (it is now the sign-in plug's
+  hooks module, through `AgentWallet.siwa_options/1`, `verified_actor/2` and
+  `refusal/1`, which the API's refusals keep using unchanged) and for its budgets,
+  which it counts with the site's `RequestRateLimiter` and the RateLimit headers of
+  `RegentAgentAccess.RateLimit.put_headers/3`. `AgentWallet.recheck_before_send/3`
+  takes how to replace the answer. `AshTemplateWeb.ErrorJSON` answers `/mcp` (a body
+  too large or not JSON, `/mcp/`, a failure) through `McpRefusal.failed/3`, and the
+  launch gate's closed `/mcp` through `McpRefusal.refuse/3`. A visit line reads a
+  refusal's code from `error.data.code`.
+- The OpenAPI documents move to 20.0.0, the docs' rule for a breaking change to what
+  a client reads; the docs' breaking changes and Hosted MCP section,
+  `cli/COMMANDS.md`, the public changelog, `docs/oauth-reference.md`,
+  `platform/README.md` and the feature map say so. No migration.
+- Tests: `platform/test/ash_template_web/mcp_agent_test.exs` reads every refusal as a
+  JSON-RPC error with the request's id or none: string, integer and zero ids carried;
+  null, decimal and object ids left out; a notification refused with no body, a
+  forged signature's included; the 429 before the body is read with `Retry-After`,
+  the RateLimit headers and `retry_after`; `/mcp/`, a form body, 413 and a body that
+  is not JSON (-32700); a pairing that ends during a call (a tool result with
+  `isError` for `tools/call`, 403 with its id for `tools/list`, an ordinary answer for
+  a pairing that stays); and a refusal's visit line naming its code.
+  `claude_connector_test.exs` reads `connection_required` with the challenge,
+  `identity_unavailable` and the address budgets' 429s the same way, and a connected
+  app's paired agent unpaired during a call. `launch_gate_test.exs` reads the closed
+  address's 503 with and without an id.

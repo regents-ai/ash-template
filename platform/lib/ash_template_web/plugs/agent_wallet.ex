@@ -59,13 +59,16 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   def init(opts), do: opts
 
   @impl Plug
-  def call(conn, _opts) do
-    Siwa.AgentAuthPlug.call(conn,
-      client: RegentAgents.Broker,
-      hooks: __MODULE__,
-      audience: RegentAgents.Broker.audience()
-    )
-  end
+  def call(conn, _opts), do: Siwa.AgentAuthPlug.call(conn, siwa_options(__MODULE__))
+
+  @doc """
+  The shared plug's options, with `hooks` signing in and refusing: this module,
+  or a door that answers in its own shape with `verified_actor/2` and
+  `refusal/1` (`AshTemplateWeb.Plugs.McpAgent`).
+  """
+  @spec siwa_options(module()) :: keyword()
+  def siwa_options(hooks),
+    do: [client: RegentAgents.Broker, hooks: hooks, audience: RegentAgents.Broker.audience()]
 
   # The shared plug has already refused a query string and a body it did not
   # capture whole. A body sent here is JSON.
@@ -77,7 +80,17 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   end
 
   @impl Siwa.AgentAuthPlug.Hooks
-  def accept(
+  def accept(conn, data, _context) do
+    with {:ok, actor} <- verified_actor(conn, data),
+         do: {:ok, conn |> assign(:actor, actor) |> recheck_before_send(actor)}
+  end
+
+  @doc """
+  The actor the wallet the sign-in service verified (`data`, its answer) signs
+  in as, or the refusal `deny/2` takes when it can't.
+  """
+  @spec verified_actor(Plug.Conn.t(), map()) :: {:ok, Agent.t()} | {:error, map()}
+  def verified_actor(
         conn,
         %{
           "verified" => true,
@@ -89,24 +102,19 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
             "chain_id" => 8453,
             "audience" => audience
           }
-        },
-        _context
+        }
       ) do
     if audience == RegentAgents.Broker.audience(),
       do: sign_in(conn, address, book),
       else: refused(:unsupported_principal)
   end
 
-  def accept(_conn, _data, _context), do: refused(:unsupported_principal)
+  def verified_actor(_conn, _data), do: refused(:unsupported_principal)
 
   defp sign_in(conn, address, book) do
-    case actor_for(address, book) do
-      {:ok, actor} ->
-        {:ok, conn |> assign(:actor, actor) |> recheck_before_send(actor)}
-
-      {:error, error} ->
-        UnexpectedFailure.log(conn, error)
-        refused(:agent_unavailable)
+    with {:error, error} <- actor_for(address, book) do
+      UnexpectedFailure.log(conn, error)
+      refused(:agent_unavailable)
     end
   end
 
@@ -151,41 +159,49 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   @doc """
   Checks a paired agent's pairing again just before the answer leaves, and
-  replaces the answer when it has ended or changed hands meanwhile.
+  replaces the answer when it has ended or changed hands meanwhile: with
+  `replace`, given the conn, the refusal's status and its
+  `{code, message, hint}`, or in this site's `{"error": ...}` shape.
   """
-  @spec recheck_before_send(Plug.Conn.t(), Agent.t()) :: Plug.Conn.t()
-  def recheck_before_send(conn, %Agent{pairing: :active} = actor),
-    do: register_before_send(conn, &recheck(&1, actor))
+  @spec recheck_before_send(
+          Plug.Conn.t(),
+          Agent.t(),
+          (Plug.Conn.t(), pos_integer(), map() -> Plug.Conn.t())
+        ) :: Plug.Conn.t()
+  def recheck_before_send(conn, actor, replace \\ &replace/3)
 
-  def recheck_before_send(conn, _actor), do: conn
+  def recheck_before_send(conn, %Agent{pairing: :active} = actor, replace),
+    do: register_before_send(conn, &recheck(&1, actor, replace))
+
+  def recheck_before_send(conn, _actor, _replace), do: conn
 
   # The request ran after the pairing was read. Before anything is sent, the
   # wallet's current pairing must still be this one, with the same person;
   # otherwise the answer is replaced, so an unpairing or a new pairing during
   # the request never sends the former person's data.
-  defp recheck(conn, %Agent{} = actor) do
+  defp recheck(conn, %Agent{} = actor, replace) do
     case RegentAgents.Authority.resolve(AshTemplate.Repo, actor.wallet_address) do
       {:ok, %{id: id, privy_user_id: person}}
       when id == actor.pairing_id and person == actor.privy_user_id ->
         conn
 
       {:error, :not_paired} ->
-        replace(conn, "agent_not_paired")
+        not_paired(conn, replace)
 
       {:ok, _other_pairing} ->
-        replace(conn, "agent_not_paired")
+        not_paired(conn, replace)
 
       {:error, error} when conn.status in 200..299 ->
-        conn |> UnexpectedFailure.log(error) |> replace(503, @unavailable)
+        conn |> UnexpectedFailure.log(error) |> replace.(503, @unavailable)
 
       {:error, _error} ->
         conn
     end
   end
 
-  defp replace(conn, code) do
-    {status, message, hint} = Map.fetch!(@not_person, code)
-    replace(conn, status, %{code: code, message: message, hint: hint})
+  defp not_paired(conn, replace) do
+    {status, message, hint} = Map.fetch!(@not_person, "agent_not_paired")
+    replace.(conn, status, %{code: "agent_not_paired", message: message, hint: hint})
   end
 
   defp replace(conn, status, body) do
@@ -235,27 +251,33 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   defp failure_kinds(error), do: [error.__struct__]
 
   @impl Siwa.AgentAuthPlug.Hooks
-  def deny(conn, %{reason: reason}) when is_map_key(@refusals, reason) do
-    {status, message, hint} = Map.fetch!(@refusals, reason)
-    refuse(conn, status, %{code: to_string(reason), message: message, hint: hint})
-  end
+  def deny(conn, failure) do
+    {status, error} = refusal(failure)
 
-  # The sign-in service refused: its status and its own words.
-  def deny(conn, %{siwa_status: status} = failure) do
-    body = %{
-      code: failure[:siwa_code] || "sign_in_refused",
-      message: failure[:siwa_message] || "The request's wallet signature was not accepted.",
-      hint: failure[:siwa_hint] || @hint
-    }
-
-    refuse(conn, status, body)
-  end
-
-  defp refuse(conn, status, body) do
     conn
     |> put_status(status)
-    |> Phoenix.Controller.json(%{error: body})
+    |> Phoenix.Controller.json(%{error: error})
     |> halt()
+  end
+
+  @doc """
+  The status and `{code, message, hint}` of a refused sign-in (`deny/2`'s
+  `failure`), made here or by the shared plug, or the sign-in service's status
+  and its own words.
+  """
+  @spec refusal(map()) :: {pos_integer(), map()}
+  def refusal(%{reason: reason}) when is_map_key(@refusals, reason) do
+    {status, message, hint} = Map.fetch!(@refusals, reason)
+    {status, %{code: to_string(reason), message: message, hint: hint}}
+  end
+
+  def refusal(%{siwa_status: status} = failure) do
+    {status,
+     %{
+       code: failure[:siwa_code] || "sign_in_refused",
+       message: failure[:siwa_message] || "The request's wallet signature was not accepted.",
+       hint: failure[:siwa_hint] || @hint
+     }}
   end
 
   defp json?(conn) do

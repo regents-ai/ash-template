@@ -257,7 +257,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       for body <- [rpc("initialize", %{"protocolVersion" => "2025-06-18"}), rpc("tools/list")] do
         refused = post_mcp(body, nil)
         assert refused.status == 401
-        assert json(refused)["error"]["code"] == "connection_required"
+        assert refusal(refused, 1)["code"] == "connection_required"
 
         assert get_resp_header(refused, "www-authenticate") ==
                  [RegentOAuth.challenge(Enum.join(RegentOAuth.scopes(), " "))]
@@ -537,6 +537,27 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       refute "rooms_post" in tool_names(token)
     end
 
+    test "unpairing while a call runs answers that call a tool result with isError" do
+      subject = "did:privy:agent-unpair-during"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+
+      handler = "connector-test-unpair"
+      :ok = :telemetry.attach(handler, [:ash_template, :mcp, :auth], &__MODULE__.unpair/4, nil)
+      on_exit(fn -> :telemetry.detach(handler) end)
+      [agent] = agents(subject)
+      Process.put(:unpair_when_accepted, {agent, person(subject)})
+
+      answered = post_mcp(room_call(), token)
+      assert answered.status == 200
+
+      assert %{"id" => 1, "result" => %{"isError" => true, "content" => [%{"text" => text}]}} =
+               json(answered)
+
+      assert Jason.decode!(text)["error"]["code"] == "agent_not_paired"
+    end
+
     test "the hosted signer is asked for the app's address once, not on every call" do
       subject = "did:privy:agent-once"
       sign_in!(subject)
@@ -559,7 +580,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       for _ <- 1..3 do
         refused = post_mcp(rpc("ping"), token)
         assert refused.status == 503
-        assert json(refused)["error"]["code"] == "identity_unavailable"
+        assert refusal(refused, 1)["code"] == "identity_unavailable"
       end
 
       assert signer_asked() == 3
@@ -603,6 +624,12 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
                refused = post_mcp(rpc("ping"), "not-this-sites", from)
                assert refused.status == 429
                assert policies(refused) == ["mcp_address"]
+               assert [seconds] = get_resp_header(refused, "retry-after")
+
+               assert %{"code" => "too_many_requests", "retry_after" => retry_after} =
+                        refusal(refused, nil)
+
+               assert Integer.to_string(retry_after) == seconds
              end) == 0
     end
 
@@ -624,6 +651,8 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       refused = post_unreadable("any-token", from)
       assert refused.status == 429
       assert policies(refused) == ["mcp_connected_address"]
+      assert [_seconds] = get_resp_header(refused, "retry-after")
+      assert %{"code" => "too_many_requests"} = refusal(refused, nil)
     end
 
     test "every answer is private and never kept, a tool's, a stream's and a refusal" do
@@ -936,4 +965,21 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   end
 
   defp json(conn), do: Jason.decode!(conn.resp_body)
+
+  # Ends the pairing the test put in the process, once, as its call is let in;
+  # the request runs in the test's process.
+  def unpair(_event, _measurements, %{outcome: :accepted}, _config) do
+    with {agent, person} <- Process.delete(:unpair_when_accepted),
+         do: :ok = RegentAgents.unpair_agent!(agent, actor: person)
+  end
+
+  def unpair(_event, _measurements, _metadata, _config), do: :ok
+
+  # The site's refusal: the `data` of the JSON-RPC error that answered, with the
+  # request's `id`, or none when `id` is nil.
+  defp refusal(conn, id) do
+    assert %{"jsonrpc" => "2.0", "error" => %{"data" => data}} = answer = json(conn)
+    assert Map.fetch(answer, "id") == if(is_nil(id), do: :error, else: {:ok, id})
+    data
+  end
 end
