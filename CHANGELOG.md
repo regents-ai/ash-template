@@ -11675,3 +11675,11 @@ no migration.
 - Known limit: on a touch screen Yes and No each take a 44px press, which reaches
   15px down into the top of the note's title (words, no control); a tap there rates
   the label.
+
+## 2026-11-15 — Released v258: Icons lab page, floating Notes label
+
+- v258 on template.regents.sh carries the Icons lab page (/animations/icons) and the floating
+  Notes label, both from the design chief, and the regenerated route handoff. Pins unchanged;
+  no migration; API 21.0.0.
+- Rollback: v257 (`39042629`) image.
+- Full check exit 0 by the chief on the exact commit.
