@@ -11203,3 +11203,11 @@ Brought up from Autolaunch (the rollback script and the deploy dry run) and Rege
   `identity_unavailable` and the address budgets' 429s the same way, and a connected
   app's paired agent unpaired during a call. `launch_gate_test.exs` reads the closed
   address's 503 with and without an id.
+
+## 2026-11-14 — Released v252: release tools, /mcp refusals as JSON-RPC
+
+- v252 on template.regents.sh carries the two entries above: the rollback script, the
+  deploy dry run and the side-by-side check; and every /mcp refusal as a JSON-RPC answer.
+  No migration, no pin change; API 20.0.0.
+- Rollback: v251 (`6d6ef4e2`) image.
+- Full check exit 0 by the chief on the exact commit.
