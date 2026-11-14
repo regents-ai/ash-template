@@ -257,7 +257,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       for body <- [rpc("initialize", %{"protocolVersion" => "2025-06-18"}), rpc("tools/list")] do
         refused = post_mcp(body, nil)
         assert refused.status == 401
-        assert json(refused)["error"]["code"] == "connection_required"
+        assert refusal(refused, 1)["code"] == "connection_required"
 
         assert get_resp_header(refused, "www-authenticate") ==
                  [RegentOAuth.challenge(Enum.join(RegentOAuth.scopes(), " "))]
@@ -544,27 +544,52 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
       assert %{"isError" => false} = post_room(token)
 
-      assert {:error, :missing_linked_wallet} =
-               VerifiedSession.establish(%RegentPrivy.Session{
-                 app_id: "test-app",
-                 session_id: subject,
-                 privy_user_id: subject,
-                 wallet_address: nil,
-                 wallet_addresses: [],
-                 linked_socials: [],
-                 issued_at: System.system_time(:second),
-                 expires_at: System.system_time(:second) + 3600
-               })
+      sign_in_without_wallet!(subject)
 
       for call <- [rpc("tools/list"), room_call()] do
         refused = post_mcp(call, token)
         assert refused.status == 401
-        assert json(refused)["error"]["code"] == "connection_required"
+        assert refusal(refused, 1)["code"] == "connection_required"
       end
 
       sign_in!(subject)
       assert "rooms_post" in tool_names(token)
       assert %{"isError" => false} = post_room(token)
+    end
+
+    test "unpairing while a call runs answers that call a tool result with isError" do
+      subject = "did:privy:agent-unpair-during"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+
+      [agent] = agents(subject)
+      when_accepted(fn -> :ok = RegentAgents.unpair_agent!(agent, actor: person(subject)) end)
+
+      answered = post_mcp(room_call(), token)
+      assert answered.status == 200
+
+      assert %{"id" => 1, "result" => %{"isError" => true, "content" => [%{"text" => text}]}} =
+               json(answered)
+
+      assert Jason.decode!(text)["error"]["code"] == "agent_not_paired"
+    end
+
+    test "a sign-in with no wallet while a call runs answers that call a tool result with isError" do
+      subject = "did:privy:agent-withdrawn-during"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+
+      when_accepted(fn -> sign_in_without_wallet!(subject) end)
+
+      answered = post_mcp(room_call(), token)
+      assert answered.status == 200
+
+      assert %{"id" => 1, "result" => %{"isError" => true, "content" => [%{"text" => text}]}} =
+               json(answered)
+
+      assert Jason.decode!(text)["error"]["code"] == "person_not_here"
     end
 
     test "the hosted signer is asked for the app's address once, not on every call" do
@@ -589,7 +614,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       for _ <- 1..3 do
         refused = post_mcp(rpc("ping"), token)
         assert refused.status == 503
-        assert json(refused)["error"]["code"] == "identity_unavailable"
+        assert refusal(refused, 1)["code"] == "identity_unavailable"
       end
 
       assert signer_asked() == 3
@@ -633,6 +658,12 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
                refused = post_mcp(rpc("ping"), "not-this-sites", from)
                assert refused.status == 429
                assert policies(refused) == ["mcp_address"]
+               assert [seconds] = get_resp_header(refused, "retry-after")
+
+               assert %{"code" => "too_many_requests", "retry_after" => retry_after} =
+                        refusal(refused, nil)
+
+               assert Integer.to_string(retry_after) == seconds
              end) == 0
     end
 
@@ -654,6 +685,8 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       refused = post_unreadable("any-token", from)
       assert refused.status == 429
       assert policies(refused) == ["mcp_connected_address"]
+      assert [_seconds] = get_resp_header(refused, "retry-after")
+      assert %{"code" => "too_many_requests"} = refusal(refused, nil)
     end
 
     test "every answer is private and never kept, a tool's, a stream's and a refusal" do
@@ -778,6 +811,21 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     {:bootstrap, claim} = SessionAuthority.renew(nil)
     {:ok, _bind, bound} = SessionAuthority.sign_in(claim, account.id)
     SessionAuthority.session(bound)
+  end
+
+  # The same person signing in again, now with no wallet on their sign-in.
+  defp sign_in_without_wallet!(subject) do
+    assert {:error, :missing_linked_wallet} =
+             VerifiedSession.establish(%RegentPrivy.Session{
+               app_id: "test-app",
+               session_id: subject,
+               privy_user_id: subject,
+               wallet_address: nil,
+               wallet_addresses: [],
+               linked_socials: [],
+               issued_at: System.system_time(:second),
+               expires_at: System.system_time(:second) + 3600
+             })
   end
 
   # An app connected by `subject`, as consent leaves it: its client id and the
@@ -966,4 +1014,28 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   end
 
   defp json(conn), do: Jason.decode!(conn.resp_body)
+
+  # Runs `change` once, as the next call is let in, before it runs; the request
+  # runs in the test's process.
+  defp when_accepted(change) do
+    handler = "connector-test-when-accepted"
+    :ok = :telemetry.attach(handler, [:ash_template, :mcp, :auth], &__MODULE__.accepted/4, nil)
+    on_exit(fn -> :telemetry.detach(handler) end)
+    Process.put(:when_accepted, change)
+  end
+
+  @doc false
+  def accepted(_event, _measurements, %{outcome: :accepted}, _config) do
+    with change when is_function(change, 0) <- Process.delete(:when_accepted), do: change.()
+  end
+
+  def accepted(_event, _measurements, _metadata, _config), do: :ok
+
+  # The site's refusal: the `data` of the JSON-RPC error that answered, with the
+  # request's `id`, or none when `id` is nil.
+  defp refusal(conn, id) do
+    assert %{"jsonrpc" => "2.0", "error" => %{"data" => data}} = answer = json(conn)
+    assert Map.fetch(answer, "id") == if(is_nil(id), do: :error, else: {:ok, id})
+    data
+  end
 end

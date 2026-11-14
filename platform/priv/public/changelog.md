@@ -8,12 +8,16 @@ Changes to Ash Template, newest first.
   its parts, the browser tools host and the MCP bridge, in one line.
 - **Addresses.** The agent guide lists the addresses an agent reaches to use this site.
   When its network refuses one, the agent tells its person once which to allow.
+- **Hosted MCP.** When the MCP address turns a call away, its answer names the call it
+  answers, so your agent's MCP client can show what to do next. If your agent is
+  unpaired while one of its tool calls runs, that call answers with an error saying so.
 - **Public name.** Your account page saves your public name with your sign-in on this
   site. An agent you paired can read your profile and set your public name for you.
   The profile API no longer takes your Privy sign-in tokens. A change larger than 8 KB
   is refused as too large.
 - **Agents.** Your agent's live feed closes, and its unfinished work for you stops, once
-  your last sign-in here has no wallet linked, as its other requests already do.
+  your last sign-in here has no wallet linked, as its other requests already do. A
+  tool call running at that moment answers with an error saying so.
 
 ## 13 November 2026
 

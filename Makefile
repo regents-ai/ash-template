@@ -1,25 +1,57 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-style check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release live-check readiness
+.PHONY: help check check-style check-platform platform-precommit platform-test check-browser check-scripts check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release live-check readiness
 help:
-	@echo "Run make check for every gate, or check-style, check-platform, check-browser, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
+	@echo "Run make check for every gate, side by side, each writing its output to platform/_build/check/<gate>.log; it prints every gate's log, the failed ones last, then one line per gate. Or run check-style, check-platform, check-browser, check-scripts, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
+	@echo "Run make check-scripts to test scripts/deploy.sh and scripts/rollback.sh on a fixture repository, with stand-ins for Fly and the site."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
 	@echo "Run SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make live-check to check template.regents.sh the way a paired agent does: the CLI, then WebMCP and every public page in headless Chromium."
 # template-only
 	@echo "Run make drift to list where each site's copies of the shared, build and deploy files differ from the template's, then run make pins and make readiness."
 	@echo "Run make pins to list each site's shared-library pins and how far each is behind the template's and the library's main."
-	@echo "Run make check-scripts to test the reports the daily jobs read: scripts/drift.sh, scripts/pins.sh and scripts/harvest.sh."
+	@echo "make check-scripts also tests the reports the daily jobs read: scripts/drift.sh, scripts/pins.sh and scripts/harvest.sh."
 # /template-only
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
 # template-only
 # The passages fenced like this one are the template's own: scripts/init.sh drops
 # them, and scripts/drift.sh compares the rest of this file with each site's.
-.PHONY: check-scripts drift pins
-check: check-scripts
-# The reports' tests, on fixture repositories (scripts/tests/test_reports.py).
-check-scripts:
-	uv run --no-project python -B -m unittest discover -s scripts/tests -p 'test_reports.py'
+.PHONY: drift pins
 # /template-only
-check: check-style check-platform check-required-fixes check-cli check-siwa-latest check-contracts
+# make check runs its gates side by side, each writing its output to
+# $(CHECK_LOGS)/<gate>.log, then prints every gate's log, the failed ones last, and
+# one line per gate, and fails when any gate failed. The gates of one quoted lane
+# run in turn: check-style and mix precommit both compile _build/dev, and both run
+# mix regent_ui.assets, which deletes assets/vendor/regent_ui and copies it again;
+# mix test's script build (ScriptBuildTest) reads that folder and writes the
+# scripts the browser walk at the end of mix precommit serves. The other gates
+# write nothing another reads.
+CHECK_LANES := "check-style platform-precommit platform-test" check-scripts check-required-fixes check-cli check-siwa-latest check-contracts
+CHECK_GATES := $(subst ",,$(CHECK_LANES))
+CHECK_LOGS := platform/_build/check
+check:
+	@mkdir -p $(CHECK_LOGS) && : > $(CHECK_LOGS)/results
+	@echo "Running $(words $(CHECK_GATES)) gates side by side; each writes $(CHECK_LOGS)/<gate>.log."
+	@for lane in $(CHECK_LANES); do \
+	  for gate in $$lane; do \
+	    start=$$(date +%s); \
+	    $(MAKE) --no-print-directory $$gate > $(CHECK_LOGS)/$$gate.log 2>&1; \
+	    code=$$?; echo "$$gate $$code $$(( $$(date +%s) - start ))" >> $(CHECK_LOGS)/results; \
+	  done & \
+	done; wait
+	@failed=; \
+	for gate in $(CHECK_GATES); do \
+	  if grep -q "^$$gate 0 " $(CHECK_LOGS)/results; then \
+	    echo; echo "== $$gate ($(CHECK_LOGS)/$$gate.log)"; cat $(CHECK_LOGS)/$$gate.log; \
+	  else failed="$$failed $$gate"; fi; \
+	done; \
+	for gate in $$failed; do \
+	  echo; echo "== $$gate FAILED ($(CHECK_LOGS)/$$gate.log)"; cat $(CHECK_LOGS)/$$gate.log; \
+	done; \
+	echo; \
+	for gate in $(CHECK_GATES); do \
+	  set -- $$(grep "^$$gate " $(CHECK_LOGS)/results); \
+	  if [ "$$2" = 0 ]; then echo "$$gate: ok in $$3 s"; else echo "$$gate: FAILED after $$3 s"; fi; \
+	done; \
+	test -z "$$failed"
 # The design system's style check (STYLE.md): every break of a style rule in the
 # site's own CSS, scripts and templates, by file and line. An exception Sean approved
 # carries its marker on the line. mix regent_ui.assets copies the script from the
@@ -27,10 +59,18 @@ check: check-style check-platform check-required-fixes check-cli check-siwa-late
 # and names it, never passing.
 check-style:
 	cd platform && mix regent_ui.assets && bash assets/vendor/regent_ui/style-check.sh
-# mix precommit ends with the TypeScript typecheck, the script tests and the
-# browser walk.
-check-platform:
-	cd platform && mix precommit && mix test
+# mix precommit ends with the TypeScript typecheck and tests and the browser walk;
+# mix test runs after it.
+check-platform: platform-precommit platform-test
+platform-precommit:
+	cd platform && mix precommit
+platform-test:
+	cd platform && mix test
+# The deploy and rollback scripts' tests (scripts/tests/test_release.py), and every
+# other test in scripts/tests, on fixture repositories with stand-ins for Fly, GitHub
+# and the site. They reach no real app.
+check-scripts:
+	uv run --no-project python -B -m unittest discover -s scripts/tests
 # The browser walk alone (platform/test/browser): every page at phone and desktop
 # width, and the paths a person takes. It starts its own server on its own database,
 # with Privy settings the server makes for itself, so it needs none of the site's.
@@ -55,6 +95,9 @@ check-cli:
 # library in elixir-utils. Needs `gh auth login`.
 check-siwa-latest:
 	scripts/check-siwa-latest.sh $(REGENTS_CLI_REV)
+# A site with contracts replaces this target with its Foundry checks under nice
+# (contracts/README.md): the Solidity compiler takes every core it can, and beside
+# the other gates in make check it gives way to them.
 check-contracts:
 	@echo "contracts/ is empty; add a Foundry project there and replace this target with its checks."
 # Read-only comparison with explicitly selected local site checkouts.

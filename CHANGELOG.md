@@ -11107,6 +11107,136 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   what a new site needs. No migration, no pin change; API 19.0.0 unchanged.
 - Rollback: v250 (`85c6e6dc`) image.
 - Full check exit 0 by the chief on the exact commit.
+## 2026-11-14 — Rollback script, deploy dry run, gates side by side
+
+Brought up from Autolaunch (the rollback script and the deploy dry run) and Regents
+(the side-by-side check).
+
+- **Rollback (from Autolaunch).** `scripts/rollback.sh <fly-app> <release>` puts an
+  app back on an earlier release's image. It refuses a release Fly does not list as
+  complete, one whose image label names no commit the checkout holds, and one whose
+  commit holds other migrations in `platform/priv/repo/migrations` than the live
+  commit: that rollback needs a person. Otherwise it switches to the image with that
+  commit's own `platform/fly.toml`, under the app's lock and a place on the shared
+  database as a deploy does, then reads `https://<app>.fly.dev/capabilities.json`
+  until `build.commit` names the commit, and fails when it never does. The shared
+  libraries' migrations are not compared: no release applies them. Autolaunch's own
+  parts (its deployment descriptions, their compaction, its app names) stay there.
+- **Deploy dry run (from Autolaunch).** `scripts/deploy.sh --dry-run <fly-app>` and
+  `scripts/rollback.sh --dry-run <fly-app> <release>` make every check and read what
+  is live, then print the commands they would run and run none that change anything,
+  taking no lock. Both scripts share `scripts/release-lib.sh`: the dry run, the switch
+  and the live commit.
+- **One way to read the live commit.** Both read the label of the image the app runs,
+  from `fly image show`, as the deploy already did, rather than Autolaunch's read of
+  the site's health answer. Fly answers even when the site does not, which is when a
+  rollback is needed, and the app's name is all it takes: no table of each app's
+  address. `/capabilities.json` is read only after a rollback's switch, to confirm the
+  site runs the release's commit.
+- **Gates side by side (from Regents).** `make check` runs its gates at once, each
+  writing `platform/_build/check/<gate>.log`, then prints every gate's log, the failed
+  ones last, and one line per gate with its time, and fails when any gate failed. The
+  style check, `mix precommit` and `mix test` still run in turn: the first two compile
+  `_build/dev` and copy the design system's files into `assets/vendor` afresh, which
+  `mix test`'s script build reads, and that build writes the scripts the browser walk
+  serves. On this Mac, under other agents' load, the old check took 303 seconds and
+  the new one 253 (the platform's three gates, 2 + 205 + 46 seconds, are the whole
+  run). A site with contracts runs them under `nice` (`contracts/README.md`).
+- `make check-scripts` runs every test in `scripts/tests`: the reports' tests and
+  the new `scripts/tests/test_release.py`, which runs both scripts on a fixture
+  repository with stand-ins for Fly, the site and the locks. It is no longer a
+  template-only target, so a new site keeps the release tests.
+- `scripts/drift.sh` lists `scripts/rollback.sh`, `scripts/release-lib.sh` and
+  `scripts/tests/test_release.py` among the files that deploy every site. The
+  committed permissions ask before `scripts/rollback.sh` runs and allow
+  `make check-scripts`. The release checklist in
+  `skills/regent-workflow/references/release.md` names the rollback script.
+
+## 2026-11-14 — The hosted MCP address refuses in JSON-RPC, with the request's id
+
+- From Patchbay `b8f71c75` and `f64da10e` (`PatchbayWeb.MCP.Refusal`). Every refusal at
+  `/mcp` keeps its HTTP status and headers (401 with the `WWW-Authenticate` challenge,
+  429 with `Retry-After` and the RateLimit headers, 405 with `Allow`, 503 with
+  `Retry-After` while the site is closed) and answers a JSON-RPC error with the
+  request's id, `{"jsonrpc": "2.0", "id", "error": {"code": -31000, "message", "data":
+  {"code", "message", "hint"}}}`, so an MCP client can match it to its call and an
+  agent still reads the hint. Past a budget `data` carries `retry_after` in seconds.
+  The JSON-RPC code is -31000 for every refusal the site makes, outside the range
+  JSON-RPC and MCP keep (MCP 2026-07-28 asks new servers not to use -32000 to
+  -32019); -32700 for a body that is not JSON and -32603 for a failure of the site's
+  own. An id that could not be read (refused before the body was read, a form body, a
+  batch, a null or non-scalar id) is left out, as MCP's error responses allow (`id?`).
+  A notification gets the status with no body, since MCP never answers one.
+- Unlike Patchbay, a refusal keeps its status instead of 200: the authorization rules
+  need 401 with the challenge for Claude's sign-in to start, and the MCP Python client
+  reads a JSON-RPC error from a 4xx or 5xx answer (and only an error: a tool result
+  there is dropped). So a refused `tools/call` before the call runs is a JSON-RPC error
+  too. Once a call has run, a refusal replaces its answer as it leaves: when a paired
+  agent's pairing ends during the call (an agent signing its own calls, or a connected
+  app acting as its paired agent), a `tools/call` answers a tool result at 200 with
+  `isError: true`, `resultType: "complete"` and the text `{"error": {"code":
+  "agent_not_paired", …}}`, the tools' own refusal shape; any other request answers
+  the 403 refusal with its id.
+- `AshTemplateWeb.McpRefusal` (new) makes each answer; `AshTemplateWeb.Plugs.McpAgent`
+  uses it for its own refusals, for the agent's sign-in (it is now the sign-in plug's
+  hooks module, through `AgentWallet.siwa_options/1`, `verified_actor/2` and
+  `refusal/1`, which the API's refusals keep using unchanged) and for its budgets,
+  which it counts with the site's `RequestRateLimiter` and the RateLimit headers of
+  `RegentAgentAccess.RateLimit.put_headers/3`. `AgentWallet.recheck_before_send/3`
+  takes how to replace the answer. `AshTemplateWeb.ErrorJSON` answers `/mcp` (a body
+  too large or not JSON, `/mcp/`, a failure) through `McpRefusal.failed/3`, and the
+  launch gate's closed `/mcp` through `McpRefusal.refuse/3`. A visit line reads a
+  refusal's code from `error.data.code`.
+- The OpenAPI documents move to 20.0.0, the docs' rule for a breaking change to what
+  a client reads; the docs' breaking changes and Hosted MCP section,
+  `cli/COMMANDS.md`, the public changelog, `docs/oauth-reference.md`,
+  `platform/README.md` and the feature map say so. No migration.
+- Tests: `platform/test/ash_template_web/mcp_agent_test.exs` reads every refusal as a
+  JSON-RPC error with the request's id or none: string, integer and zero ids carried;
+  null, decimal and object ids left out; a notification refused with no body, a
+  forged signature's included; the 429 before the body is read with `Retry-After`,
+  the RateLimit headers and `retry_after`; `/mcp/`, a form body, 413 and a body that
+  is not JSON (-32700); a pairing that ends during a call (a tool result with
+  `isError` for `tools/call`, 403 with its id for `tools/list`, an ordinary answer for
+  a pairing that stays); and a refusal's visit line naming its code.
+  `claude_connector_test.exs` reads `connection_required` with the challenge,
+  `identity_unavailable` and the address budgets' 429s the same way, and a connected
+  app's paired agent unpaired during a call. `launch_gate_test.exs` reads the closed
+  address's 503 with and without an id.
+
+## 2026-11-14 — Released v252: release tools, /mcp refusals as JSON-RPC
+
+- v252 on template.regents.sh carries the two entries above: the rollback script, the
+  deploy dry run and the side-by-side check; and every /mcp refusal as a JSON-RPC answer.
+  No migration, no pin change; API 20.0.0.
+- Rollback: v251 (`6d6ef4e2`) image.
+- Full check exit 0 by the chief on the exact commit.
+## 2026-11-14 — Outside authors' Skills carried in skills/third-party
+
+Someone who clones the template or a site made from it now has the outside Skills used
+for local work, kept apart from the Skills Regent writes.
+
+- `skills/third-party/` holds 17 Skills as exact, unmodified copies of their authors'
+  folders at a recorded commit: `emil-design-eng`, `animate`, `review-animations`,
+  `improve-animations`, `choreograph`, `gestures` and `animation-performance` from
+  emilkowalski/skills (MIT); `better-interface`, `better-accessibility`,
+  `better-colors`, `better-layout`, `better-typography`, `better-ui` and
+  `better-writing` from jakubkrehel/skills (MIT); `diagnosing-bugs` and
+  `resolving-merge-conflicts` from mattpocock/skills (MIT); and `oban-thinking` from
+  georgeguimaraes/claude-code-elixir (Apache-2.0). Each repository's licence is kept
+  word for word in `skills/third-party/LICENSES/`. `sentry-elixir-sdk` is not carried:
+  the template does not use Sentry.
+- `skills/third-party/README.md` names each Skill's author, source, folder, commit and
+  licence, says these are other people's work, notes the two Skills since retired or
+  renamed upstream (`resolving-merge-conflicts`, `oban-thinking`), says where the
+  template's own Skills win (wallet buttons, motion and pages, Oban jobs, design), and
+  lists Skills worth installing but not carried, with the reason for each.
+- The web app does not serve or list them (`AshTemplateWeb.AgentSkills` names only the
+  template's own build skills), and `scripts/init.sh` leaves them as written with the
+  rest of `skills/`. No code changed.
+- The design-system reference (`skills/regent-workflow/references/design-system.md`)
+  points at `skills/third-party/emil-design-eng/SKILL.md` instead of a path on one
+  person's machine. `AGENTS.md` and `README.md` introduce the folder.
 
 ## 2026-11-14 — Paired agents: one rule, checked in the feed, jobs and wallet sends
 
@@ -11115,10 +11245,13 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   sign-in here named a wallet. The signed request (`AgentWallet.actor_for/2`), the
   check before its answer leaves, the live feed, the job actor
   (`AshTemplate.Actors.Persister`) and the check-in account
-  (`AshTemplate.Agents.PairedAccount`) all ask it.
+  (`AshTemplate.Agents.PairedAccount`) all ask it. At `/mcp` the answer the check
+  replaces is the JSON-RPC refusal (`AshTemplateWeb.McpRefusal`): a tool call's
+  becomes a tool result with `isError: true`, naming `person_not_here` when the
+  person's latest sign-in had no wallet.
 - The live feed listens for its person's sign-ins as well as pairing changes, and
   closes with `pairing_changed` once the agent no longer acts for its person. The
-  guide and the API document say so; API 19.0.0 unchanged.
+  guide and the API document say so; API 20.0.0 unchanged.
 - A job that carried an agent acting for its person runs as the agent itself when
   the rule no longer holds, so it ends as for an agent never paired: the reply ends
   with a line saying it failed, the label question is not asked and the chat is not

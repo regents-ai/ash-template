@@ -59,21 +59,26 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
   Every call carries the client's address key (`client_key`), which an agent's
   room post spends its allowances under. Each answer is private and never kept
   (`cache-control: private, no-store`, set as the answer leaves, so it stands
-  over AshAi's own `no-cache` on a streamed answer). Refusals answer
-  `{"error": {"code", "message", "hint"}}`, the site's one shape; what the tool
-  itself refuses comes back as the tool's error, in the same shape
-  (`AshTemplateWeb.ToolErrors`). Which way each request came in is counted as
-  `[:ash_template, :mcp, :auth]`.
+  over AshAi's own `no-cache` on a streamed answer). Each refusal keeps its HTTP
+  status and headers and answers in JSON-RPC, with the request's id and the
+  site's `{code, message, hint}` as the error's `data`; past a budget, `data`
+  carries the seconds to wait as `retry_after`. A notification gets the status
+  alone. When a paired agent no longer acts for its person by the time its
+  answer leaves, a tool call's answer becomes a tool result with `isError: true`
+  (`AshTemplateWeb.McpRefusal`). What the tool itself refuses comes back as the
+  tool's error, `{"error": {code, message, hint}}` (`AshTemplateWeb.ToolErrors`).
+  Which way each request came in is counted as `[:ash_template, :mcp, :auth]`.
   """
 
   @behaviour Plug
+  @behaviour Siwa.AgentAuthPlug.Hooks
 
   import Plug.Conn
 
   alias AshTemplate.Accounts.RequestRateLimiter
   alias AshTemplate.Actors.{Agent, ConnectedApp}
   alias AshTemplate.Agents.HostedAddress
-  alias AshTemplateWeb.{ClientAddress, PublicDocuments}
+  alias AshTemplateWeb.{ClientAddress, McpRefusal, PublicDocuments}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentAgentAccess.RateLimit
   alias RegentHttp.UnexpectedFailure
@@ -114,8 +119,29 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
   """
   def limit_address(conn) do
     if carries_token?(conn) and not spent?(conn, @address),
-      do: RateLimit.call(conn, @connected_address),
-      else: RateLimit.call(conn, @address)
+      do: limit(conn, @connected_address),
+      else: limit(conn, @address)
+  end
+
+  # Counts the request against `budget`, with the rate-limit headers the API
+  # sends (`RegentAgentAccess.RateLimit`); past it, the refusal names the seconds
+  # in `Retry-After` as `retry_after` too.
+  defp limit(conn, %{policy: policy, limit: limit, window: window, admit: admit, key: key}) do
+    case admit.({policy, key.(conn)}, limit, window) do
+      {:ok, budget} ->
+        RateLimit.put_headers(conn, policy, budget)
+
+      {:error, :rate_limited, budget} ->
+        conn
+        |> RateLimit.put_headers(policy, budget)
+        |> put_resp_header("retry-after", Integer.to_string(budget.reset))
+        |> McpRefusal.refuse(429, %{
+          code: "too_many_requests",
+          message: "Too Many Requests",
+          hint: "Wait the number of seconds in Retry-After, then send the request again.",
+          retry_after: budget.reset
+        })
+    end
   end
 
   # Only the connector gives tokens, so while it is off every request is counted
@@ -143,7 +169,7 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
       not own_origin?(conn) ->
         refuse(conn, :none, "origin_not_allowed")
 
-      not json?(conn) ->
+      not McpRefusal.json?(conn) ->
         refuse(conn, :none, "unsupported_media_type")
 
       is_list(conn.body_params["_json"]) ->
@@ -176,25 +202,31 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
     end
   end
 
-  defp json?(conn) do
-    case get_req_header(conn, "content-type") do
-      [type] -> match?({:ok, "application", "json", _params}, Plug.Conn.Utils.content_type(type))
-      _none_or_several -> false
+  # Signed in as on the API (`AgentWallet`), answered here: the agent is Ash's
+  # actor, and each refusal is JSON-RPC.
+  defp agent(conn) do
+    conn
+    |> Siwa.AgentAuthPlug.call(AgentWallet.siwa_options(__MODULE__))
+    |> counted(:siwa_request)
+  end
+
+  @impl Siwa.AgentAuthPlug.Hooks
+  defdelegate before_verify(conn, headers), to: AgentWallet
+
+  @impl Siwa.AgentAuthPlug.Hooks
+  def accept(conn, data, _context) do
+    with {:ok, actor} <- AgentWallet.verified_actor(conn, data) do
+      {:ok,
+       conn
+       |> Ash.PlugHelpers.set_actor(actor)
+       |> AgentWallet.recheck_before_send(actor, &McpRefusal.replace/3)}
     end
   end
 
-  defp agent(conn) do
-    conn = AgentWallet.call(conn, [])
-
-    if conn.halted do
-      counted(conn, :siwa_request)
-    else
-      {actor, assigns} = Map.pop!(conn.assigns, :actor)
-
-      %{conn | assigns: assigns}
-      |> Ash.PlugHelpers.set_actor(actor)
-      |> counted(:siwa_request)
-    end
+  @impl Siwa.AgentAuthPlug.Hooks
+  def deny(conn, failure) do
+    {status, error} = AgentWallet.refusal(failure)
+    McpRefusal.refuse(conn, status, error)
   end
 
   defp connected_app(conn, token) do
@@ -204,7 +236,7 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
            RegentOAuth.verify(bearer, RegentOAuth.resource(), RegentMCPAgents.identity_scope()) do
       conn
       |> Ash.PlugHelpers.set_actor(%ConnectedApp{principal: principal})
-      |> RateLimit.call(@budget)
+      |> limit(@budget)
       |> as_paired_agent(principal)
       |> counted(:site_oauth)
     else
@@ -229,7 +261,7 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
       conn
       |> Ash.PlugHelpers.set_actor(agent)
-      |> AgentWallet.recheck_before_send(agent)
+      |> AgentWallet.recheck_before_send(agent, &McpRefusal.replace/3)
     else
       false ->
         conn
@@ -265,18 +297,14 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
   defp refuse(conn, mode, code) when is_binary(code), do: refuse(conn, mode, &refusal(&1, code))
 
   defp refuse(conn, mode, refusal) do
-    conn = if carries_token?(conn), do: RateLimit.call(conn, @address), else: conn
+    conn = if carries_token?(conn), do: limit(conn, @address), else: conn
 
     if conn.halted, do: counted(conn, mode), else: conn |> refusal.() |> counted(mode)
   end
 
   defp refusal(conn, code) do
     {status, message, hint} = words(code)
-
-    conn
-    |> put_status(status)
-    |> Phoenix.Controller.json(%{error: %{code: code, message: message, hint: hint}})
-    |> halt()
+    McpRefusal.refuse(conn, status, %{code: code, message: message, hint: hint})
   end
 
   defp words("unsupported_query"),

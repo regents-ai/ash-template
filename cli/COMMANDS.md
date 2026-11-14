@@ -790,6 +790,11 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## Changes
 
+- 2026-11-14: The OpenAPI documents move to 20.0.0. The hosted MCP server at `/mcp` answers
+  each refusal as a JSON-RPC error with the request's id, its HTTP status and headers kept,
+  and the site's `code`, `message` and `hint` as the error's `data`, so an MCP client, `regents
+  mcp` among them, can match each refusal to its call. A tool call whose agent is unpaired
+  while it runs answers a tool error with `agent_not_paired`. No command changes.
 - 2026-11-14: The OpenAPI documents move to 19.0.0. `GET` and `PATCH /api/v1/profile` no longer
   take a person's Privy tokens: they answer a person signed in on the site's own pages, or a
   paired agent signing with its own key. `POST /api/v1/profile/sync` is gone; a profile is made
