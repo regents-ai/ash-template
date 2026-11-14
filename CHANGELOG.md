@@ -11510,3 +11510,8 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   Library pin `5f662718`; design-system pin `d4075655` unchanged; no migration; API 21.0.0.
 - Rollback: v255 (`175a1379`) image.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — Shared-package registry no longer lists regent_near_intents
+
+- `security/required-fixes.json` drops the `regent_near_intents` entry added earlier today. The
+  package is off elixir-utils main and stays on its branch `eu/near-intents-1114`; no site pins it.
