@@ -77,6 +77,11 @@ type IslandKind<Renderer extends IslandRenderer> = {
    * picture may go past the usual ceiling; the pixel budget still holds.
    */
   readonly maxDevicePixelRatio?: number
+  /**
+   * The most device pixels the picture is drawn with. A large picture of hairlines
+   * (the icon sheet) may ask for more than the usual budget, or it draws soft.
+   */
+  readonly maxDrawingBufferPixels?: number
   /** Listeners the island keeps for as long as it is watching. */
   interact?(island: IslandInteraction<Renderer>): () => void
 }
@@ -84,6 +89,8 @@ type IslandKind<Renderer extends IslandRenderer> = {
 /** Resolution ceilings. The picture is decorative; a 4K backing store is not. */
 export const MAX_DEVICE_PIXEL_RATIO = 1.5
 export const MAX_DRAWING_BUFFER_PIXELS = 1_500_000
+/** The longest side every WebGPU device draws to (its default `maxTextureDimension2D`). */
+export const MAX_DRAWING_BUFFER_SIDE = 8192
 
 /** Frames the easing may spend settling after the pointer stops moving. */
 export const EASING_FRAME_LIMIT = 24
@@ -100,19 +107,23 @@ export const EASING_FRAME_LIMIT = 24
 export const DEVICE_RECOVERY_LIMIT = 3
 
 /**
- * Backing-store size for a CSS box, capped on both device pixel ratio and total
- * pixels. Both axes take the same scale, so the picture never stretches.
+ * Backing-store size for a CSS box, capped on device pixel ratio, total pixels and
+ * the longest side a device draws to. Both axes take the same scale, so the picture
+ * never stretches.
  */
 export function drawingBufferSize(
   width: number,
   height: number,
   devicePixelRatio: number,
   maxDevicePixelRatio: number = MAX_DEVICE_PIXEL_RATIO,
+  maxPixels: number = MAX_DRAWING_BUFFER_PIXELS,
 ): readonly [number, number] {
   const ratio = Math.min(maxDevicePixelRatio, Math.max(1, devicePixelRatio))
   const requested = width * height * ratio * ratio
-  const fit =
-    requested > MAX_DRAWING_BUFFER_PIXELS ? Math.sqrt(MAX_DRAWING_BUFFER_PIXELS / requested) : 1
+  const fit = Math.min(
+    requested > maxPixels ? Math.sqrt(maxPixels / requested) : 1,
+    MAX_DRAWING_BUFFER_SIDE / (Math.max(width, height) * ratio),
+  )
   return [
     Math.max(1, Math.floor(width * ratio * fit)),
     Math.max(1, Math.floor(height * ratio * fit)),
@@ -179,7 +190,13 @@ export const createCanvasIsland = <Renderer extends IslandRenderer>(
    */
   const measure = (): readonly [number, number] => {
     const view = canvas()
-    return drawingBufferSize(view.clientWidth, view.clientHeight, devicePixelRatio(), kind.maxDevicePixelRatio)
+    return drawingBufferSize(
+      view.clientWidth,
+      view.clientHeight,
+      devicePixelRatio(),
+      kind.maxDevicePixelRatio,
+      kind.maxDrawingBufferPixels,
+    )
   }
 
   const stopFrame = () => {

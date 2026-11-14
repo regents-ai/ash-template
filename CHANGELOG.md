@@ -11549,3 +11549,31 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   unchanged (library `5f662718`, design system `d4075655`); no migration; API 21.0.0.
 - Rollback: v256 (`d7a00eed`) image.
 - Full check exit 0 by the chief on the exact commit.
+## 2026-11-14 — Icons lab (branch, not on main)
+
+On `wt/tpl-icons-1114`, for the design chief. Design-system pin unchanged (`d4075655`);
+no migration.
+
+- New lab page `/animations/icons`: fifty-six small diagrams in seven sections
+  (Connect, Signals, Flow, Control, Agents, Capital, Fleets), each above its word and
+  number. Thirty-two follow a reference sheet of diagram icons; twenty-four say what
+  Regents products do, from Stake and Claim to Vote and the crown. Listed on
+  `/animations` and `/design`.
+- The words and numbers are the page's own text, a list per section, and each cell can
+  be focused from the keyboard. The drawings are one GPU picture behind the sheet, drawn
+  in one batch each frame; each icon is data on one grid, one module per section
+  (`platform/assets/js/icon_sheet/icons/`).
+- Each icon plays its own calm loop of three to six seconds that ends where it began,
+  staggered so the sheet never pulses together. Pointing at a cell, or focusing it,
+  plays it at full strength and quiets the rest; nothing on the page moves. Colours come
+  from the theme. With less motion each icon holds one still frame. In forced colours,
+  or without WebGPU, the words stand alone, and without WebGPU a line says the drawings
+  need a newer browser.
+- Eight across on a wide screen, four at 390 and three at 320, every word whole, no
+  sideways scroll.
+- The shared canvas island takes a pixel budget per picture and keeps every picture's
+  longest side within what every GPU draws to (8,192 pixels).
+- Frame times in headless Chromium on a 2x screen with all fifty-six moving: 60 frames a
+  second at 1440 and 390, under 0.5 ms of script a frame, no long tasks.
+- Checks: `platform/assets/test/icon_sheet.test.ts` (names, seamless loops, every
+  drawing inside its box) and the walk `platform/test/browser/icons.spec.ts`.
