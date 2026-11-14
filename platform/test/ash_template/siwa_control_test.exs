@@ -1,7 +1,7 @@
 defmodule AshTemplate.SiwaControlTest do
   # The sign-in service's control API (`AshTemplate.SiwaControl`), stood in for
   # here: each answer is the service's data, its refusal or unavailable, nothing
-  # is sent twice, and a new site key never prints.
+  # is sent twice, a period's fee stays exact and a new site key never prints.
   use ExUnit.Case, async: true
 
   alias AshTemplate.SiwaControl
@@ -85,6 +85,71 @@ defmodule AshTemplate.SiwaControlTest do
     assert SiwaControl.create_site_key("control-token", Ecto.UUID.generate()) == {:error, :unavailable}
 
     Req.Test.verify!(SiwaControl)
+  end
+
+  test "a billing period's fee comes exact, as a Decimal, and a fee in any other shape is unavailable" do
+    usage = %{
+      periodStartsAt: "2026-11-01T00:00:00Z",
+      periodEndsAt: "2026-12-01T00:00:00Z",
+      activeAgents: 1_001,
+      includedAgents: 1_000,
+      feeCents: "9909.9",
+      capCents: nil,
+      maxAgents: nil
+    }
+
+    answer(200, %{code: "account", data: %{did: "did:privy:a", customer: nil, usage: usage}})
+    assert {:ok, %{"usage" => %{"feeCents" => fee}}} = SiwaControl.account("control-token")
+    assert Decimal.equal?(fee, Decimal.new("9909.9"))
+
+    answer(200, %{code: "account", data: %{did: "did:privy:a", customer: nil, usage: nil}})
+    assert {:ok, %{"usage" => nil}} = SiwaControl.account("control-token")
+
+    for fee <- [9909.9, "9909.90", "9,909.9"] do
+      answer(200, %{code: "account", data: %{did: "did:privy:a", customer: nil, usage: %{usage | feeCents: fee}}})
+      assert SiwaControl.account("control-token") == {:error, :unavailable}
+    end
+  end
+
+  test "a cap is sent in whole cents, and null removes it" do
+    customer = %{id: Ecto.UUID.generate(), name: "Acme", capCents: 50_000}
+
+    for cap <- [50_000, nil] do
+      answer(200, %{code: "cap_updated", data: %{customer: %{customer | capCents: cap}, usage: nil}})
+      assert {:ok, %{"customer" => %{"capCents" => ^cap}}} = SiwaControl.set_cap("control-token", cap)
+      assert_received {:asked, "PUT", "/api/control/v1/cap", _headers, sent}
+      assert Jason.decode!(sent) == %{"capCents" => cap}
+    end
+  end
+
+  test "the period's agents are asked a page at a time, after the cursor of the page before" do
+    test = self()
+
+    page = %{
+      agents: [
+        %{
+          subject: "eip155:8453:0x" <> String.duplicate("1", 40),
+          firstVerifiedAt: "2026-11-14T10:00:00Z",
+          firstSiteId: Ecto.UUID.generate()
+        }
+      ],
+      next: "cursor-1"
+    }
+
+    for _page <- 1..2 do
+      Req.Test.expect(SiwaControl, fn conn ->
+        send(test, {:asked, conn.method, conn.request_path, conn.query_string})
+        Req.Test.json(conn, %{code: "agents", data: page})
+      end)
+    end
+
+    assert {:ok, %{"agents" => [_agent], "next" => "cursor-1"}} =
+             SiwaControl.list_agents("control-token", nil)
+
+    assert_received {:asked, "GET", "/api/control/v1/agents", ""}
+
+    assert {:ok, _page} = SiwaControl.list_agents("control-token", "cursor-1")
+    assert_received {:asked, "GET", "/api/control/v1/agents", "after=cursor-1"}
   end
 
   test "a new key comes once, as a secret no inspection shows" do

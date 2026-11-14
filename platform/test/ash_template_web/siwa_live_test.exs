@@ -20,8 +20,19 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     "id" => "6b1f0f8e-3d4c-4f3e-9a51-0d8d1f5a2b10",
     "name" => "Acme",
     "kind" => "paid",
+    "capCents" => nil,
     "createdAt" => @at,
     "updatedAt" => @at
+  }
+  # A period that has counted one agent past the 1,000 it includes.
+  @usage %{
+    "periodStartsAt" => "2026-11-01T00:00:00Z",
+    "periodEndsAt" => "2026-12-01T00:00:00Z",
+    "activeAgents" => 1_001,
+    "includedAgents" => 1_000,
+    "feeCents" => "9909.9",
+    "capCents" => nil,
+    "maxAgents" => nil
   }
   @site %{
     "id" => "0e3a8f52-6f7b-4c11-8d2e-5b9c7a1d4e63",
@@ -78,15 +89,17 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     %{browser: browser, topic: topic, keep: keep}
   end
 
-  # The service answers each `{method, path}` from `answers` and says what it
-  # was asked; anything else it was not expected to be asked.
+  # The service answers each `{method, path}` from `answers`, the path with its
+  # query when it has one, and says what it was asked; anything else it was not
+  # expected to be asked.
   defp service(answers) do
     test = self()
 
     Req.Test.stub(SiwaControl, fn conn ->
       {:ok, sent, conn} = Plug.Conn.read_body(conn)
-      send(test, {:asked, conn.method, conn.request_path, sent})
-      {status, body} = Map.fetch!(answers, {conn.method, conn.request_path})
+      path = if conn.query_string == "", do: conn.request_path, else: "#{conn.request_path}?#{conn.query_string}"
+      send(test, {:asked, conn.method, path, sent})
+      {status, body} = Map.fetch!(answers, {conn.method, path})
       conn |> Plug.Conn.put_status(status) |> Req.Test.json(body)
     end)
   end
@@ -98,11 +111,33 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     {status, %{error: if(fields, do: Map.put(error, :fields, fields), else: error)}}
   end
 
-  # The account answer will grow (Overview's summary); what the page doesn't use
-  # it leaves alone.
-  defp company(customer \\ @customer) do
-    account = %{did: "did:privy:siwa-live", customer: customer, summary: %{sites: 1}}
+  defp company(customer \\ @customer, usage \\ nil) do
+    account = %{did: "did:privy:siwa-live", customer: customer, usage: usage}
     %{{"GET", @base <> "/account"} => ok("account", account)}
+  end
+
+  defp agent(chain_id, digit, site_id, at) do
+    %{
+      subject: "eip155:#{chain_id}:0x" <> String.duplicate(digit, 40),
+      firstVerifiedAt: at,
+      firstSiteId: site_id
+    }
+  end
+
+  # A billed company's Overview: the period above, its one site, and the first
+  # page of agents, one first seen at a site since archived.
+  defp billed(customer \\ @customer) do
+    Map.merge(company(customer, @usage), %{
+      {"GET", @base <> "/sites"} => ok("sites", %{sites: [@site]}),
+      {"GET", @base <> "/agents"} =>
+        ok("agents", %{
+          agents: [
+            agent(8453, "a", @site["id"], "2026-11-14T09:00:00Z"),
+            agent(1, "b", Ecto.UUID.generate(), "2026-11-02T09:00:00Z")
+          ],
+          next: "page-2"
+        })
+    })
   end
 
   defp site_answers(keys \\ []) do
@@ -313,10 +348,132 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     assert has_element?(view, "#siwa-company-name[value='Acme Labs']")
   end
 
+  test "Overview before billing starts says so, asks for no agents, and sets, refuses and removes a cap",
+       %{browser: browser} do
+    service(company())
+    view = open(browser, "/siwa")
+    assert has_element?(view, "#siwa-billing")
+    refute has_element?(view, "#siwa-usage")
+    refute has_element?(view, "#siwa-agents-panel")
+    assert_received {:asked, "GET", "/api/control/v1/account", _sent}
+    refute_received {:asked, _method, _path, _sent}
+
+    # What isn't an amount in dollars is never sent.
+    view |> form("#siwa-cap-form", cap: %{amount: "five hundred"}) |> render_submit()
+    assert has_element?(view, "#siwa-cap-amount[aria-invalid='true']")
+    refute_received {:asked, _method, _path, _sent}
+
+    too_low = refused(422, "control_fields_invalid", %{capCents: ["must be greater than or equal to 9900"]})
+    service(Map.put(company(), {"PUT", @base <> "/cap"}, too_low))
+    view |> form("#siwa-cap-form", cap: %{amount: "50"}) |> render_submit()
+    render_async(view)
+    assert_received {:asked, "PUT", "/api/control/v1/cap", sent}
+    assert Jason.decode!(sent) == %{"capCents" => 5_000}
+    # The least cap shows beside the field; the service's own sentence doesn't.
+    assert view |> element("#siwa-cap-amount-errors") |> render() =~ "$99.00"
+    refute render(view) =~ "must be greater than"
+
+    capped = %{@customer | "capCents" => 125_050}
+    service(Map.put(company(), {"PUT", @base <> "/cap"}, ok("cap_updated", %{customer: capped, usage: nil})))
+    view |> form("#siwa-cap-form", cap: %{amount: " $1,250.5 "}) |> render_submit()
+    render_async(view)
+    assert_received {:asked, "PUT", "/api/control/v1/cap", sent}
+    assert Jason.decode!(sent) == %{"capCents" => 125_050}
+    assert has_element?(view, "#siwa-cap-amount[aria-invalid='false'][value='1250.50']")
+    assert has_element?(view, "#siwa-cap-notice")
+
+    service(Map.put(company(), {"PUT", @base <> "/cap"}, ok("cap_updated", %{customer: @customer, usage: nil})))
+    view |> element("#siwa-cap-remove") |> render_click()
+    render_async(view)
+    assert_received {:asked, "PUT", "/api/control/v1/cap", sent}
+    assert Jason.decode!(sent) == %{"capCents" => nil}
+    refute has_element?(view, "#siwa-cap-remove")
+    assert has_element?(view, "#siwa-cap-amount[value='']")
+  end
+
+  test "Overview of a billed period shows its figures, and lists its agents a page at a time by their first site's name",
+       %{browser: browser} do
+    capped = %{@customer | "capCents" => 50_000}
+    usage = %{@usage | "capCents" => 50_000, "maxAgents" => 5_050}
+    answers = Map.merge(billed(capped), company(capped, usage))
+    service(answers)
+    view = open(browser, "/siwa")
+    render_async(view)
+
+    assert view |> element("#siwa-period") |> render() =~ "1–30 Nov 2026"
+    assert view |> element("#siwa-agents-count") |> render() =~ "1,001"
+    assert view |> element("#siwa-fee") |> render() =~ "$99.099"
+    assert view |> element("#siwa-cap") |> render() =~ "$500.00"
+    assert view |> element("#siwa-usage") |> render() =~ "5,050"
+    assert has_element?(view, "#siwa-cap-amount[value='500.00']")
+
+    on_base = "#siwa-agent-base-0x" <> String.duplicate("a", 40)
+    on_ethereum = "#siwa-agent-ethereum-0x" <> String.duplicate("b", 40)
+    assert view |> element(on_base) |> render() =~ @site["name"]
+    assert has_element?(view, on_base <> "-wallet")
+    refute view |> element(on_ethereum) |> render() =~ @site["name"]
+
+    assert_received {:asked, "GET", "/api/control/v1/account", _sent}
+    assert_received {:asked, "GET", "/api/control/v1/sites", _sent}
+    assert_received {:asked, "GET", "/api/control/v1/agents", _sent}
+
+    last = %{agents: [agent(8453, "c", @site["id"], "2026-11-01T09:00:00Z")], next: nil}
+    service(Map.put(answers, {"GET", @base <> "/agents?after=page-2"}, ok("agents", last)))
+    view |> element("#siwa-agents-more") |> render_click()
+    render_async(view)
+
+    # The next page joins the list under the first, named from the same sites.
+    assert view |> element("#siwa-agent-base-0x" <> String.duplicate("c", 40)) |> render() =~ @site["name"]
+    assert has_element?(view, on_base)
+    refute has_element?(view, "#siwa-agents-more")
+    assert_received {:asked, "GET", "/api/control/v1/agents?after=page-2", _sent}
+    refute_received {:asked, "GET", "/api/control/v1/sites", _sent}
+
+    # A cap below the fee so far is refused with the least whole cent above it.
+    below = refused(422, "control_fields_invalid", %{capCents: ["is below the fee this period has already reached"]})
+    service(Map.put(answers, {"PUT", @base <> "/cap"}, below))
+    view |> form("#siwa-cap-form", cap: %{amount: "99"}) |> render_submit()
+    render_async(view)
+    assert view |> element("#siwa-cap-amount-errors") |> render() =~ "$99.10"
+    assert has_element?(view, "#siwa-cap-amount[value='99']")
+  end
+
+  test "a period with no agents yet asks for none", %{browser: browser} do
+    service(company(@customer, %{@usage | "activeAgents" => 0, "feeCents" => "9900.0"}))
+    view = open(browser, "/siwa")
+    render_async(view)
+
+    assert view |> element("#siwa-fee") |> render() =~ "$99.00"
+    assert has_element?(view, "#siwa-agents-none")
+    refute has_element?(view, "#siwa-agents-box")
+    assert_received {:asked, "GET", "/api/control/v1/account", _sent}
+    refute_received {:asked, _method, _path, _sent}
+  end
+
+  test "an agent that isn't a wallet on a chain SIWA signs in on leaves the list unread, and Try again reads it again",
+       %{browser: browser} do
+    sepolia = %{agents: [agent(84_532, "a", @site["id"], @at)], next: nil}
+    service(Map.put(billed(), {"GET", @base <> "/agents"}, ok("agents", sepolia)))
+    view = open(browser, "/siwa")
+    render_async(view)
+
+    assert has_element?(view, "#siwa-usage")
+    assert has_element?(view, "#siwa-agents-box[data-state='error']")
+    refute has_element?(view, "#siwa-agents-more")
+
+    service(billed())
+    view |> element("#siwa-agents-box button[phx-click='list_agents']") |> render_click()
+    render_async(view)
+
+    assert has_element?(view, "#siwa-agents-box[data-state='ready']")
+    assert has_element?(view, "#siwa-agent-base-0x" <> String.duplicate("a", 40))
+    assert has_element?(view, "#siwa-agents-more")
+  end
+
   test "signed out, the pages offer sign-in and ask SIWA nothing" do
     service(company())
 
-    for path <- ["/siwa/sites", "/siwa/sites/#{@site["id"]}", "/siwa/settings"] do
+    for path <- ["/siwa", "/siwa/sites", "/siwa/sites/#{@site["id"]}", "/siwa/settings"] do
       html = build_conn() |> get(path) |> html_response(200)
       assert html |> LazyHTML.from_document() |> LazyHTML.query("#siwa-signed-out") |> Enum.any?()
     end

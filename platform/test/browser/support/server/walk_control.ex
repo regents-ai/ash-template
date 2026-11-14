@@ -2,16 +2,34 @@ defmodule AshTemplate.WalkControl do
   @moduledoc """
   The browser walk's SIWA control API (`AshTemplate.SiwaControl`), answered in
   this server's memory for the run (`AshTemplate.WalkOffline`) under the
-  service's own rules and in its own shapes: each person's company, its sites
-  and each site's keys, at most five of them in use.
+  service's own rules and in its own shapes: each person's company and its cap,
+  its billing period and the agents counted in it, its sites and each site's
+  keys, at most five of them in use.
 
   The identity token of the Privy pair a page trades is taken as the person's
   DID, and the token it gets back names them. The access token
   `walk-unavailable` is answered as a service whose control API is off.
+
+  A person starts with nothing, as a new company has no billing period, except
+  one whose DID starts `did:privy:browser-walk-siwa-billed-`: their company is
+  already billed, with a production site, an archived one and a period this UTC
+  month that has counted more agents than it includes.
   """
 
   @base "/api/control/v1/"
+  @billed "did:privy:browser-walk-siwa-billed-"
   @max_keys 5
+
+  # The service's price: $99 a period covers the first 1,000 agents and each one
+  # after adds $0.099, in tenths of a cent. A cap is in whole cents.
+  @included_agents 1_000
+  @base_tenths 99_000
+  @agent_tenths 99
+  @least_cap 9_900
+  @most_cap 2_147_483_647
+  @billed_agents 1_204
+  @default_page 50
+  @most_page 200
   @service_audiences ~w(agent-book agent-link)
   @audience ~r/\A[a-z0-9][a-z0-9_-]{0,63}\z/
   @https ~r/\Ahttps:\/\/(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?\z/
@@ -50,7 +68,9 @@ defmodule AshTemplate.WalkControl do
         {session(access, Req.Request.get_header(request, "privy-id-token")), state}
 
       {"walk-control:" <> did, method, path} ->
-        case step(method, path, body(request), did, state) do
+        state = known(state, did)
+
+        case step(method, path, params(request), did, state) do
           {:ok, status, code, data, state} -> {{status, %{"code" => code, "data" => data}}, state}
           {:error, refusal} -> {refusal, state}
         end
@@ -73,8 +93,42 @@ defmodule AshTemplate.WalkControl do
   defp session(_access, _identity),
     do: refusal(401, "privy_proof_invalid", "the Privy sign-in was not accepted")
 
-  defp step(:get, ["account"], _params, did, state),
-    do: {:ok, 200, "account", %{"did" => did, "customer" => person(state, did).customer}, state}
+  defp step(:get, ["account"], _params, did, state) do
+    %{customer: customer, period: period} = person(state, did)
+
+    {:ok, 200, "account", %{"did" => did, "customer" => customer, "usage" => usage(period)},
+     state}
+  end
+
+  defp step(:put, ["cap"], params, did, state) do
+    with {:ok, params} <- only(params, ~w(capCents)),
+         {:ok, customer} <- customer(state, did),
+         %{period: period} = person(state, did),
+         :ok <- valid(cap(params, period)) do
+      cap = params["capCents"]
+      customer = %{customer | "capCents" => cap, "updatedAt" => now()}
+      period = period && %{period | cap: cap}
+
+      {:ok, 200, "cap_updated", %{"customer" => customer, "usage" => usage(period)},
+       update_person(state, did, &%{&1 | customer: customer, period: period})}
+    end
+  end
+
+  # The period's agents, newest first, a page at a time; with no period, none.
+  defp step(:get, ["agents"], params, did, state) do
+    with {:ok, params} <- only(params, ~w(after limit)),
+         {:ok, _customer} <- customer(state, did),
+         :ok <- valid(page(params)) do
+      offset = if params["after"], do: offset(params["after"]), else: 0
+      limit = if params["limit"], do: String.to_integer(params["limit"]), else: @default_page
+
+      {shown, rest} =
+        person(state, did).period |> counted() |> Enum.drop(offset) |> Enum.split(limit)
+
+      next = if rest != [], do: Base.url_encode64("#{offset + limit}", padding: false)
+      {:ok, 200, "agents", %{"agents" => shown, "next" => next}, state}
+    end
+  end
 
   defp step(:post, ["customer"], params, did, state) do
     with {:ok, params} <- only(params, ~w(name)),
@@ -87,6 +141,7 @@ defmodule AshTemplate.WalkControl do
         "id" => Ecto.UUID.generate(),
         "name" => name,
         "kind" => "paid",
+        "capCents" => nil,
         "createdAt" => at,
         "updatedAt" => at
       }
@@ -214,8 +269,155 @@ defmodule AshTemplate.WalkControl do
   defp step(_method, _path, _params, _did, _state),
     do: {:error, refusal(404, "not_found", "no such route")}
 
-  defp person(state, did),
-    do: Map.get(state.people, did, %{customer: nil, sites: [], keys: %{}})
+  defp person(state, did), do: Map.fetch!(state.people, did)
+
+  # The person a token names, as they start the first time it is used.
+  defp known(%{people: people} = state, did) when is_map_key(people, did), do: state
+
+  defp known(state, @billed <> _width = did) do
+    %{sites: sites} = billed = billed(did)
+
+    state
+    |> Map.update!(:audiences, &Enum.into(sites, &1, fn site -> site["audience"] end))
+    |> Map.update!(:people, &Map.put(&1, did, billed))
+  end
+
+  defp known(state, did),
+    do: put_in(state.people[did], %{customer: nil, sites: [], keys: %{}, period: nil})
+
+  defp billed(@billed <> width = did) do
+    at = DateTime.utc_now(:second)
+    starts = %{at | day: 1, hour: 0, minute: 0, second: 0}
+    ends = starts |> DateTime.to_date() |> Date.shift(month: 1) |> DateTime.new!(~T[00:00:00])
+    made = DateTime.to_iso8601(starts)
+
+    customer = %{
+      "id" => Ecto.UUID.generate(),
+      "name" => "Walk Billed #{String.capitalize(width)}",
+      "kind" => "internal",
+      "capCents" => nil,
+      "createdAt" => made,
+      "updatedAt" => made
+    }
+
+    live =
+      billed_site("Main site", "walk-billed-#{width}", "https://example.com", made, nil)
+
+    archived =
+      billed_site("Old site", "walk-billed-old-#{width}", "https://old.example.com", made, made)
+
+    %{
+      customer: customer,
+      sites: [live, archived],
+      keys: %{},
+      period: %{
+        starts: starts,
+        ends: ends,
+        cap: nil,
+        agents: billed_agents(did, starts, at, [live["id"], archived["id"]])
+      }
+    }
+  end
+
+  defp billed_site(name, audience, origin, made, archived) do
+    %{
+      "id" => Ecto.UUID.generate(),
+      "name" => name,
+      "audience" => audience,
+      "environment" => "production",
+      "origins" => [origin],
+      "originProof" => "verified",
+      "archivedAt" => archived,
+      "createdAt" => made,
+      "updatedAt" => archived || made
+    }
+  end
+
+  # Agents first seen across the period so far, newest first: every fifth on
+  # Ethereum, the rest on Base, and every seventh first seen at the archived site.
+  defp billed_agents(did, starts, at, [live, archived]) do
+    span = DateTime.diff(at, starts)
+
+    for n <- @billed_agents..1//-1 do
+      wallet = :crypto.hash(:sha256, "#{did}:#{n}") |> binary_part(0, 20) |> Base.encode16(case: :lower)
+
+      %{
+        "subject" => "eip155:#{if rem(n, 5) == 0, do: 1, else: 8453}:0x#{wallet}",
+        "firstVerifiedAt" =>
+          starts |> DateTime.add(div(span * n, @billed_agents + 1)) |> DateTime.to_iso8601(),
+        "firstSiteId" => if(rem(n, 7) == 0, do: archived, else: live)
+      }
+    end
+  end
+
+  defp counted(nil), do: []
+  defp counted(period), do: period.agents
+
+  # The period as the service shows it, its fee in cents with one decimal place.
+  defp usage(nil), do: nil
+
+  defp usage(period) do
+    tenths = fee_tenths(length(period.agents))
+
+    %{
+      "periodStartsAt" => DateTime.to_iso8601(period.starts),
+      "periodEndsAt" => DateTime.to_iso8601(period.ends),
+      "activeAgents" => length(period.agents),
+      "includedAgents" => @included_agents,
+      "feeCents" => "#{div(tenths, 10)}.#{rem(tenths, 10)}",
+      "capCents" => period.cap,
+      "maxAgents" => max_agents(period.cap)
+    }
+  end
+
+  defp fee_tenths(agents), do: @base_tenths + max(0, agents - @included_agents) * @agent_tenths
+
+  defp max_agents(nil), do: nil
+  defp max_agents(cap), do: @included_agents + div(cap * 10 - @base_tenths, @agent_tenths)
+
+  # A cap is at least the least fee and never below the fee the period has reached.
+  defp cap(params, _period) when not is_map_key(params, "capCents"),
+    do: %{"capCents" => ["can't be blank; null means no cap"]}
+
+  defp cap(%{"capCents" => nil}, _period), do: %{}
+
+  defp cap(%{"capCents" => cap}, period) do
+    cond do
+      not is_integer(cap) -> %{"capCents" => ["is invalid"]}
+      cap < @least_cap -> %{"capCents" => ["must be greater than or equal to #{@least_cap}"]}
+      cap > @most_cap -> %{"capCents" => ["must be less than or equal to #{@most_cap}"]}
+      period && fee_tenths(length(period.agents)) > cap * 10 -> below_fee()
+      true -> %{}
+    end
+  end
+
+  defp below_fee, do: %{"capCents" => ["is below the fee this period has already reached"]}
+
+  defp page(params), do: Map.merge(limit(params["limit"]), cursor(params["after"]))
+
+  defp limit(nil), do: %{}
+
+  defp limit(limit) do
+    case Integer.parse(limit) do
+      {limit, ""} when limit in 1..@most_page -> %{}
+      _other -> %{"limit" => ["must be from 1 to #{@most_page}"]}
+    end
+  end
+
+  defp cursor(nil), do: %{}
+
+  defp cursor(cursor),
+    do: if(offset(cursor), do: %{}, else: %{"after" => ["is not a cursor this list gave"]})
+
+  # The walk's cursor is how many agents the pages before gave.
+  defp offset(cursor) do
+    with {:ok, decoded} <- Base.url_decode64(cursor, padding: false),
+         {offset, ""} when offset > 0 <- Integer.parse(decoded) do
+      offset
+    else
+      _not_a_cursor -> nil
+    end
+  end
 
   defp update_person(state, did, fun),
     do: %{state | people: Map.put(state.people, did, fun.(person(state, did)))}
@@ -395,8 +597,10 @@ defmodule AshTemplate.WalkControl do
     end
   end
 
-  defp body(%Req.Request{body: nil}), do: %{}
-  defp body(%Req.Request{body: body}), do: body |> IO.iodata_to_binary() |> Jason.decode!()
+  # A read's query, or a change's body.
+  defp params(%Req.Request{method: :get, url: url}), do: URI.decode_query(url.query || "")
+  defp params(%Req.Request{body: nil}), do: %{}
+  defp params(%Req.Request{body: body}), do: body |> IO.iodata_to_binary() |> Jason.decode!()
 
   defp now, do: DateTime.utc_now(:second) |> DateTime.to_iso8601()
 end

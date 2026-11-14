@@ -18,7 +18,9 @@ Changes to Ash Template, newest first.
   own sites. Name your company, add a site with its audience and the web addresses it
   runs on, make a key (shown once, so copy it then), revoke a key, change a site's
   name or addresses, and archive a site. Settings shows your company's name, its
-  owner and where to get help.
+  owner and where to get help. Overview shows your billing period once it starts: its
+  dates, the agents counted, the fee so far and each agent with the site it first
+  signed in to. Set a cap on your SIWA fees for a period there, change it or remove it.
 
 ## 13 November 2026
 

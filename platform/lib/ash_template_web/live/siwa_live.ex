@@ -1,10 +1,18 @@
 defmodule AshTemplateWeb.SiwaLive do
   @moduledoc """
-  The SIWA pages, where a person runs their company's agent sign-in: Sites
-  (`/siwa/sites`), one site with its keys (`/siwa/sites/:site_id`) and Settings
-  (`/siwa/settings`). All of it is read from the sign-in service's control API
-  (`AshTemplate.SiwaControl`) each time; this site keeps none of it. A person
-  with no company names it first, then lands on Sites.
+  The SIWA pages, where a person runs their company's agent sign-in: Overview
+  (`/siwa`), Sites (`/siwa/sites`), one site with its keys
+  (`/siwa/sites/:site_id`) and Settings (`/siwa/settings`). All of it is read
+  from the sign-in service's control API (`AshTemplate.SiwaControl`) each time;
+  this site keeps none of it. A person with no company names it first, then
+  lands on Sites.
+
+  Overview shows the company's billing period from the account read: its dates,
+  the agents counted against those included, the fee so far and the cap, which
+  the person sets, changes or removes there. With no period running it says
+  billing hasn't started. Once one runs, a second read lists the period's agents,
+  newest first, into a stream, a page at a time by the service's cursor, so the
+  page keeps none of the rows.
 
   The service is asked with the control token this browser's sign-in traded for
   (`AshTemplateWeb.SiwaSessionController`), which only this machine holds
@@ -31,16 +39,26 @@ defmodule AshTemplateWeb.SiwaLive do
   alias AshTemplate.SiwaControl
   alias AshTemplate.SiwaControl.{Refusal, Secret, Tokens}
   alias AshTemplateWeb.Live.Session
-  alias AshTemplateWeb.Read
+  alias AshTemplateWeb.{Motion, Read}
   alias Regent.Primitives, as: P
 
-  @reads [:company, :sites, :site]
-  @forms ~w(company site details)
+  @reads [:company, :sites, :site, :agents, :more_agents]
+  @forms ~w(company site details cap)
   @fields %{
     "company" => ~w(name),
     "site" => ~w(name audience environment origins),
     "details" => ~w(name origins)
   }
+
+  # The service's bounds for a cap, in cents: the fee for the agents a period
+  # includes, and the largest it keeps.
+  @least_cap 9_900
+  @most_cap 2_147_483_647
+  @dollars ~r/\A[0-9]+(\.[0-9]{1,2})?\z/
+
+  # An agent is a wallet on one of the chains SIWA signs agents in on.
+  @subject ~r/\Aeip155:(1|8453):(0x[0-9a-f]{40})\z/
+  @chains %{"1" => {"ethereum", "Ethereum"}, "8453" => {"base", "Base"}}
   @labels %{
     "name" => "Name",
     "audience" => "Audience",
@@ -65,6 +83,8 @@ defmodule AshTemplateWeb.SiwaLive do
      socket
      |> Session.check_component_lease(&assign(&1, :account, &2))
      |> assign(owner: nil, company: %Read{}, sites: %Read{}, site: %Read{})
+     |> assign(agents: %Read{}, more_agents: %Read{})
+     |> stream_configure(:agents, dom_id: &"siwa-agent-#{&1.chain}-#{&1.address}")
      |> fresh()}
   end
 
@@ -83,8 +103,11 @@ defmodule AshTemplateWeb.SiwaLive do
   defp owner(%{account: nil}), do: nil
   defp owner(%{account: account, page: page, site_id: site_id}), do: {account.id, page, site_id}
 
+  # The agents listed so far go too, and any page of them still on its way is
+  # dropped when it lands.
   defp fresh(socket) do
-    assign(socket,
+    socket
+    |> assign(
       control: :ready,
       waiting: [],
       again: MapSet.new(),
@@ -93,26 +116,47 @@ defmodule AshTemplateWeb.SiwaLive do
       drafts: %{},
       errors: %{},
       notices: %{},
-      revealed: nil
+      revealed: nil,
+      next: nil,
+      names: %{}
     )
+    |> Read.clear(:agents)
+    |> Read.clear(:more_agents)
+    |> stream(:agents, [], reset: true)
   end
 
-  # Settings reads the company each time; the other pages read it once.
+  # Overview and Settings read the company each time; the other pages read it once.
   defp begin(%{assigns: %{owner: nil}} = socket), do: socket
 
   defp begin(socket) do
-    if socket.assigns.page != :siwa_settings and known_company?(socket.assigns),
+    if socket.assigns.page in [:siwa_sites, :siwa_site] and known_company?(socket.assigns),
       do: run_page(socket),
       else: run(socket, :company)
   end
 
-  defp known_company?(%{company: %Read{owner: id, value: %{"id" => _}}, account: %{id: id}}),
-    do: true
+  defp known_company?(%{
+         company: %Read{owner: id, value: %{"customer" => %{"id" => _}}},
+         account: %{id: id}
+       }),
+       do: true
 
   defp known_company?(_assigns), do: false
 
   defp run_page(%{assigns: %{page: :siwa_sites}} = socket), do: run(socket, :sites)
   defp run_page(%{assigns: %{page: :siwa_site}} = socket), do: run(socket, :site)
+
+  # A period with no agents yet has none to list.
+  defp run_page(
+         %{
+           assigns: %{
+             page: :siwa_overview,
+             company: %Read{value: %{"usage" => %{"activeAgents" => counted}}}
+           }
+         } = socket
+       )
+       when counted > 0,
+       do: run(socket, :agents)
+
   defp run_page(socket), do: socket
 
   @impl true
@@ -167,7 +211,52 @@ defmodule AshTemplateWeb.SiwaLive do
 
   def handle_event("hide_key", _params, socket), do: {:noreply, assign(socket, revealed: nil)}
 
+  def handle_event("set_cap", %{"cap" => %{"amount" => amount} = params}, socket) do
+    case cents(amount) do
+      {:ok, cap_cents} ->
+        {:noreply, submit(socket, "cap", params, {:set_cap, cap_cents})}
+
+      {:error, words} ->
+        {:noreply,
+         socket
+         |> update(:drafts, &Map.put(&1, "cap", params))
+         |> update(:notices, &Map.delete(&1, "cap"))
+         |> cap_error(words)}
+    end
+  end
+
+  def handle_event("remove_cap", _params, socket) do
+    {:noreply,
+     socket
+     |> update(:drafts, &Map.delete(&1, "cap"))
+     |> update(:errors, &Map.delete(&1, "cap"))
+     |> act({:set_cap, nil})}
+  end
+
+  def handle_event("list_agents", _params, socket), do: {:noreply, run(socket, :agents)}
+
+  # A press after the last page landed has nothing more to read.
+  def handle_event("more_agents", _params, %{assigns: %{next: nil}} = socket),
+    do: {:noreply, socket}
+
+  def handle_event("more_agents", _params, socket), do: {:noreply, run(socket, :more_agents)}
+
   defp name(params), do: Map.take(params, ["name"])
+
+  # Dollars as the person typed them, with or without its sign and commas, in
+  # whole cents. The service says whether it is enough.
+  defp cents(amount) do
+    dollars = String.replace(amount, ~r/[\s$,]/u, "")
+
+    if Regex.match?(@dollars, dollars),
+      do: dollars |> Decimal.new() |> Decimal.mult(100) |> Decimal.to_integer() |> at_most(),
+      else: {:error, "Enter the cap in dollars, such as 500 or 500.00."}
+  end
+
+  defp at_most(cents) when cents > @most_cap,
+    do: {:error, "Set a cap of at most #{money(@most_cap)}."}
+
+  defp at_most(cents), do: {:ok, cents}
 
   # One origin a line, as the person typed them.
   defp origins(text) do
@@ -204,8 +293,15 @@ defmodule AshTemplateWeb.SiwaLive do
     |> start_async({:write, ref}, fn -> call(ctx, &write(op, &1)) end)
   end
 
-  defp ctx(%{lease: lease, account: account, site_id: site_id}),
-    do: %{topic: SessionAuthority.topic(lease.lineage), account_id: account.id, site_id: site_id}
+  defp ctx(%{lease: lease, account: account, site_id: site_id, next: next, names: names}) do
+    %{
+      topic: SessionAuthority.topic(lease.lineage),
+      account_id: account.id,
+      site_id: site_id,
+      next: next,
+      names: names
+    }
+  end
 
   defp read_owner(:site, ctx), do: {ctx.account_id, ctx.site_id}
   defp read_owner(_name, ctx), do: ctx.account_id
@@ -215,7 +311,25 @@ defmodule AshTemplateWeb.SiwaLive do
   defp read(:company, ctx) do
     ctx
     |> call(&SiwaControl.account/1)
-    |> then(&with({:ok, %{"customer" => customer}} <- &1, do: {:ok, customer}))
+    |> then(&with({:ok, data} <- &1, do: {:ok, Map.take(data, ["customer", "usage"])}))
+    |> shown()
+  end
+
+  # The first page of agents comes with the company's sites, so each agent's
+  # first site shows by its name; the later pages use the same names.
+  defp read(:agents, ctx) do
+    ctx
+    |> call(fn token ->
+      with {:ok, %{"sites" => sites}} <- SiwaControl.list_sites(token),
+           {:ok, page} <- SiwaControl.list_agents(token, nil),
+           do: agents(page, Map.new(sites, &{&1["id"], &1["name"]}))
+    end)
+    |> shown()
+  end
+
+  defp read(:more_agents, %{next: next, names: names} = ctx) do
+    ctx
+    |> call(&with({:ok, page} <- SiwaControl.list_agents(&1, next), do: agents(page, names)))
     |> shown()
   end
 
@@ -241,6 +355,37 @@ defmodule AshTemplateWeb.SiwaLive do
 
   defp shown(result), do: result
 
+  # A page of agents as the list shows them. An agent that isn't a wallet on a
+  # chain SIWA signs in on means the service answered something else.
+  defp agents(%{"agents" => agents, "next" => next}, names) do
+    rows = Enum.map(agents, &agent(&1, names))
+
+    if Enum.all?(rows, &is_map/1),
+      do: {:ok, %{rows: rows, next: next, names: names}},
+      else: {:error, :unavailable}
+  end
+
+  defp agents(_other, _names), do: {:error, :unavailable}
+
+  defp agent(%{"subject" => subject, "firstVerifiedAt" => at, "firstSiteId" => site_id}, names)
+       when is_binary(subject) and is_binary(at) do
+    with [chain_id, address] <- Regex.run(@subject, subject, capture: :all_but_first),
+         {:ok, at, _offset} <- DateTime.from_iso8601(at) do
+      {chain, chain_name} = Map.fetch!(@chains, chain_id)
+
+      %{
+        chain: chain,
+        chain_name: chain_name,
+        address: address,
+        at: at,
+        site: Map.get(names, site_id)
+      }
+    end
+  end
+
+  defp agent(_other, _names), do: nil
+
+  defp write({:set_cap, cap_cents}, token), do: SiwaControl.set_cap(token, cap_cents)
   defp write({:create_company, params}, token), do: SiwaControl.create_customer(token, params)
   defp write({:update_company, params}, token), do: SiwaControl.update_customer(token, params)
   defp write({:create_site, params}, token), do: SiwaControl.create_site(token, params)
@@ -321,10 +466,23 @@ defmodule AshTemplateWeb.SiwaLive do
 
   defp settled(socket, op), do: update(socket, :again, &MapSet.delete(&1, op))
 
-  defp landed(socket, :company) do
-    if socket.assigns.page != :siwa_settings and known_company?(socket.assigns),
-      do: run_page(socket),
-      else: socket
+  defp landed(socket, :company),
+    do: if(known_company?(socket.assigns), do: run_page(socket), else: socket)
+
+  # Agents go into the stream and out of the read, so the page keeps none of them.
+  defp landed(%{assigns: %{agents: %Read{value: %{rows: rows} = page} = read}} = socket, :agents) do
+    socket
+    |> assign(agents: %{read | value: nil}, next: page.next, names: page.names)
+    |> stream(:agents, rows, reset: true)
+  end
+
+  defp landed(
+         %{assigns: %{more_agents: %Read{value: %{rows: rows} = page} = read}} = socket,
+         :more_agents
+       ) do
+    socket
+    |> assign(more_agents: %{read | value: nil}, next: page.next)
+    |> stream(:agents, rows)
   end
 
   defp landed(socket, _name), do: socket
@@ -337,6 +495,17 @@ defmodule AshTemplateWeb.SiwaLive do
          {:ok, {:error, %Refusal{code: "customer_exists"}}}
        ),
        do: run(socket, :company)
+
+  # The service says why a cap is too low in its own words; the page says it in
+  # its own, with the amounts that apply now.
+  defp wrote(
+         socket,
+         {:set_cap, _cap_cents},
+         {:ok,
+          {:error,
+           %Refusal{status: 422, code: "control_fields_invalid", fields: %{"capCents" => _}}}}
+       ),
+       do: cap_error(socket, too_low(socket.assigns.company))
 
   defp wrote(socket, op, {:ok, {:error, %Refusal{status: 422, fields: fields}}})
        when map_size(fields) > 0,
@@ -351,7 +520,7 @@ defmodule AshTemplateWeb.SiwaLive do
     socket =
       socket
       |> update(:drafts, &Map.delete(&1, "company"))
-      |> put_read(:company, socket.assigns.account.id, customer)
+      |> put_company(%{"customer" => customer})
 
     if socket.assigns.page == :siwa_sites,
       do: run_page(socket),
@@ -361,8 +530,15 @@ defmodule AshTemplateWeb.SiwaLive do
   defp done(socket, {:update_company, _params}, customer) do
     socket
     |> update(:drafts, &Map.delete(&1, "company"))
-    |> put_read(:company, socket.assigns.account.id, customer)
+    |> put_company(%{"customer" => customer})
     |> notice("company", :success, "Saved.")
+  end
+
+  defp done(socket, {:set_cap, cap_cents}, company) do
+    socket
+    |> update(:drafts, &Map.delete(&1, "cap"))
+    |> put_company(company)
+    |> notice("cap", :success, if(cap_cents, do: "Saved.", else: "Cap removed."))
   end
 
   defp done(socket, {:create_site, _params}, site) do
@@ -403,6 +579,18 @@ defmodule AshTemplateWeb.SiwaLive do
   defp put_read(socket, name, owner, value),
     do: Read.now(socket, name, owner, fn -> {:ok, value} end)
 
+  defp put_company(socket, company) do
+    account_id = socket.assigns.account.id
+
+    case socket.assigns.company do
+      %Read{owner: ^account_id, value: %{"customer" => _} = shown} ->
+        put_read(socket, :company, account_id, Map.merge(shown, company))
+
+      _moved_on ->
+        socket
+    end
+  end
+
   defp put_site(socket, id, change) do
     case socket.assigns.site do
       %Read{owner: {account_id, ^id} = owner, value: %{site: _, keys: _} = shown} ->
@@ -427,6 +615,23 @@ defmodule AshTemplateWeb.SiwaLive do
   defp notice(socket, section, tone, words),
     do: update(socket, :notices, &Map.put(&1, section, {tone, words}))
 
+  defp cap_error(socket, words),
+    do: update(socket, :errors, &Map.put(&1, "cap", %{"capCents" => [words]}))
+
+  # A cap covers at least the fee this period has reached, rounded up to a whole
+  # cent; with no period, the service's least.
+  defp too_low(%Read{value: %{"usage" => %{} = usage}}),
+    do:
+      "Set a cap of at least #{money(least_cap(usage))}, the fee this period has reached so far."
+
+  defp too_low(_no_period), do: "Set a cap of at least #{money(@least_cap)}."
+
+  defp least_cap(nil), do: @least_cap
+
+  defp least_cap(%{"feeCents" => fee}),
+    do: fee |> Decimal.round(0, :ceiling) |> Decimal.to_integer()
+
+  defp section({:set_cap, _cap_cents}), do: "cap"
   defp section({:create_company, _params}), do: "company"
   defp section({:update_company, _params}), do: "company"
   defp section({:create_site, _params}), do: "site"
@@ -520,6 +725,20 @@ defmodule AshTemplateWeb.SiwaLive do
               Continue
             </.company_form>
           </section>
+        <% {:overview, customer, usage} -> %>
+          <.overview
+            customer={customer}
+            usage={usage}
+            agents={@agents}
+            more={@more_agents}
+            rows={@streams.agents}
+            next={@next}
+            drafts={@drafts}
+            errors={@errors}
+            notices={@notices}
+            pending={@pending}
+            myself={@myself}
+          />
         <% {:settings, customer} -> %>
           <.settings
             customer={customer}
@@ -564,13 +783,17 @@ defmodule AshTemplateWeb.SiwaLive do
 
   defp screen(assigns) do
     case view(assigns.company) do
-      {:ready, nil} -> :setup
-      {:ready, customer} -> page_screen(assigns, customer)
+      {:ready, %{"customer" => nil}} -> :setup
+      {:ready, company} -> page_screen(assigns, company)
       other -> other
     end
   end
 
-  defp page_screen(%{page: :siwa_settings}, customer), do: {:settings, customer}
+  defp page_screen(%{page: :siwa_overview}, %{"customer" => customer, "usage" => usage}),
+    do: {:overview, customer, usage}
+
+  defp page_screen(%{page: :siwa_settings}, %{"customer" => customer}),
+    do: {:settings, customer}
 
   defp page_screen(%{page: :siwa_sites, sites: sites}, _customer) do
     case view(sites) do
@@ -592,10 +815,14 @@ defmodule AshTemplateWeb.SiwaLive do
   defp view(%Read{read_at: nil}), do: :loading
   defp view(%Read{value: value}), do: {:ready, value}
 
+  defp title(:siwa_overview, _screen), do: "Overview"
   defp title(:siwa_sites, _screen), do: "Sites"
   defp title(:siwa_settings, _screen), do: "Settings"
   defp title(:siwa_site, {:site, site, _keys}), do: site["name"]
   defp title(:siwa_site, _screen), do: "Site"
+
+  defp tip(:siwa_overview),
+    do: "Your company's billing period: the agents counted, the fee so far and your cap."
 
   defp tip(:siwa_settings), do: "Your company's name, its owner and where to get help."
   defp tip(:siwa_site), do: "This site's audience, origins and keys, and how to check an agent."
@@ -657,6 +884,262 @@ defmodule AshTemplateWeb.SiwaLive do
     </.form>
     """
   end
+
+  attr :customer, :map, required: true
+
+  attr :usage, :map,
+    default: nil,
+    doc: "the billing period running now; nil before billing starts"
+
+  attr :agents, Read, required: true
+  attr :more, Read, required: true
+  attr :rows, :any, required: true, doc: "the agents stream"
+  attr :next, :string, default: nil
+  attr :drafts, :map, required: true
+  attr :errors, :map, required: true
+  attr :notices, :map, required: true
+  attr :pending, :list, required: true
+  attr :myself, :any, required: true
+
+  defp overview(assigns) do
+    ~H"""
+    <section
+      :if={is_nil(@usage)}
+      id="siwa-billing"
+      class="account-panel siwa-card"
+      aria-labelledby="siwa-billing-title"
+    >
+      <div class="siwa-head">
+        <h2 id="siwa-billing-title">Billing</h2>
+        <P.status>Not started</P.status>
+      </div>
+      <p class="rg-muted">
+        Your sandbox sites work now, and their agents are never counted. Once billing starts, each
+        agent that signs in to one of your production sites counts once a period, and this page
+        shows the period, its agents and the fee so far.
+      </p>
+      <div class="siwa-actions">
+        <.link patch={~p"/siwa/sites"} class="rg-button rg-button--secondary rg-button--no-arrow">
+          <span class="rg-button__label">View sites</span>
+        </.link>
+      </div>
+    </section>
+
+    <section
+      :if={@usage}
+      id="siwa-usage"
+      class="account-panel siwa-usage"
+      aria-labelledby="siwa-usage-title"
+    >
+      <h2 id="siwa-usage-title">Usage</h2>
+      <p class="rg-muted">
+        This period runs <span id="siwa-period" class="siwa-period">{period(@usage)}</span>.
+        Dates are in UTC.
+      </p>
+      <dl
+        id="siwa-stats"
+        class="siwa-stats"
+        phx-hook="MotionCount"
+        data-variant={Motion.standard("count")}
+      >
+        <div class="siwa-card siwa-stat siwa-stat--wide">
+          <dt>Agents</dt>
+          <dd>
+            <P.figure
+              id="siwa-agents-count"
+              class="siwa-stat__value"
+              value={count(@usage["activeAgents"])}
+            />
+            <span class="siwa-stat__note">{included(@usage)}</span>
+            <span class="siwa-meter" aria-hidden="true">
+              <span style={"--siwa-used: #{used(@usage)}%"}></span>
+            </span>
+          </dd>
+        </div>
+        <div class="siwa-card siwa-stat">
+          <dt>Fee</dt>
+          <dd>
+            <P.figure id="siwa-fee" class="siwa-stat__value" value={money(@usage["feeCents"])} />
+            <span class="siwa-stat__note">So far, before tax</span>
+          </dd>
+        </div>
+        <div class="siwa-card siwa-stat">
+          <dt>Cap</dt>
+          <dd>
+            <P.figure
+              :if={@customer["capCents"]}
+              id="siwa-cap"
+              class="siwa-stat__value"
+              value={money(@customer["capCents"])}
+            />
+            <span :if={is_nil(@customer["capCents"])} id="siwa-cap" class="siwa-stat__value">
+              None
+            </span>
+            <span class="siwa-stat__note">{reach(@customer, @usage)}</span>
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section id="siwa-cap-panel" class="account-panel" aria-labelledby="siwa-cap-title">
+      <h2 id="siwa-cap-title">Cap</h2>
+      <p class="rg-muted">
+        The most your SIWA fees can reach in one billing period, before tax. Once they reach it, new
+        agents can't sign in to your production sites until the next period. Agents already counted
+        still can.
+      </p>
+      <.form
+        :let={cap}
+        for={form(@drafts, "cap", %{"amount" => dollars(@customer["capCents"])})}
+        id="siwa-cap-form"
+        class="siwa-form"
+        phx-change="draft"
+        phx-submit="set_cap"
+        phx-target={@myself}
+      >
+        <P.field :let={field} id="siwa-cap-amount" label="Amount" errors={cap_errors(@errors)}>
+          <span class="siwa-money">
+            <span class="siwa-money__sign" aria-hidden="true">$</span>
+            <input
+              id={field.id}
+              name={cap[:amount].name}
+              value={cap[:amount].value}
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="No cap"
+              phx-debounce="blur"
+              aria-invalid={field.aria_invalid}
+              aria-describedby={field.described_by}
+            />
+          </span>
+          <:hint>In US dollars, at least {money(least_cap(@usage))}.</:hint>
+        </P.field>
+        <div class="siwa-actions">
+          <P.button type="submit" disabled={pending?(@pending, :set_cap)} phx-disable-with="Saving…">
+            Save
+          </P.button>
+          <P.button
+            :if={@customer["capCents"]}
+            id="siwa-cap-remove"
+            type="button"
+            variant="quiet"
+            arrow={false}
+            disabled={pending?(@pending, :set_cap)}
+            phx-click="remove_cap"
+            phx-target={@myself}
+            data-confirm="Remove the cap? Your SIWA fees then have no limit in a period."
+            data-confirm-action="Remove"
+          >
+            Remove cap
+          </P.button>
+        </div>
+        <.notice id="siwa-cap-notice" notice={@notices["cap"]} />
+      </.form>
+    </section>
+
+    <section
+      :if={@usage}
+      id="siwa-agents-panel"
+      class="account-panel"
+      aria-labelledby="siwa-agents-title"
+    >
+      <h2 id="siwa-agents-title">Agents</h2>
+      <p class="rg-muted">
+        Each agent counts once a period, from its first sign-in to one of your production sites.
+      </p>
+      <p :if={@usage["activeAgents"] == 0} id="siwa-agents-none" class="rg-muted">
+        No agents yet this period.
+      </p>
+      <.agent_list
+        :if={@usage["activeAgents"] > 0}
+        agents={@agents}
+        more={@more}
+        rows={@rows}
+        next={@next}
+        myself={@myself}
+      />
+    </section>
+    """
+  end
+
+  attr :agents, Read, required: true
+  attr :more, Read, required: true
+  attr :rows, :any, required: true
+  attr :next, :string, default: nil
+  attr :myself, :any, required: true
+
+  defp agent_list(assigns) do
+    ~H"""
+    <P.waiting id="siwa-agents-box" state={box(@agents)} class="siwa-agents-box">
+      <div class="siwa-agents__head" aria-hidden="true">
+        <span>Agent</span>
+        <span>Chain</span>
+        <span>Site</span>
+        <span>First seen</span>
+      </div>
+      <ul id="siwa-agents" class="siwa-agents" phx-update="stream">
+        <li :for={{dom_id, agent} <- @rows} id={dom_id} class="siwa-agents__row">
+          <P.address
+            id={"#{dom_id}-wallet"}
+            class="siwa-agents__agent"
+            address={agent.address}
+            chain={agent.chain}
+          />
+          <span class="siwa-agents__cell">
+            <span class="visually-hidden">Chain</span>
+            {agent.chain_name}
+          </span>
+          <span class="siwa-agents__cell">
+            <span class="visually-hidden">Site</span>
+            <bdi :if={agent.site}>{agent.site}</bdi>
+            <span :if={is_nil(agent.site)} class="rg-muted">Archived site</span>
+          </span>
+          <span class="siwa-agents__cell">
+            <span class="visually-hidden">First seen</span>
+            <time datetime={DateTime.to_iso8601(agent.at)}>{date(agent.at)}</time>
+          </span>
+        </li>
+      </ul>
+      <:retry>
+        <P.button
+          type="button"
+          variant="secondary"
+          arrow={false}
+          phx-click="list_agents"
+          phx-target={@myself}
+        >
+          Try again
+        </P.button>
+      </:retry>
+    </P.waiting>
+    <div :if={@next && box(@agents) == :ready} class="siwa-actions">
+      <P.button
+        id="siwa-agents-more"
+        type="button"
+        variant="secondary"
+        arrow={false}
+        disabled={@more.state == :loading}
+        phx-click="more_agents"
+        phx-target={@myself}
+      >
+        More
+      </P.button>
+    </div>
+    <P.notice :if={@more.state in [:error, :stale]} id="siwa-agents-failed" tone="error">
+      The next agents couldn't be loaded. Press More to try again.
+    </P.notice>
+    <.notice id="siwa-agents-notice" notice={refusal(@agents) || refusal(@more)} />
+    """
+  end
+
+  # The list's box waits for the first page, and says when it couldn't be read,
+  # with Try again in place of rows from before.
+  defp box(%Read{state: state}) when state in [:idle, :loading], do: :loading
+  defp box(%Read{state: state}) when state in [:error, :stale], do: :error
+  defp box(%Read{}), do: :ready
+
+  defp refusal(%Read{value: {:refused, refusal}}), do: {:error, refusal_words(refusal)}
+  defp refusal(%Read{}), do: nil
 
   attr :customer, :map, required: true
   attr :owner, :map, required: true, doc: "`AshTemplate.PublicIdentity.person/1`"
@@ -1134,8 +1617,58 @@ defmodule AshTemplateWeb.SiwaLive do
 
   defp day(iso) do
     {:ok, at, _offset} = DateTime.from_iso8601(iso)
-    Calendar.strftime(at, "%-d %b %Y")
+    date(at)
   end
+
+  defp date(at), do: Calendar.strftime(at, "%-d %b %Y")
+
+  # A period's first and last days; it ends the moment its last day does.
+  defp period(%{"periodStartsAt" => starts, "periodEndsAt" => ends}) do
+    {:ok, starts, _offset} = DateTime.from_iso8601(starts)
+    {:ok, ends, _offset} = DateTime.from_iso8601(ends)
+    last = DateTime.add(ends, -1, :second)
+
+    cond do
+      {starts.year, starts.month} == {last.year, last.month} -> "#{starts.day}–#{date(last)}"
+      starts.year == last.year -> "#{Calendar.strftime(starts, "%-d %b")} – #{date(last)}"
+      true -> "#{date(starts)} – #{date(last)}"
+    end
+  end
+
+  defp count(number), do: number |> Integer.to_string() |> RegentFormat.add_delimiters()
+
+  defp included(%{"activeAgents" => counted, "includedAgents" => included})
+       when counted > included,
+       do: "#{count(counted - included)} past the #{count(included)} included"
+
+  defp included(%{"includedAgents" => included}), do: "Of #{count(included)} included"
+
+  defp used(%{"activeAgents" => counted, "includedAgents" => included}),
+    do: min(100, div(counted * 100, included))
+
+  defp reach(%{"capCents" => nil}, _usage), do: "No limit on fees"
+  defp reach(_customer, %{"maxAgents" => most}), do: "Up to #{count(most)} agents"
+
+  # Dollars from cents, exactly: a fee with a tenth of a cent shows all three places.
+  defp money(cents) when is_integer(cents), do: money(Decimal.new(cents))
+
+  defp money(cents) do
+    places = if Decimal.integer?(cents), do: 2, else: 3
+
+    "$" <>
+      (cents
+       |> Decimal.div(100)
+       |> RegentFormat.decimal_to_string(places)
+       |> RegentFormat.add_delimiters())
+  end
+
+  defp dollars(nil), do: ""
+
+  defp dollars(cents),
+    do: cents |> Decimal.new() |> Decimal.div(100) |> RegentFormat.decimal_to_string(2)
+
+  defp cap_errors(%{"cap" => %{"capCents" => words}}), do: words
+  defp cap_errors(_errors), do: []
 
   # What a site's server sends SIWA to check a signed request, for the host of
   # the site's first origin.

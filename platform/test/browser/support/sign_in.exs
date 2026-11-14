@@ -5,7 +5,7 @@
 # agent pairs, and the signed cookie the walk sends; the friend who writes in General
 # gets one too, starts a quiet room for each width's busy room (busy_room.spec.ts) and
 # has a page and one more of notes (notes.spec.ts); and a person for each width who
-# sets up SIWA from nothing (siwa.spec.ts).
+# sets up SIWA from nothing and one whose SIWA company is billed (siwa.spec.ts).
 # Run by playwright.config.ts
 # before the server starts; it refuses any database but a walk's own local one.
 alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
@@ -212,8 +212,14 @@ save_sign_in.(
 
 # A person for each width, with a name of their own, who sets up SIWA from nothing
 # (siwa.spec.ts), so every other page the walk opens as the person above still
-# finds no SIWA company.
-for {width, digit} <- [{"desktop", "1"}, {"phone", "2"}] do
+# finds no SIWA company; and one for each width whose company the walk's SIWA
+# already bills (AshTemplate.WalkControl), for the Overview of a running period.
+for {width, digit} <- [
+      {"desktop", "1"},
+      {"phone", "2"},
+      {"billed-desktop", "3"},
+      {"billed-phone", "4"}
+    ] do
   did = "did:privy:browser-walk-siwa-#{width}"
   siwa_wallet = "0x" <> String.duplicate(digit, 40)
 

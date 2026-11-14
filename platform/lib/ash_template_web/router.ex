@@ -410,6 +410,7 @@ defmodule AshTemplateWeb.Router do
       live "/chat", ShellLive, :chat
       live "/chat/:conversation_id", ShellLive, :conversation
       live "/design", ShellLive, :design
+      live "/siwa", ShellLive, :siwa_overview
       live "/siwa/sites", ShellLive, :siwa_sites
       live "/siwa/sites/:site_id", ShellLive, :siwa_site
       live "/siwa/settings", ShellLive, :siwa_settings

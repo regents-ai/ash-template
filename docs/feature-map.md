@@ -279,7 +279,7 @@ the agent's own row on the site: when the agent was last seen, added the first t
 
 ## SIWA
 
-The paid sign-in product's control pages (`/siwa/sites`, `/siwa/sites/:site_id`,
+The paid sign-in product's control pages (`/siwa`, `/siwa/sites`, `/siwa/sites/:site_id`,
 `/siwa/settings`), read from the sign-in service's control API each time; the site keeps
 none of it.
 
@@ -287,12 +287,14 @@ none of it.
 | --- | --- |
 | The person's Privy pair is traded at SIWA with the session cookie and the forms token; the control token stays on this machine, kept for that browser's sign-in and person, never in the answer or a log, and goes when the sign-in ends | `platform/test/ash_template_web/siwa_session_test.exs` |
 | Without the forms token, with nobody signed in, without a pair, for a pair SIWA refuses (`privy_proof_invalid`) or for another person, nothing is kept; SIWA off, broken, out of reach or giving a token already ended is unavailable; SIWA's own limit, or 30 trades a minute for a person, is a 429 with a wait | same |
-| The control API's answers become its data, its refusal with each field's reasons, or unavailable; nothing is sent twice; a new key comes once and no inspection shows it | `platform/test/ash_template/siwa_control_test.exs` |
+| The control API's answers become its data, its refusal with each field's reasons, or unavailable; nothing is sent twice; a new key comes once and no inspection shows it; a period's fee comes as an exact Decimal and a fee in any other shape is unavailable; a cap goes in whole cents, null to remove it; agents are asked after the cursor of the page before | `platform/test/ash_template/siwa_control_test.exs` |
 | A person with no company names it first, then lands on Sites; a refused field is marked and explained under its own box, the others keep what was typed; a new site opens its own page | `platform/test/ash_template_web/siwa_live_test.exs` (a connected shell page) |
 | A new key goes to the browser once and is never in the page's state; Done hides it; a revoked key stays listed, without Revoke | same |
-| A site's name and origins are saved together; Archive goes back to Sites; a site SIWA doesn't know is refused on the page; Settings shows the company, its owner (their wallet with its copy icon, and their name when they chose one) and support, and renames the company; fields the account answer gains are left alone | same |
+| A site's name and origins are saved together; Archive goes back to Sites; a site SIWA doesn't know is refused on the page; Settings shows the company, its owner (their wallet with its copy icon, and their name when they chose one) and support, and renames the company | same |
+| Overview before billing starts says so and asks for no agents; an amount that isn't dollars is never sent; a cap SIWA refuses shows the least it takes beside the field, never SIWA's sentence; a cap is saved in whole cents and removed | same |
+| Overview of a billed period shows its dates, the agents counted, the exact fee and the cap with the most agents it pays for; the agents list a page at a time into a stream, each by its first site's name (none for an archived site), More reads after the cursor and the sites only once; a cap below the fee so far shows the least whole cent above it; a period with no agents asks for none; an agent that isn't a wallet on Base or Ethereum leaves the list unread with Try again | same |
 | With no token, or SIWA's `control_token_invalid`, the page asks the browser to trade and carries on; any other refusal is shown and asks no trade; a read or change SIWA still refuses after one trade says to sign in again; SIWA off, out of reach or a failed trade shows Unavailable, too many tries shows Busy, and neither is tried again until Try again; signed out, the pages offer sign-in and ask SIWA nothing | same |
-| At both widths, a new person names their company, is refused an origin a sandbox site can't list, adds the site, makes a key and sees it once, revokes it through the confirm window and opens Settings, every address with its copy icon and every scrolling box reachable; with SIWA off the page says it is unavailable | `platform/test/browser/siwa.spec.ts`, against the walk's SIWA stand-in |
+| At both widths, a new person names their company, is refused an origin a sandbox site can't list, adds the site, makes a key and sees it once, revokes it through the confirm window, opens Settings, and on Overview finds billing not started, is refused a cap under $99.00, saves one and removes it through the confirm window, every address with its copy icon and every scrolling box reachable; a person whose company is billed reads the period's agents and exact fee, lists 50 agents and 50 more, sees one first seen at an archived site, and is refused a cap below the fee so far; with SIWA off the page says it is unavailable | `platform/test/browser/siwa.spec.ts`, against the walk's SIWA stand-in |
 
 ## Visit lines
 
@@ -346,7 +348,9 @@ none of it.
   site, its origin warning and its proof, the five-key limit, Copy key on a phone, a
   token that ends while a page is open, Busy, and the site running on more than one
   machine (the token is kept on the machine that traded for it, so a page on another
-  machine trades again) are not walked.
+  machine trades again) are not walked. Overview walks only a period of one UTC
+  calendar month; a period across two months or two years, as a paid company's
+  will be, is formatted by the same code but not checked.
 - Writing, pinning and deleting a note; posting in a room: the walk opens these pages
   but does not use them.
 - Older chats and Older messages on the chat page: the walk's person has fewer than a

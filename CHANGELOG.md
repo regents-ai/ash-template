@@ -11306,3 +11306,43 @@ for local work, kept apart from the Skills Regent writes.
   `platform/test/browser/siwa.spec.ts` at both widths. The feature map says so, and
   `docs/agent-parity.md` marks the pages person-only for good (G13): SIWA plans no agent
   credential, so no agent tool or command is built for them.
+
+## 2026-11-14 — SIWA: Overview
+
+- The SIWA pages gain Overview (`/siwa`), first of the three tabs (Overview, Sites,
+  Settings), and the side menu's SIWA opens it. It reads the company from SIWA's
+  `GET /account` each visit, which now carries the customer's `capCents` and the
+  current billing period's `usage`; the site keeps none of it.
+- With no period running (`usage` null, as for every paid company today), Overview
+  says billing hasn't started: sandbox sites work now and are never counted. With a
+  period it shows the period's first and last days (UTC; the service's end is
+  exclusive), then three figures: the agents counted against the 1,000 included with a
+  bar, the fee so far and the cap with the most agents it pays for. The fee comes as a
+  decimal string and stays exact: `AshTemplate.SiwaControl` turns it into a `Decimal`,
+  a fee in any other shape is unavailable, and the page shows tenths of a cent when
+  there are any ($119.196).
+- The cap (SIWA fees in a period, before tax) is set, changed or removed on the page
+  (`PUT /cap`, whole cents, null for none; removing asks first). An amount that isn't
+  dollars is never sent, nor one past the service's largest. SIWA's 422
+  `control_fields_invalid` on `capCents` shows beside the field in the page's words,
+  with the least cap it takes now: $99.00 with no period, or the fee so far rounded up
+  to a whole cent.
+- Once a period has agents, a second read lists them newest first (`GET /agents`, 50
+  a page) into a LiveView stream, with More reading after the service's cursor. Each
+  row shows the wallet short with its copy icon and explorer link, its chain, the name
+  of the site it was first seen at (from the company's sites, read once with the first
+  page; a site no longer listed shows as archived) and the day; on a phone the chain,
+  site and day share one quiet line under the wallet. A row that isn't a wallet on
+  Base or Ethereum leaves the list unavailable with Try again. A period with no agents
+  asks for none.
+- The walk's SIWA stand-in answers the cap, the agents and `usage` under the service's
+  rules and price, and bills any person whose DID starts
+  `did:privy:browser-walk-siwa-billed-` with a period this UTC month of 1,204 agents,
+  a production site and an archived one; `sign_in.exs` signs in one such person for
+  each width. `pages.json` lists `/siwa`. The route handoff is regenerated.
+- Tests: `platform/test/ash_template/siwa_control_test.exs` (the exact fee, the cap's
+  body, the cursor); `platform/test/ash_template_web/siwa_live_test.exs` (Overview
+  before billing, a billed period, More, the refusals beside the cap, no agents, an
+  agent on another chain); `platform/test/browser/siwa.spec.ts` at both widths for both
+  people. The feature map and `docs/agent-parity.md` say so; Overview is person-only
+  (G13). The API contract is unchanged.

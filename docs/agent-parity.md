@@ -84,7 +84,9 @@ these rows have no agent surface and get none.
 
 | Action | Page | WebMCP | MCP | Connector | CLI | Protected | Gap |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Name the company, rename it | `/siwa/sites` (first visit), `/siwa/settings` | — | — | — | — | sign-in | person-only (G13) |
+| Read the billing period: its dates, the agents counted, the fee so far; list its agents a page at a time | `/siwa` | — | — | — | — | no | person-only (G13) |
+| Set, change or remove the cap on a period's fees | `/siwa` | — | — | — | — | money | person-only (G13) |
+| Name the company, rename it | `/siwa`, `/siwa/sites` (first visit), `/siwa/settings` | — | — | — | — | sign-in | person-only (G13) |
 | Sites: list, add, open, rename, change origins, archive | `/siwa/sites`, `/siwa/sites/:site_id` | — | — | — | — | sign-in | person-only (G13) |
 | A site's keys: list, make (shown once), revoke | `/siwa/sites/:site_id` | — | — | — | — | secrets | person-only (G13) |
 | Read the company's owner and where to get help | `/siwa/settings` | — | — | — | — | no | person-only (G13) |

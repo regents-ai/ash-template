@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{id: :dms, label: "Messages", path: "/dms", icon: "mail"},
     %{id: :polls, label: "Polls", path: "/polls", icon: "chart-column"},
     %{id: :chat, label: "Chat", path: "/chat", icon: "sparkles"},
-    %{id: :siwa, label: "SIWA", path: "/siwa/sites", icon: "key-round"},
+    %{id: :siwa, label: "SIWA", path: "/siwa", icon: "key-round"},
     %{id: :design, label: "Design", path: "/design", icon: "shapes"},
     %{id: :settings, label: "Account", path: "/account", icon: "settings"}
   ]
@@ -105,6 +105,7 @@ defmodule AshTemplateWeb.RouteCatalog do
       %{route_id: :activity, label: "Activity", path: "/app/activity"}
     ],
     siwa: [
+      %{route_id: :siwa_overview, label: "Overview", path: "/siwa"},
       %{route_id: :siwa_sites, label: "Sites", path: "/siwa/sites"},
       %{route_id: :siwa_settings, label: "Settings", path: "/siwa/settings"}
     ],
@@ -162,6 +163,8 @@ defmodule AshTemplateWeb.RouteCatalog do
       {:chat,
        %{route_id: :chat, destination: "/chat/:conversation_id", page_display_label: "Chat"}},
     design: {:design, %{route_id: :design, destination: "/design", page_display_label: "Design"}},
+    siwa_overview:
+      {:siwa, %{route_id: :siwa_overview, destination: "/siwa", page_display_label: "Overview"}},
     siwa_sites:
       {:siwa, %{route_id: :siwa_sites, destination: "/siwa/sites", page_display_label: "Sites"}},
     siwa_site:
@@ -227,6 +230,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{label: "Messages", path: "/dms"},
     %{label: "Polls", path: "/polls"},
     %{label: "Chat", path: "/chat"},
+    %{label: "SIWA overview", path: "/siwa"},
     %{label: "SIWA sites", path: "/siwa/sites"},
     %{label: "SIWA settings", path: "/siwa/settings"},
     %{label: "Account", path: "/account"},
