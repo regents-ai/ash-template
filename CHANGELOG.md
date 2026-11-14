@@ -11460,3 +11460,13 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   `48a40c56`; no migration; API 20.0.0 unchanged.
 - Rollback: v253 (`05be3f21`) image.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — Design system d4075655; Patchbay updates Skill reads every event
+
+- Design-system pin `c9071e2c` → `d4075655` (`platform/mix.exs`, `platform/mix.lock`). The
+  Points page gains: a large total no longer runs into Today or pushes Rank off the card, the
+  leaderboard's You tag never runs into the points, a wallet stays readable on a narrow
+  leaderboard, and an address sits on the text line beside it. A site can now move the Points
+  total's figure alone (design-system `CONSUMERS.md`); the template does not.
+- `skills/patchbay-check-updates/SKILL.md`: `by_you` stops an agent responding, never reading.
+  The agent fetches the thread for every new event ID and drops repeats by that ID.
