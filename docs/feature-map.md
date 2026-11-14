@@ -270,12 +270,12 @@ none of it.
 | What | Check |
 | --- | --- |
 | The person's Privy pair is traded at SIWA with the session cookie and the forms token; the control token stays on this machine, kept for that browser's sign-in and person, never in the answer or a log, and goes when the sign-in ends | `platform/test/ash_template_web/siwa_session_test.exs` |
-| Without the forms token, with nobody signed in, without a pair, for a pair SIWA refuses or for another person, nothing is kept; SIWA off, broken, out of reach or giving a token already ended is unavailable; 30 trades a minute for a person, then a wait | same |
+| Without the forms token, with nobody signed in, without a pair, for a pair SIWA refuses (`privy_proof_invalid`) or for another person, nothing is kept; SIWA off, broken, out of reach or giving a token already ended is unavailable; SIWA's own limit, or 30 trades a minute for a person, is a 429 with a wait | same |
 | The control API's answers become its data, its refusal with each field's reasons, or unavailable; nothing is sent twice; a new key comes once and no inspection shows it | `platform/test/ash_template/siwa_control_test.exs` |
 | A person with no company names it first, then lands on Sites; a refused field is marked and explained under its own box, the others keep what was typed; a new site opens its own page | `platform/test/ash_template_web/siwa_live_test.exs` (a connected shell page) |
 | A new key goes to the browser once and is never in the page's state; Done hides it; a revoked key stays listed, without Revoke | same |
-| A site's name and origins are saved together; Archive goes back to Sites; a site SIWA doesn't know is refused on the page; Settings shows the company, its owner and support, and renames the company | same |
-| With no token the page asks the browser to trade and carries on; a read or change SIWA still refuses after one trade says to sign in again; SIWA off, out of reach or a failed trade shows Unavailable, and Try again reads again; signed out, the pages offer sign-in and ask SIWA nothing | same |
+| A site's name and origins are saved together; Archive goes back to Sites; a site SIWA doesn't know is refused on the page; Settings shows the company, its owner (their wallet with its copy icon, and their name when they chose one) and support, and renames the company; fields the account answer gains are left alone | same |
+| With no token, or SIWA's `control_token_invalid`, the page asks the browser to trade and carries on; any other refusal is shown and asks no trade; a read or change SIWA still refuses after one trade says to sign in again; SIWA off, out of reach or a failed trade shows Unavailable, too many tries shows Busy, and neither is tried again until Try again; signed out, the pages offer sign-in and ask SIWA nothing | same |
 | At both widths, a new person names their company, is refused an origin a sandbox site can't list, adds the site, makes a key and sees it once, revokes it through the confirm window and opens Settings, every address with its copy icon and every scrolling box reachable; with SIWA off the page says it is unavailable | `platform/test/browser/siwa.spec.ts`, against the walk's SIWA stand-in |
 
 ## Visit lines
@@ -324,12 +324,13 @@ none of it.
   bridge handing Privy's pair to the server through the shared reader is proved by
   the typecheck and `privy_sign_in.test.ts` (the reader), not by a run of the bridge.
   The same holds for the SIWA pages' trade: the walk's stand-in makes it as the bridge
-  does (`platform/test/browser/support/test.ts`).
+  does (`platform/test/browser/support/test.ts`), but never reads a fresh Privy pair
+  and sends again after a refused one, as the real bridge does once.
 - SIWA against the real sign-in service: every check uses a stand-in. A production
   site, its origin warning and its proof, the five-key limit, Copy key on a phone, a
-  token that ends while a page is open, and the site running on more than one machine
-  (the token is kept on the machine that traded for it, so a page on another machine
-  trades again) are not walked.
+  token that ends while a page is open, Busy, and the site running on more than one
+  machine (the token is kept on the machine that traded for it, so a page on another
+  machine trades again) are not walked.
 - Writing, pinning and deleting a note; posting in a room: the walk opens these pages
   but does not use them.
 - Older chats and Older messages on the chat page: the walk's person has fewer than a

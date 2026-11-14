@@ -24,7 +24,8 @@ export async function startPrivyBridge() {
         }
       })
       if (response.ok) return "ready"
-      return response.status === 429 || response.status === 503 ? "unavailable" : "signed-out"
+      if (response.status === 429) return "busy"
+      return response.status === 503 ? "unavailable" : "signed-out"
     }
   }
 }

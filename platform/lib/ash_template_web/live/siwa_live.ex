@@ -12,7 +12,8 @@ defmodule AshTemplateWeb.SiwaLive do
   has ended, the page asks the browser's sign-in to trade again (the
   `SiwaControl` hook) and runs what was waiting once it has. Each read and each
   change is tried again once after a trade; one that still finds no token says
-  to sign in again.
+  to sign in again. A trade refused for too many tries shows Busy, and one SIWA
+  can't make shows Unavailable; neither is tried again until the person asks.
 
   A new site key goes from the service's answer straight to the browser, into
   its box on the page, and is never kept in the page's state, so no later
@@ -56,7 +57,7 @@ defmodule AshTemplateWeb.SiwaLive do
     "customer_not_found" => "Your company isn't set up yet. Reload the page to name it."
   }
 
-  @unavailable "SIWA didn't answer. Try again in a moment."
+  @unavailable "SIWA isn't available right now. Try again later."
 
   @impl true
   def mount(socket) do
@@ -249,7 +250,8 @@ defmodule AshTemplateWeb.SiwaLive do
   defp write({:archive, id}, token), do: SiwaControl.archive_site(token, id)
 
   # The token this browser's sign-in holds here, or word that a trade is needed:
-  # there is none, or the service says it has ended.
+  # there is none, or the service says it is no longer good (`control_token_invalid`
+  # is its one answer for that, and covers every token a release of the service voids).
   defp call(%{topic: topic, account_id: account_id}, fun) do
     case Tokens.token(topic, account_id) do
       {:ok, token} -> token |> fun.() |> ended()
@@ -257,7 +259,9 @@ defmodule AshTemplateWeb.SiwaLive do
     end
   end
 
-  defp ended({:error, %Refusal{status: 401}}), do: {:error, :sign_in}
+  defp ended({:error, %Refusal{status: 401, code: "control_token_invalid"}}),
+    do: {:error, :sign_in}
+
   defp ended(result), do: result
 
   @impl true
@@ -310,7 +314,9 @@ defmodule AshTemplateWeb.SiwaLive do
     Enum.reduce(waiting, socket, &run(&2, &1))
   end
 
+  # Nothing is tried again by itself; the person's Try again starts afresh.
   defp traded(socket, "unavailable"), do: assign(socket, control: :unavailable, waiting: [])
+  defp traded(socket, "busy"), do: assign(socket, control: :busy, waiting: [])
   defp traded(socket, _signed_out), do: assign(socket, control: :ended, waiting: [])
 
   defp settled(socket, op), do: update(socket, :again, &MapSet.delete(&1, op))
@@ -482,7 +488,12 @@ defmodule AshTemplateWeb.SiwaLive do
           </P.empty_state>
         <% :unavailable -> %>
           <P.empty_state id="siwa-unavailable" title="Unavailable" class="siwa-state">
-            SIWA isn't answering right now. Try again in a moment.
+            SIWA isn't available right now. Try again later.
+            <:action><.retry myself={@myself} /></:action>
+          </P.empty_state>
+        <% :busy -> %>
+          <P.empty_state id="siwa-busy" title="Busy" class="siwa-state">
+            Too many tries in a short time. Wait a moment, then try again.
             <:action><.retry myself={@myself} /></:action>
           </P.empty_state>
         <% :loading -> %>
@@ -549,6 +560,7 @@ defmodule AshTemplateWeb.SiwaLive do
   defp screen(%{account: nil}), do: :signed_out
   defp screen(%{control: :ended}), do: :ended
   defp screen(%{control: :unavailable}), do: :unavailable
+  defp screen(%{control: :busy}), do: :busy
 
   defp screen(assigns) do
     case view(assigns.company) do
@@ -938,7 +950,7 @@ defmodule AshTemplateWeb.SiwaLive do
         </P.field>
         <.origins_field form={details} id="siwa-details-origins" errors={@errors["details"]} />
         <P.notice :if={@site["environment"] == "production"} id="siwa-proof-warning" tone="warning">
-          Changing a production site's origins means proving them again.
+          Changing a production site's origins sets its proof back to Not proven.
         </P.notice>
         <div class="siwa-actions">
           <P.button

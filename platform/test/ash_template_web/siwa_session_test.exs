@@ -174,10 +174,17 @@ defmodule AshTemplateWeb.SiwaSessionTest do
     end
   end
 
-  test "a person trades at most 30 times a minute", %{page: page, csrf: csrf} do
+  test "a person trades at most 30 times a minute, and SIWA's own limit is passed on",
+       %{account: account, topic: topic, page: page, csrf: csrf} do
+    service(refusal(429, "rate_limited"))
+    limited = trade(page, csrf)
+    assert json_response(limited, 429)["error"]["code"] == "rate_limited"
+    assert get_resp_header(limited, "retry-after") == ["60"]
+    assert Tokens.token(topic, account.id) == :error
+
     service(session(@did))
 
-    for _trade <- 1..30, do: assert(trade(page, csrf).status == 204)
+    for _trade <- 2..30, do: assert(trade(page, csrf).status == 204)
 
     limited = trade(page, csrf)
     assert json_response(limited, 429)["error"]["code"] == "rate_limited"

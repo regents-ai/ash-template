@@ -48,9 +48,10 @@ export const IDENTITY_REQUEST_EVENT = "ash:identity-request"
 
 /**
  * How a SIWA page's trade for its control token ended: the server holds one
- * now, SIWA could not be reached, or the person must sign in again.
+ * now, there were too many tries in a short time, SIWA is not available, or the
+ * person must sign in again.
  */
-export type ControlOutcome = "ready" | "unavailable" | "signed-out"
+export type ControlOutcome = "ready" | "busy" | "unavailable" | "signed-out"
 
 export const CONTROL_REQUEST_EVENT = "ash:siwa-control-request"
 export const CONTROL_STATE_EVENT = "ash:siwa-control-state"

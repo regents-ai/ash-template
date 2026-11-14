@@ -35,13 +35,8 @@ defmodule AshTemplateWeb.SiwaSessionController do
 
   def create(%{assigns: %{current_human_account: account}} = conn, _untrusted_params) do
     case RequestRateLimiter.admit({:siwa_session, account.id}, @limit, @window_seconds) do
-      {:ok, _budget} ->
-        trade(conn, account)
-
-      {:error, :rate_limited, _budget} ->
-        conn
-        |> put_resp_header("retry-after", to_string(@window_seconds))
-        |> refuse("rate_limited")
+      {:ok, _budget} -> trade(conn, account)
+      {:error, :rate_limited, _budget} -> limited(conn, :site)
     end
   end
 
@@ -55,8 +50,9 @@ defmodule AshTemplateWeb.SiwaSessionController do
       conn |> put_resp_header("cache-control", "no-store") |> send_resp(:no_content, "")
     else
       {:error, {:request_pair, _missing}} -> refused(conn, :missing_pair)
-      {:error, %Refusal{status: 401}} -> refused(conn, :service_refused)
+      {:error, %Refusal{status: 401, code: "privy_proof_invalid"}} -> refused(conn, :privy_proof)
       {:error, :another_person} -> refused(conn, :another_person)
+      {:error, %Refusal{status: 429, code: "rate_limited"}} -> limited(conn, :siwa)
       {:error, reason} -> unavailable(conn, reason)
     end
   end
@@ -78,6 +74,15 @@ defmodule AshTemplateWeb.SiwaSessionController do
   defp refused(conn, reason) do
     Logger.info("SIWA control sign-in refused reason=#{reason}")
     refuse(conn, "siwa_sign_in_refused")
+  end
+
+  # Too many trades, counted here or by SIWA, whose own count is per minute too.
+  defp limited(conn, by) do
+    Logger.info("SIWA control sign-in limited by=#{by}")
+
+    conn
+    |> put_resp_header("retry-after", to_string(@window_seconds))
+    |> refuse("rate_limited")
   end
 
   defp unavailable(conn, %Refusal{status: status, code: code}) do

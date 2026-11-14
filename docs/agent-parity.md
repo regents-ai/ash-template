@@ -79,14 +79,15 @@ identity tools behind its switch.
 
 The paid sign-in product's control pages, read from the sign-in service each time
 (`AshTemplateWeb.SiwaLive`, 14 Nov). The site trades the person's Privy pair for a
-control token it keeps itself (`POST /siwa/session`).
+control token it keeps itself (`POST /siwa/session`). Person-only for good (G13):
+these rows have no agent surface and get none.
 
 | Action | Page | WebMCP | MCP | Connector | CLI | Protected | Gap |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Name the company, rename it | `/siwa/sites` (first visit), `/siwa/settings` | — | — | — | — | sign-in | G13 |
-| Sites: list, add, open, rename, change origins, archive | `/siwa/sites`, `/siwa/sites/:site_id` | — | — | — | — | sign-in | G13 |
-| A site's keys: list, make (shown once), revoke | `/siwa/sites/:site_id` | — | — | — | — | secrets | G13 |
-| Read the company's owner and where to get help | `/siwa/settings` | — | — | — | — | no | G13 |
+| Name the company, rename it | `/siwa/sites` (first visit), `/siwa/settings` | — | — | — | — | sign-in | person-only (G13) |
+| Sites: list, add, open, rename, change origins, archive | `/siwa/sites`, `/siwa/sites/:site_id` | — | — | — | — | sign-in | person-only (G13) |
+| A site's keys: list, make (shown once), revoke | `/siwa/sites/:site_id` | — | — | — | — | secrets | person-only (G13) |
+| Read the company's owner and where to get help | `/siwa/settings` | — | — | — | — | no | person-only (G13) |
 
 ## Gaps
 
@@ -149,10 +150,9 @@ control token it keeps itself (`POST /siwa/session`).
   `--wake`): `GET /api/v1/feed` is a stream that stays open, and `cli/COMMANDS.md`
   ("feed") describes the command. A browser tool and a hosted MCP tool answer once, so
   neither carries a feed; an agent in the browser already sees the page change live.
-- **G13. SIWA is person-only.** The SIWA pages act only for a person signed in with
-  Privy in a browser: the sign-in service proves the owner by trading their Privy pair
-  for a control token, and a paired agent holds no Privy pair. An agent that owns its
-  Privy account (G1) can use the pages; no tool or command reaches the control API.
-  Making a site key hands out a secret, so a tool for it is protected (secrets) and
-  must show the key only to its caller. Owner: template chief, after G1, with the
-  siwa-server chief for an agent's own control token.
+- **G13. SIWA is person-only, for good.** The siwa-server chief settled it on 14 Nov:
+  SIWA's control API proves a company's owner only by a person's Privy sign-in,
+  traded for a control token, and no agent credential is planned. The SIWA pages act
+  only for a person signed in with Privy in a browser, and no WebMCP tool, hosted MCP
+  tool, connector tool or regents command reaches the control API. This is not a gap
+  to close: nothing here is built or planned for an agent.

@@ -98,8 +98,12 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     {status, %{error: if(fields, do: Map.put(error, :fields, fields), else: error)}}
   end
 
-  defp company(customer \\ @customer),
-    do: %{{"GET", @base <> "/account"} => ok("account", %{did: "did:privy:siwa-live", customer: customer})}
+  # The account answer will grow (Overview's summary); what the page doesn't use
+  # it leaves alone.
+  defp company(customer \\ @customer) do
+    account = %{did: "did:privy:siwa-live", customer: customer, summary: %{sites: 1}}
+    %{{"GET", @base <> "/account"} => ok("account", account)}
+  end
 
   defp site_answers(keys \\ []) do
     Map.merge(company(), %{
@@ -268,6 +272,11 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     assert_push_event(view, "siwa-control:trade", %{})
     view |> with_target("#siwa-page") |> render_hook("traded", %{"outcome" => "unavailable"})
     assert has_element?(view, "#siwa-unavailable")
+
+    view = open(browser, "/siwa/sites")
+    assert_push_event(view, "siwa-control:trade", %{})
+    view |> with_target("#siwa-page") |> render_hook("traded", %{"outcome" => "busy"})
+    assert has_element?(view, "#siwa-busy button[phx-click='retry']")
   end
 
   test "a site SIWA doesn't know is refused on the page", %{browser: browser} do
@@ -276,6 +285,14 @@ defmodule AshTemplateWeb.SiwaLiveTest do
 
     assert has_element?(view, "#siwa-refused")
     refute has_element?(view, "#siwa-keys-title")
+  end
+
+  test "only an ended token asks for a trade; any other refusal is shown", %{browser: browser} do
+    service(%{{"GET", @base <> "/account"} => refused(401, "privy_proof_invalid")})
+    view = open(browser, "/siwa/sites")
+
+    assert has_element?(view, "#siwa-refused")
+    refute_push_event(view, "siwa-control:trade", %{})
   end
 
   test "Settings shows the company, its owner and support, and renames the company", %{browser: browser} do

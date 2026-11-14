@@ -561,7 +561,7 @@ paths:
                   value: {error: {code: siwa_sign_in_refused, message: "SIWA couldn't confirm your sign-in.", hint: "Sign in again."}}
         "403": {$ref: "#/components/responses/CsrfForbidden"}
         "429":
-          description: More than 30 trades from this account in a minute
+          description: More than 30 trades from this account in a minute, or SIWA's own limit
           headers:
             Retry-After: {schema: {type: string, const: "60"}}
             Cache-Control: {schema: {type: string, const: no-store}}
