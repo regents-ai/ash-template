@@ -50,6 +50,13 @@ defmodule AshTemplate.Chat.Conversation do
       change AshTemplate.Chat.Conversation.Changes.GenerateName
     end
 
+    # The naming job's own read of its conversation, which only AshOban may use.
+    # It finds only the conversations of the person the job acts for, so a job
+    # whose agent no longer acts for its person finds nothing and ends.
+    read :job_read do
+      filter expr(human_account_id == ^actor(:human_account_id))
+    end
+
     # Newest first, a page at a time.
     read :my_conversations do
       pagination keyset?: true, default_limit: 50, max_page_size: 100
@@ -79,6 +86,10 @@ defmodule AshTemplate.Chat.Conversation do
   policies do
     bypass AshAi.Checks.ActorIsAshAi do
       authorize_if always()
+    end
+
+    bypass action(:job_read) do
+      authorize_if AshOban.Checks.AshObanInteraction
     end
 
     policy always() do
@@ -111,6 +122,7 @@ defmodule AshTemplate.Chat.Conversation do
       trigger :name_conversation do
         actor_persister AshTemplate.Actors.Persister
         action :generate_name
+        worker_read_action :job_read
         # A job that gives up logs one safe line (RegentHttp.UnexpectedFailure), not raw text.
         log_errors? false
         log_final_error? false

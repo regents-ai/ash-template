@@ -39,7 +39,8 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
     agent signing its own requests would be (`AgentWallet.actor_for/2`, with
     the token's principal as its `connection`), so AshAi lists and runs the
     agent's tools under the same policies and its identity tools besides;
-    its pairing is checked again before the answer leaves. Otherwise the app
+    whether it still acts for its person (`AshTemplate.Agents.ForPerson`) is
+    checked again before the answer leaves. Otherwise the app
     is the actor (`AshTemplate.Actors.ConnectedApp`) and has its identity
     tools only. Each app has its own identity, so an app pairs only with a
     code its person gives it and never takes another app's pairing. The budget

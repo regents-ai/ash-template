@@ -1053,6 +1053,115 @@ defmodule AshTemplate.SignedToolsTest do
     assert %{source: :agent, complete: true, response_to_id: ^operation_id} = reply
   end
 
+  test "an agent's jobs stop acting for its person once the person signs in with no wallet" do
+    # Invariant: a reply, a chat's name and a note's label question each act for
+    # the person only if the agent still does when the job runs; otherwise the job
+    # ends without acting for them, and the person's chat never waits for a reply.
+    did = "did:privy:jobs-withdrawn"
+    {account, _person, _paired} = paired_person(did)
+    key = Application.get_env(:regent_jev, :api_key)
+    Application.put_env(:regent_jev, :api_key, "test-key")
+    on_exit(fn -> Application.put_env(:regent_jev, :api_key, key) end)
+
+    human = AshTemplate.Actors.Human.for_account(account)
+
+    # While the agent acts for its person, the naming job names the chat.
+    named = send_chat("Name this chat")
+    assert %{success: 1} = Oban.drain_queue(queue: :chat_responses)
+    assert %{success: 1} = Oban.drain_queue(queue: :conversations)
+    assert %{title: <<_, _::binary>>} = AshTemplate.Chat.get_conversation!(conversation_of(named, human), actor: human)
+
+    unnamed = send_chat("Leave this unnamed")
+    assert %{success: 1} = Oban.drain_queue(queue: :chat_responses)
+    unanswered = send_chat("Answer this")
+
+    note_id = Ecto.UUID.generate()
+    noted = request(:post, "/api/v1/notes", Jason.encode!(%{title: "Label me", operation_id: note_id}))
+    assert noted.status == 201, noted.resp_body
+
+    withdraw(did)
+
+    assert %{success: 0} =
+             Oban.drain_queue(queue: :chat_responses, with_scheduled: true, with_recursion: true)
+
+    assert [%{source: :agent, complete: true, response_to_id: ^unanswered}, %{id: ^unanswered}] =
+             AshTemplate.Chat.message_history!(conversation_of(unanswered, human), actor: human).results
+
+    # The naming job finds no chat it may name, so it ends at once, quietly.
+    assert %{cancelled: 1, failure: 0, discard: 0} =
+             Oban.drain_queue(queue: :conversations, with_scheduled: true)
+
+    assert %{title: nil} =
+             AshTemplate.Chat.get_conversation!(conversation_of(unnamed, human), actor: human)
+
+    assert %{failure: 0, discard: 0} = Oban.drain_queue(queue: :default, with_scheduled: true)
+    assert [] = Ash.read!(Ash.Query.filter(AshTemplate.Notes.Decision, note_id == ^note_id), authorize?: false)
+  end
+
+  test "an answer to a paired agent is replaced when its person signs in with no wallet while the request runs" do
+    did = "did:privy:withdrawn-mid-request"
+    paired_person(did)
+    assert {:ok, %{pairing: :active} = actor} = AshTemplateWeb.Plugs.AgentWallet.actor_for(@wallet)
+
+    conn = :get |> conn("/api/v1/notes") |> AshTemplateWeb.Plugs.AgentWallet.recheck_before_send(actor)
+    withdraw(did)
+    sent = send_resp(conn, 200, ~s({"notes": []}))
+
+    assert sent.status == 403
+    assert error_code(sent) == "person_not_here"
+  end
+
+  test "an agent's note under another person's note id is refused, and that note stays theirs" do
+    paired_person("did:privy:notes-operation")
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:notes-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+      |> AshTemplate.Actors.Human.for_account()
+
+    theirs = AshTemplate.Notes.create_note!(%{title: "Theirs alone", body: "Private"}, actor: other)
+    taken = Jason.encode!(%{title: "Mine now", body: "Replaced", operation_id: theirs.id})
+    refused = request(:post, "/api/v1/notes", taken)
+
+    assert refused.status == 422
+    assert error_code(refused) == "invalid_note"
+    refute refused.resp_body =~ "Theirs alone"
+    refute refused.resp_body =~ "Private"
+
+    assert %{title: "Theirs alone", body: "Private"} =
+             AshTemplate.Notes.get_my_note!(theirs.id, actor: other)
+
+    assert Jason.decode!(request(:post, "/api/v1/notes/list", "{}").resp_body)["notes"] == []
+    assert request(:get, "/api/v1/notes/" <> theirs.id).status == 404
+  end
+
+  # The agent's new chat message, by its operation_id.
+  defp send_chat(text) do
+    operation_id = Ecto.UUID.generate()
+    sent = request(:post, "/api/v1/chat/messages", Jason.encode!(%{text: text, operation_id: operation_id}))
+    assert sent.status == 201, sent.resp_body
+    operation_id
+  end
+
+  defp conversation_of(message_id, human),
+    do: AshTemplate.Chat.get_earlier_message!(message_id, actor: human).conversation_id
+
+  # The person signs in with no wallet linked: the account's wallet evidence is withdrawn.
+  defp withdraw(privy_user_id) do
+    assert {:error, :missing_linked_wallet} =
+             VerifiedSession.establish(%RegentPrivy.Session{
+               app_id: "test-app",
+               session_id: "test-session",
+               privy_user_id: privy_user_id,
+               wallet_address: nil,
+               wallet_addresses: [],
+               linked_socials: [],
+               issued_at: System.system_time(:second),
+               expires_at: System.system_time(:second) + 3600
+             })
+  end
+
   defp documented_code(path, status) do
     document = Application.app_dir(:ash_template, "priv/public/openapi.json")
     %{"paths" => %{^path => %{"post" => %{"responses" => %{^status => response}}}}} =

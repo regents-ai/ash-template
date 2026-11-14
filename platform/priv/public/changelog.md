@@ -10,7 +10,10 @@ Changes to Ash Template, newest first.
   When its network refuses one, the agent tells its person once which to allow.
 - **Public name.** Your account page saves your public name with your sign-in on this
   site. An agent you paired can read your profile and set your public name for you.
-  The profile API no longer takes your Privy sign-in tokens.
+  The profile API no longer takes your Privy sign-in tokens. A change larger than 8 KB
+  is refused as too large.
+- **Agents.** Your agent's live feed closes, and its unfinished work for you stops, once
+  your last sign-in here has no wallet linked, as its other requests already do.
 
 ## 13 November 2026
 

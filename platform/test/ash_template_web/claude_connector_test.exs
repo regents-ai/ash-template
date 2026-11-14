@@ -537,6 +537,36 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       refute "rooms_post" in tool_names(token)
     end
 
+    test "after a sign-in with no wallet the app is asked to connect, and works as the agent again after one with a wallet" do
+      subject = "did:privy:agent-withdrawn"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+      assert %{"isError" => false} = post_room(token)
+
+      assert {:error, :missing_linked_wallet} =
+               VerifiedSession.establish(%RegentPrivy.Session{
+                 app_id: "test-app",
+                 session_id: subject,
+                 privy_user_id: subject,
+                 wallet_address: nil,
+                 wallet_addresses: [],
+                 linked_socials: [],
+                 issued_at: System.system_time(:second),
+                 expires_at: System.system_time(:second) + 3600
+               })
+
+      for call <- [rpc("tools/list"), room_call()] do
+        refused = post_mcp(call, token)
+        assert refused.status == 401
+        assert json(refused)["error"]["code"] == "connection_required"
+      end
+
+      sign_in!(subject)
+      assert "rooms_post" in tool_names(token)
+      assert %{"isError" => false} = post_room(token)
+    end
+
     test "the hosted signer is asked for the app's address once, not on every call" do
       subject = "did:privy:agent-once"
       sign_in!(subject)

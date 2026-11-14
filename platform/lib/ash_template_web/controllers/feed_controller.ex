@@ -12,9 +12,11 @@ defmodule AshTemplateWeb.FeedController do
   - A comment line, `: keep-alive`, every `keep_alive_ms`, so a proxy never
     closes a quiet feed.
   - One feed per agent: opening another, on any machine, closes this one with
-    `{"kind": "closed", "reason": "replaced"}`. A pairing that ends or changes
-    closes it with `"reason": "pairing_changed"`, so the agent reconnects as it
-    now is.
+    `{"kind": "closed", "reason": "replaced"}`. A paired agent's feed is checked
+    again whenever its pairing changes or its person signs in, and once the
+    agent no longer acts for its person (`AshTemplate.Agents.ForPerson`) it
+    closes with `"reason": "pairing_changed"`, so the agent reconnects as it now
+    is.
   - At most `max_open` feeds on one machine, of which at most `max_unpaired`
     are agents not paired with a person; past either the open is refused.
 
@@ -24,7 +26,9 @@ defmodule AshTemplateWeb.FeedController do
 
   use AshTemplateWeb, :controller
 
+  alias AshTemplate.Accounts.HumanAccount
   alias AshTemplate.Actors.Agent
+  alias AshTemplate.Agents.ForPerson
   alias AshTemplate.Feed
   alias RegentHttp.UnexpectedFailure
 
@@ -89,15 +93,22 @@ defmodule AshTemplateWeb.FeedController do
   # together at least the older one hears the newer.
   defp listen(%Feed{actor: actor} = feed) do
     own = "agent_feed:#{actor.agent_id}"
-
-    pairing =
-      if actor.pairing == :active, do: [RegentAgents.topic(actor.privy_user_id)], else: []
-
-    topics = [own | pairing ++ Feed.topics(feed)]
+    topics = [own | person_topics(actor) ++ Feed.topics(feed)]
     Enum.each(topics, &Phoenix.PubSub.subscribe(AshTemplate.PubSub, &1))
     Phoenix.PubSub.broadcast_from(AshTemplate.PubSub, self(), own, :feed_replaced)
     topics
   end
+
+  # A paired agent's feed hears its pairing change (`RegentAgents.topic/1`) and
+  # its person sign in (`sign_in_topic/1`).
+  defp person_topics(%Agent{pairing: :active} = actor),
+    do: [RegentAgents.topic(actor.privy_user_id), sign_in_topic(actor)]
+
+  defp person_topics(_actor), do: []
+
+  # Where the person's sign-ins are published; nil for an agent acting as itself.
+  defp sign_in_topic(%Agent{pairing: :active, human_account_id: id}), do: HumanAccount.topic(id)
+  defp sign_in_topic(_actor), do: nil
 
   # The connection's process may go on to answer another request, so the feed
   # leaves nothing behind in it.
@@ -106,10 +117,15 @@ defmodule AshTemplateWeb.FeedController do
     Registry.unregister(@feeds, actor.agent_id)
   end
 
-  # The pairing was checked again just before the answer left
+  # The agent was checked again just before the answer left
   # (`AshTemplateWeb.Plugs.AgentWallet`); a refusal there replaced it.
   defp start(%Plug.Conn{status: 200} = conn, feed, since) do
-    state = %{feed: feed, seen: MapSet.new(), timer: keep_alive()}
+    state = %{
+      feed: feed,
+      seen: MapSet.new(),
+      timer: keep_alive(),
+      sign_in: sign_in_topic(feed.actor)
+    }
 
     case catch_up(conn, state, since) do
       {:ok, conn, state} -> loop(conn, state)
@@ -145,8 +161,11 @@ defmodule AshTemplateWeb.FeedController do
   end
 
   # `seen` is what the catch-up sent, which the feed may hear again.
-  defp loop(conn, state) do
+  defp loop(conn, %{sign_in: sign_in} = state) do
     receive do
+      %{topic: ^sign_in} ->
+        still_for_person(conn, state)
+
       %{topic: _, event: _, payload: _} = notice ->
         case Feed.heard(state.feed, notice) do
           {:ok, events, feed} ->
@@ -165,17 +184,20 @@ defmodule AshTemplateWeb.FeedController do
         close(conn, state, "replaced")
 
       :agents_changed ->
-        if paired_as_before?(state.feed.actor),
-          do: loop(conn, state),
-          else: close(conn, state, "pairing_changed")
+        still_for_person(conn, state)
     end
   end
 
   defp continue({:ok, conn}, state), do: loop(conn, state)
   defp continue({:error, conn}, state), do: stop_timer(conn, state)
 
-  defp paired_as_before?(%Agent{wallet_address: wallet, pairing_id: id}) do
-    match?({:ok, %{id: ^id}}, RegentAgents.Authority.resolve(AshTemplate.Repo, wallet))
+  # Heard only by a paired agent's feed, which goes on while the agent still
+  # acts for the person it opened for.
+  defp still_for_person(conn, state) do
+    case ForPerson.still(state.feed.actor) do
+      :ok -> loop(conn, state)
+      {:error, _no_longer} -> close(conn, state, "pairing_changed")
+    end
   end
 
   defp close(conn, state, reason) do
