@@ -11444,3 +11444,11 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   agent on another chain); `platform/test/browser/siwa.spec.ts` at both widths for both
   people. The feature map and `docs/agent-parity.md` say so; Overview is person-only
   (G13). The API contract is unchanged.
+
+## 2026-11-14 — A paired agent keeps working after its person signs out
+
+- Sean's decision (63 a): a paired agent acts for its person while the pairing is active and
+  the person's latest sign-in named a wallet; signing out, or the sign-in's seven days
+  ending, does not stop it. Unpairing stops it at once. Two public sentences said "must sign
+  in again" and now say what the rule is (`AshTemplateWeb.PublicDocuments`,
+  `platform/priv/public/agents.md`). No behaviour change.

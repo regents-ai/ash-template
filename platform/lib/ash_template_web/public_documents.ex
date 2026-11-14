@@ -432,7 +432,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @statuses [
     {"not_paired", "no person has paired you with their account"},
     {"person_not_here",
-     "paired, but your person hasn't signed in on this site yet, or must sign in again"},
+     "paired, but your person hasn't signed in on this site yet, or last signed in without a wallet"},
     {"paired", "you act for your person"}
   ]
 
