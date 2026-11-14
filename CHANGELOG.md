@@ -10904,3 +10904,11 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   `ash-template` and the review rules keep the template's names, that an ordinary doc
   is renamed, and that `scripts/regent-ui-update` is gone; the harvest test checks a
   skills file and a dated plan keep their template paths. Both fail on the old scripts.
+
+## 2026-11-14 — Released v248: the rename script change
+
+- v248 on template.regents.sh carries the `scripts/init.sh` change above. Repository
+  scripts, tests and docs only; nothing served changes. No migration, no pin change;
+  API 18.0.0 unchanged.
+- Rollback: v247 (`d621804e`) image.
+- Full check exit 0 by the chief on the exact commit.
