@@ -29,8 +29,9 @@
 # brings in are listed themselves. status is git's A, M or D; a renamed file is a D
 # and an A. template_path is null for a file the template has no copy of. list names
 # the scripts/shared-files.sh list the template's file is in: shared, build,
-# homepage (regents only, as in scripts/drift.sh) or null. shared is true for a
-# commit that touches a file in the shared list. Needs git and jq.
+# account, homepage (regents only, as in scripts/drift.sh) or null. shared is true
+# for a commit that touches a file in the shared or account list, which every site
+# shares. Needs git and jq.
 set -euo pipefail
 
 if [[ $# -lt 2 ]]; then
@@ -86,6 +87,7 @@ lists() {
   {
     printf 'shared %s\n' "${shared[@]}"
     printf 'build %s\n' "${build[@]}"
+    printf 'account %s\n' "${account[@]}"
     [[ "$site" != regents ]] || printf 'homepage %s\n' "${homepage[@]}"
   } | jq -R -s 'split("\n") | map(select(. != "") | split(" ") | {key: .[1], value: .[0]}) | from_entries'
 }
@@ -125,6 +127,6 @@ for site in "${@:-${sites[@]}}"; do
          split("\n") as $lines | ($lines[0] | split("\u001f")) as $h
          | {commit: $h[0], date: ($h[2] | tonumber | todate), subject: $h[3], merge: ($h[1] | split(" ") | length > 1),
             files: [$lines[1:][] | select(. != "") | file]}
-         | .shared = any(.files[]; .list == "shared")))}')"$'\n'
+         | .shared = any(.files[]; .list == "shared" or .list == "account")))}')"$'\n'
 done
 jq -s --arg template "$(git -C "$root" rev-parse HEAD)" '{template: $template, sites: .}' <<<"$sites_read"

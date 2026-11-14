@@ -22,6 +22,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   alias AshTemplateWeb.{
     AccountLive,
+    AccountSite,
     ActivityLive,
     AgentsPanel,
     ChatLive,
@@ -464,6 +465,14 @@ defmodule AshTemplateWeb.ShellLive do
           account={current_account(@access_context)}
           verified_connections={@verified_connections}
           verified_connections_notice={@verified_connections_notice}
+        />
+
+        <AccountLive.settings
+          :if={@route_spec.route_id == :account_settings}
+          page={AccountSite.settings()}
+          signed_out_reason={@signed_out_reason}
+          lease={@session_lease}
+          account={current_account(@access_context)}
         />
       </:content>
     </.shell>

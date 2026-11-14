@@ -11515,3 +11515,30 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
 
 - `security/required-fixes.json` drops the `regent_near_intents` entry added earlier today. The
   package is off elixir-utils main and stays on its branch `eu/near-intents-1114`; no site pins it.
+
+## 2026-11-14 — Account is one shared area, with one optional Settings page
+
+- Sean's decision of 14 Nov ("the accounts page the same for all sites, with each having 1
+  extra page that is only for that site's settings") and 72 a: Account is the same on every
+  Regent site, and a page only one site has goes in that site's own menu, never under Account.
+- `AshTemplateWeb.AccountRoutes` lists Account's pages once (Account, Agents, Points, Wallets,
+  Connections, then Settings when the site has one). The router routes them with
+  `account_routes/1`, and the route catalog's tabs and the page titles are built from the same
+  list, so a tab, its route and its title cannot disagree. The five tabs, their pages and their
+  titles are unchanged; the route handoff lists the Account routes last.
+- `AshTemplateWeb.AccountSite` is the one Account file a site edits: `settings/0` answers the
+  site's Settings page body, or nil. The template has none, so it has no Settings tab and no
+  `/account/settings`. `AccountLive.settings/1` draws a site's body under the Settings title,
+  behind sign-in like the other tabs.
+- `scripts/shared-files.sh` gains an `account` list: the route list, the tab bodies, Points
+  page pieces, the agents panel, the pairing box (moved from the `shared` list), verified
+  connections, their CSS, hooks and hook test, and the Account browser walks.
+  `scripts/drift.sh` compares each site's copy like the shared and build files;
+  `account_site.ex` is never compared. `scripts/harvest.sh` names the `account` list and counts
+  a commit touching an Account file as shared.
+- The compile-connected limit moves from 48 to 51: the router, the route catalog and
+  `PublicDocuments` read the Account list at compile time.
+- New checks: `platform/test/ash_template_web/account_routes_test.exs` (tabs, routes and titles
+  agree; no Settings in the template; a stand-in site with Settings gets its tab and route, and
+  its body only once signed in) and two report tests in `scripts/tests/test_reports.py`.
+  `AGENTS.md`, `docs/feature-map.md` and `automation/spread.md` say so.

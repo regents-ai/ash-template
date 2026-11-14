@@ -3,6 +3,8 @@ defmodule AshTemplateWeb.Router do
   use AshTemplateWeb, :router
   use ErrorTracker.Web, :router
 
+  import AshTemplateWeb.AccountRoutes, only: [account_routes: 1]
+
   alias AshTemplateWeb.{ContentSecurityPolicy, Live.Session, Showcase}
 
   # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
@@ -414,11 +416,8 @@ defmodule AshTemplateWeb.Router do
       live "/siwa/sites", ShellLive, :siwa_sites
       live "/siwa/sites/:site_id", ShellLive, :siwa_site
       live "/siwa/settings", ShellLive, :siwa_settings
-      live "/account", ShellLive, :account
-      live "/account/agents", ShellLive, :account_agents
-      live "/account/points", ShellLive, :points
-      live "/account/wallets", ShellLive, :wallets
-      live "/account/connections", ShellLive, :connections
+      # Account, the same on every Regent site (AshTemplateWeb.AccountRoutes).
+      account_routes(ShellLive)
       live "/pair", ShellLive, :pair
       # The reading pages (AshTemplateWeb.Components.Reading).
       live "/agents", ShellLive, :agents

@@ -55,6 +55,18 @@ site still replaces by hand; keep it outside this passage, which the rename drop
   swipe away, `hooks/motion/gestures.ts`), never with their own motion code.
   `/animations` is the lab where every version that was tried sits side by side;
   `skills/animejs/references/liveview-islands.md` explains it.
+- Account (`/account` and its tabs Account, Agents, Points, Wallets and
+  Connections) is the same on every Regent site, file for file. Its pages are
+  listed once, in `platform/lib/ash_template_web/account_routes.ex`: the router
+  routes them with `account_routes/1`, and the route catalog's tabs and the page
+  titles come from the same list. A site edits one Account file,
+  `platform/lib/ash_template_web/account_site.ex`: its one extra page, Settings,
+  which holds only that site's settings (the template has none, so it has no
+  Settings tab), and its part of the Agents page. A page only one site has goes in
+  that site's own menu, never under Account. Every other Account file is the
+  `account` list in regents-ai/ash-template's `scripts/shared-files.sh`, and its
+  `make drift` names each site whose copy differs; change them in
+  regents-ai/ash-template, never in a site.
 - There is no `identity/` folder. The shared profile domain comes from the
   `regents/identity` package. It and the `design-system` and `elixir-utils`
   libraries are git dependencies pinned to one commit each in `platform/mix.exs`.
@@ -165,6 +177,13 @@ names and address, and replaces these by hand:
     service's settings for the site's audience: its wallet sign-in address and,
     before the Claude connector goes on, its hosted signing key and the requests
     its connector may sign.
+13. Account stays the template's. A site with settings of its own gives them one
+    page, Settings: `settings/0` in `platform/lib/ash_template_web/account_site.ex`
+    answers its body (the module's own documentation says how), which adds the
+    Settings tab and `/account/settings`, and the page's walk entry goes in
+    `platform/test/browser/pages.json`. Every other page the site has of its own
+    goes in its own menu (the rail's sections in
+    `platform/lib/ash_template_web/route_catalog.ex`), never under Account.
 
 <!-- BEGIN REGENT ROLLOUT REVIEW -->
 ## Code Review Rules
