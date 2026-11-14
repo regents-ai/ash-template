@@ -47,6 +47,7 @@
 }
 
 .notes-item {
+  position: relative;
   display: grid;
   gap: var(--space-1);
   min-width: 0;
@@ -64,16 +65,6 @@
 .notes-item p {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-/* A note's label, and the two buttons that say whether it fits. */
-.notes-label,
-.notes-label__rate {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1);
-  margin: 0;
 }
 
 /* The empty line shows only when it is the list's one child, and only once
@@ -102,4 +93,77 @@
   min-block-size: 1lh;
   margin: 0;
   color: var(--ash-signal);
+}
+
+/* A note's label floats on the line above the note, at its end, centred on it:
+   one line in the gap between two notes, where only padding lies, so it takes no
+   room and covers nothing. A label that arrives, changes or is rated moves
+   nothing on the page. Every state is drawn in this one place and only the one
+   that is on shows: it fades in rising 4px over 200ms as the last fades out over
+   140ms, and with less motion asked for it is simply there. A press passes
+   through to the page except on its own buttons. Unlayered, like the shared
+   button whose height it sets. */
+.notes-label {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  display: grid;
+  justify-items: end;
+  max-inline-size: 100%;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+.notes-item .notes-label__state {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-1);
+  margin: 0;
+  padding-inline-start: var(--space-1);
+  background: var(--ash-ground);
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  translate: 0 4px;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    translate 0s var(--duration-fast),
+    visibility 0s var(--duration-fast);
+}
+
+.notes-item .notes-label__state[data-on] {
+  opacity: 1;
+  visibility: visible;
+  translate: none;
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    translate var(--duration-base) var(--ease-out);
+}
+
+/* Its buttons are as tall as its line. On a touch screen each still takes a
+   44px press, reaching down into the note's own top, where only its words are. */
+.notes-label .rg-button {
+  min-height: 1lh;
+  padding: 0 var(--space-1);
+  pointer-events: auto;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .notes-label .rg-button::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    block-size: 44px;
+    background: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notes-item .notes-label__state,
+  .notes-item .notes-label__state[data-on] {
+    transition: none;
+  }
 }

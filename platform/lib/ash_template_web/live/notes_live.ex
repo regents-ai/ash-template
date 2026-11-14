@@ -284,7 +284,7 @@ defmodule AshTemplateWeb.NotesLive do
                 Saved by your agent
                 <Primitives.address id={"#{dom_id}-agent"} address={note.agent_wallet} />
               </p>
-              <.label decision={note.label} target={@myself} />
+              <.label id={"#{dom_id}-label"} decision={note.label} target={@myself} />
               <div class="notes-item__actions">
                 <Primitives.button
                   type="button"
@@ -348,49 +348,63 @@ defmodule AshTemplateWeb.NotesLive do
     """
   end
 
-  # A note's label as the list shows it: `%{id, state, choice, report}`.
+  # A note's label, `%{id, state, choice, report}` or nil, floats on the line
+  # above the note (notes.css), so a label that arrives, changes or is rated
+  # moves nothing on the page. Every state it can show is drawn in the same
+  # place and only the current one is on, so the page only switches which one
+  # shows, the way the design system's status words do.
+  attr :id, :string, required: true
   attr :decision, :map, default: nil
   attr :target, :any, required: true
 
-  defp label(%{decision: nil} = assigns), do: ~H""
+  defp label(assigns) do
+    assigns =
+      assign(assigns,
+        shows: label_shows(assigns.decision),
+        choice: label_choice(assigns.decision)
+      )
 
-  defp label(%{decision: %{state: :pending}} = assigns) do
     ~H"""
-    <p class="notes-label rg-muted" data-label-state="pending">Choosing a label…</p>
-    """
-  end
-
-  defp label(%{decision: %{state: :failed}} = assigns) do
-    ~H"""
-    <p class="notes-label rg-muted" data-label-state="failed">No label this time.</p>
-    """
-  end
-
-  defp label(%{decision: %{state: :answered}} = assigns) do
-    ~H"""
-    <div class="notes-label" data-label-state="answered">
-      <Primitives.status tone="info">{String.capitalize(@decision.choice)}</Primitives.status>
-      <span :if={@decision.report == :fits} class="rg-muted">You said this label fits.</span>
-      <span :if={@decision.report == :does_not_fit} class="rg-muted">
-        You said this label doesn’t fit.
-      </span>
-      <span :if={is_nil(@decision.report)} class="notes-label__rate">
-        <span class="rg-muted">Does it fit?</span>
+    <div id={@id} class="notes-label">
+      <p class="notes-label__state rg-muted" data-on={@shows == :pending}>Choosing a label…</p>
+      <p class="notes-label__state rg-muted" data-on={@shows == :failed}>No label this time.</p>
+      <p
+        class="notes-label__state"
+        data-on={@shows == :asking}
+        role="group"
+        aria-labelledby={"#{@id}-choice #{@id}-question"}
+      >
+        <Primitives.status id={"#{@id}-choice"} tone="info">{@choice}</Primitives.status>
+        <span id={"#{@id}-question"} class="rg-muted">Fits?</span>
         <Primitives.button
-          :for={{report, text} <- [fits: "Fits", does_not_fit: "Doesn’t fit"]}
+          :for={{report, text} <- [fits: "Yes", does_not_fit: "No"]}
           type="button"
           variant="quiet"
           phx-click="rate"
-          phx-value-id={@decision.id}
+          phx-value-id={@decision && @decision.id}
           phx-value-report={report}
           phx-target={@target}
         >
           {text}
         </Primitives.button>
-      </span>
+      </p>
+      <p class="notes-label__state" data-on={@shows == :rated}>
+        <Primitives.status tone="info">{@choice}</Primitives.status>
+        <span class="rg-muted">
+          {if @decision && @decision.report == :does_not_fit, do: "Doesn’t fit", else: "Fits"}
+        </span>
+      </p>
     </div>
     """
   end
+
+  defp label_shows(nil), do: nil
+  defp label_shows(%{state: :answered, report: nil}), do: :asking
+  defp label_shows(%{state: :answered}), do: :rated
+  defp label_shows(%{state: state}), do: state
+
+  defp label_choice(%{choice: choice}) when is_binary(choice), do: String.capitalize(choice)
+  defp label_choice(_decision), do: nil
 
   defp load(%{assigns: %{actor: nil}} = socket) do
     socket

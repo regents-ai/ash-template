@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 13 November 2026
 
+- **Notes.** A note's label now sits on the line above the note, so your notes no
+  longer jump down when a label arrives or when you say whether it fits.
 - **Likes.** A message's like count rolls to its new number when it changes while
   you are looking.
 - **Copy.** "Copied" fades in gently when you copy something with a click or a tap.

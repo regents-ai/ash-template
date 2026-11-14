@@ -2,7 +2,8 @@
 # signed in through the site's own sign-in step with a fresh session, one chat of
 # their own, one direct message to someone who wrote in General, a room that friend wrote in, the longest unbroken Public Display Name the site takes (so every
 # signed-in page proves a long name fits the screen), three agents paired the way an
-# agent pairs, and the signed cookie the walk sends; the friend who writes in General
+# agent pairs, a note for each width whose label waits to be rated (notes.spec.ts),
+# and the signed cookie the walk sends; the friend who writes in General
 # gets one too, starts a quiet room for each width's busy room (busy_room.spec.ts) and
 # has a page and one more of notes (notes.spec.ts).
 # Run by playwright.config.ts
@@ -114,6 +115,26 @@ AshTemplate.Dms.send_dm!(conversation.id, %{body: "Hello back."}, actor: person)
 # the last (notes.spec.ts).
 for n <- 1..51 do
   Ash.Seed.seed!(AshTemplate.Notes.Note, %{title: "Walk note #{n}", human_account_id: friend.id})
+end
+
+# A note of the person's for each width whose label has been chosen and waits to be
+# rated, for the label to ask and give way to the answer (notes.spec.ts). Labels are
+# not asked on the walk, so these are put in place as they would be saved.
+for width <- ["desktop", "phone"] do
+  note =
+    Ash.Seed.seed!(AshTemplate.Notes.Note, %{
+      title: "Walk label #{width}",
+      human_account_id: account.id
+    })
+
+  Ash.Seed.seed!(AshTemplate.Notes.Decision, %{
+    note_id: note.id,
+    human_account_id: account.id,
+    question: "Which label fits this note best?",
+    choices: ["idea", "other", "question", "reference", "task"],
+    state: :answered,
+    choice: "reference"
+  })
 end
 
 # A poll the friend started, open for the whole walk, for the poll page to show.

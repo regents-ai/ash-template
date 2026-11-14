@@ -10789,3 +10789,36 @@ Tests only; no code changed.
   frames, and the button returned to its exact size.
 - Known limit: the heart's count also rolls when the person likes with a key; the
   kit's `MotionCount` cannot tell what changed the count.
+
+## 2026-11-13 — Notes: a note's label floats on the line above it
+
+- Before: `platform/lib/ash_template_web/live/notes_live.ex` drew a note's label
+  ("Choosing a label…", "No label this time.", the chosen label with "Does it fit?"
+  and Fits / Doesn't fit, or "You said this label fits.") as a line inside the note,
+  between its words and its buttons. A label that arrived, failed or was rated added
+  or changed that line and pushed the note's buttons, and every note below, down.
+- Now the label floats on the hairline above its note, at its end
+  (`platform/assets/css/pages/notes.css`): one line over the gap between two notes,
+  where only padding lies, on the page's own background, so the hairline stops at its
+  edge. It takes no room. Every state is drawn in that one place and only the current
+  one shows (`data-on`): the new one fades in rising 4px over 200ms as the old one
+  fades out over 140ms, on the house ease-out; nothing moves on opening, on
+  reconnecting or under reduced motion. Presses pass through it except on its own
+  buttons. To fit one line at 320 wide, the question reads "Fits?" with Yes and No,
+  named for screen readers by the label and the question together, and the answer
+  reads "Fits" or "Doesn't fit" beside the label. Screen readers meet it where they
+  did, in the note after its words.
+- Test: `platform/test/browser/notes.spec.ts` presses Yes on a note whose label
+  waits to be rated (seeded in `platform/test/browser/support/sign_in.exs`), at 1280
+  and 390 wide: the question goes, the answer shows, nothing in the note moves and
+  the label covers nothing that can be pressed.
+- Measured in headless Chromium at 320, 360, 390 and 1280 wide, light and dark, with
+  labels driven through choosing, chosen, rated by a press and failed while the page
+  was open: nothing else on the page moved (0px over 116 boxes at each step); no
+  shown label covered a control or any words (up to 413 label and control pairs per
+  view); every label stayed one line, 26px tall; Yes and No each answered their own
+  press. The transitions ran 200ms in and 140ms out on cubic-bezier(0.23, 1, 0.32,
+  1); none ran on opening, on reconnecting, or with reduced motion.
+- Known limit: on a touch screen Yes and No each take a 44px press, which reaches
+  15px down into the top of the note's title (words, no control); a tap there rates
+  the label.
