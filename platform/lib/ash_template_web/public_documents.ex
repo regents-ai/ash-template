@@ -47,12 +47,6 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"SIWA sites", "Your company's sites where agents sign in with SIWA, and their keys."},
     "/siwa/settings" =>
       {"SIWA settings", "Your company's name, its owner and where to get help."},
-    "/account" => {"Account", "Your profile and the session on this browser."},
-    "/account/agents" => {"Agents", "The agents you paired, and pairing a new one."},
-    "/account/points" => {"Points", "Your points and activity."},
-    "/account/wallets" => {"Wallets", "The wallets your sign-in verified."},
-    "/account/connections" =>
-      {"Connections", "The accounts you have connected, such as X, GitHub and Farcaster."},
     "/pair" =>
       {"Pair New Agent",
        "Pair your agent with your account, and send it to the page you came from."},
@@ -178,6 +172,11 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/showcase/onchain" =>
       {"Wallet lab", "Wallet buttons against a practice network on this machine."}
   }
+  # Account's pages are the same on every Regent site (AshTemplateWeb.AccountRoutes).
+  @pages Map.merge(
+           @pages,
+           Map.new(AshTemplateWeb.AccountRoutes.pages(), &{&1.path, {&1.label, &1.description}})
+         )
   # The public documents change only with a release, so the release time is when
   # each last changed.
   @released_at DateTime.utc_now() |> DateTime.truncate(:second)

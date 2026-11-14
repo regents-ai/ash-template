@@ -158,8 +158,8 @@ class Fixture(unittest.TestCase):
         return root
 
     def listed(self):
-        """Every path in scripts/shared-files.sh's shared, build and homepage lists."""
-        script = 'source scripts/shared-files.sh; printf "%s\\n" "${shared[@]}" "${build[@]}" "${homepage[@]}"'
+        """Every path in scripts/shared-files.sh's shared, build, account and homepage lists."""
+        script = 'source scripts/shared-files.sh; printf "%s\\n" "${shared[@]}" "${build[@]}" "${account[@]}" "${homepage[@]}"'
         return subprocess.run(
             ["bash", "-c", script], cwd=SCRIPTS.parent, check=True, capture_output=True, text=True,
         ).stdout.split()
@@ -186,6 +186,8 @@ class Harvest(Fixture):
         self.root = self.template({
             "platform/lib/ash_template/repo.ex": "defmodule AshTemplate.Repo do\nend\n",
             "platform/lib/ash_template_web/onchain_steps.ex": "defmodule AshTemplateWeb.OnchainSteps do\nend\n",
+            "platform/lib/ash_template_web/live/account_live.ex": "defmodule AshTemplateWeb.AccountLive do\nend\n",
+            "platform/lib/ash_template_web/account_site.ex": "defmodule AshTemplateWeb.AccountSite do\nend\n",
             "platform/lib/mix/tasks/ash_template.route_handoff.ex": "defmodule Mix.Tasks.AshTemplate.RouteHandoff do\nend\n",
             "platform/Dockerfile": "FROM elixir\n",
             "platform/assets/css/pages/home.css": "body {}\n",
@@ -301,6 +303,25 @@ class Harvest(Fixture):
         self.assertEqual(home["files"][0]["list"], "homepage")
         self.assertFalse(home["shared"])
 
+    def test_an_account_file_is_shared_and_the_site_own_account_file_is_not(self):
+        work, base = self.site("keyfleet", "Keyfleet")
+        account = self.commit(work, "Account: one more line", {
+            "platform/lib/keyfleet_web/live/account_live.ex": "changed\n",
+        })
+        own = self.commit(work, "Settings page", {"platform/lib/keyfleet_web/account_site.ex": "settings\n"})
+        self.git(work, "push", "-q", "origin", "main")
+
+        out = self.report(self.root, "harvest.sh", str(self.ledger({"keyfleet": base})), str(self.repos), "keyfleet")
+
+        commits = {c["commit"]: c for c in out["sites"][0]["commits"]}
+        self.assertTrue(commits[account]["shared"])
+        self.assertEqual(commits[account]["files"][0]["list"], "account")
+        self.assertFalse(commits[own]["shared"])
+        self.assertEqual(
+            (commits[own]["files"][0]["template_path"], commits[own]["files"][0]["list"]),
+            ("platform/lib/ash_template_web/account_site.ex", None),
+        )
+
     def test_a_site_missing_from_the_ledger_stops_the_run(self):
         _, base = self.site("keyfleet", "Keyfleet")
         self.site("regents", "Regents")
@@ -372,7 +393,7 @@ class Drift(Fixture):
                          ("techtree", "regents-ai/techtree", "c" * 40, "techtree", "Techtree"))
         self.assertIsNone(site["live_homepage"])
         files = self.files(site)
-        self.assertEqual({f["list"] for f in site["files"]}, {"shared", "build"})
+        self.assertEqual({f["list"] for f in site["files"]}, {"shared", "build", "account"})
 
         differs = files[repo_ex]
         self.assertEqual((differs["status"], differs["site_path"], differs["added"], differs["removed"]),
@@ -391,6 +412,22 @@ class Drift(Fixture):
         })
         self.assertEqual(files["platform/mix.exs"]["status"], "same")
         self.assertEqual(files["Makefile"]["status"], "same")
+
+    def test_account_files_are_compared_and_the_site_own_account_file_is_not(self):
+        points = "platform/lib/ash_template_web/live/points_live.ex"
+        pairing = "platform/lib/ash_template_web/components/pairing_box.ex"
+        self.serve_site("patchbay", "Patchbay", "e" * 40,
+                        change={points: "platform/lib/patchbay_web/live/points_live.ex\nPatchbay patchbay inbox\n"},
+                        absent=[pairing])
+
+        out = self.report(self.root, "drift.sh", "patchbay")
+
+        files = self.files(out["sites"][0])
+        self.assertEqual((files[points]["list"], files[points]["status"], files[points]["added"]),
+                         ("account", "differs", 1))
+        self.assertEqual((files[pairing]["list"], files[pairing]["status"]), ("account", "missing"))
+        self.assertEqual(files["platform/lib/ash_template_web/account_routes.ex"]["status"], "same")
+        self.assertNotIn("platform/lib/ash_template_web/account_site.ex", files)
 
     def test_a_moved_file_is_read_at_the_site_path_and_runs_keep_their_own_folders(self):
         chain = "platform/lib/ash_template/chain_client.ex"

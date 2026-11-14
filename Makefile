@@ -6,7 +6,7 @@ help:
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
 	@echo "Run SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make live-check to check template.regents.sh the way a paired agent does: the CLI, then WebMCP and every public page in headless Chromium."
 # template-only
-	@echo "Run make drift to list where each site's copies of the shared, build and deploy files differ from the template's, then run make pins and make readiness."
+	@echo "Run make drift to list where each site's copies of the shared, build, deploy and Account files differ from the template's, then run make pins and make readiness."
 	@echo "Run make pins to list each site's shared-library pins and how far each is behind the template's and the library's main."
 	@echo "make check-scripts also tests the reports the daily jobs read: scripts/drift.sh, scripts/pins.sh and scripts/harvest.sh."
 # /template-only

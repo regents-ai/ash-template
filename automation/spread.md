@@ -77,8 +77,8 @@ table.
    letter. Name each one, with its days open, in the summary (see "Records").
 3. **Read the facts**, from `<repos>/ash-template`, into a folder of your own outside
    the repositories (`<out>`):
-   - `scripts/drift.sh > <out>/drift.json`: for each site, each shared, build and
-     homepage file as `same`, `differs`, `missing` or `not_used`, with the path of
+   - `scripts/drift.sh > <out>/drift.json`: for each site, each shared, build,
+     account and homepage file as `same`, `differs`, `missing` or `not_used`, with the path of
      each difference's diff, and for regents the live homepages compared.
    - `scripts/pins.sh > <out>/pins.json`: each site's library pins and how far each is
      behind the template's pin and the library's main.

@@ -12,7 +12,6 @@ shared=(
   platform/lib/ash_template/chain_client.ex
   platform/lib/ash_template/repo.ex
   platform/lib/ash_template_web/client_address.ex
-  platform/lib/ash_template_web/components/pairing_box.ex
   platform/lib/ash_template_web/content_security_policy.ex
   platform/lib/ash_template_web/metrics.ex
   platform/lib/ash_template_web/onchain_steps.ex
@@ -59,6 +58,27 @@ build=(
   platform/.formatter.exs
   platform/.credo.exs
   platform/.sobelow-conf
+)
+
+# The files of Account, the same on every site: its pages and their parts, styles,
+# hooks and their tests, and its browser walks. A site's own part of Account is
+# platform/lib/ash_template_web/account_site.ex alone, which is never compared, and
+# a page only one site has sits in that site's own menu, never under Account.
+account=(
+  platform/lib/ash_template_web/account_routes.ex
+  platform/lib/ash_template_web/live/account_live.ex
+  platform/lib/ash_template_web/live/points_live.ex
+  platform/lib/ash_template_web/points_entries.ex
+  platform/lib/ash_template_web/components/agents_panel.ex
+  platform/lib/ash_template_web/components/pairing_box.ex
+  platform/lib/ash_template_web/components/verified_connections.ex
+  platform/assets/css/pages/account.css
+  platform/assets/js/hooks/public_name.ts
+  platform/assets/js/hooks/verified_connections.ts
+  platform/assets/test/public_name.test.ts
+  platform/test/browser/agents.spec.ts
+  platform/test/browser/pairing.spec.ts
+  platform/test/browser/public_name.spec.ts
 )
 
 # The files of the homepage the template shares with regents.sh, compared with
