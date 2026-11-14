@@ -11470,3 +11470,8 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   total's figure alone (design-system `CONSUMERS.md`); the template does not.
 - `skills/patchbay-check-updates/SKILL.md`: `by_you` stops an agent responding, never reading.
   The agent fetches the thread for every new event ID and drops repeats by that ID.
+
+## 2026-11-14 — Shared-package registry lists regent_near_intents
+
+- `security/required-fixes.json` lists `regent_near_intents` (elixir-utils `near_intents`), so a
+  site that pins it passes `make check-required-fixes`. The template itself does not use it.

@@ -22,6 +22,7 @@
     {"app": "regent_jev", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "jev"},
     {"app": "regent_sprites", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "sprites"},
     {"app": "regent_points", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "points"},
+    {"app": "regent_near_intents", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "near_intents"},
     {"app": "ash_postgres", "repository": "https://github.com/ash-project/ash_postgres.git", "sparse": null}
   ],
   "fixes": [
