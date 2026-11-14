@@ -11237,3 +11237,35 @@ for local work, kept apart from the Skills Regent writes.
 - The design-system reference (`skills/regent-workflow/references/design-system.md`)
   points at `skills/third-party/emil-design-eng/SKILL.md` instead of a path on one
   person's machine. `AGENTS.md` and `README.md` introduce the folder.
+
+## 2026-11-14 — Guided tour, from Keyfleet, with a demo on the homepage
+
+Every site can now give a page a guided tour: a ring round one part at a time, the
+rest of the page dimmed, and a small card with a one-word title, one sentence, Skip,
+Back and Next and a dot for each step. The homepage carries a five-step demo.
+
+- `AshTemplateWeb.Components.Tour` (`tour/1`, `start_button/1`), the `Tour` hook
+  (`platform/assets/js/hooks/tour.ts`), its placement (`platform/assets/js/tour/place.ts`)
+  and its light (`tour/renderer.ts`, `tour/shader.ts`, a vgpu picture in the shared
+  canvas island), ported from Keyfleet's (5829e5b6b). A page passes its own steps;
+  Keyfleet's step lists, fleet selectors, its visitor and holder tours and its step
+  links are left out.
+- It plays once a browser, never over an open window, and the Tour button plays it
+  again. The browser alone remembers it was seen (`ash-template:tour:<name>`), and a
+  browser that keeps nothing shows it again. Escape and Skip end it. With less motion it
+  is simply there; without WebGPU or with less motion the ring is the page's own lines.
+- The tour only points: the dimming and the ring take no presses, so every button,
+  wallet buttons above all, takes its press while it shows. The card keeps off wallet
+  steps, toasts and notices wherever there is room.
+- Styles in `platform/assets/css/components/tour.css`, from the template's five colours;
+  the card's buttons read them too (`.tour` in `tokens/root.css`).
+- The homepage: five steps (App, Tools, Agents, Products, Tour) and a quiet Tour button
+  in the panel's header, before the X and GitHub icons. While a tour shows, the
+  datascape's hook holds the glass panel open (`tour:opened` until `tour:closed`); this
+  changes `hooks/datascape.ts`, which regents.sh shares.
+- Every browser walk starts with the tour seen (`playwright.config.ts`, the saved
+  sign-ins in `test/browser/support/sign_in.exs`, `playwright.live.config.ts`);
+  `tour.spec.ts` and `tour_light.spec.ts` start with nothing kept. `colourReader` in
+  `hooks/theme_switch.ts` is exported for the light.
+- `AGENTS.md`'s "New site" gains item 2: a new site replaces the demo steps.
+  `skills/ash-frontend` says how to write a step list.

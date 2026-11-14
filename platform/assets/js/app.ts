@@ -40,6 +40,7 @@ import {MenuAgents} from "./hooks/menu_agents"
 import {PublicName} from "./hooks/public_name"
 import {ProductsMenu} from "./hooks/products_menu"
 import {ThemeSwitch} from "./hooks/theme_switch"
+import {Tour} from "./hooks/tour"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
@@ -330,6 +331,7 @@ const hooks = {
   Conversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
   ThemeSwitch,
+  Tour,
   VerifiedConnections,
 }
 if (!browserCsrfToken()) throw new Error("Missing CSRF token")

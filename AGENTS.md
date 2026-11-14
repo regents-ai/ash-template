@@ -114,7 +114,12 @@ names and address, and replaces these by hand:
    `mark.png`, `images/brand/mark-flat-dark.svg`,
    `images/brand/mark-flat-dark-clear.svg`, `images/brand/mark-flat-light.svg`)
    are the Regents crown. Keep them.
-2. The homepage's theme, which is always dark for the template's artwork:
+2. The homepage's guided tour: the `@tour` steps in
+   `platform/lib/ash_template_web/live/home_live.ex` are the template's demo.
+   Write the site's own, each a part of the page with a one-word title and one
+   plain sentence (`AshTemplateWeb.Components.Tour` says how), or take the tour
+   and its Tour button out of the page.
+3. The homepage's theme, which is always dark for the template's artwork:
    `homeThemeLocked` in `platform/assets/js/theme.ts`, `home?` in
    `platform/lib/ash_template_web/components/layouts/root.html.heex` and the
    `data-home-theme-locked` rule in `platform/assets/css/pages/home.css`, which
@@ -122,39 +127,39 @@ names and address, and replaces these by hand:
    lock out of all three, with the theme test that expects it
    (`platform/assets/test/theme.test.ts`), and the homepage follows the
    visitor's light or dark choice like every other page.
-3. The legal operator named in `platform/priv/legal/terms.md` and
+4. The legal operator named in `platform/priv/legal/terms.md` and
    `privacy.md`.
-4. The site's Patchbay page (`https://patchbay.help/<domain>`) in
+5. The site's Patchbay page (`https://patchbay.help/<domain>`) in
    `platform/priv/public/about.md`. Every contact address stays
    `build@regents.sh`, as on every Regent site.
-5. The X and GitHub links in
+6. The X and GitHub links in
    `platform/lib/ash_template_web/components/regent_links.ex` and `twitter_site`
    in `platform/lib/ash_template_web/components/layouts/root.html.heex` point at
    the Regents accounts; keep them unless the product has its own.
-6. The Fly app names: `app` in `platform/fly.staging.toml`, and the production
+7. The Fly app names: `app` in `platform/fly.staging.toml`, and the production
    app, which `platform/fly.toml` leaves to the deploy command. The deploy and
    rollback examples in `platform/README.md` and the opening comments of
    `scripts/deploy.sh` and `scripts/rollback.sh` name the template's own app,
    `template-regents-sh`.
-7. The database cluster, hosts and refused identities in
+8. The database cluster, hosts and refused identities in
    `platform/lib/ash_template/database_config.ex`.
-8. The WebMCP origin trial token, `@webmcp_origin_trial` in
+9. The WebMCP origin trial token, `@webmcp_origin_trial` in
    `platform/lib/ash_template_web/endpoint.ex`. It is issued to the template's
    address and Chrome ignores it on any other host: register the site's own
    address for Chrome's WebMCP origin trial and put its token there, with its end
    date in the comment above it.
-9. The compile-connected limit, `--fail-above 48` in the `precommit` alias in
-   `platform/mix.exs`. `mix precommit` stops once more files are connected at
-   compile time than it allows, and the comment above it says what adds one:
-   each resource an Ash domain lists, each generic action's module, each
-   signed-agent controller. Raise it in the commit that adds them, by the number
-   of new files `mix xref graph --label compile-connected` lists, with a comment
-   line naming them.
-10. `mix format` and `mix ash_template.route_handoff`, run from `platform/` once
+10. The compile-connected limit, `--fail-above 48` in the `precommit` alias in
+    `platform/mix.exs`. `mix precommit` stops once more files are connected at
+    compile time than it allows, and the comment above it says what adds one:
+    each resource an Ash domain lists, each generic action's module, each
+    signed-agent controller. Raise it in the commit that adds them, by the number
+    of new files `mix xref graph --label compile-connected` lists, with a comment
+    line naming them.
+11. `mix format` and `mix ash_template.route_handoff`, run from `platform/` once
     the shared dependencies are fetched: names of another length rewrap lines,
     and the route catalog digest (`platform/priv/handoff/route-catalog.sha256`)
     includes the display name. `scripts/init.sh` prints both.
-11. Outside this repository: elixir-utils' list of Regent sites
+12. Outside this repository: elixir-utils' list of Regent sites
     (`RegentAgents.Activity` leaves an agent's days on the site out of its
     activity until the site is there; take the new pin), and the sign-in
     service's settings for the site's audience: its wallet sign-in address and,

@@ -152,6 +152,10 @@ options = Plug.Session.init(Application.fetch_env!(:ash_template, :session_optio
 
 File.mkdir_p!("test/browser/.auth")
 
+# The walk's own address, where its browser keeps the homepage's guided tour seen, as
+# playwright.config.ts does for a walk that is not signed in.
+walk_origin = "http://127.0.0.1:" <> System.fetch_env!("PORT")
+
 # Signs `account` in through the site's own sign-in step with a fresh session and
 # writes the cookie in Playwright's own saved-sign-in shape, which a test loads.
 save_sign_in = fn account, verified, file ->
@@ -188,7 +192,12 @@ save_sign_in = fn account, verified, file ->
           sameSite: "Lax"
         }
       ],
-      origins: []
+      origins: [
+        %{
+          origin: walk_origin,
+          localStorage: [%{name: "ash-template:tour:home", value: "seen"}]
+        }
+      ]
     })
   )
 end
