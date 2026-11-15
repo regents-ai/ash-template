@@ -1,10 +1,11 @@
 @layer regents-product {
-/* The splats page (`/animations/splats`, `AshTemplateWeb.SplatsLabLive`): one box of
-   night sky holding a floating island in pixel art. The box keeps its shape from the
-   first paint: three wide by two high, square on a phone. It always holds the still
-   picture, cropped from its middle on a phone just as the live picture is; the turning
-   island (the `SplatIsland` hook) fades in over it once it has drawn, and without
-   WebGPU the still stays. The night is the same in both themes. */
+/* The splats page (`/animations/splats`, `AshTemplateWeb.SplatsLabLive`): one box
+   holding a small world in pixel art, the factory or the island, chosen by the tabs
+   above it. The box keeps its shape from the first paint and for either scene: three
+   wide by two high, square on a phone. It always holds the scene's square still
+   picture, cropped to the box just as the live picture is framed; the turning scene
+   (the `SplatIsland` hook) fades in over it once it has drawn, and without WebGPU the
+   still stays. The sky is the same in both themes. */
 .motion-lab--splats {
   width: 100%;
   align-content: start;

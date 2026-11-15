@@ -1,25 +1,55 @@
 defmodule AshTemplateWeb.SplatsLabLive do
   @moduledoc """
-  Splats: a floating island at night, a big tree, two pines and a campfire, drawn
-  as some fifty thousand small 3D gaussians (splats) and shown as pixel art, turning
-  once every thirty seconds.
+  Splats: two small worlds drawn as a few hundred thousand 3D gaussians (splats) and
+  shown as pixel art, turning once every thirty seconds. The robot factory comes
+  first; `?scene=island` shows the floating island at night instead, and any other
+  value shows the factory.
 
-  The box always holds the still picture the server sends
-  (`priv/static/images/animations/splats.png`, drawn by `npm run stills:splats`).
-  Over it the `SplatIsland` hook draws the turning island with WebGPU and fades it in
-  once its first frame has landed; without WebGPU the still stays. The island is grown
-  from one fixed seed in `assets/js/splats/`, so the still and the live picture match.
-  Nothing here reads or changes anything outside the page.
+  The box always holds the scene's still picture
+  (`priv/static/images/animations/splats-<scene>.png`, drawn by `npm run stills:splats`).
+  Over it the `SplatIsland` hook draws the scene with WebGPU and fades it in once its
+  first frame has landed; without WebGPU the still stays. Each scene's box has its own
+  id, so switching ends one scene's drawing before the next begins. The scenes are
+  grown from fixed seeds in `assets/js/splats/`, so the stills and the live pictures
+  match. Nothing here reads or changes anything outside the page.
   """
 
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.PublicDocuments
 
+  @scenes [
+    %{id: "factory", name: "Factory"},
+    %{id: "island", name: "Island"}
+  ]
+
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, PublicDocuments.page(~p"/animations/splats"))}
+    {:ok,
+     socket |> assign(PublicDocuments.page(~p"/animations/splats")) |> assign(scenes: @scenes)}
   end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign(socket, scene: scene(params["scene"]))}
+  end
+
+  defp scene("island"), do: "island"
+  defp scene(_other), do: "factory"
+
+  defp scene_path("factory"), do: ~p"/animations/splats"
+  defp scene_path(scene), do: ~p"/animations/splats?#{[scene: scene]}"
+
+  defp still("factory"), do: ~p"/images/animations/splats-factory.png"
+  defp still("island"), do: ~p"/images/animations/splats-island.png"
+
+  defp label("factory"),
+    do:
+      "A solarpunk robot factory on a floating island at dusk: a plaster hall with a planted roof and the Regents crown lit over its open door, a glass hall of plants, solar panels, two wind turbines, a water tower and robots at work. Drag, or use the arrow keys, to turn and tilt it."
+
+  defp label("island"),
+    do:
+      "A floating island at night with a large tree, two small pines, rocks, a stone crown and a campfire. Drag, or use the arrow keys, to turn and tilt it."
 
   @impl true
   def render(assigns) do
@@ -31,27 +61,36 @@ defmodule AshTemplateWeb.SplatsLabLive do
         </p>
         <h1>Splats</h1>
         <p class="motion-lab__lede">
-          A floating island at night, turning slowly. Drag it to turn it yourself.
+          Two small worlds, turning slowly. Drag one to turn it, or to look from above or below.
         </p>
       </header>
-
+      <nav class="flair-tabs" aria-label="Scenes">
+        <.link
+          :for={scene <- @scenes}
+          patch={scene_path(scene.id)}
+          aria-current={scene.id == @scene && "page"}
+        >
+          {scene.name}
+        </.link>
+      </nav>
       <div
-        id="splats-island"
+        id={"splats-#{@scene}"}
         class="splats-lab"
         tabindex="0"
         role="img"
-        aria-label="A floating island at night with a large tree, two small pines, rocks, a stone crown and a campfire, turning slowly. Drag, or use the left and right arrow keys, to turn it."
+        aria-label={label(@scene)}
+        data-splats-scene={@scene}
         phx-hook="SplatIsland"
         phx-mounted={JS.ignore_attributes(["data-splats-ready"])}
       >
         <img
           class="splats-lab__still"
-          src={~p"/images/animations/splats.png"}
-          width="288"
-          height="192"
+          src={still(@scene)}
+          width="432"
+          height="432"
           alt=""
         />
-        <div id="splats-island-stage" class="splats-lab__stage" phx-update="ignore">
+        <div id={"splats-#{@scene}-stage"} class="splats-lab__stage" phx-update="ignore">
           <canvas data-splats-canvas></canvas>
         </div>
       </div>

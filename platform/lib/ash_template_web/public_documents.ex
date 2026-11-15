@@ -132,7 +132,7 @@ defmodule AshTemplateWeb.PublicDocuments do
        "Fifty-six small diagrams, each one a word on its own slow loop, from merge and relay to stake, vote and the crown."},
     "/animations/splats" =>
       {"Splats",
-       "A floating island at night, a big tree, two pines and a campfire, in pixel art that turns slowly and turns with your finger."},
+       "Two small floating worlds in pixel art, a solar robot factory at dusk and an island at night, that turn slowly and turn and tilt as you drag them."},
     "/docs" =>
       {"Docs",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},
