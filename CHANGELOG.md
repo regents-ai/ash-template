@@ -11711,3 +11711,10 @@ no migration.
   stand-in for the service gives production sites the same shape, answers a check, and
   sets the proof back when a site's origins change. No migration; no route change; API
   21.0.0.
+
+## 2026-11-15 — Released v260: SIWA Sites proof
+
+- v260 on template.regents.sh carries the SIWA Sites proof section and the keyed Setup example
+  (Sean's letter 78 a of 15 Nov), matching siwa-server v93. Pins unchanged; no migration; API 21.0.0.
+- Rollback: v259 (`10a17e55`) image.
+- Full check exit 0 by the chief on the exact commit.
