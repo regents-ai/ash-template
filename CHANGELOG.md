@@ -11727,3 +11727,9 @@ no migration.
   `regent_payments 20261112180000` (a default of "usdc" on `payment_receipts.paid_with`; no row
   is rewritten). That change is applied once with `/app/bin/migrate-shared` from this release's
   image before the deployment, on Sean's letter 77 a of 15 Nov. No site migration; API 21.0.0.
+
+## 2026-11-15 — regents-cli 1.10.29
+
+- The template asks for the newest command line, 1.10.29 (source commit `5ae2e873`): the agent
+  guide, the install lines, the capability list and the Makefile's pin name it. The
+  `regents ash-template` commands are the same as in 1.10.28.
