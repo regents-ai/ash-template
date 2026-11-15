@@ -11802,3 +11802,11 @@ For the design chief. No migration.
 - The template asks for the newest command line, 1.10.30 (source commit `4a781568`): the agent
   guide, the install lines, the capability list and the Makefile's pin name it. The
   `regents ash-template` commands are the same as in 1.10.29.
+
+## 2026-11-15 — Released v262: Splats lab, regents-cli 1.10.30
+
+- v262 (`edd56e64`) on template.regents.sh since 23:51Z carries the two entries above. Library
+  pin `8f1821dd` (elixir-utils main); design-system pin `d4075655`; regents-cli 1.10.30; API
+  21.0.0. No migration.
+- Rollback: v261 (`d561854b`) image; nothing to undo.
+- Full check exit 0 by the design chief's worker on the exact commit.
