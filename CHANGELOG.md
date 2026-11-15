@@ -11753,7 +11753,7 @@ On `wt/tpl-splat-1115`, for the design chief. Pins unchanged; no migration.
     with a planted roof and the Regents crown lit over its open door, a glowing glass
     hall of plants, solar panels, two wind turbines, a vine-wrapped water tower, pipes
     and a steaming chimney, a conveyor carrying half-built robots past a swinging arm,
-    finished robots with Tangerine Tango trim and blinking eyes (one walks the path),
+    finished robots with Tangerine Tango trim and blinking eyes (one walks round the pond),
     a pond, fruit trees, planting beds and lamps, over hanging earth and roots. 284,523
     splats, 48 colours (`platform/assets/js/splats/factory.ts`).
   - Island: the night island with a big leafy tree, two pines, rocks, flowers, a stone
