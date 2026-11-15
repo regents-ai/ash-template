@@ -11742,3 +11742,31 @@ no migration.
   `/app/bin/migrate-shared` from this release's image before the switch (Sean's letter 77 a).
 - Rollback: v260 (`8412d750`) image; the payments default stays and harms nothing.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-15 — Splats lab (branch, not on main)
+
+On `wt/tpl-splat-1115`, for the design chief. Pins unchanged; no migration.
+
+- New lab page `/animations/splats`: a floating island at night in pixel art, a big
+  leafy tree, two small pines, rocks, flowers, a stone Regents crown and a campfire
+  with rising sparks, turning once every thirty seconds and bobbing gently. Listed on
+  `/animations` and `/design`.
+- The island is 57,349 small 3D gaussians (splats) grown from one fixed seed, nothing
+  downloaded (`platform/assets/js/splats/island.ts`). Each frame vgpu draws them
+  farthest first onto a picture about 190 pixels high, matches every pixel to a night
+  palette of 32 colours with an ordered dither, and scales it up in whole-pixel
+  squares; soft motes drift behind and in front. The moonlight is worked out as the
+  island turns; the fire's light is baked in and flickers.
+- A drag turns it under the pointer and it eases back into its slow turn from the speed
+  it was let go at; a vertical drag on a phone still scrolls the page. Focused, the left
+  and right arrow keys turn it. With less motion it holds still unless dragged.
+- The box keeps its shape from the first paint (three by two, square on a phone) and
+  always holds a still picture of the island
+  (`platform/priv/static/images/animations/splats.png`, `npm run stills:splats`);
+  without WebGPU the still stays. Nothing is drawn while the box is off screen, and
+  the GPU device is given back on leaving the page.
+- Frame times: 60 frames a second in headless Chromium at 1440 on a 2x screen (every
+  frame drawn), and about 1 ms a frame for sorting, drawing and finishing on the GPU at
+  that size (2172 by 1446) on this Mac.
+- Checks: `platform/assets/test/splats.test.ts` (the seed, the sort, the pixel grid)
+  and the walk `platform/test/browser/splats.spec.ts`.
