@@ -1,13 +1,14 @@
 /**
- * The night palette the splats page's island is drawn in: thirty-two colours, the
- * four brand colours among them (Tangerine Tango for the fire, Charcoal, Platinum and
- * Powder Blue). Every pixel of the picture is one of these; the painter (painter.ts)
- * picks the nearest by how different two colours look (OKLab), after a small ordered
- * dither, so gradients become pixel patterns rather than bands.
+ * The palettes the splats page's scenes are drawn in, the four brand colours in each
+ * (Tangerine Tango, Charcoal, Platinum and Powder Blue). Every pixel of a picture is
+ * one of its scene's colours; the painter (painter.ts) picks the nearest by how
+ * different two colours look (OKLab), after a small ordered dither, so gradients
+ * become pixel patterns rather than bands.
  *
- * This file imports nothing, so the script that draws the page's still picture
- * (`stills.mjs`, beside it) uses the same colours the browser does.
+ * This file imports nothing, so the scripts beside it use the colours the browser does.
  */
+
+/** The island at night: thirty-two colours, Tangerine Tango for the fire. */
 export const NIGHT = [
   // Charcoal, then the sky from its darkest to the haze near the horizon.
   "#161616", "#0a0f1f", "#0f1830", "#152246", "#1c2d5a", "#25396d", "#304883", "#3f5a96",
@@ -23,6 +24,28 @@ export const NIGHT = [
   "#c2341a", "#FF5B19", "#ffa035", "#ffd86a",
   // Flowers.
   "#d0679b",
+] as const
+
+/** The robot factory at dusk: forty-eight colours, Tangerine Tango for its robots, arm and sign. */
+export const DUSK = [
+  // Charcoal, then the dusk sky from overhead down to the glow on the horizon.
+  "#161616", "#120f24", "#1d1a3a", "#2b2752", "#3e3468", "#5a4479", "#80548a", "#b0667f", "#e07b6a", "#f6a36b",
+  // Tangerine Tango and a lighter orange, Platinum and Powder Blue.
+  "#FF5B19", "#ff8a3d", "#E5E3D2", "#AECACD",
+  // Leaves and grass, from deep shade to the tips the low sun lights.
+  "#0f2422", "#16362c", "#1f4a33", "#2b5f3a", "#3c7840", "#559146", "#7aab52", "#a8c862",
+  // Warm plaster, from its shadow side to the face the sun lights.
+  "#5b4650", "#8a6f72", "#b8968a", "#dcbca2", "#f2dcbc",
+  // Earth and timber, then brick.
+  "#2a1a1c", "#4a2e28", "#734634", "#a0643e", "#b4553a",
+  // Solar panels and steel.
+  "#1b2440", "#2a3d66", "#43649a", "#7fa3cf", "#3b3a4a", "#5a6074", "#8d93a6",
+  // Lamplight, from amber to the white at a bulb's heart.
+  "#ffb04a", "#ffd97a", "#fff3c8",
+  // Water.
+  "#2c5d7c", "#5fa2b8",
+  // Flowers and fruit, and the robots' eyes.
+  "#e46a9a", "#c43c4c", "#a47be0", "#7ff0e8",
 ] as const
 
 const channel = (value: string, at: number) => Number.parseInt(value.slice(at, at + 2), 16) / 255

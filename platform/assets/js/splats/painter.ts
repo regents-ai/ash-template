@@ -1,45 +1,37 @@
 /**
- * Paints the splats page's island with WebGPU through vgpu, in three passes:
+ * Paints a splats-page scene (build.ts) with WebGPU through vgpu, in three passes:
  *
- * 1. Splats. Every splat is one instance of a single draw: its 3D covariance is
- *    carried through the camera into an ellipse on a low picture of about 290 by 190
- *    pixels, drawn as a quad along the ellipse's axes with a gaussian falloff, in the
- *    order order.ts gives (farthest first), each laid over the ones behind it.
- * 2. Pixels. On that same low grid: where the splats cover a pixel past a dithered
- *    threshold it takes their colour, elsewhere the night sky's; the fire's glow is
- *    added; then every pixel takes the nearest colour of the night palette after a
- *    4 by 4 ordered dither. The pixel grid moves with the island's bob in whole
- *    pixels only, so bobbing never makes the picture shimmer.
+ * 1. Splats, as Gaussian splatting draws them (Kerbl et al., 2023). Every splat is one
+ *    instance of a single draw, in the order order.ts gives (farthest first). Its
+ *    covariance Σ = R S Sᵀ Rᵀ comes from its quaternion and scales; it is carried into
+ *    the camera (W) and through the perspective projection's Jacobian (J) at its centre,
+ *    J W Σ Wᵀ Jᵀ, plus 0.3 of a pixel either way (the low-pass term); the quad spans
+ *    three standard deviations along the ellipse's axes, and each pixel takes
+ *    opacity · exp(-½ dᵀ Σ'⁻¹ d), at most 0.99, laid over what is behind it. Its colour
+ *    is its spherical harmonics of degrees 0 and 1 seen along the real view direction.
+ * 2. Pixels. On a low grid of about 450 columns: where the splats cover a pixel past a
+ *    dithered threshold it takes their colour, elsewhere the sky's; the outline's edge
+ *    toward the rim light brightens and glows are added; then every pixel takes the
+ *    nearest colour of the scene's palette after a 4 by 4 ordered dither. The grid moves
+ *    with the bob in whole pixels only, so bobbing never makes the picture shimmer.
  * 3. Picture. The low picture is scaled up by a whole number onto the canvas, each
- *    pixel a crisp square of device pixels, and soft motes drift over it: small ones
- *    behind the island, a few large blurred ones in front.
+ *    pixel a crisp square of device pixels, and soft motes drift over it.
  *
- * The moon's light is worked out per splat as the island turns, so its cool edge
- * light stays on one side; the fire's light is baked into each splat (island.ts) and
- * flickers here. Shared by the renderer (renderer.ts) and the still picture's script
- * (`stills.mjs`), so it imports only vgpu and types.
+ * The camera orbits the scene: a turn round its upright axis and a tilt from straight
+ * below to straight above. Shared by the renderer (renderer.ts) and the scripts beside
+ * it, so it imports only vgpu and types.
  */
 import {prepareShader} from "@vgpu/wgsl/prepare"
 import {draw, effect, storage, target, type Frame, type Gpu, type Target} from "vgpu"
 
-import type {Island} from "./island"
+import type {Camera, Glow, Scene, Vec3} from "./build.ts"
 
-/** The camera: its pitch above the island, the angle it sees top to bottom, how far back it stands, the height it looks at. */
-export const PITCH = (17 * Math.PI) / 180
-const FIELD = (20 * Math.PI) / 180
-const DISTANCE = 8
-const LOOK_AT = 0.42
-/** About how many rows of pixels the picture has, whatever the size of its box: the island's
- * pixels are the same size against it on a wide screen and a phone. */
-export const ROWS = 192
-/** The island's radius, as a share of the picture's height: what a drag turns 1:1. */
-export const RADIUS_IN_HEIGHT = 1 / (2 * Math.tan(FIELD / 2) * DISTANCE)
-/** The island's angle and clock in the still picture, the first frame and a still island. */
-export const STILL_TURN = (-24 * Math.PI) / 180
-export const STILL_SECONDS = 3.2
-/** Motes behind the island, then in front of it. */
-const BACK_MOTES = 26
-const FRONT_MOTES = 7
+/** About how many columns of pixels the picture has on its longer side. */
+export const COLUMNS = 450
+/** The tilt reaches this close to straight above or below, so the view never flips. */
+export const TILT_LIMIT = (86 * Math.PI) / 180
+/** Motes are drawn at the canvas's own resolution, this many at most. */
+const MOTES_LIMIT = 64
 
 export type PixelGrid = {
   /** Device pixels per picture pixel, a whole number. */
@@ -50,82 +42,118 @@ export type PixelGrid = {
   readonly offset: readonly [number, number]
 }
 
-/** The low picture for a canvas of this many device pixels: about `ROWS` high, scaled by a whole number to cover it. */
+/** The low picture for a canvas of this many device pixels: at most `COLUMNS` on its longer side, scaled by a whole number to cover it. */
 export function pixelGrid(width: number, height: number): PixelGrid {
-  const scale = Math.max(1, Math.round(height / ROWS))
+  const scale = Math.max(1, Math.ceil(Math.max(width, height) / COLUMNS))
   const columns = Math.ceil(width / scale)
   const rows = Math.ceil(height / scale)
   return {scale, columns, rows, offset: [Math.floor((width - columns * scale) / 2), Math.floor((height - rows * scale) / 2)]}
 }
 
-/** One frame's moment: the island's turn, its bob in whole pixels, the fire's flicker, and the clock. */
+/** The focal length in picture pixels: a 3:2 frame of the camera's field fits inside the picture. */
+export const focal = (camera: Camera, grid: {columns: number; rows: number}) =>
+  Math.min(grid.rows, grid.columns / 1.5) / (2 * Math.tan(camera.field / 2))
+
+/** The camera stands back a little further as it tilts toward straight above or below, so the whole scene fits. */
+const standBack = (camera: Camera, pitch: number) =>
+  camera.distance * (1 + 0.32 * Math.pow(Math.max(0, (Math.abs(pitch) - camera.pitch) / (Math.PI / 2 - camera.pitch)), 1.5))
+
+/** The camera, in the scene's own frame, at a turn and tilt: its right, up and forward, and where it stands. */
+export function viewFrom(camera: Camera, turn: number, pitch: number) {
+  const ct = Math.cos(turn)
+  const st = Math.sin(turn)
+  const cp = Math.cos(pitch)
+  const sp = Math.sin(pitch)
+  const right: Vec3 = [ct, 0, st]
+  const up: Vec3 = [sp * st, cp, -sp * ct]
+  const ahead: Vec3 = [cp * st, -sp, -cp * ct]
+  const back = standBack(camera, pitch)
+  const eye: Vec3 = [-ahead[0] * back, camera.lookAt - ahead[1] * back, -ahead[2] * back]
+  return {right, up, ahead, eye}
+}
+
+/** One frame's moment: the view, the bob in whole pixels, the flicker of any fire, and the clock. */
 export type Moment = {
   readonly turn: number
+  readonly pitch: number
   readonly bob: number
   readonly flicker: number
   readonly seconds: number
 }
 
-/** The fire's flicker at a moment: a few slow waves, never quite repeating. */
+/** A fire's flicker at a moment: a few slow waves, never quite repeating. */
 export const flicker = (seconds: number) =>
   0.84 + 0.08 * Math.sin(seconds * 7.3) + 0.05 * Math.sin(seconds * 13.1 + 1.7) + 0.04 * Math.sin(seconds * 21.7 + 0.4)
 
-/** The island's bob, in whole pixels of a low picture this many rows high. */
-export const bob = (seconds: number, rows: number) => Math.round(rows * 0.0125 * Math.sin((seconds * Math.PI * 2) / 5.5))
+/** The bob, in whole pixels of a low picture this many rows high. */
+export const bob = (seconds: number, rows: number) => Math.round(rows * 0.01 * Math.sin((seconds * Math.PI * 2) / 5.5))
 
 const vec3 = (c: readonly number[]) => `vec3f(${c.map(v => v.toFixed(6)).join(", ")})`
 
-// What both the splat pass and the pixel pass know of the camera.
+// What every pass that looks at the scene knows of the camera.
 const VIEW_WGSL = /* wgsl */ `
 struct View {
   // The low picture's columns and rows, its focal length in pixels, and the clock in seconds.
   frame: vec4f,
-  // The cosine and sine of the island's turn, its bob in whole pixels, and the fire's flicker.
-  turn: vec4f,
-  // The cosine and sine of the camera's pitch, its distance, and the height it looks at.
-  camera: vec4f,
-  // Where the fire's light comes from on the island (the fourth is padding).
-  fire: vec4f,
+  // The camera's right in the scene's frame, and the bob in whole pixels.
+  right: vec4f,
+  // The camera's up, and the flicker of any fire.
+  up: vec4f,
+  // The camera's forward, and the camera's tilt.
+  ahead: vec4f,
+  // Where the camera stands, and how strongly the outline's lit edge shows.
+  eye: vec4f,
+  // How far off the middle a splat's centre may sit before the projection's slope is
+  // taken at the edge instead (1.3 times the view's half width and half height, as in
+  // the original renderer), then the step in pixels toward the rim light on the picture.
+  limits: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> view: View;
 
-fn turned(p: vec3f) -> vec3f {
-  return vec3f(view.turn.x * p.x + view.turn.y * p.z, p.y, -view.turn.y * p.x + view.turn.x * p.z);
-}
-
-// A point on the turned island in the camera's own frame: x right, y up, z straight ahead.
-fn seen(r: vec3f) -> vec3f {
-  let cp = view.camera.x;
-  let sp = view.camera.y;
-  let q = r - vec3f(0.0, view.camera.w + view.camera.z * sp, view.camera.z * cp);
-  return vec3f(q.x, q.y * cp - q.z * sp, -(q.y * sp + q.z * cp));
+// A point of the scene in the camera's own frame: x right, y up, z straight ahead.
+fn seen(p: vec3f) -> vec3f {
+  let v = p - view.eye.xyz;
+  return vec3f(dot(v, view.right.xyz), dot(v, view.up.xyz), dot(v, view.ahead.xyz));
 }
 
 // Where a seen point lands on the low picture, in pixels from its bottom left.
 fn onPicture(v: vec3f) -> vec2f {
-  return vec2f(view.frame.x * 0.5, view.frame.y * 0.5 + view.turn.z) + view.frame.z * v.xy / v.z;
+  return vec2f(view.frame.x * 0.5, view.frame.y * 0.5 + view.right.w) + view.frame.z * v.xy / v.z;
 }
 `
 
 const SPLAT_WGSL = /* wgsl */ `
 ${VIEW_WGSL}
 
+// One splat in the standard layout, then how it moves.
 struct Splat {
-  // Place, opacity.
-  a: vec4f,
-  // Covariance xx, xy, xz, yy.
-  b: vec4f,
-  // Covariance yz, zz, kind (0 lit, 1 flame, 2 spark), the fire's light.
-  c: vec4f,
-  // Colour, a phase for flames and sparks.
-  d: vec4f,
-  // The way it faces, how open it is to the sky.
-  e: vec4f,
+  // Place, and opacity before the sigmoid.
+  place: vec4f,
+  // Rotation as a unit quaternion, real part first.
+  rotation: vec4f,
+  // The log of its scale on each axis, and its kind.
+  scale: vec4f,
+  // Colour, degree 0 (f_dc), and a phase for anything that moves by itself.
+  dc: vec4f,
+  // Colour, degree 1 (f_rest) for red, green and blue, each followed by: the moving
+  // part it belongs to; the share of its colour a flickering fire gives; how often it blinks.
+  red: vec4f,
+  green: vec4f,
+  blue: vec4f,
+}
+
+// Where a moving part is: three axes, a shift, and an opacity.
+struct Part {
+  x: vec4f,
+  y: vec4f,
+  z: vec4f,
+  shift: vec4f,
 }
 
 @group(0) @binding(1) var<storage, read> splats: array<Splat>;
 @group(0) @binding(2) var<storage, read> order: array<u32>;
+@group(0) @binding(3) var<storage, read> parts: array<Part>;
 
 struct Out {
   @builtin(position) position: vec4f,
@@ -134,91 +162,111 @@ struct Out {
   @location(2) opacity: f32,
 }
 
-// How many standard deviations each quad reaches: past it a splat adds nothing worth a pixel.
-const EXTENT = 2.8;
-// The moon, high on the left, in the world the camera sees.
-const MOON = vec3f(-0.8, 0.55, -0.05);
-const MOONLIGHT = vec3f(0.7, 0.76, 0.86);
-const SKY = vec3f(0.36, 0.42, 0.56);
-const BOUNCE = vec3f(0.16, 0.16, 0.2);
-const EDGE = vec3f(0.68, 0.79, 0.8);
-const FIRELIGHT = vec3f(1.0, 0.52, 0.2);
+const SH_C0 = 0.28209479177387814;
+const SH_C1 = 0.4886025119029199;
+// How many standard deviations each quad reaches, as in the original renderer.
+const EXTENT = 3.0;
+
+fn rotation(q: vec4f) -> mat3x3f {
+  let r = q.x;
+  let x = q.y;
+  let y = q.z;
+  let z = q.w;
+  return mat3x3f(
+    vec3f(1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y + r * z), 2.0 * (x * z - r * y)),
+    vec3f(2.0 * (x * y - r * z), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z + r * x)),
+    vec3f(2.0 * (x * z + r * y), 2.0 * (y * z - r * x), 1.0 - 2.0 * (x * x + y * y)),
+  );
+}
 
 @vertex fn vs_main(@builtin(vertex_index) vertex: u32, @builtin(instance_index) instance: u32) -> Out {
   var out: Out;
   let s = splats[order[instance]];
-  let kind = u32(s.c.z);
-  var at = s.a.xyz;
-  var opacity = s.a.w;
-  var grow = 1.0;
-  var colour = s.d.rgb;
+  let part = parts[u32(s.red.w)];
+  let moved = mat3x3f(part.x.xyz, part.y.xyz, part.z.xyz);
+  let kind = u32(s.scale.w);
+  let phase = s.dc.w;
   let seconds = view.frame.w;
-  let phase = s.d.w;
+  var at = moved * s.place.xyz + part.shift.xyz;
+  var opacity = part.shift.w / (1.0 + exp(-s.place.w));
+  var grow = 1.0;
+
+  // Its colour seen from the camera, in the splat's own frame (a moving part turns its look with it).
+  let d = transpose(moved) * normalize(at - view.eye.xyz);
+  let lobe = vec3f(-d.y, d.z, -d.x);
+  var colour = max(vec3f(0.0), 0.5 + SH_C0 * s.dc.rgb + SH_C1 * vec3f(dot(lobe, s.red.xyz), dot(lobe, s.green.xyz), dot(lobe, s.blue.xyz)));
+  colour *= 1.0 + s.green.w * (view.up.w - 1.0);
+  if (s.blue.w > 0.0) {
+    colour *= mix(0.2, 1.0, step(0.45, fract(seconds * s.blue.w + phase)));
+  }
 
   if (kind == 1u) {
     // A flame licks upward, shrinking and fading as it goes, and brightens with the flicker.
     let lick = fract(seconds * (1.1 + phase * 0.8) + phase);
-    at.y += lick * 0.05 * (0.4 + at.y * 3.0);
+    at.y += lick * 0.05 * (0.4 + (s.place.y + 0.1) * 2.0);
     grow = 1.0 - lick * 0.45;
     opacity *= 1.0 - lick * lick;
-    colour *= 0.82 + 0.3 * view.turn.w;
+    colour *= 0.82 + 0.3 * view.up.w;
   } else if (kind == 2u) {
     // A spark rises from the fire on its own slow path, wavers, and goes out.
     let life = fract(seconds * (0.3 + phase * 0.25) + phase * 7.0);
     at += vec3f(sin(life * 5.0 + phase * 40.0) * 0.06 * life, life * (0.55 + phase * 0.45), cos(life * 4.0 + phase * 23.0) * 0.06 * life);
     opacity *= smoothstep(0.0, 0.06, life) * (1.0 - life);
     colour = mix(vec3f(1.0, 0.95, 0.75), colour, smoothstep(0.0, 0.4, life));
-  } else {
-    let facing = turned(s.e.xyz);
-    let open = s.e.w;
-    let moon = normalize(MOON);
-    let toward = normalize(vec3f(0.0, view.camera.y, view.camera.x));
-    let lit = max(dot(facing, moon), 0.0);
-    let sky = mix(BOUNCE, SKY, facing.y * 0.5 + 0.5);
-    // Light along the outline on the moon's side, so the island's shape reads as it turns.
-    let edge = pow(1.0 - clamp(abs(dot(facing, toward)), 0.0, 1.0), 3.0) * smoothstep(0.0, 0.5, dot(facing, moon));
-    colour = s.d.rgb * (sky * open + MOONLIGHT * lit * (0.45 + 0.55 * open)) + EDGE * edge * 0.5 * open + s.d.rgb * FIRELIGHT * s.c.w * view.turn.w * 2.2;
+  } else if (kind == 3u) {
+    // Steam rises, swells and thins, leaning with a light breeze.
+    let life = fract(seconds * 0.16 + phase);
+    at += vec3f(
+      0.16 * life * life + 0.045 * sin(seconds * 0.7 + phase * 9.0 + life * 4.0),
+      0.55 * life,
+      0.05 * life * life + 0.03 * cos(seconds * 0.5 + phase * 13.0 + life * 3.0),
+    );
+    grow = 1.0 + 1.8 * life;
+    opacity *= smoothstep(0.0, 0.12, life) * (1.0 - life) * (1.0 - life);
+  } else if (kind == 4u) {
+    // A firefly drifts round where it lives and glows on and off.
+    let t = seconds * (0.25 + phase * 0.2);
+    at += vec3f(sin(t * 1.3 + phase * 17.0), 0.5 * sin(t * 1.9 + phase * 5.0), cos(t * 1.1 + phase * 11.0)) * 0.05;
+    opacity *= smoothstep(0.2, 0.8, 0.5 + 0.5 * sin(seconds * (1.2 + phase) + phase * 31.0));
+  } else if (kind == 5u) {
+    // Water: small ripples run across it and catch the light.
+    let ripple = sin(at.x * 61.0 + seconds * 1.7 + sin(at.z * 23.0)) * sin(at.z * 53.0 - seconds * 1.3 + phase * 6.0);
+    colour += vec3f(0.7, 0.85, 0.9) * pow(max(ripple, 0.0), 12.0) * 1.4;
   }
 
-  let middle = seen(turned(at));
-  let f = view.frame.z;
+  let middle = seen(at);
   let z = middle.z;
-  // The covariance, turned with the island and seen by the camera.
-  let cov = mat3x3f(
-    vec3f(s.b.x, s.b.y, s.b.z),
-    vec3f(s.b.y, s.b.w, s.c.x),
-    vec3f(s.b.z, s.c.x, s.c.y),
-  ) * (grow * grow);
-  let cp = view.camera.x;
-  let sp = view.camera.y;
-  let ct = view.turn.x;
-  let st = view.turn.y;
-  // The camera's rows times the island's turn: right, up, ahead.
-  let right = vec3f(ct, 0.0, st);
-  let up = vec3f(sp * st, cp, -sp * ct);
-  let ahead = vec3f(cp * st, -sp, -cp * ct);
-  // The projection's slope at this point, applied to each row.
-  let t0 = right * (f / z) - ahead * (f * middle.x / (z * z));
-  let t1 = up * (f / z) - ahead * (f * middle.y / (z * z));
-  // Plus a third of a pixel either way, so the smallest splat still covers one.
+  let f = view.frame.z;
+  let scale = exp(s.scale.xyz) * grow;
+  let m = moved * rotation(s.rotation);
+  let shape = mat3x3f(m[0] * scale.x, m[1] * scale.y, m[2] * scale.z);
+  let cov = shape * transpose(shape);
+  // The projection's slope at the centre, J W, row by row; past 1.3 times the edge of
+  // the view it is taken at the edge, so splats far off to the side do not blow up.
+  let tx = clamp(middle.x / z, -view.limits.x, view.limits.x) * z;
+  let ty = clamp(middle.y / z, -view.limits.y, view.limits.y) * z;
+  let t0 = view.right.xyz * (f / z) - view.ahead.xyz * (f * tx / (z * z));
+  let t1 = view.up.xyz * (f / z) - view.ahead.xyz * (f * ty / (z * z));
+  // The low-pass term: every splat covers at least about a pixel.
   let a = dot(t0, cov * t0) + 0.3;
   let b = dot(t0, cov * t1);
-  let d = dot(t1, cov * t1) + 0.3;
-  let mid = 0.5 * (a + d);
-  let spread = sqrt(max(mid * mid - (a * d - b * b), 0.0));
+  let c = dot(t1, cov * t1) + 0.3;
+  let mid = 0.5 * (a + c);
+  let spread = sqrt(max(mid * mid - (a * c - b * b), 0.0));
   let major = mid + spread;
   let minor = max(mid - spread, 0.1);
   var axis = vec2f(1.0, 0.0);
   if (abs(b) > 1e-6) {
     axis = normalize(vec2f(b, major - a));
-  } else if (d > a) {
+  } else if (c > a) {
     axis = vec2f(0.0, 1.0);
   }
   var corners = array<vec2f, 4>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(1.0, 1.0));
   let k = corners[vertex] * EXTENT;
   let pixel = onPicture(middle) + axis * (k.x * sqrt(major)) + vec2f(-axis.y, axis.x) * (k.y * sqrt(minor));
   out.position = vec4f(pixel / view.frame.xy * 2.0 - 1.0, 0.0, 1.0);
-  if (z < 0.5) {
+  // Behind or right at the camera: nothing to draw (the original renderer's near plane).
+  if (z < 0.2) {
     out.position = vec4f(2.0, 2.0, 2.0, 1.0);
   }
   out.local = k;
@@ -238,7 +286,16 @@ const FIRELIGHT = vec3f(1.0, 0.52, 0.2);
 
 const BAYER_WGSL = `const BAYER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);`
 
-function pixelWgsl(palette: readonly (readonly [number, number, number])[], lab: readonly (readonly [number, number, number])[]) {
+function glowsWgsl(glows: readonly Glow[]) {
+  const rows = glows.map(g => `Glow(${vec3(g.at)}, ${vec3(g.colour)}, ${vec3(g.facing ?? [0, 0, 0])}, ${g.radius.toFixed(4)}, ${g.strength.toFixed(4)})`)
+  return `
+struct Glow { at: vec3f, colour: vec3f, facing: vec3f, radius: f32, strength: f32 }
+const GLOWS = ${glows.length}u;
+const GLOW = array<Glow, ${Math.max(1, glows.length)}>(${rows.length ? rows.join(", ") : "Glow(vec3f(0.0), vec3f(0.0), vec3f(0.0), 1.0, 0.0)"});`
+}
+
+function pixelWgsl(scene: Scene, palette: readonly (readonly [number, number, number])[], lab: readonly (readonly [number, number, number])[]) {
+  const sky = scene.sky
   return /* wgsl */ `
 ${VIEW_WGSL}
 
@@ -250,6 +307,16 @@ const PALETTE_LAB = array<vec3f, ${lab.length}>(${lab.map(vec3).join(", ")});
 ${BAYER_WGSL}
 // How far the dither nudges a colour before it is matched to the palette.
 const SPREAD = 0.05;
+const EDGE = ${vec3(scene.edge)};
+const ZENITH = ${vec3(sky.zenith)};
+const HIGH = ${vec3(sky.high)};
+const HORIZON = ${vec3(sky.horizon)};
+const BELOW = ${vec3(sky.below)};
+const SKY_GLOW = ${vec3(sky.glow)};
+const GLOW_AT = ${sky.glowAt.toFixed(6)};
+const CLOUD = ${vec3(sky.cloud)};
+const STARS = ${sky.stars.toFixed(4)};
+${glowsWgsl(scene.glows)}
 
 fn threshold(p: vec2i) -> f32 {
   let x = ((p.x % 4) + 4) % 4;
@@ -299,39 +366,77 @@ fn noise(p: vec2f) -> f32 {
   return mix(mix(hash(i), hash(i + vec2f(1.0, 0.0)), u.x), mix(hash(i + vec2f(0.0, 1.0)), hash(i + vec2f(1.0, 1.0)), u.x), u.y);
 }
 
-// The night sky at a pixel, y down: darkest at the top, with soft bands of cloud.
+// The sky along the ray through a pixel (y down). The sky stays still while the scene
+// turns; tilting the camera moves the horizon up and down the picture.
 fn sky(p: vec2f) -> vec3f {
-  let v = p.y / view.frame.y;
-  var c = mix(vec3f(0.03, 0.05, 0.11), vec3f(0.1, 0.16, 0.34), smoothstep(0.0, 0.8, v));
-  c = mix(c, vec3f(0.12, 0.19, 0.38), smoothstep(0.75, 1.0, v));
-  let q = p / view.frame.y * vec2f(2.4, 7.0);
+  let tilt = view.ahead.w;
+  let x = p.x - view.frame.x * 0.5;
+  let y = view.frame.y * 0.5 - p.y;
+  let f = view.frame.z;
+  let ray = normalize(vec3f(x, y * cos(tilt) - f * sin(tilt), -(y * sin(tilt) + f * cos(tilt))));
+  let height = ray.y;
+  let round = atan2(ray.x, -ray.z);
+  var c = mix(HORIZON, HIGH, smoothstep(0.0, 0.3, height));
+  c = mix(c, ZENITH, smoothstep(0.3, 0.95, height));
+  c = mix(c, BELOW, smoothstep(0.0, -0.45, height));
+  let side = round - GLOW_AT;
+  let toward = exp(-side * side / 0.5);
+  c += SKY_GLOW * toward * exp(-abs(height - 0.01) / 0.09);
+  let q = vec2f(round * 3.0 + view.frame.w * 0.01, height * 14.0);
   let cloud = noise(q) * 0.6 + noise(q * 2.3 + vec2f(5.2, 1.3)) * 0.3 + noise(q * 5.1) * 0.1;
-  c = mix(c, c * 1.45 + vec3f(0.01, 0.015, 0.03), smoothstep(0.55, 0.85, cloud) * 0.55);
-  c = mix(c, c * 0.72, smoothstep(0.42, 0.18, cloud) * 0.4);
+  let band = smoothstep(-0.25, 0.02, height) * smoothstep(0.45, 0.08, height);
+  c = mix(c, CLOUD + SKY_GLOW * toward * 0.35, smoothstep(0.5, 0.82, cloud) * band * 0.6);
+  // Stars: cells about a pixel across on a grid of directions, so they stay points all
+  // the way up to straight overhead.
+  let cell = floor(ray * f);
+  let star = hash(cell.xy + cell.z * vec2f(17.31, 43.17));
+  c += vec3f(0.85, 0.88, 0.95) * step(1.0 - STARS, star) * smoothstep(0.08, 0.3, height) * (0.6 + 0.4 * sin(view.frame.w * 2.0 + star * 90.0));
   return c;
+}
+
+fn covered(pixel: vec2i, lifted: vec2i) -> bool {
+  return textureLoad(splatsDrawn, pixel, 0).a > 0.2 + 0.6 * threshold(pixel + lifted);
 }
 
 @fragment fn fs_main(@builtin(position) at: vec4f) -> @location(0) vec4f {
   let pixel = vec2i(at.xy);
+  let size = vec2i(textureDimensions(splatsDrawn));
   let drawn = textureLoad(splatsDrawn, pixel, 0);
-  // The cloud drifts a whole pixel at a time, and its dither drifts with it.
-  let drift = vec2i(i32(floor(view.frame.w * 1.5)), 0);
-  // The island's dither moves with its bob, so a step of the bob never reshuffles it.
-  let lifted = vec2i(0, -i32(view.turn.z));
-  let island = drawn.a > 0.2 + 0.6 * threshold(pixel + lifted);
-  var colour = sky(vec2f(pixel + drift) + 0.5);
-  var dither = threshold(pixel + drift);
-  if (island) {
+  // The scene's dither moves with its bob, so a step of the bob never reshuffles it.
+  let lifted = vec2i(0, -i32(view.right.w));
+  let inside = covered(pixel, lifted);
+  var colour = sky(vec2f(pixel) + 0.5);
+  var dither = threshold(pixel);
+  if (inside) {
     colour = drawn.rgb / drawn.a;
     dither = threshold(pixel + lifted);
+    // The outline's edge toward the rim light catches it: a line of bright pixels along
+    // solid shapes, not along strands a pixel thin (hanging grass, roots, steam).
+    let step = vec2i(view.limits.zw);
+    let toward = clamp(pixel + step, vec2i(0), size - 1);
+    let behind = clamp(pixel - step, vec2i(0), size - 1);
+    if (!covered(toward, lifted) && covered(behind, lifted)) {
+      colour = mix(colour, EDGE, view.eye.w);
+    }
   }
-  // The fire's glow, round where the fire is, brighter while it is on the near side.
-  let fire = seen(turned(view.fire.xyz));
-  let spot = onPicture(fire);
-  let gap = (at.xy - vec2f(spot.x, view.frame.y - spot.y)) / view.frame.y;
-  let near = mix(0.35, 1.0, smoothstep(0.4, -0.6, fire.z - view.camera.z));
-  colour += vec3f(1.0, 0.42, 0.12) * exp(-dot(gap, gap) / 0.0045) * 0.32 * view.turn.w * near;
-  return vec4f(nearest(colour + (dither - 0.5) * SPREAD), select(0.0, 1.0, island));
+  for (var g = 0u; g < GLOWS; g++) {
+    let light = GLOW[g];
+    let seenAt = seen(light.at);
+    if (seenAt.z < 0.2) {
+      continue;
+    }
+    let spot = onPicture(seenAt);
+    let reach = light.radius * view.frame.z / seenAt.z;
+    let gap = at.xy - vec2f(spot.x, view.frame.y - spot.y);
+    // Every light sits on the island's top, so seen from below the island it is hidden.
+    let toEye = normalize(view.eye.xyz - light.at);
+    var facing = smoothstep(-0.12, 0.02, toEye.y);
+    if (dot(light.facing, light.facing) > 0.0) {
+      facing *= smoothstep(-0.2, 0.3, dot(light.facing, toEye));
+    }
+    colour += light.colour * light.strength * facing * exp(-dot(gap, gap) / (reach * reach)) * mix(1.0, view.up.w, 0.6);
+  }
+  return vec4f(nearest(colour + (dither - 0.5) * SPREAD), select(0.0, 1.0, inside));
 }
 `
 }
@@ -361,10 +466,15 @@ ${PRESENT_WGSL}
 }
 `
 
-const MOTES_WGSL = /* wgsl */ `
+function motesWgsl(scene: Scene) {
+  const {back, colours, size} = scene.motes
+  return /* wgsl */ `
 ${PRESENT_WGSL}
 
-const BACK = ${BACK_MOTES}u;
+const BACK = ${back}u;
+const NEAR_COLOUR = ${vec3(colours[0])};
+const FAR_COLOUR = ${vec3(colours[1])};
+const SIZE = ${size.toFixed(4)};
 
 struct Out {
   @builtin(position) position: vec4f,
@@ -386,13 +496,13 @@ fn hash(n: f32) -> f32 {
   let rise = mix(0.004, 0.012, hash(k + 3.0)) * select(1.0, 1.7, front);
   let y = fract(hash(k + 1.0) - seconds * rise) * 1.2 - 0.1;
   let x = fract(hash(k + 2.0) + 0.015 * sin(seconds * mix(0.15, 0.4, hash(k + 4.0)) + k));
-  let radius = select(mix(0.005, 0.012, hash(k + 5.0)), mix(0.022, 0.042, hash(k + 5.0)), front) * size.y;
+  let radius = select(mix(0.4, 1.0, hash(k + 5.0)), mix(1.6, 3.0, hash(k + 5.0)), front) * SIZE * size.y;
   var corners = array<vec2f, 4>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(1.0, 1.0));
   let corner = corners[vertex];
   let pixel = vec2f(x * size.x, y * size.y) + corner * radius;
   out.position = vec4f(pixel.x / size.x * 2.0 - 1.0, 1.0 - pixel.y / size.y * 2.0, 0.0, 1.0);
   out.local = corner;
-  let strength = select(mix(0.2, 0.5, hash(k + 6.0)), mix(0.1, 0.2, hash(k + 6.0)), front);
+  let strength = select(mix(0.14, 0.34, hash(k + 6.0)), mix(0.07, 0.15, hash(k + 6.0)), front);
   out.look = vec4f(select(0.0, 1.0, front), strength, hash(k + 7.0), 0.0);
   return out;
 }
@@ -403,25 +513,29 @@ fn hash(n: f32) -> f32 {
     discard;
   }
   let front = in.look.x > 0.5;
-  // A mote behind the island shows only against the sky.
+  // A mote behind the scene shows only against the sky.
   if (!front && textureLoad(pixels, gridPixel(in.position.xy), 0).a > 0.5) {
     discard;
   }
-  let soft = select(1.0 - smoothstep(0.3, 1.0, d), exp(-d * d * 3.5) * (1.0 - d), front);
-  let colour = mix(vec3f(0.68, 0.79, 0.8), vec3f(0.9, 0.89, 0.82), in.look.z);
+  // Behind, a soft-edged disc, the way a light far off blurs; in front, a wide haze.
+  let soft = select(1.0 - smoothstep(0.55, 1.0, d), exp(-d * d * 3.5) * (1.0 - d), front);
+  let colour = mix(NEAR_COLOUR, FAR_COLOUR, in.look.z);
   let alpha = in.look.y * soft;
   return vec4f(colour * alpha, alpha);
 }
 `
+}
 
 export type Painter = {
   /** Fits the low picture to a canvas of this many device pixels. */
   resize(width: number, height: number): PixelGrid
   /** The order to draw the splats in, farthest first. */
   order(indices: Uint32Array<ArrayBuffer>): void
+  /** Where the moving parts are now (`Scene.pose`). */
+  pose(parts: Float32Array<ArrayBuffer>): void
   /** Encodes one moment: the splats and their pixels, and the scaled picture with motes on `picture` when given. */
   encode(f: Frame, moment: Moment, picture?: Target): void
-  /** The low picture, one palette colour per pixel; alpha is 1 where the island is. */
+  /** The low picture, one palette colour per pixel; alpha is 1 where the scene is. */
   readonly pixels: Target
   /** Prepares every pipeline before the first frame. */
   compile(picture?: Target): Promise<void>
@@ -429,36 +543,48 @@ export type Painter = {
 
 export function createPainter(
   gpu: Gpu,
-  island: Island,
+  scene: Scene,
   palette: readonly (readonly [number, number, number])[],
   lab: readonly (readonly [number, number, number])[],
 ): Painter {
-  let grid = pixelGrid(ROWS * 1.5, ROWS)
+  let grid = pixelGrid(COLUMNS, Math.round(COLUMNS / 1.5))
   const splatsDrawn = target(gpu, {size: [grid.columns, grid.rows], format: "rgba16float", label: "splats.drawn"})
   const pixels = target(gpu, {size: [grid.columns, grid.rows], format: "rgba8unorm", label: "splats.pixels"})
-  const data = storage(gpu, island.data.byteLength, "read")
-  data.write(island.data)
-  const order = storage(gpu, island.count * 4, "read")
+  const data = storage(gpu, scene.data.byteLength, "read")
+  data.write(scene.data)
+  const order = storage(gpu, scene.count * 4, "read")
+  const parts = storage(gpu, Math.max(1, scene.parts) * 64, "read")
 
-  const view = (moment: Moment) => ({
-    frame: [grid.columns, grid.rows, grid.rows / (2 * Math.tan(FIELD / 2)), moment.seconds],
-    turn: [Math.cos(moment.turn), Math.sin(moment.turn), moment.bob, moment.flicker],
-    camera: [Math.cos(PITCH), Math.sin(PITCH), DISTANCE, LOOK_AT],
-    fire: [island.fire[0], island.fire[1], island.fire[2], 0],
-  })
-  const first: Moment = {turn: 0, bob: 0, flicker: 1, seconds: 0}
+  const view = (moment: Moment) => {
+    const f = focal(scene.camera, grid)
+    const {right, up, ahead, eye} = viewFrom(scene.camera, moment.turn, moment.pitch)
+    // The rim light's way across the picture, as a step to the next pixel (y down).
+    const across = scene.rim[0] * right[0] + scene.rim[1] * right[1] + scene.rim[2] * right[2]
+    const upward = scene.rim[0] * up[0] + scene.rim[1] * up[1] + scene.rim[2] * up[2]
+    const span = Math.hypot(across, upward)
+    const step = span > 1e-3 ? [Math.round(across / span), -Math.round(upward / span)] : [0, -1]
+    return {
+      frame: [grid.columns, grid.rows, f, moment.seconds],
+      right: [right[0], right[1], right[2], moment.bob],
+      up: [up[0], up[1], up[2], moment.flicker],
+      ahead: [ahead[0], ahead[1], ahead[2], moment.pitch],
+      eye: [eye[0], eye[1], eye[2], 0.55 * Math.min(1, span * 1.6)],
+      limits: [(1.3 * grid.columns) / (2 * f), (1.3 * grid.rows) / (2 * f), step[0]!, step[1]!],
+    }
+  }
+  const first: Moment = {turn: 0, pitch: scene.camera.pitch, bob: 0, flicker: 1, seconds: 0}
 
   const splats = draw(gpu, {
     shader: prepareShader(SPLAT_WGSL, "splats.wgsl"),
     geometry: {topology: "triangle-strip"},
     vertices: 4,
-    instances: island.count,
+    instances: scene.count,
     blend: "premultiplied",
     depth: false,
     label: "splats.splats",
-    set: {view: view(first), splats: data, order},
+    set: {view: view(first), splats: data, order, parts},
   })
-  const pixelPass = effect(gpu, prepareShader(pixelWgsl(palette, lab), "splats_pixels.wgsl"), {
+  const pixelPass = effect(gpu, prepareShader(pixelWgsl(scene, palette, lab), "splats_pixels.wgsl"), {
     label: "splats.pixels",
     set: {view: view(first), splatsDrawn},
   })
@@ -471,10 +597,10 @@ export function createPainter(
     set: {present: presentation(0, [1, 1]), pixels},
   })
   const motes = draw(gpu, {
-    shader: prepareShader(MOTES_WGSL, "splats_motes.wgsl"),
+    shader: prepareShader(motesWgsl(scene), "splats_motes.wgsl"),
     geometry: {topology: "triangle-strip"},
     vertices: 4,
-    instances: BACK_MOTES + FRONT_MOTES,
+    instances: Math.min(MOTES_LIMIT, scene.motes.back + scene.motes.front),
     blend: "premultiplied",
     depth: false,
     label: "splats.motes",
@@ -491,6 +617,9 @@ export function createPainter(
     },
     order(indices) {
       order.write(indices)
+    },
+    pose(where) {
+      parts.write(where)
     },
     encode(f, moment, destination) {
       const looking = view(moment)

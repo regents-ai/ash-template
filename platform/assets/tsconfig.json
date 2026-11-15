@@ -8,7 +8,8 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "types": ["@webgpu/types"],
-    "noEmit": true
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["js/**/*.ts", "js/**/*.tsx", "test/**/*.ts"]
 }
