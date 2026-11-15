@@ -11747,26 +11747,48 @@ no migration.
 
 On `wt/tpl-splat-1115`, for the design chief. Pins unchanged; no migration.
 
-- New lab page `/animations/splats`: a floating island at night in pixel art, a big
-  leafy tree, two small pines, rocks, flowers, a stone Regents crown and a campfire
-  with rising sparks, turning once every thirty seconds and bobbing gently. Listed on
-  `/animations` and `/design`.
-- The island is 57,349 small 3D gaussians (splats) grown from one fixed seed, nothing
-  downloaded (`platform/assets/js/splats/island.ts`). Each frame vgpu draws them
-  farthest first onto a picture about 190 pixels high, matches every pixel to a night
-  palette of 32 colours with an ordered dither, and scales it up in whole-pixel
-  squares; soft motes drift behind and in front. The moonlight is worked out as the
-  island turns; the fire's light is baked in and flickers.
-- A drag turns it under the pointer and it eases back into its slow turn from the speed
-  it was let go at; a vertical drag on a phone still scrolls the page. Focused, the left
-  and right arrow keys turn it. With less motion it holds still unless dragged.
+- New lab page `/animations/splats`: two small floating worlds in pixel art, turning
+  once every thirty seconds and bobbing gently. Listed on `/animations` and `/design`.
+  - Factory, first and the default: a solarpunk robot factory at dusk, a plaster hall
+    with a planted roof and the Regents crown lit over its open door, a glowing glass
+    hall of plants, solar panels, two wind turbines, a vine-wrapped water tower, pipes
+    and a steaming chimney, a conveyor carrying half-built robots past a swinging arm,
+    finished robots with Tangerine Tango trim and blinking eyes (one walks the path),
+    a pond, fruit trees, planting beds and lamps, over hanging earth and roots. 284,523
+    splats, 48 colours (`platform/assets/js/splats/factory.ts`).
+  - Island: the night island with a big leafy tree, two pines, rocks, flowers, a stone
+    Regents crown and a campfire with sparks. 249,750 splats, 32 colours
+    (`platform/assets/js/splats/island.ts`).
+- Tabs above the box switch the scene (`?scene=island`; any other value, a list or a
+  map included, shows the factory). The box keeps its size for either scene, and each
+  scene has its own box, so only one is ever drawing.
+- The splats are Gaussian splats in the standard layout (place, rotation, size, opacity
+  and colour with one degree of view-dependent shading), grown from fixed seeds by code
+  rather than trained from photos; nothing is downloaded. Light, shade in the creases
+  and a sheen that moves with the view are worked out when each scene is grown; moving
+  parts keep the light they have at rest. Each frame vgpu draws them farthest first
+  onto a picture about 435 by 290 pixels on a wide screen (324 square on a phone),
+  matches each pixel to the scene's palette with an ordered dither, lights the edges
+  that face the light, and scales it up in whole-pixel squares.
+- `npm run ply:splats -- <folder>` writes both scenes as `.ply` files that splat
+  viewers open, and checks each file's header, count and size
+  (`platform/assets/js/splats/export_ply.mjs`, `platform/assets/js/splats/ply.ts`).
+  The files are about 30 MB and 26 MB and are not committed.
+- A drag turns the scene round without end and tilts it from above to below, stopping
+  short of straight up or down; let go, it carries on at that speed and eases back into
+  its slow turn and resting tilt. On a touch screen a sideways swipe turns it and an up
+  or down swipe scrolls the page; tilting there is the keyboard's. Focused, the arrow
+  keys turn and tilt it. With less motion it holds still unless moved.
 - The box keeps its shape from the first paint (three by two, square on a phone) and
-  always holds a still picture of the island
-  (`platform/priv/static/images/animations/splats.png`, `npm run stills:splats`);
-  without WebGPU the still stays. Nothing is drawn while the box is off screen, and
-  the GPU device is given back on leaving the page.
-- Frame times: 60 frames a second in headless Chromium at 1440 on a 2x screen (every
-  frame drawn), and about 1 ms a frame for sorting, drawing and finishing on the GPU at
-  that size (2172 by 1446) on this Mac.
-- Checks: `platform/assets/test/splats.test.ts` (the seed, the sort, the pixel grid)
-  and the walk `platform/test/browser/splats.spec.ts`.
+  always holds the scene's still picture
+  (`platform/priv/static/images/animations/splats-factory.png` and `splats-island.png`,
+  `npm run stills:splats`); without WebGPU the still stays. Nothing is drawn while the
+  box is off screen, and the GPU device is given back on leaving the page.
+- Frame times: 60 frames a second in headless Chromium for both scenes, at 1440 on a
+  2x screen and at 390 on a 3x phone, no frame over 20 ms. Posing, sorting, drawing
+  and finishing on the GPU take about 4 ms a frame for the factory and 2.5 ms for the
+  island at 2172 by 1446 on this Mac; the sort alone about 0.8 ms.
+- Checks: `platform/assets/test/splats.test.ts` (seeds, the standard layout, each
+  splat's shape, moving parts, the sort from above and below, the pixel grid, the
+  `.ply` file) and the walk `platform/test/browser/splats.spec.ts` (draws and turns,
+  the switch, links, drags, keys and touch).
