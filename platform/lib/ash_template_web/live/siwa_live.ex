@@ -1542,6 +1542,8 @@ defmodule AshTemplateWeb.SiwaLive do
       <p class="rg-muted">
         When an agent signs a request to your site, send its parts to SIWA, with each header copied
         from the agent's request. SIWA answers with the agent's wallet once the signature checks out.
+        Send one of this site's keys with it. The key stays on your server: never give it to a
+        browser or an agent.
       </p>
       <pre class="siwa-code" tabindex="0" aria-label="Setup example"><code id="siwa-setup-code">{example(@site)}</code></pre>
       <div class="siwa-actions">
@@ -1806,7 +1808,7 @@ defmodule AshTemplateWeb.SiwaLive do
   defp cap_errors(%{"cap" => %{"capCents" => words}}), do: words
   defp cap_errors(_errors), do: []
 
-  # What a site's server sends SIWA to check a signed request, for the host of
+  # What a site's server sends SIWA to check a signed request, with one of its keys, for the host of
   # the site's first origin.
   defp example(site) do
     authority = site["origins"] |> List.first() |> String.split("://", parts: 2) |> List.last()
@@ -1814,7 +1816,7 @@ defmodule AshTemplateWeb.SiwaLive do
     """
     POST #{SiwaControl.url()}/api/shared/siwa/http-verify
     content-type: application/json
-    x-siwa-audience: #{site["audience"]}
+    authorization: Bearer #{key_shape(site)}
 
     {
       "method": "GET",
@@ -1832,4 +1834,8 @@ defmodule AshTemplateWeb.SiwaLive do
     }\
     """
   end
+
+  # Where one of the site's server keys goes: the key names the site.
+  defp key_shape(%{"environment" => "production"}), do: "siwa_sk_live_…"
+  defp key_shape(_site), do: "siwa_sk_test_…"
 end
