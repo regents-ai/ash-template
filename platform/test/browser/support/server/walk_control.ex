@@ -3,8 +3,12 @@ defmodule AshTemplate.WalkControl do
   The browser walk's SIWA control API (`AshTemplate.SiwaControl`), answered in
   this server's memory for the run (`AshTemplate.WalkOffline`) under the
   service's own rules and in its own shapes: each person's company and its cap,
-  its billing period and the agents counted in it, its sites and each site's
-  keys, at most five of them in use.
+  its billing period and the agents counted in it, its sites, each production
+  site's proof of its origins and each site's keys, at most five of them in use.
+
+  The walk publishes no proof file anywhere, so checking a production site that
+  isn't proven fails at its first origin with `not_found`; a proven one is
+  answered as it is.
 
   The identity token of the Privy pair a page trades is taken as the person's
   DID, and the token it gets back names them. The access token
@@ -12,8 +16,8 @@ defmodule AshTemplate.WalkControl do
 
   A person starts with nothing, as a new company has no billing period, except
   one whose DID starts `did:privy:browser-walk-siwa-billed-`: their company is
-  already billed, with a production site, an archived one and a period this UTC
-  month that has counted more agents than it includes.
+  already billed, with a proven production site, an archived one and a period
+  this UTC month that has counted more agents than it includes.
   """
 
   @base "/api/control/v1/"
@@ -182,7 +186,8 @@ defmodule AshTemplate.WalkControl do
         "audience" => params["audience"],
         "environment" => environment,
         "origins" => params["origins"],
-        "originProof" => if(environment == "production", do: "unverified"),
+        "originProof" =>
+          if(environment == "production", do: unproven(token(), params["origins"])),
         "archivedAt" => nil,
         "createdAt" => at,
         "updatedAt" => at
@@ -206,16 +211,27 @@ defmodule AshTemplate.WalkControl do
          {:ok, site} <- site(state, did, id),
          :ok <- valid(Map.merge(name(params), origins(params, site["environment"]))) do
       moved? = site["environment"] == "production" and params["origins"] != site["origins"]
+      proof = site["originProof"]
 
       site = %{
         site
         | "name" => String.trim(params["name"]),
           "origins" => params["origins"],
-          "originProof" => if(moved?, do: "unverified", else: site["originProof"]),
+          "originProof" =>
+            if(moved?, do: unproven(proof["token"], params["origins"]), else: proof),
           "updatedAt" => now()
       }
 
       {:ok, 200, "site_updated", site, put_site(state, did, site)}
+    end
+  end
+
+  defp step(:post, ["sites", id, "proof"], params, did, state) do
+    with {:ok, _params} <- only(params, []),
+         {:ok, site} <- site(state, did, id),
+         {:ok, proof} <- proof_needed(site) do
+      site = %{site | "originProof" => checked(proof, site["origins"])}
+      {:ok, 200, "site_proof_checked", site, put_site(state, did, site)}
     end
   end
 
@@ -326,7 +342,12 @@ defmodule AshTemplate.WalkControl do
       "audience" => audience,
       "environment" => "production",
       "origins" => [origin],
-      "originProof" => "verified",
+      "originProof" => %{
+        unproven(token(), [origin])
+        | "state" => "verified",
+          "checkedAt" => made,
+          "verifiedAt" => made
+      },
       "archivedAt" => archived,
       "createdAt" => made,
       "updatedAt" => archived || made
@@ -450,6 +471,32 @@ defmodule AshTemplate.WalkControl do
       %{person | sites: Enum.map(person.sites, &if(&1["id"] == id, do: site, else: &1))}
     end)
   end
+
+  # A production site's proof as it is made, and again once its origins change:
+  # its token kept, one file for each origin, no check yet.
+  defp unproven(token, origins) do
+    %{
+      "state" => "unverified",
+      "token" => token,
+      "fileUrls" => Enum.map(origins, &(&1 <> "/.well-known/siwa-site.txt")),
+      "checkedAt" => nil,
+      "verifiedAt" => nil,
+      "failureReason" => nil,
+      "failedOrigin" => nil
+    }
+  end
+
+  defp token, do: "siwa_site_" <> Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
+
+  defp proof_needed(%{"originProof" => nil}),
+    do: {:error, refusal(409, "site_proof_not_needed", "a sandbox site needs no proof")}
+
+  defp proof_needed(%{"originProof" => proof}), do: {:ok, proof}
+
+  defp checked(%{"state" => "verified"} = proof, _origins), do: proof
+
+  defp checked(proof, [first | _rest]),
+    do: %{proof | "checkedAt" => now(), "failureReason" => "not_found", "failedOrigin" => first}
 
   defp keys(state, did, site), do: Map.get(person(state, did).keys, site["id"], [])
 

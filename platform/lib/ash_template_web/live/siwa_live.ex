@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.SiwaLive do
   @moduledoc """
   The SIWA pages, where a person runs their company's agent sign-in: Overview
-  (`/siwa`), Sites (`/siwa/sites`), one site with its keys
+  (`/siwa`), Sites (`/siwa/sites`), one site with its proof and keys
   (`/siwa/sites/:site_id`) and Settings (`/siwa/settings`). All of it is read
   from the sign-in service's control API (`AshTemplate.SiwaControl`) each time;
   this site keeps none of it. A person with no company names it first, then
@@ -13,6 +13,13 @@ defmodule AshTemplateWeb.SiwaLive do
   billing hasn't started. Once one runs, a second read lists the period's agents,
   newest first, into a stream, a page at a time by the service's cursor, so the
   page keeps none of the rows.
+
+  A production site takes agents only once the company has proven its origins
+  are its own: its Proof section shows the site's token, which is public, and
+  the address of the file each origin publishes it in, and Check asks the
+  service to read them. The answer is the site after the check, proven or with
+  why the first origin failed. A sandbox site needs no proof and has no Proof
+  section.
 
   The service is asked with the control token this browser's sign-in traded for
   (`AshTemplateWeb.SiwaSessionController`), which only this machine holds
@@ -72,7 +79,8 @@ defmodule AshTemplateWeb.SiwaLive do
     "site_not_found" => "This site doesn't exist, or it was archived.",
     "site_key_not_found" => "This key doesn't exist. Reload the page to see the site's keys.",
     "site_key_limit" => "A site can have 5 keys in use. Revoke one, then make another.",
-    "customer_not_found" => "Your company isn't set up yet. Reload the page to name it."
+    "customer_not_found" => "Your company isn't set up yet. Reload the page to name it.",
+    "rate_limited" => "Too many checks in a short time. Wait a moment, then check again."
   }
 
   @unavailable "SIWA isn't available right now. Try again later."
@@ -197,6 +205,9 @@ defmodule AshTemplateWeb.SiwaLive do
 
   def handle_event("archive", _params, socket),
     do: {:noreply, act(socket, {:archive, socket.assigns.site_id})}
+
+  def handle_event("check_proof", _params, socket),
+    do: {:noreply, act(socket, {:check_proof, socket.assigns.site_id})}
 
   def handle_event("add_site", _params, socket), do: {:noreply, assign(socket, adding: true)}
 
@@ -393,6 +404,7 @@ defmodule AshTemplateWeb.SiwaLive do
   defp write({:make_key, id}, token), do: SiwaControl.create_site_key(token, id)
   defp write({:revoke_key, id, key_id}, token), do: SiwaControl.revoke_site_key(token, id, key_id)
   defp write({:archive, id}, token), do: SiwaControl.archive_site(token, id)
+  defp write({:check_proof, id}, token), do: SiwaControl.check_site_proof(token, id)
 
   # The token this browser's sign-in holds here, or word that a trade is needed:
   # there is none, or the service says it is no longer good (`control_token_invalid`
@@ -575,6 +587,9 @@ defmodule AshTemplateWeb.SiwaLive do
 
   defp done(socket, {:archive, _id}, _archived), do: push_patch(socket, to: ~p"/siwa/sites")
 
+  # The site after the check, proven or with why it isn't.
+  defp done(socket, {:check_proof, id}, site), do: put_site(socket, id, &%{&1 | site: site})
+
   # What a change answered is what a read would show now.
   defp put_read(socket, name, owner, value),
     do: Read.now(socket, name, owner, fn -> {:ok, value} end)
@@ -639,6 +654,7 @@ defmodule AshTemplateWeb.SiwaLive do
   defp section({:make_key, _id}), do: "keys"
   defp section({:revoke_key, _id, _key_id}), do: "keys"
   defp section({:archive, _id}), do: "archive"
+  defp section({:check_proof, _id}), do: "proof"
 
   @impl true
   def render(assigns) do
@@ -825,7 +841,9 @@ defmodule AshTemplateWeb.SiwaLive do
     do: "Your company's billing period: the agents counted, the fee so far and your cap."
 
   defp tip(:siwa_settings), do: "Your company's name, its owner and where to get help."
-  defp tip(:siwa_site), do: "This site's audience, origins and keys, and how to check an agent."
+
+  defp tip(:siwa_site),
+    do: "This site's audience, origins, proof and keys, and how to check an agent."
 
   defp tip(_sites),
     do: "The sites where agents sign in with SIWA. Each has its own audience, origins and keys."
@@ -1404,6 +1422,14 @@ defmodule AshTemplateWeb.SiwaLive do
       </dl>
     </section>
 
+    <.origin_proof
+      :if={@site["originProof"]}
+      proof={@site["originProof"]}
+      notice={@notices["proof"]}
+      busy={pending?(@pending, :check_proof)}
+      myself={@myself}
+    />
+
     <section class="account-panel" aria-labelledby="siwa-details-title">
       <h2 id="siwa-details-title">Details</h2>
       <.form
@@ -1562,15 +1588,125 @@ defmodule AshTemplateWeb.SiwaLive do
   defp proof(assigns) do
     ~H"""
     <%= case @site["originProof"] do %>
-      <% "verified" -> %>
+      <% %{"state" => "verified"} -> %>
         <P.status tone="success">Proven</P.status>
-      <% "unverified" -> %>
+      <% %{"state" => "unverified"} -> %>
         <P.status tone="warning">Not proven</P.status>
       <% nil -> %>
         <span class="rg-muted">Not needed</span>
     <% end %>
     """
   end
+
+  attr :proof, :map, required: true, doc: "a production site's `originProof`"
+  attr :notice, :any, default: nil
+  attr :busy, :boolean, required: true
+  attr :myself, :any, required: true
+
+  defp origin_proof(assigns) do
+    ~H"""
+    <section
+      id="siwa-proof"
+      class="account-panel account-details"
+      aria-labelledby="siwa-proof-title"
+      data-state={@proof["state"]}
+    >
+      <div class="siwa-head">
+        <h2 id="siwa-proof-title">Proof</h2>
+        <P.button
+          id="siwa-proof-check"
+          type="button"
+          variant="secondary"
+          arrow={false}
+          disabled={@busy}
+          phx-click="check_proof"
+          phx-target={@myself}
+        >
+          Check
+        </P.button>
+      </div>
+      <p class="rg-muted">
+        Agents can sign in to this site only once it's proven. Publish a file at each address below
+        that holds exactly the token and nothing else.
+      </p>
+      <dl>
+        <div>
+          <dt>Token</dt>
+          <dd class="siwa-proof-value">
+            <code id="siwa-proof-token">{@proof["token"]}</code>
+            <P.copy_icon id="siwa-proof-token-copy" text={@proof["token"]} label="Copy the token" />
+          </dd>
+        </div>
+        <div>
+          <dt>Files</dt>
+          <dd>
+            <ul id="siwa-proof-files" class="siwa-proof-files">
+              <li
+                :for={{url, index} <- Enum.with_index(@proof["fileUrls"])}
+                id={"siwa-proof-file-#{index}"}
+                class="siwa-proof-value"
+              >
+                <code>{url}</code>
+                <P.copy_icon
+                  id={"siwa-proof-file-#{index}-copy"}
+                  text={url}
+                  label="Copy the file address"
+                />
+              </li>
+            </ul>
+          </dd>
+        </div>
+        <div :if={@proof["checkedAt"]}>
+          <dt>Checked</dt>
+          <dd>
+            <time id="siwa-proof-checked" datetime={@proof["checkedAt"]}>
+              {day(@proof["checkedAt"])}
+            </time>
+          </dd>
+        </div>
+        <div :if={@proof["verifiedAt"]}>
+          <dt>Proven</dt>
+          <dd>
+            <time id="siwa-proof-proven" datetime={@proof["verifiedAt"]}>
+              {day(@proof["verifiedAt"])}
+            </time>
+          </dd>
+        </div>
+      </dl>
+      <P.notice
+        :if={@proof["failureReason"]}
+        id="siwa-proof-failure"
+        tone="warning"
+        data-reason={@proof["failureReason"]}
+      >
+        {failure(@proof["failureReason"], @proof["failedOrigin"])}
+      </P.notice>
+      <.notice id="siwa-proof-notice" notice={@notice} />
+    </section>
+    """
+  end
+
+  # Why the last check failed, at the first origin it failed at, and what to do.
+  defp failure("not_https", origin), do: "#{origin} must start with https://."
+
+  defp failure("address_not_allowed", origin),
+    do: "#{origin} must point to a public address, not a private network."
+
+  defp failure("unreachable", origin),
+    do: "#{origin} didn't answer, so make sure the site is online and check again."
+
+  defp failure("redirected", origin),
+    do: "#{origin} redirected the check, so serve the file at its exact address instead."
+
+  defp failure("not_found", origin),
+    do: "#{origin} doesn't have the file yet, so publish it and check again."
+
+  defp failure("too_large", origin),
+    do: "The file on #{origin} is too large, so make it hold only the token."
+
+  defp failure("wrong_token", origin),
+    do:
+      "The file on #{origin} doesn't hold this site's token, so replace what it holds with the token above."
 
   attr :id, :string, required: true
   attr :notice, :any, default: nil

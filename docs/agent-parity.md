@@ -89,6 +89,7 @@ these rows have no agent surface and get none.
 | Name the company, rename it | `/siwa`, `/siwa/sites` (first visit), `/siwa/settings` | — | — | — | — | sign-in | person-only (G13) |
 | Sites: list, add, open, rename, change origins, archive | `/siwa/sites`, `/siwa/sites/:site_id` | — | — | — | — | sign-in | person-only (G13) |
 | A site's keys: list, make (shown once), revoke | `/siwa/sites/:site_id` | — | — | — | — | secrets | person-only (G13) |
+| A production site's proof: read its token and file addresses, check them | `/siwa/sites/:site_id` | — | — | — | — | sign-in | person-only (G13) |
 | Read the company's owner and where to get help | `/siwa/settings` | — | — | — | — | no | person-only (G13) |
 
 ## Gaps
