@@ -2,6 +2,12 @@
 
 Changes to Ash Template, newest first.
 
+## 15 November 2026
+
+- **Motion lab.** A new page, Splats: two small floating worlds in pixel art, a robot
+  factory at dusk and an island at night, turning slowly. Drag one to turn it, or to
+  look at it from above or below. On a phone each fills its square.
+
 ## 14 November 2026
 
 - **Points.** The Points page lists every action across Regents, under the site where you

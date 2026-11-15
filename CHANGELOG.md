@@ -11743,9 +11743,9 @@ no migration.
 - Rollback: v260 (`8412d750`) image; the payments default stays and harms nothing.
 - Full check exit 0 by the chief on the exact commit.
 
-## 2026-11-15 — Splats lab (branch, not on main)
+## 2026-11-15 — Splats lab
 
-On `wt/tpl-splat-1115`, for the design chief. Pins unchanged; no migration.
+For the design chief. No migration.
 
 - New lab page `/animations/splats`: two small floating worlds in pixel art, turning
   once every thirty seconds and bobbing gently. Listed on `/animations` and `/design`.
@@ -11784,13 +11784,15 @@ On `wt/tpl-splat-1115`, for the design chief. Pins unchanged; no migration.
 - The box keeps its shape from the first paint (three by two, square on a phone) and
   always holds the scene's still picture for that shape
   (`platform/priv/static/images/animations/splats-<scene>-wide.png` and
-  `splats-<scene>-square.png`, `npm run stills:splats`); without WebGPU the still stays. Nothing is drawn while the
-  box is off screen, and the GPU device is given back on leaving the page.
+  `splats-<scene>-square.png`, `npm run stills:splats`); without WebGPU the still stays.
+  Nothing is drawn while the box is off screen, and the GPU device is given back on
+  leaving the page.
 - Frame times: 60 frames a second in headless Chromium for both scenes, at 1440 on a
   2x screen and at 390 on a 3x phone, no frame over 20 ms. Posing, sorting, drawing
   and finishing on the GPU take about 4 ms a frame for the factory and 2.5 ms for the
   island at 2172 by 1446 on this Mac; the sort alone about 0.8 ms.
 - Checks: `platform/assets/test/splats.test.ts` (seeds, the standard layout, each
   splat's shape, moving parts, the sort from above and below, each scene filling a wide
-  box and a square one uncut, the pixel grid, the `.ply` file) and the walk `platform/test/browser/splats.spec.ts` (draws and turns,
-  the switch, links, drags, keys and touch).
+  box and a square one uncut, the pixel grid, the `.ply` file) and the walk
+  `platform/test/browser/splats.spec.ts` (draws and turns, the switch, links, drags, keys
+  and touch).
