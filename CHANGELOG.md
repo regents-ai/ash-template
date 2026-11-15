@@ -11796,3 +11796,9 @@ For the design chief. No migration.
   box and a square one uncut, the pixel grid, the `.ply` file) and the walk
   `platform/test/browser/splats.spec.ts` (draws and turns, the switch, links, drags, keys
   and touch).
+
+## 2026-11-15 — regents-cli 1.10.30
+
+- The template asks for the newest command line, 1.10.30 (source commit `4a781568`): the agent
+  guide, the install lines, the capability list and the Makefile's pin name it. The
+  `regents ash-template` commands are the same as in 1.10.29.
