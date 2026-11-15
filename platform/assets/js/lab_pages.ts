@@ -15,6 +15,7 @@ import {InkLines} from "./hooks/ink_lines"
 import {KeyfleetField, KeyfleetKeyCard, KeyfleetReplay} from "./hooks/keyfleet_hero"
 import {ParticleField} from "./hooks/particle_field"
 import {ParticleLab} from "./hooks/particle_lab"
+import {SplatIsland} from "./hooks/splat_island"
 import {SwarmCity} from "./hooks/swarm_city"
 import {TwinCube} from "./hooks/twin_cube"
 import {ValueCard} from "./hooks/value_card"
@@ -22,4 +23,4 @@ import {ValueLight} from "./hooks/value_light"
 import {Wonder} from "./hooks/wonder"
 import {WorldCube} from "./hooks/world_cube"
 
-export const hooks = {AskBar, CellsMeter, Crown, CodeCube, FrostedGlass, GlowLight, GrainWater, Harbour, IconSheet, InkLines, KeyfleetField, KeyfleetKeyCard, KeyfleetReplay, ParticleField, ParticleLab, SwarmCity, TwinCube, ValueCard, ValueLight, Wonder, WorldCube}
+export const hooks = {AskBar, CellsMeter, Crown, CodeCube, FrostedGlass, GlowLight, GrainWater, Harbour, IconSheet, InkLines, KeyfleetField, KeyfleetKeyCard, KeyfleetReplay, ParticleField, ParticleLab, SplatIsland, SwarmCity, TwinCube, ValueCard, ValueLight, Wonder, WorldCube}
