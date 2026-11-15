@@ -11690,3 +11690,10 @@ no migration.
   the same line; only the points folder differs). The site's own record of an action is read
   again under the account's lock just before its award is written; an action that no longer
   stands is recorded as refused and awards nothing. No migration; no page change; API 21.0.0.
+
+## 2026-11-15 — Released v259: award confirmed as it is written
+
+- v259 on template.regents.sh carries the entry above. Library pin `e2989ae7`; design-system
+  pin `d4075655` unchanged; no migration; API 21.0.0.
+- Rollback: v258 (`c9cfa2c1`) image.
+- Full check exit 0 by the chief on the exact commit.
