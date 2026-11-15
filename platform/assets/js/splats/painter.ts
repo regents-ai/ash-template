@@ -17,9 +17,9 @@
  * 3. Picture. The low picture is scaled up by a whole number onto the canvas, each
  *    pixel a crisp square of device pixels, and soft motes drift over it.
  *
- * The camera orbits the scene: a turn round its upright axis and a tilt from straight
- * below to straight above. Shared by the renderer (renderer.ts) and the scripts beside
- * it, so it imports only vgpu and types.
+ * The camera orbits the scene: a turn round its upright axis and a tilt to nearly
+ * straight above or below (`TILT_LIMIT`). Shared by the renderer (renderer.ts) and the
+ * scripts beside it, so it imports only vgpu and types.
  */
 import {prepareShader} from "@vgpu/wgsl/prepare"
 import {draw, effect, storage, target, type Frame, type Gpu, type Target} from "vgpu"
