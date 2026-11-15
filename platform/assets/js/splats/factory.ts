@@ -83,7 +83,8 @@ const SOLAR = {x0: -0.84, x1: -0.54, rows: [0.12, 0.27, 0.42], depth: 0.11, tilt
 const BEDS = [{x0: -0.5, x1: -0.33, z0: -0.04, z1: 0.05}, {x0: -0.5, x1: -0.33, z0: 0.12, z1: 0.21}]
 const TROUGH = {x0: 0.26, x1: 0.66, z0: -0.17, z1: -0.12}
 const LAMPS: readonly Vec3[] = [[0.06, 0, 0.28], [0.66, 0, 0.16], [-0.38, 0, 0.34]]
-const TREES: readonly Vec3[] = [[0.08, 0, 0.68], [-0.3, 0, 0.66]]
+// The first tree stands clear of every robot's line of sight at the still picture's view.
+const TREES: readonly Vec3[] = [[-0.05, 0, 0.84], [-0.3, 0, 0.66]]
 const TENDER = {foot: [-0.28, 0, 0.13] as Vec3, yaw: -Math.PI / 2}
 
 /** Moving parts; 0 stands still. */
@@ -395,7 +396,7 @@ export function buildFactory(): Scene {
     for (let i = 0; i < 220; i++) {
       const a = random() * Math.PI * 2
       const r = Math.sqrt(random()) * 0.025
-      ball([x + Math.cos(a) * r, top + 0.03, z + Math.sin(a) * r], between(0.014, 0.022), jitter(mix(C.platinum, C.powder, 0.3), 0.05), SUN, 0.8, {kind: STEAM, phase: random(), opacity: 0.11})
+      ball([x + Math.cos(a) * r, top + 0.03, z + Math.sin(a) * r], between(0.014, 0.022), jitter(mix(C.platinum, C.powder, 0.3), 0.05), SUN, 0.8, {kind: STEAM, phase: random(), opacity: 0.06})
     }
   }
 

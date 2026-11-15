@@ -214,15 +214,19 @@ fn rotation(q: vec4f) -> mat3x3f {
     opacity *= smoothstep(0.0, 0.06, life) * (1.0 - life);
     colour = mix(vec3f(1.0, 0.95, 0.75), colour, smoothstep(0.0, 0.4, life));
   } else if (kind == 3u) {
-    // Steam rises, swells and thins, leaning with a light breeze.
+    // Steam leaves the chimney as a faint wisp, then rises, spreads, swells and thins,
+    // leaning with a light breeze. Each puff drifts out its own way, so the plume widens
+    // as it goes rather than rising as one rope.
     let life = fract(seconds * 0.16 + phase);
+    let away = fract(phase * 97.0) * 6.2831853;
+    let spread = 0.1 * life * sqrt(fract(phase * 57.0));
     at += vec3f(
-      0.16 * life * life + 0.045 * sin(seconds * 0.7 + phase * 9.0 + life * 4.0),
-      0.55 * life,
-      0.05 * life * life + 0.03 * cos(seconds * 0.5 + phase * 13.0 + life * 3.0),
+      0.16 * life * life + 0.025 * sin(seconds * 0.7 + phase * 9.0 + life * 4.0) + spread * cos(away),
+      0.36 * life,
+      0.05 * life * life + 0.02 * cos(seconds * 0.5 + phase * 13.0 + life * 3.0) + spread * sin(away),
     );
-    grow = 1.0 + 1.8 * life;
-    opacity *= smoothstep(0.0, 0.12, life) * (1.0 - life) * (1.0 - life);
+    grow = 1.0 + 2.5 * life;
+    opacity *= smoothstep(0.0, 0.15, life) * pow(1.0 - life, 1.5);
   } else if (kind == 4u) {
     // A firefly drifts round where it lives and glows on and off.
     let t = seconds * (0.25 + phase * 0.2);
