@@ -270,6 +270,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           / <.link navigate={~p"/animations/particles"}>Particles</.link>
           / <.link navigate={~p"/animations/cells"}>Cells</.link>
           / <.link navigate={~p"/animations/icons"}>Icons</.link>
+          / <.link navigate={~p"/animations/splats"}>Splats</.link>
         </nav>
         <div class="motion-lab__row">
           <P.button

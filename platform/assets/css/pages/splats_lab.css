@@ -1,0 +1,72 @@
+@layer regents-product {
+/* The splats page (`/animations/splats`, `AshTemplateWeb.SplatsLabLive`): one box of
+   night sky holding a floating island in pixel art. The box keeps its shape from the
+   first paint: three wide by two high, square on a phone. It always holds the still
+   picture, cropped from its middle on a phone just as the live picture is; the turning
+   island (the `SplatIsland` hook) fades in over it once it has drawn, and without
+   WebGPU the still stays. The night is the same in both themes. */
+.motion-lab--splats {
+  width: 100%;
+  align-content: start;
+}
+
+.splats-lab {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  border: 1px solid var(--color-border);
+  background: var(--palette-charcoal);
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.splats-lab:active {
+  cursor: grabbing;
+}
+
+.splats-lab:focus-visible {
+  outline: var(--rg-ring-width) solid var(--color-focus);
+  outline-offset: var(--rg-ring-offset);
+}
+
+.splats-lab__still,
+.splats-lab__stage,
+.splats-lab__stage canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* Every picture pixel stays a crisp square, cropped from the middle on a narrow box. */
+.splats-lab__still,
+.splats-lab__stage canvas {
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.splats-lab__stage {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.splats-lab[data-splats-ready="true"] .splats-lab__stage {
+  opacity: 1;
+}
+
+@media (max-width: 36rem) {
+  .splats-lab {
+    aspect-ratio: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splats-lab__stage {
+    transition: none;
+  }
+}
+}

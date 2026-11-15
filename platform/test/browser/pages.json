@@ -75,6 +75,7 @@
     {"route": "/animations/particles", "purpose": "See fine grains become a control, an icon or a mark.", "check": "#particle-lab"},
     {"route": "/animations/cells", "purpose": "See a meter of square cells twinkle, count and let a part go.", "check": "#cells-lab-meter"},
     {"route": "/animations/icons", "purpose": "See fifty-six small diagrams, each one a word, move on their own loops.", "check": "#icons-sheet"},
+    {"route": "/animations/splats", "purpose": "Watch a pixel-art island turn at night, and turn it by dragging.", "check": "#splats-island"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}
   ],

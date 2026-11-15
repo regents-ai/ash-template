@@ -7,6 +7,7 @@
     "test": "vitest run",
     "typecheck": "tsc --project assets/tsconfig.json --noEmit && tsc --project test/browser/tsconfig.json --noEmit && tsc --project test/live/tsconfig.json --noEmit",
     "test:browser": "sh test/browser/walk.sh",
+    "stills:splats": "node assets/js/splats/stills.mjs",
     "stills:value-cards": "node assets/js/value_cards/stills.mjs"
   },
   "dependencies": {
