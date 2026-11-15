@@ -11697,3 +11697,17 @@ no migration.
   pin `d4075655` unchanged; no migration; API 21.0.0.
 - Rollback: v258 (`c9cfa2c1`) image.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-15 — SIWA: a production site proves its origins
+
+- The sign-in service (v93) now asks a company to prove each production site's origins
+  are its own before agents can sign in to it. A production site's page has a Proof
+  section: the site's token, which is public, with its copy icon; the file address for
+  each origin, where that file holds exactly the token; when it was last checked and,
+  once proven, when. Check asks the service to read the files and shows what it found.
+  A failed check says which origin failed and what to change there. Too many checks in
+  a minute say to wait a moment. A sandbox site needs no proof and has no Proof section.
+- The Sites list and the site's summary read the proof's new shape. The browser walk's
+  stand-in for the service gives production sites the same shape, answers a check, and
+  sets the proof back when a site's origins change. No migration; no route change; API
+  21.0.0.

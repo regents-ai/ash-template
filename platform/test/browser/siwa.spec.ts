@@ -10,8 +10,9 @@ import {ready, watch} from "./support/person"
 // once, revokes it through the confirm window, opens Settings, and on Overview finds
 // billing not started and sets, is refused and removes a cap. Each width also has a
 // person whose company is billed, who reads the period on Overview, lists more of its
-// agents and is refused a cap below the fee so far. With SIWA off, the page says it
-// is unavailable.
+// agents, is refused a cap below the fee so far, and on its proven production site
+// adds an origin, which sets the proof back, and checks it. With SIWA off, the page
+// says it is unavailable.
 
 // The sign-in bridge trades as `did` with the access token `access`.
 const trading = (page: Page, did: string, access?: string) =>
@@ -62,6 +63,7 @@ test.describe("a new SIWA customer", () => {
     await press(page.locator("#siwa-site-submit"))
     await expect(page).toHaveURL(/\/siwa\/sites\/[0-9a-f-]{36}$/)
     await expect(page.locator("#siwa-audience")).toHaveText(`walk-${info.project.name}`)
+    await expect(page.locator("#siwa-proof")).toHaveCount(0)
 
     await press(page.locator("#siwa-make-key"))
     await expect(page.locator("#siwa-key-value")).toHaveText(/^siwa_sk_test_[A-Za-z0-9_-]{43}$/)
@@ -141,7 +143,7 @@ test.describe("a billed SIWA customer", () => {
       use(`test/browser/.auth/siwa-billed-${info.project.name}.json`),
   })
 
-  test("reads the period, lists more agents and sets a cap no lower than the fee so far", async ({page, hasTouch}, info) => {
+  test("reads the period, lists more agents, sets a cap no lower than the fee so far and checks its site's proof", async ({page, hasTouch}, info) => {
     const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
     const problems = watch(page)
     await trading(page, `did:privy:browser-walk-siwa-billed-${info.project.name}`)
@@ -167,6 +169,30 @@ test.describe("a billed SIWA customer", () => {
     await expect(page.locator("#siwa-usage")).toContainText("Up to 5,050 agents")
     await removeCap(page, press)
     await expect(page.locator("#siwa-cap")).toHaveText("None")
+    await tidy(page)
+
+    // The production site is proven. A new origin sets its proof back, and a check
+    // then finds no file at its first origin: the walk publishes none.
+    await page.goto("/siwa/sites")
+    await connected(page)
+    await press(page.locator("#siwa-sites > li[id^='siwa-site-'] a"))
+    const proof = page.locator("#siwa-proof")
+    const files = page.locator("#siwa-proof-files > li")
+    await expect(proof).toHaveAttribute("data-state", "verified")
+    await expect(page.locator("#siwa-proof-token")).toHaveText(/^siwa_site_[0-9a-f]{32}$/)
+    await expect(files).toHaveCount(1)
+    await expect(page.locator("#siwa-proof-proven")).toBeVisible()
+    await tidy(page)
+
+    await page.locator("#siwa-details-origins").fill("https://example.com\nhttps://www.example.com")
+    await press(page.locator("#siwa-details-form button[type='submit']"))
+    await expect(proof).toHaveAttribute("data-state", "unverified")
+    await expect(files).toHaveCount(2)
+    await expect(page.locator("#siwa-proof-proven")).toHaveCount(0)
+
+    await press(page.locator("#siwa-proof-check"))
+    await expect(page.locator("#siwa-proof-failure")).toHaveAttribute("data-reason", "not_found")
+    await expect(page.locator("#siwa-proof-checked")).toBeVisible()
     await tidy(page)
     await problems.expect()
   })

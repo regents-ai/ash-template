@@ -2,8 +2,9 @@ defmodule AshTemplate.SiwaControl do
   @moduledoc """
   The sign-in service's control API (`/api/control/v1` at the address in
   `config :regent_agents, :siwa`), which keeps a person's SIWA company, its cap,
-  its billing period and the agents counted in it, its sites and each site's
-  server keys. This site keeps no copy of them: the SIWA pages
+  its billing period and the agents counted in it, its sites, each production
+  site's proof that its origins are its own, and each site's server keys. This
+  site keeps no copy of them: the SIWA pages
   (`AshTemplateWeb.SiwaLive`) read them here every time.
 
   The person is proven to the service by trading their Privy sign-in for a
@@ -113,6 +114,15 @@ defmodule AshTemplate.SiwaControl do
   @spec archive_site(String.t(), String.t()) :: result()
   def archive_site(token, id),
     do: call(token, method: :delete, url: "/sites/:id", path_params: [id: id])
+
+  @doc """
+  Checks that each of a production site's origins publishes its proof token,
+  and answers the site after the check, proven or not: its `originProof` says
+  which.
+  """
+  @spec check_site_proof(String.t(), String.t()) :: result()
+  def check_site_proof(token, id),
+    do: call(token, method: :post, url: "/sites/:id/proof", path_params: [id: id])
 
   @doc "A site's keys, revoked ones included, newest first, as `%{\"keys\" => _}`."
   @spec list_site_keys(String.t(), String.t()) :: result()

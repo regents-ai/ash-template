@@ -45,6 +45,25 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     "createdAt" => @at,
     "updatedAt" => @at
   }
+  # A production site whose last check found another token at its second origin.
+  @production %{
+    @site
+    | "id" => "4d7b0c1e-2a9f-4b3d-9e8c-1f6a5b2c3d40",
+      "environment" => "production",
+      "origins" => ["https://acme.example", "https://www.acme.example"],
+      "originProof" => %{
+        "state" => "unverified",
+        "token" => "siwa_site_3f6c1d0e9a8b4c2d8e7f6a5b4c3d2e1f",
+        "fileUrls" => [
+          "https://acme.example/.well-known/siwa-site.txt",
+          "https://www.acme.example/.well-known/siwa-site.txt"
+        ],
+        "checkedAt" => "2026-11-14T07:02:10Z",
+        "verifiedAt" => nil,
+        "failureReason" => "wrong_token",
+        "failedOrigin" => "https://www.acme.example"
+      }
+  }
   @key %{
     "id" => "9c4d2b7e-1a3f-4e5d-8b6c-7f0a1e2d3c4b",
     "prefix" => "siwa_sk_test_AbCdEf",
@@ -140,10 +159,10 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     })
   end
 
-  defp site_answers(keys \\ []) do
+  defp site_answers(site \\ @site) do
     Map.merge(company(), %{
-      {"GET", "#{@base}/sites/#{@site["id"]}"} => ok("site", @site),
-      {"GET", "#{@base}/sites/#{@site["id"]}/keys"} => ok("site_keys", %{keys: keys})
+      {"GET", "#{@base}/sites/#{site["id"]}"} => ok("site", site),
+      {"GET", "#{@base}/sites/#{site["id"]}/keys"} => ok("site_keys", %{keys: []})
     })
   end
 
@@ -213,6 +232,8 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     secret = "siwa_sk_test_" <> String.duplicate("s", 43)
     service(site_answers())
     view = open(browser, "/siwa/sites/#{@site["id"]}")
+    # A sandbox site needs no proof.
+    refute has_element?(view, "#siwa-proof")
 
     keys = "#{@base}/sites/#{@site["id"]}/keys"
     service(Map.put(site_answers(), {"POST", keys}, ok(201, "site_key_created", Map.put(@key, "key", secret))))
@@ -261,6 +282,62 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     view |> element("#siwa-archive") |> render_click()
     render_async(view)
     assert_patch(view, "/siwa/sites")
+  end
+
+  test "a production site shows its proof, and Check asks SIWA to read it and shows the site it answers",
+       %{browser: browser} do
+    proof = @production["originProof"]
+    service(site_answers(@production))
+    view = open(browser, "/siwa/sites/#{@production["id"]}")
+
+    assert has_element?(view, "#siwa-proof[data-state='unverified']")
+    assert view |> element("#siwa-proof-token") |> render() =~ proof["token"]
+    assert has_element?(view, "#siwa-proof-token-copy")
+
+    for {url, index} <- Enum.with_index(proof["fileUrls"]) do
+      assert view |> element("#siwa-proof-file-#{index}") |> render() =~ url
+    end
+
+    assert has_element?(view, "#siwa-proof-checked[datetime='#{proof["checkedAt"]}']")
+    refute has_element?(view, "#siwa-proof-proven")
+    assert has_element?(view, "#siwa-proof-failure[data-reason='wrong_token']")
+    assert view |> element("#siwa-proof-failure") |> render() =~ proof["failedOrigin"]
+
+    path = "#{@base}/sites/#{@production["id"]}/proof"
+    checked_at = "2026-11-14T07:04:31Z"
+
+    proven = %{
+      @production
+      | "originProof" => %{
+          proof
+          | "state" => "verified",
+            "checkedAt" => checked_at,
+            "verifiedAt" => checked_at,
+            "failureReason" => nil,
+            "failedOrigin" => nil
+        }
+    }
+
+    service(Map.put(site_answers(@production), {"POST", path}, ok("site_proof_checked", proven)))
+    view |> element("#siwa-proof-check") |> render_click()
+    render_async(view)
+
+    assert_received {:asked, "POST", ^path, ""}
+    assert has_element?(view, "#siwa-proof[data-state='verified']")
+    assert has_element?(view, "#siwa-proof-proven[datetime='#{checked_at}']")
+    assert has_element?(view, "#siwa-proof-checked[datetime='#{checked_at}']")
+    refute has_element?(view, "#siwa-proof-failure")
+    refute has_element?(view, "#siwa-proof-notice")
+    assert has_element?(view, "#siwa-proof-check:not([disabled])")
+
+    # Too many checks are refused beside the button, and the site stays as it was.
+    service(Map.put(site_answers(proven), {"POST", path}, refused(429, "rate_limited")))
+    view |> element("#siwa-proof-check") |> render_click()
+    render_async(view)
+
+    assert_received {:asked, "POST", ^path, ""}
+    assert has_element?(view, "#siwa-proof-notice")
+    assert has_element?(view, "#siwa-proof[data-state='verified']")
   end
 
   test "with no token the page asks the browser to trade and carries on; a change SIWA still refuses after a trade says to sign in again",

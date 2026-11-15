@@ -135,6 +135,26 @@
   gap: var(--space-1);
 }
 
+/* Proof: the token and each file address keep their copy button beside them, and
+   wrap rather than push it onto a line of its own on a phone. */
+.siwa-proof-files {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.siwa-proof-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.siwa-proof-value code {
+  min-width: 0;
+}
+
 /* A section's heading with its one button beside it. */
 .siwa-head {
   display: flex;

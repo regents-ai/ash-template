@@ -48,6 +48,27 @@ defmodule AshTemplate.SiwaControlTest do
     assert Jason.decode!(sent) == params
   end
 
+  test "a proof check is sent with no body and answers the site after it" do
+    proof = %{
+      "state" => "unverified",
+      "token" => "siwa_site_" <> String.duplicate("a", 32),
+      "fileUrls" => ["https://acme.example/.well-known/siwa-site.txt"],
+      "checkedAt" => "2026-11-14T07:02:10Z",
+      "verifiedAt" => nil,
+      "failureReason" => "not_found",
+      "failedOrigin" => "https://acme.example"
+    }
+
+    site = %{"id" => Ecto.UUID.generate(), "environment" => "production", "originProof" => proof}
+    answer(200, %{code: "site_proof_checked", data: site})
+
+    assert SiwaControl.check_site_proof("control-token", site["id"]) == {:ok, site}
+
+    path = "/api/control/v1/sites/#{site["id"]}/proof"
+    assert_received {:asked, "POST", ^path, headers, ""}
+    assert header(headers, "authorization") == ["Bearer control-token"]
+  end
+
   test "a refusal keeps its status, code, message, hint and each field's reasons" do
     answer(422, %{
       error: %{
