@@ -5,8 +5,9 @@ defmodule AshTemplateWeb.SplatsLabLive do
   first; `?scene=island` shows the floating island at night instead, and any other
   value shows the factory.
 
-  The box always holds the scene's still picture
-  (`priv/static/images/animations/splats-<scene>.png`, drawn by `npm run stills:splats`).
+  The box always holds the scene's still picture for its shape
+  (`priv/static/images/animations/splats-<scene>-wide.png`, or `-square.png` on a phone,
+  both drawn by `npm run stills:splats`).
   Over it the `SplatIsland` hook draws the scene with WebGPU and fades it in once its
   first frame has landed; without WebGPU the still stays. Each scene's box has its own
   id, so switching ends one scene's drawing before the next begins. The scenes are
@@ -31,7 +32,8 @@ defmodule AshTemplateWeb.SplatsLabLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    {:noreply, assign(socket, scene: scene(params["scene"]))}
+    scene = scene(params["scene"])
+    {:noreply, assign(socket, scene: scene, stills: stills(scene))}
   end
 
   defp scene("island"), do: "island"
@@ -40,8 +42,17 @@ defmodule AshTemplateWeb.SplatsLabLive do
   defp scene_path("factory"), do: ~p"/animations/splats"
   defp scene_path(scene), do: ~p"/animations/splats?#{[scene: scene]}"
 
-  defp still("factory"), do: ~p"/images/animations/splats-factory.png"
-  defp still("island"), do: ~p"/images/animations/splats-island.png"
+  defp stills("factory"),
+    do: %{
+      wide: ~p"/images/animations/splats-factory-wide.png",
+      square: ~p"/images/animations/splats-factory-square.png"
+    }
+
+  defp stills("island"),
+    do: %{
+      wide: ~p"/images/animations/splats-island-wide.png",
+      square: ~p"/images/animations/splats-island-square.png"
+    }
 
   defp label("factory"),
     do:
@@ -83,13 +94,11 @@ defmodule AshTemplateWeb.SplatsLabLive do
         phx-hook="SplatIsland"
         phx-mounted={JS.ignore_attributes(["data-splats-ready"])}
       >
-        <img
-          class="splats-lab__still"
-          src={still(@scene)}
-          width="432"
-          height="432"
-          alt=""
-        />
+        <%!-- The same width as the CSS that turns the box square (splats_lab.css). --%>
+        <picture>
+          <source media="(max-width: 36rem)" srcset={@stills.square} width="432" height="432" />
+          <img class="splats-lab__still" src={@stills.wide} width="432" height="288" alt="" />
+        </picture>
         <div id={"splats-#{@scene}-stage"} class="splats-lab__stage" phx-update="ignore">
           <canvas data-splats-canvas></canvas>
         </div>

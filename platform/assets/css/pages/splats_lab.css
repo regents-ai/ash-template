@@ -2,10 +2,11 @@
 /* The splats page (`/animations/splats`, `AshTemplateWeb.SplatsLabLive`): one box
    holding a small world in pixel art, the factory or the island, chosen by the tabs
    above it. The box keeps its shape from the first paint and for either scene: three
-   wide by two high, square on a phone. It always holds the scene's square still
-   picture, cropped to the box just as the live picture is framed; the turning scene
-   (the `SplatIsland` hook) fades in over it once it has drawn, and without WebGPU the
-   still stays. The sky is the same in both themes. */
+   wide by two high, square on a phone. It always holds the scene's still picture for
+   that shape, framed just as the live picture is; the turning scene (the `SplatIsland`
+   hook) fades in over it once it has drawn, and without WebGPU the still stays. The
+   square still's `<source>` in `SplatsLabLive` names the same width as the media query
+   below. The sky is the same in both themes. */
 .motion-lab--splats {
   width: 100%;
   align-content: start;

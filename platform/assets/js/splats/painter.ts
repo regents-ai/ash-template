@@ -50,9 +50,9 @@ export function pixelGrid(width: number, height: number): PixelGrid {
   return {scale, columns, rows, offset: [Math.floor((width - columns * scale) / 2), Math.floor((height - rows * scale) / 2)]}
 }
 
-/** The focal length in picture pixels: a 3:2 frame of the camera's field fits inside the picture. */
+/** The focal length in picture pixels: the field fits the picture's height, or the scene's width (`Camera.width`) its width, whichever is smaller. */
 export const focal = (camera: Camera, grid: {columns: number; rows: number}) =>
-  Math.min(grid.rows, grid.columns / 1.5) / (2 * Math.tan(camera.field / 2))
+  Math.min(grid.rows, grid.columns / camera.width) / (2 * Math.tan(camera.field / 2))
 
 /** The camera stands back a little further as it tilts toward straight above or below, so the whole scene fits. */
 const standBack = (camera: Camera, pitch: number) =>

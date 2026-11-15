@@ -1,8 +1,8 @@
-// Draws the splats page's still pictures into priv/static/images/animations/:
-// splats-factory.png and splats-island.png, each scene at the view and moment its live
-// picture opens on, one pixel per picture pixel, so the browser scales them up in crisp
-// squares. Each is square, with the scene's three-by-two frame across its middle, so
-// the box's crop matches the live picture on a wide screen and on a phone. The scenes,
+// Draws the splats page's still pictures into priv/static/images/animations/: for each
+// scene, splats-<scene>-wide.png (three by two, for the wide box) and
+// splats-<scene>-square.png (for a phone's square box), at the view and moment its live
+// picture opens on and framed as the live picture is in a box of that shape, one pixel
+// per picture pixel, so the browser scales them up in crisp squares. The scenes,
 // colours and shaders are the page's own, read from the files beside this one.
 //
 //   npm run stills:splats            (from platform/, after changing a scene)
@@ -23,7 +23,7 @@ import {oklab, rgb} from "./palette.ts"
 
 const {chromium} = createRequire(import.meta.url)("playwright")
 const here = dirname(fileURLToPath(import.meta.url))
-const SIZE = 432
+const SHAPES = [["wide", [432, 288]], ["square", [432, 432]]]
 
 const gpu = await init()
 const browser = await chromium.launch()
@@ -33,28 +33,32 @@ for (const [name, build] of [["factory", buildFactory], ["island", buildIsland]]
   const scene = build()
   const palette = scene.palette.map(rgb)
   const painter = createPainter(gpu, scene, palette, palette.map(oklab))
-  const still = target(gpu, {size: [SIZE, SIZE], format: "rgba8unorm"})
-  const grid = painter.resize(SIZE, SIZE)
   const {turn, pitch, seconds} = scene.still
   const parts = new Float32Array(Math.max(1, scene.parts) * 16)
   scene.pose(seconds, parts)
   painter.pose(parts)
   painter.order(depthOrder(scene.data, scene.count, SPLAT_FLOATS, scene.reach)(viewFrom(scene.camera, turn, pitch).ahead, parts))
-  const moment = {turn, pitch, bob: bob(seconds, grid.rows), flicker: flicker(seconds), seconds}
-  frame(gpu, current => painter.encode(current, moment, still))
-  const pixels = await still.color.read({mipLevel: 0, region: "all"})
-  const png = await page.evaluate(
-    async ([base64, size]) => {
-      const bytes = Uint8ClampedArray.from(atob(base64), character => character.charCodeAt(0))
-      const canvas = new OffscreenCanvas(size, size)
-      canvas.getContext("2d").putImageData(new ImageData(bytes, size, size), 0, 0)
-      const packed = new Uint8Array(await (await canvas.convertToBlob({type: "image/png"})).arrayBuffer())
-      return btoa(Array.from(packed, byte => String.fromCharCode(byte)).join(""))
-    },
-    [Buffer.from(pixels.buffer, pixels.byteOffset, SIZE * SIZE * 4).toString("base64"), SIZE],
-  )
-  writeFileSync(join(here, `../../../priv/static/images/animations/splats-${name}.png`), Buffer.from(png, "base64"))
-  console.log(`splats-${name}.png`)
+
+  for (const [shape, [width, height]] of SHAPES) {
+    const still = target(gpu, {size: [width, height], format: "rgba8unorm"})
+    const grid = painter.resize(width, height)
+    const moment = {turn, pitch, bob: bob(seconds, grid.rows), flicker: flicker(seconds), seconds}
+    frame(gpu, current => painter.encode(current, moment, still))
+    const pixels = await still.color.read({mipLevel: 0, region: "all"})
+    const png = await page.evaluate(
+      async ([base64, width, height]) => {
+        const bytes = Uint8ClampedArray.from(atob(base64), character => character.charCodeAt(0))
+        const canvas = new OffscreenCanvas(width, height)
+        canvas.getContext("2d").putImageData(new ImageData(bytes, width, height), 0, 0)
+        const packed = new Uint8Array(await (await canvas.convertToBlob({type: "image/png"})).arrayBuffer())
+        return btoa(Array.from(packed, byte => String.fromCharCode(byte)).join(""))
+      },
+      [Buffer.from(pixels.buffer, pixels.byteOffset, width * height * 4).toString("base64"), width, height],
+    )
+    const file = `splats-${name}-${shape}.png`
+    writeFileSync(join(here, `../../../priv/static/images/animations/${file}`), Buffer.from(png, "base64"))
+    console.log(file)
+  }
 }
 
 await browser.close()

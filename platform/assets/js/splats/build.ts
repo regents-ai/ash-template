@@ -79,10 +79,14 @@ export type Sky = {
 }
 
 export type Camera = {
-  /** The resting tilt above the scene, the vertical angle a 3:2 frame sees, how far
-   * back the camera orbits, and the height it orbits round. */
+  /** The resting tilt above the scene, the vertical angle the picture's height sees, how
+   * far back the camera orbits, and the height it orbits round. */
   readonly pitch: number
   readonly field: number
+  /** How wide the scene stands as it turns, in heights of the field: a picture at least
+   * this wide shows the field top to bottom, and a narrower one (a phone's square) shows
+   * this width side to side instead, so the scene fills either. */
+  readonly width: number
   readonly distance: number
   readonly lookAt: number
   /** The scene's radius, the distance a drag at its edge carries one to one. */

@@ -11769,7 +11769,9 @@ On `wt/tpl-splat-1115`, for the design chief. Pins unchanged; no migration.
   parts keep the light they have at rest. Each frame vgpu draws them farthest first
   onto a picture about 435 by 290 pixels on a wide screen (324 square on a phone),
   matches each pixel to the scene's palette with an ordered dither, lights the edges
-  that face the light, and scales it up in whole-pixel squares.
+  that face the light, and scales it up in whole-pixel squares. Each scene fills its box
+  on a phone as well as on a wide screen: in the square box the camera frames the
+  scene's width rather than a three-by-two view.
 - `npm run ply:splats -- <folder>` writes both scenes as `.ply` files that splat
   viewers open, and checks each file's header, count and size
   (`platform/assets/js/splats/export_ply.mjs`, `platform/assets/js/splats/ply.ts`).
@@ -11780,15 +11782,15 @@ On `wt/tpl-splat-1115`, for the design chief. Pins unchanged; no migration.
   or down swipe scrolls the page; tilting there is the keyboard's. Focused, the arrow
   keys turn and tilt it. With less motion it holds still unless moved.
 - The box keeps its shape from the first paint (three by two, square on a phone) and
-  always holds the scene's still picture
-  (`platform/priv/static/images/animations/splats-factory.png` and `splats-island.png`,
-  `npm run stills:splats`); without WebGPU the still stays. Nothing is drawn while the
+  always holds the scene's still picture for that shape
+  (`platform/priv/static/images/animations/splats-<scene>-wide.png` and
+  `splats-<scene>-square.png`, `npm run stills:splats`); without WebGPU the still stays. Nothing is drawn while the
   box is off screen, and the GPU device is given back on leaving the page.
 - Frame times: 60 frames a second in headless Chromium for both scenes, at 1440 on a
   2x screen and at 390 on a 3x phone, no frame over 20 ms. Posing, sorting, drawing
   and finishing on the GPU take about 4 ms a frame for the factory and 2.5 ms for the
   island at 2172 by 1446 on this Mac; the sort alone about 0.8 ms.
 - Checks: `platform/assets/test/splats.test.ts` (seeds, the standard layout, each
-  splat's shape, moving parts, the sort from above and below, the pixel grid, the
-  `.ply` file) and the walk `platform/test/browser/splats.spec.ts` (draws and turns,
+  splat's shape, moving parts, the sort from above and below, each scene filling a wide
+  box and a square one uncut, the pixel grid, the `.ply` file) and the walk `platform/test/browser/splats.spec.ts` (draws and turns,
   the switch, links, drags, keys and touch).

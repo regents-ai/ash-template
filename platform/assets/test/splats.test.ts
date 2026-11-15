@@ -2,17 +2,18 @@
 // standard layout of Gaussian splatting; a splat's quaternion and scales give back the
 // shape it was placed with, and its spherical harmonics brighten it toward the view a
 // gleam was baked for; moving parts move as rigid turns; the sort hands back every
-// splat once, farthest first, from above and below too; the pixel grid covers its
-// canvas in whole-pixel squares; and the .ply file reads back as written.
+// splat once, farthest first, from above and below too; each scene fills a wide box and
+// a phone's square without being cut off; the pixel grid covers its canvas in
+// whole-pixel squares; and the .ply file reads back as written.
 import {describe, expect, it} from "vitest"
 import {
-  after, createBuilder, PART_FLOAT, SH_C0, SH_C1, SPLAT_FLOATS, turning, unit,
+  after, createBuilder, PART_FLOAT, SH_C0, SH_C1, SPLAT_FLOATS, SURFACE, turning, unit,
   type Lighting, type Pose, type Scene, type Vec3,
 } from "../js/splats/build"
 import {buildFactory} from "../js/splats/factory"
 import {buildIsland} from "../js/splats/island"
 import {depthOrder} from "../js/splats/order"
-import {pixelGrid, TILT_LIMIT, viewFrom} from "../js/splats/painter"
+import {focal, pixelGrid, TILT_LIMIT, viewFrom} from "../js/splats/painter"
 import {PLY_PROPERTIES, readPlyHeader, toPly} from "../js/splats/ply"
 
 const scenes: [string, () => Scene][] = [["factory", buildFactory], ["island", buildIsland]]
@@ -28,6 +29,15 @@ const rotation = ([w, x, y, z]: number[]): Matrix => [
   [2 * (x! * y! + w! * z!), 1 - 2 * (x! * x! + z! * z!), 2 * (y! * z! - w! * x!)],
   [2 * (x! * z! - w! * y!), 2 * (y! * z! + w! * x!), 1 - 2 * (x! * x! + y! * y!)],
 ]
+
+/** Where splat `i` stands with its moving part where `parts` puts it. */
+const posed = (data: Float32Array, parts: Float32Array, i: number): Vec3 => {
+  const o = i * SPLAT_FLOATS
+  const p = data[o + PART_FLOAT]! * 16
+  const [x, y, z] = [data[o]!, data[o + 1]!, data[o + 2]!]
+  const at = (a: number) => parts[p + a]! * x + parts[p + 4 + a]! * y + parts[p + 8 + a]! * z + parts[p + 12 + a]!
+  return [at(0), at(1), at(2)]
+}
 
 /** A splat's colour seen along `d` (from the camera toward it), as Gaussian splatting evaluates degrees 0 and 1. */
 const seen = (data: Float32Array, i: number, d: Vec3) => {
@@ -100,10 +110,8 @@ describe.each(scenes)("the %s", name => {
         expect(new Set(order).size).toBe(scene.count)
         // How far ahead each splat stands, where its part is now.
         const depth = (i: number) => {
-          const o = i * SPLAT_FLOATS
-          const p = scene.data[o + PART_FLOAT]! * 16
-          const place = [0, 1, 2].map(a => parts[p + a]! * scene.data[o]! + parts[p + 4 + a]! * scene.data[o + 1]! + parts[p + 8 + a]! * scene.data[o + 2]! + parts[p + 12 + a]!)
-          return place[0]! * ahead[0] + place[1]! * ahead[1] + place[2]! * ahead[2]
+          const place = posed(scene.data, parts, i)
+          return place[0] * ahead[0] + place[1] * ahead[1] + place[2] * ahead[2]
         }
         // Within one step of the sort's 16-bit keys, each splat is no nearer than the next.
         const step = (2 * scene.reach) / 65_535
@@ -113,6 +121,43 @@ describe.each(scenes)("the %s", name => {
       })
     }
   })
+
+  // The wide box's picture, and a phone's square.
+  for (const grid of [{columns: 435, rows: 290}, {columns: 324, rows: 324}]) {
+    it(`fills a ${grid.columns} by ${grid.rows} picture as it turns, cutting none of it off`, () => {
+      const parts = new Float32Array(Math.max(1, scene.parts) * 16)
+      scene.pose(scene.still.seconds, parts)
+      const f = focal(scene.camera, grid)
+      // Only splats that stay where they were grown: steam, sparks and fireflies drift.
+      const fixed = Array.from({length: scene.count}, (_, i) => i).filter(i => scene.data[i * SPLAT_FLOATS + 11] === SURFACE)
+      const xs = new Float64Array(fixed.length)
+      const ys = new Float64Array(fixed.length)
+      // The scene's span past its farthest few splats (a stray root or blade of grass).
+      const span = (values: Float64Array) => {
+        values.sort()
+        return [values[Math.floor(values.length * 0.0005)]!, values[Math.floor(values.length * 0.9995)]!]
+      }
+      let fill = 0
+      for (let turn = 0; turn < 2 * Math.PI; turn += Math.PI / 6) {
+        const {right, up, ahead, eye} = viewFrom(scene.camera, turn, scene.camera.pitch)
+        fixed.forEach((i, k) => {
+          const p = posed(scene.data, parts, i)
+          const v = [p[0] - eye[0], p[1] - eye[1], p[2] - eye[2]]
+          const z = v[0]! * ahead[0] + v[1]! * ahead[1] + v[2]! * ahead[2]
+          xs[k] = grid.columns / 2 + (f * (v[0]! * right[0] + v[1]! * right[1] + v[2]! * right[2])) / z
+          ys[k] = grid.rows / 2 - (f * (v[0]! * up[0] + v[1]! * up[1] + v[2]! * up[2])) / z
+        })
+        const [left, rightmost] = span(xs)
+        const [top, bottom] = span(ys)
+        expect(left).toBeGreaterThan(0)
+        expect(rightmost).toBeLessThan(grid.columns)
+        expect(top).toBeGreaterThan(0)
+        expect(bottom).toBeLessThan(grid.rows)
+        fill = Math.max(fill, (rightmost - left) / grid.columns, (bottom - top) / grid.rows)
+      }
+      expect(fill).toBeGreaterThan(0.8)
+    })
+  }
 })
 
 describe("a splat", () => {

@@ -428,7 +428,7 @@ export function buildIsland(): Scene {
     count,
     data,
     reach,
-    camera: {pitch: (17 * Math.PI) / 180, field: (16.5 * Math.PI) / 180, distance: 8.7, lookAt: 0.46, radius: 1.0},
+    camera: {pitch: (17 * Math.PI) / 180, field: (16.5 * Math.PI) / 180, width: 1, distance: 8.7, lookAt: 0.46, radius: 1.0},
     palette: NIGHT,
     sky: {
       zenith: hex("#070b18"),

@@ -952,7 +952,7 @@ export function buildFactory(): Scene {
     count,
     data,
     reach,
-    camera: {pitch: (18 * Math.PI) / 180, field: (16.5 * Math.PI) / 180, distance: 6.9, lookAt: 0.17, radius: 1.0},
+    camera: {pitch: (18 * Math.PI) / 180, field: (16.5 * Math.PI) / 180, width: 1.16, distance: 6.9, lookAt: 0.17, radius: 1.0},
     palette: DUSK,
     sky: {
       zenith: hex("#120f24"),
