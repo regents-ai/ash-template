@@ -11718,3 +11718,12 @@ no migration.
   (Sean's letter 78 a of 15 Nov), matching siwa-server v93. Pins unchanged; no migration; API 21.0.0.
 - Rollback: v259 (`10a17e55`) image.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-15 — Library pin moves to elixir-utils main
+
+- Library pin `e2989ae7` → `8f1821dd` (elixir-utils main, now the one line: Sean's 70 a). The
+  sign-in, pairing, Points and connector libraries are unchanged from the previous pin. What
+  differs: the Credits package is gone from the library, and Payments carries one shared change,
+  `regent_payments 20261112180000` (a default of "usdc" on `payment_receipts.paid_with`; no row
+  is rewritten). That change is applied once with `/app/bin/migrate-shared` from this release's
+  image before the deployment, on Sean's letter 77 a of 15 Nov. No site migration; API 21.0.0.
