@@ -11733,3 +11733,12 @@ no migration.
 - The template asks for the newest command line, 1.10.29 (source commit `5ae2e873`): the agent
   guide, the install lines, the capability list and the Makefile's pin name it. The
   `regents ash-template` commands are the same as in 1.10.28.
+
+## 2026-11-15 — Released v261: elixir-utils main, regents-cli 1.10.29
+
+- v261 on template.regents.sh carries the two entries above. Library pin `8f1821dd` (elixir-utils
+  main); design-system pin `d4075655`; regents-cli 1.10.29; API 21.0.0.
+- The shared database now carries `regent_payments 20261112180000`, applied once at 08:10:33Z with
+  `/app/bin/migrate-shared` from this release's image before the switch (Sean's letter 77 a).
+- Rollback: v260 (`8412d750`) image; the payments default stays and harms nothing.
+- Full check exit 0 by the chief on the exact commit.
