@@ -11889,3 +11889,22 @@ loaded only when the button is pressed.
 - Rollback: v263 (`b99995f5`) image; nothing to undo.
 - Full check exit 0 twice by the chief on the exact commit (126 s and 141 s for the longest gate
   lane; 713 walk tests, 345 Elixir, 369 script).
+
+## 2026-11-16 — Chain events: a mismatch keeps the first saved row
+
+- `skills/chain-events` (Sean's letter 6 a, 16 Nov): a transaction's rows are saved by the
+  first pass that reads it and kept as first saved. When its logs read again no longer match
+  them (moved to another block, in a block whose hash changed, changed, or gone), the reader
+  saves nothing more of it, logs one warning naming the contract and the transaction, from
+  the pass that reads its block for the last time, and carries on; the cursor moves as
+  usual. A log of a transaction not saved yet is still saved. A log that does not decode, or
+  one block the node keeps refusing, is read again until the code or the node is fixed.
+  Rules 1 and 3 to 6 say so, and `references/watcher.md` has the cursor, the event row's
+  `:seen` read and a scanner built that way, with its tests. Autolaunch's covered-call
+  reader and Patchbay's offer reader are its models; `references/sites-today.md` has
+  Keyfleet's, Autolaunch's and Patchbay's rows as they are on their main lines today and
+  where each still differs.
+- `skills/ash-security/references/operator-actions.md` takes the template's own release
+  commands (`room-reports`, `remove-room-message`) as its model.
+- Skills only; no code, pin or database change. The served build skills change with the next
+  release.
