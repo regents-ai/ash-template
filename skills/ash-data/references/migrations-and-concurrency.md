@@ -37,7 +37,13 @@ On a bluegreen release the outgoing machines keep running the old code until the
 ones are healthy, and Ash selects every attribute a resource declares. A migration that
 drops a column the old code still declares makes every read on the old machines fail.
 
-1. Release 1: remove the attribute from the resource and every use of it. No migration.
+1. Release 1: remove the attribute from the resource and every use of it. No migration
+   when the column already accepts a row that leaves it out (nullable, or it has a
+   database default). A required column with no database default needs release 1 to
+   carry the generated migration that makes it optional, or the new code's inserts
+   fail: generate it with the attribute set `allow_nil? true`, then remove the
+   attribute and generate again, keeping the drop migration for release 2. The
+   template's ENS `lookup_state` (v266, then v267) did it this way.
 2. Release 2, once release 1 is the only code running: the migration that drops the
    column.
 
