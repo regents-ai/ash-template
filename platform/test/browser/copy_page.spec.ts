@@ -28,7 +28,10 @@ test("a copy button whose url does not answer says it could not copy", async ({p
   await recordCopies(page)
   await page.goto("/showcase/grammar")
 
+  // On a showcase page the script loads the showcase's own modules before it connects
+  // and listens for copy presses (assets/js/app.ts), so a connected page is listening.
   const copy = page.locator("#grammar-noun-copy-page")
+  await page.locator(".phx-connected").first().waitFor()
   await copy.click()
   await expect
     .poll(() => copiesShown(copy))

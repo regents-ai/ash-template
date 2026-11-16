@@ -24,6 +24,16 @@ const drawn = async (page: Page, scene: "factory" | "island") => {
   return box
 }
 
+// The scene alone, one pixel inside the box's edge. On a phone the box's outermost rows
+// of screen pixels blend its border with the picture, and on a busy machine the browser
+// can still be repainting them just after the picture has drawn, the scene unmoved.
+const picture = async (page: Page, scene: "factory" | "island") => {
+  const canvas = page.locator(`#splats-${scene} [data-splats-canvas]`)
+  await canvas.scrollIntoViewIfNeeded()
+  const {x, y, width, height} = (await canvas.boundingBox())!
+  return page.screenshot({clip: {x: x + 1, y: y + 1, width: width - 2, height: height - 2}})
+}
+
 test("the factory comes first, draws in its box and turns by itself", async ({page}) => {
   await page.goto("/animations/splats", {waitUntil: "domcontentloaded"})
   const first = await size(page.locator("#splats-factory"))
@@ -75,9 +85,9 @@ test.describe("with less motion", () => {
       await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
       const box = await drawn(page, scene)
 
-      const resting = await box.screenshot()
+      const resting = await picture(page, scene)
       await page.waitForTimeout(400)
-      expect((await box.screenshot()).equals(resting)).toBe(true)
+      expect((await picture(page, scene)).equals(resting)).toBe(true)
 
       // Drags across, then down, from the middle of the box; each leaves the picture changed and still.
       const area = (await box.boundingBox())!
@@ -89,10 +99,10 @@ test.describe("with less motion", () => {
         for (let step = 1; step <= 8; step++) await page.mouse.move(middle.x + step * dx, middle.y + step * dy)
         await page.mouse.up()
         await page.waitForTimeout(100)
-        const moved = await box.screenshot()
+        const moved = await picture(page, scene)
         expect(moved.equals(last)).toBe(false)
         await page.waitForTimeout(400)
-        expect((await box.screenshot()).equals(moved)).toBe(true)
+        expect((await picture(page, scene)).equals(moved)).toBe(true)
         last = moved
       }
 
@@ -100,7 +110,7 @@ test.describe("with less motion", () => {
       for (const key of ["ArrowRight", "ArrowUp"]) {
         await page.keyboard.press(key)
         await page.waitForTimeout(100)
-        const pressed = await box.screenshot()
+        const pressed = await picture(page, scene)
         expect(pressed.equals(last)).toBe(false)
         last = pressed
       }
@@ -128,14 +138,14 @@ test.describe("with less motion", () => {
     }
 
     // Back at the top after the page has scrolled, the scene is as it was: not tilted.
-    const resting = await box.screenshot()
+    const resting = await picture(page, "factory")
     await swipe(0, -15)
     expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
     await page.evaluate(() => window.scrollTo(0, 0))
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
-    expect((await box.screenshot()).equals(resting)).toBe(true)
+    expect((await picture(page, "factory")).equals(resting)).toBe(true)
 
     await swipe(15, 0)
-    expect((await box.screenshot()).equals(resting)).toBe(false)
+    expect((await picture(page, "factory")).equals(resting)).toBe(false)
   })
 })
