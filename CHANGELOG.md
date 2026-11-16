@@ -11819,3 +11819,12 @@ For the design chief. No migration.
   or refused differently (Sean's letter 79 a).
 - The same pin carries the Base Builder Code on the shared fee pass-on
   (`RegentPayments.Operator.send/3`); the template sends none, so nothing changes here.
+
+## 2026-11-16 — Released v263: sign-in refusals name their reason
+
+- v263 (`b99995f5`) on template.regents.sh carries the entry above. Library pin `adf77f79`
+  (elixir-utils main); design-system pin `d4075655`; regents-cli 1.10.30; API 21.0.0. No
+  migration.
+- Rollback: v262 (`edd56e64`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit. v262, released from the design lane, was
+  also checked in full by the chief afterwards (exit 0 on `ba911b67`).
