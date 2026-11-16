@@ -12,8 +12,8 @@
  * facing +z.
  */
 import {
-  add, after, clamp01, createBuilder, CROWN_BLOCKS, CROWN_PITCH, cross, FIREFLY, growUnderside, hex, length, mix, restPose, setPart, smoothstep,
-  STEAM, STILL, sub, times, turning, unit, UP, WATER,
+  add, after, clamp01, createBuilder, CROWN_BLOCKS, CROWN_PITCH, cross, FIREFLY, growUnderside, hex, length, mix, rate, restPose, setPart, smoothstep,
+  STEAM, STILL, sub, times, turning, unit, UP, WATER, wave,
   type Glow, type Lighting, type Placed, type Pose, type Scene, type Vec3,
 } from "./build.ts"
 import {DUSK} from "./palette.ts"
@@ -105,9 +105,9 @@ const CRATE_RECT: Rect = {x0: CRATE.x - CRATE.half, x1: CRATE.x + CRATE.half, z0
 const FOOTPRINTS: readonly Rect[] = [HALL, GLASS_RECT, CRATE_RECT, TROUGH, ...BEDS]
 const inPond = (x: number, z: number, grow = 0) => ((x - POND.x) / (POND.a + grow)) ** 2 + ((z - POND.z) / (POND.b + grow)) ** 2 < 1
 
-/** Where the walking robot is on its loop round the pond at a moment, and the way it faces. */
-const onLoop = (seconds: number) => {
-  const angle = (seconds / LOOP.period) * Math.PI * 2
+/** Where the walking robot is after so many laps round the pond, and the way it faces. */
+const onLoop = (laps: number) => {
+  const angle = laps * Math.PI * 2
   const x = LOOP.x + LOOP.a * Math.cos(angle)
   const z = LOOP.z + LOOP.b * Math.sin(angle)
   return {at: [x, ground(x, z), z] as Vec3, yaw: Math.atan2(-LOOP.a * Math.sin(angle), LOOP.b * Math.cos(angle))}
@@ -969,13 +969,16 @@ export function buildFactory(): Scene {
     glows,
     motes: {back: 30, front: 6, colours: [[1.0, 0.72, 0.45], [0.9, 0.89, 0.82]], size: 0.014},
     parts: PARTS,
-    pose(seconds, into) {
+    pose(seconds, into, loop) {
       restPose(into, PARTS)
-      setPart(into, PART.belt, {columns: STILL.columns, move: [0, 0, (seconds * BELT.speed) % BELT.slat]})
-      // Each robot rides the belt out of the door, drops into the crate, and starts again inside.
+      // Each robot rides the belt out of the door, drops into the crate, and starts again
+      // inside. Each is built a stage further than the one before, so the belt comes round
+      // once every lap, and its slats run with it.
       const lap = 0.96
+      const laps = seconds * rate(BELT.speed / lap, loop)
+      setPart(into, PART.belt, {columns: STILL.columns, move: [0, 0, (laps * lap) % BELT.slat]})
       PART.carried.forEach((part, k) => {
-        const travelled = ((seconds * BELT.speed) / lap + k / 3) % 1 * lap
+        const travelled = (laps + k / 3) % 1 * lap
         const onBelt = BELT.z1 - BELT.z0
         if (travelled < onBelt) {
           setPart(into, part, {columns: STILL.columns, move: [0, 0, BELT.z0 + travelled]})
@@ -985,27 +988,30 @@ export function buildFactory(): Scene {
         }
       })
       // The arm swings over the belt.
-      const swing = (seconds / 8) * Math.PI * 2
+      const swing = seconds * wave((2 * Math.PI) / 8, loop)
       const turret = turning(UP, 0.55 * Math.sin(swing), ARM.shoulder)
       const upper = after(turret, turning([0, 0, 1], 0.12 * Math.sin(swing + 1.2), ARM.shoulder))
       setPart(into, PART.turret, turret)
       setPart(into, PART.upperArm, upper)
       setPart(into, PART.forearm, after(upper, turning([0, 0, 1], 0.25 * Math.sin(swing * 2), ARM.elbow)))
-      // The walker goes round the pond, its legs swinging.
-      const now = onLoop(seconds)
-      const body: Pose = turning(UP, now.yaw - walkerRest.yaw, walkerRest.at, sub(add(now.at, [0, 0.002 * Math.abs(Math.sin(seconds * 5.2)), 0]), walkerRest.at))
+      // The walker goes round the pond, its legs swinging. A loop shorter than its lap
+      // hurries it round, and its steps quicken with it, so its feet never slide.
+      const pace = rate(1 / LOOP.period, loop) * LOOP.period
+      const now = onLoop((seconds * pace) / LOOP.period)
+      const step = seconds * wave(5.2 * pace, loop)
+      const body: Pose = turning(UP, now.yaw - walkerRest.yaw, walkerRest.at, sub(add(now.at, [0, 0.002 * Math.abs(Math.sin(step)), 0]), walkerRest.at))
       setPart(into, PART.walker, body)
       const side: Vec3 = [Math.cos(walkerRest.yaw), 0, -Math.sin(walkerRest.yaw)]
       PART.legs.forEach((leg, k) => {
         const hip = add(add(walkerRest.at, times(side, (k === 0 ? -1 : 1) * 0.015)), [0, 0.045, 0])
-        setPart(into, leg, after(body, turning(side, (k === 0 ? 1 : -1) * 0.45 * Math.sin(seconds * 5.2), hip)))
+        setPart(into, leg, after(body, turning(side, (k === 0 ? 1 : -1) * 0.45 * Math.sin(step), hip)))
       })
       // The gardener tips its watering can.
       const shoulder = add(tenderFoot, [0, 0.092, 0.037])
-      setPart(into, PART.watering, turning([0, 0, 1], 0.35 + 0.3 * Math.sin(seconds * 1.4), shoulder))
+      setPart(into, PART.watering, turning([0, 0, 1], 0.35 + 0.3 * Math.sin(seconds * wave(1.4, loop)), shoulder))
       for (const turbine of TURBINES) {
         const hub: Vec3 = [turbine.x, ground(turbine.x, turbine.z) + turbine.height + 0.012, turbine.z + 0.034]
-        setPart(into, turbine.part, turning([0, 0, 1], -turbine.speed * seconds, hub))
+        setPart(into, turbine.part, turning([0, 0, 1], -wave(turbine.speed, loop) * seconds, hub))
       }
     },
     still: {turn: (-32 * Math.PI) / 180, pitch: (18 * Math.PI) / 180, seconds: 6.5},

@@ -35,14 +35,14 @@ for (const [name, build] of [["factory", buildFactory], ["island", buildIsland]]
   const painter = createPainter(gpu, scene, palette, palette.map(oklab))
   const {turn, pitch, seconds} = scene.still
   const parts = new Float32Array(Math.max(1, scene.parts) * 16)
-  scene.pose(seconds, parts)
+  scene.pose(seconds, parts, 0)
   painter.pose(parts)
   painter.order(depthOrder(scene.data, scene.count, SPLAT_FLOATS, scene.reach)(viewFrom(scene.camera, turn, pitch).ahead, parts))
 
   for (const [shape, [width, height]] of SHAPES) {
     const still = target(gpu, {size: [width, height], format: "rgba8unorm"})
     const grid = painter.resize(width, height)
-    const moment = {turn, pitch, bob: bob(seconds, grid.rows), flicker: flicker(seconds), seconds}
+    const moment = {turn, pitch, bob: bob(seconds, grid.rows, 0), flicker: flicker(seconds, 0), seconds, loop: 0}
     frame(gpu, current => painter.encode(current, moment, still))
     const pixels = await still.color.read({mipLevel: 0, region: "all"})
     const png = await page.evaluate(

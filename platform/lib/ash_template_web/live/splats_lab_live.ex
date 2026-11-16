@@ -12,7 +12,14 @@ defmodule AshTemplateWeb.SplatsLabLive do
   first frame has landed; without WebGPU the still stays. Each scene's box has its own
   id, so switching ends one scene's drawing before the next begins. The scenes are
   grown from fixed seeds in `assets/js/splats/`, so the stills and the live pictures
-  match. Nothing here reads or changes anything outside the page.
+  match.
+
+  Download GIF, at the end of the tabs' row, saves one seamless loop of the scene
+  showing as `regents-<scene>.gif`, drawn and encoded in the browser
+  (`assets/js/splats/gif.ts`). It is offered once the scene has drawn, so never without
+  WebGPU, and keeps its place on the row before then. Its control has the box's id with
+  `-gif` after it, which is how the `SplatIsland` hook finds it. Nothing here reads or
+  changes anything outside the page.
   """
 
   use AshTemplateWeb, :live_view
@@ -75,15 +82,52 @@ defmodule AshTemplateWeb.SplatsLabLive do
           Two small worlds, turning slowly. Drag one to turn it, or to look from above or below.
         </p>
       </header>
-      <nav class="flair-tabs" aria-label="Scenes">
-        <.link
-          :for={scene <- @scenes}
-          patch={scene_path(scene.id)}
-          aria-current={scene.id == @scene && "page"}
+      <div class="splats-lab__bar">
+        <nav class="flair-tabs" aria-label="Scenes">
+          <.link
+            :for={scene <- @scenes}
+            patch={scene_path(scene.id)}
+            aria-current={scene.id == @scene && "page"}
+          >
+            {scene.name}
+          </.link>
+        </nav>
+        <%!-- The SplatIsland hook finds this by the box's id and keeps its state
+        (data-gif) and words; it shows once the scene has drawn (splats_lab.css). --%>
+        <div
+          id={"splats-#{@scene}-gif"}
+          class="splats-gif"
+          phx-mounted={JS.ignore_attributes(["data-gif"])}
         >
-          {scene.name}
-        </.link>
-      </nav>
+          <p class="splats-gif__failed">Could not make the GIF. Try again.</p>
+          <Regent.Primitives.button
+            id={"splats-#{@scene}-gif-button"}
+            variant="secondary"
+            arrow={false}
+            class="splats-gif__button"
+            phx-mounted={JS.ignore_attributes(["aria-disabled", "aria-busy"])}
+          >
+            <span class="splats-gif__words">
+              <span class="splats-gif__idle">Download GIF</span>
+              <span class="splats-gif__making">
+                Making
+                <Regent.Primitives.figure
+                  id={"splats-#{@scene}-gif-done"}
+                  value="0%"
+                  width={4}
+                  phx-update="ignore"
+                />
+              </span>
+            </span>
+          </Regent.Primitives.button>
+          <span
+            id={"splats-#{@scene}-gif-status"}
+            class="visually-hidden"
+            role="status"
+            phx-update="ignore"
+          ></span>
+        </div>
+      </div>
       <div
         id={"splats-#{@scene}"}
         class="splats-lab"

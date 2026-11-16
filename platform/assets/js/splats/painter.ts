@@ -17,20 +17,25 @@
  * 3. Picture. The low picture is scaled up by a whole number onto the canvas, each
  *    pixel a crisp square of device pixels, and soft motes drift over it.
  *
+ * A recorded loop (`Moment.loop`, for a GIF: gif.ts) is drawn as the low picture alone:
+ * every moving thing comes round a whole number of times in it (build.ts `rate`), the
+ * clouds hold still, and the motes are drawn into the low picture before its palette,
+ * each living once round the loop, so every pixel stays a palette colour.
+ *
  * The camera orbits the scene: a turn round its upright axis and a tilt to nearly
  * straight above or below (`TILT_LIMIT`). Shared by the renderer (renderer.ts) and the
- * scripts beside it, so it imports only vgpu and types.
+ * scripts beside it, so it imports only vgpu and build.ts.
  */
 import {prepareShader} from "@vgpu/wgsl/prepare"
 import {draw, effect, storage, target, type Frame, type Gpu, type Target} from "vgpu"
 
-import type {Camera, Glow, Scene, Vec3} from "./build.ts"
+import {wave, type Camera, type Glow, type Scene, type Vec3} from "./build.ts"
 
 /** About how many columns of pixels the picture has on its longer side. */
 export const COLUMNS = 450
 /** The tilt reaches this close to straight above or below, so the view never flips. */
 export const TILT_LIMIT = (86 * Math.PI) / 180
-/** Motes are drawn at the canvas's own resolution, this many at most. */
+/** At most this many motes; on the page they are drawn at the canvas's own resolution. */
 const MOTES_LIMIT = 64
 
 export type PixelGrid = {
@@ -72,21 +77,27 @@ export function viewFrom(camera: Camera, turn: number, pitch: number) {
   return {right, up, ahead, eye}
 }
 
-/** One frame's moment: the view, the bob in whole pixels, the flicker of any fire, and the clock. */
+/** One frame's moment: the view, the bob in whole pixels, the flicker of any fire, the
+ * clock, and the length of the loop being recorded in seconds (0 on the page). */
 export type Moment = {
   readonly turn: number
   readonly pitch: number
   readonly bob: number
   readonly flicker: number
   readonly seconds: number
+  readonly loop: number
 }
 
-/** A fire's flicker at a moment: a few slow waves, never quite repeating. */
-export const flicker = (seconds: number) =>
-  0.84 + 0.08 * Math.sin(seconds * 7.3) + 0.05 * Math.sin(seconds * 13.1 + 1.7) + 0.04 * Math.sin(seconds * 21.7 + 0.4)
+/** A fire's flicker at a moment: a few slow waves, never quite repeating but in a recorded loop. */
+export const flicker = (seconds: number, loop: number) =>
+  0.84 +
+  0.08 * Math.sin(seconds * wave(7.3, loop)) +
+  0.05 * Math.sin(seconds * wave(13.1, loop) + 1.7) +
+  0.04 * Math.sin(seconds * wave(21.7, loop) + 0.4)
 
 /** The bob, in whole pixels of a low picture this many rows high. */
-export const bob = (seconds: number, rows: number) => Math.round(rows * 0.01 * Math.sin((seconds * Math.PI * 2) / 5.5))
+export const bob = (seconds: number, rows: number, loop: number) =>
+  Math.round(rows * 0.01 * Math.sin(seconds * wave((Math.PI * 2) / 5.5, loop)))
 
 const vec3 = (c: readonly number[]) => `vec3f(${c.map(v => v.toFixed(6)).join(", ")})`
 
@@ -107,9 +118,31 @@ struct View {
   // taken at the edge instead (1.3 times the view's half width and half height, as in
   // the original renderer), then the step in pixels toward the rim light on the picture.
   limits: vec4f,
+  // The length of the loop being recorded in seconds, 0 on the page (the last three are padding).
+  clock: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> view: View;
+
+const TAU = 6.283185307179586;
+
+// The loop rule (rate in build.ts): something that comes round so many times a second
+// comes round a whole number of times in a recorded loop, at least once.
+fn rate(cycles: f32) -> f32 {
+  let period = view.clock.x;
+  if (period <= 0.0) {
+    return cycles;
+  }
+  return max(1.0, floor(cycles * period + 0.5)) / period;
+}
+
+// The same for a wave given in radians a second.
+fn wave(radians: f32) -> f32 {
+  if (view.clock.x <= 0.0) {
+    return radians;
+  }
+  return TAU * rate(radians / TAU);
+}
 
 // A point of the scene in the camera's own frame: x right, y up, z straight ahead.
 fn seen(p: vec3f) -> vec3f {
@@ -197,19 +230,19 @@ fn rotation(q: vec4f) -> mat3x3f {
   var colour = max(vec3f(0.0), 0.5 + SH_C0 * s.dc.rgb + SH_C1 * vec3f(dot(lobe, s.red.xyz), dot(lobe, s.green.xyz), dot(lobe, s.blue.xyz)));
   colour *= 1.0 + s.green.w * (view.up.w - 1.0);
   if (s.blue.w > 0.0) {
-    colour *= mix(0.2, 1.0, step(0.45, fract(seconds * s.blue.w + phase)));
+    colour *= mix(0.2, 1.0, step(0.45, fract(seconds * rate(s.blue.w) + phase)));
   }
 
   if (kind == 1u) {
     // A flame licks upward, shrinking and fading as it goes, and brightens with the flicker.
-    let lick = fract(seconds * (1.1 + phase * 0.8) + phase);
+    let lick = fract(seconds * rate(1.1 + phase * 0.8) + phase);
     at.y += lick * 0.05 * (0.4 + (s.place.y + 0.1) * 2.0);
     grow = 1.0 - lick * 0.45;
     opacity *= 1.0 - lick * lick;
     colour *= 0.82 + 0.3 * view.up.w;
   } else if (kind == 2u) {
     // A spark rises from the fire on its own slow path, wavers, and goes out.
-    let life = fract(seconds * (0.3 + phase * 0.25) + phase * 7.0);
+    let life = fract(seconds * rate(0.3 + phase * 0.25) + phase * 7.0);
     at += vec3f(sin(life * 5.0 + phase * 40.0) * 0.06 * life, life * (0.55 + phase * 0.45), cos(life * 4.0 + phase * 23.0) * 0.06 * life);
     opacity *= smoothstep(0.0, 0.06, life) * (1.0 - life);
     colour = mix(vec3f(1.0, 0.95, 0.75), colour, smoothstep(0.0, 0.4, life));
@@ -217,24 +250,28 @@ fn rotation(q: vec4f) -> mat3x3f {
     // Steam leaves the chimney as a faint wisp, then rises, spreads, swells and thins,
     // leaning with a light breeze. Each puff drifts out its own way, so the plume widens
     // as it goes rather than rising as one rope.
-    let life = fract(seconds * 0.16 + phase);
+    let life = fract(seconds * rate(0.16) + phase);
     let away = fract(phase * 97.0) * 6.2831853;
     let spread = 0.1 * life * sqrt(fract(phase * 57.0));
     at += vec3f(
-      0.16 * life * life + 0.025 * sin(seconds * 0.7 + phase * 9.0 + life * 4.0) + spread * cos(away),
+      0.16 * life * life + 0.025 * sin(seconds * wave(0.7) + phase * 9.0 + life * 4.0) + spread * cos(away),
       0.36 * life,
-      0.05 * life * life + 0.02 * cos(seconds * 0.5 + phase * 13.0 + life * 3.0) + spread * sin(away),
+      0.05 * life * life + 0.02 * cos(seconds * wave(0.5) + phase * 13.0 + life * 3.0) + spread * sin(away),
     );
     grow = 1.0 + 2.5 * life;
     opacity *= smoothstep(0.0, 0.15, life) * pow(1.0 - life, 1.5);
   } else if (kind == 4u) {
     // A firefly drifts round where it lives and glows on and off.
-    let t = seconds * (0.25 + phase * 0.2);
-    at += vec3f(sin(t * 1.3 + phase * 17.0), 0.5 * sin(t * 1.9 + phase * 5.0), cos(t * 1.1 + phase * 11.0)) * 0.05;
-    opacity *= smoothstep(0.2, 0.8, 0.5 + 0.5 * sin(seconds * (1.2 + phase) + phase * 31.0));
+    let pace = 0.25 + phase * 0.2;
+    at += vec3f(
+      sin(seconds * wave(pace * 1.3) + phase * 17.0),
+      0.5 * sin(seconds * wave(pace * 1.9) + phase * 5.0),
+      cos(seconds * wave(pace * 1.1) + phase * 11.0),
+    ) * 0.05;
+    opacity *= smoothstep(0.2, 0.8, 0.5 + 0.5 * sin(seconds * wave(1.2 + phase) + phase * 31.0));
   } else if (kind == 5u) {
     // Water: small ripples run across it and catch the light.
-    let ripple = sin(at.x * 61.0 + seconds * 1.7 + sin(at.z * 23.0)) * sin(at.z * 53.0 - seconds * 1.3 + phase * 6.0);
+    let ripple = sin(at.x * 61.0 + seconds * wave(1.7) + sin(at.z * 23.0)) * sin(at.z * 53.0 - seconds * wave(1.3) + phase * 6.0);
     colour += vec3f(0.7, 0.85, 0.9) * pow(max(ripple, 0.0), 12.0) * 1.4;
   }
 
@@ -321,6 +358,7 @@ const GLOW_AT = ${sky.glowAt.toFixed(6)};
 const CLOUD = ${vec3(sky.cloud)};
 const STARS = ${sky.stars.toFixed(4)};
 ${glowsWgsl(scene.glows)}
+${moteWgsl(scene)}
 
 fn threshold(p: vec2i) -> f32 {
   let x = ((p.x % 4) + 4) % 4;
@@ -386,7 +424,9 @@ fn sky(p: vec2f) -> vec3f {
   let side = round - GLOW_AT;
   let toward = exp(-side * side / 0.5);
   c += SKY_GLOW * toward * exp(-abs(height - 0.01) / 0.09);
-  let q = vec2f(round * 3.0 + view.frame.w * 0.01, height * 14.0);
+  // The clouds drift, but never come round, so in a recorded loop they hold still.
+  let drift = select(view.frame.w, 0.0, view.clock.x > 0.0);
+  let q = vec2f(round * 3.0 + drift * 0.01, height * 14.0);
   let cloud = noise(q) * 0.6 + noise(q * 2.3 + vec2f(5.2, 1.3)) * 0.3 + noise(q * 5.1) * 0.1;
   let band = smoothstep(-0.25, 0.02, height) * smoothstep(0.45, 0.08, height);
   c = mix(c, CLOUD + SKY_GLOW * toward * 0.35, smoothstep(0.5, 0.82, cloud) * band * 0.6);
@@ -394,7 +434,7 @@ fn sky(p: vec2f) -> vec3f {
   // the way up to straight overhead.
   let cell = floor(ray * f);
   let star = hash(cell.xy + cell.z * vec2f(17.31, 43.17));
-  c += vec3f(0.85, 0.88, 0.95) * step(1.0 - STARS, star) * smoothstep(0.08, 0.3, height) * (0.6 + 0.4 * sin(view.frame.w * 2.0 + star * 90.0));
+  c += vec3f(0.85, 0.88, 0.95) * step(1.0 - STARS, star) * smoothstep(0.08, 0.3, height) * (0.6 + 0.4 * sin(view.frame.w * wave(2.0) + star * 90.0));
   return c;
 }
 
@@ -440,6 +480,19 @@ fn covered(pixel: vec2i, lifted: vec2i) -> bool {
     }
     colour += light.colour * light.strength * facing * exp(-dot(gap, gap) / (reach * reach)) * mix(1.0, view.up.w, 0.6);
   }
+  // In a recorded loop the motes are drawn here, before the palette, rather than over the
+  // picture, laid on in the order the picture's pass lays them.
+  if (view.clock.x > 0.0) {
+    for (var i = 0u; i < MOTES; i++) {
+      let m = mote(i, view.frame.w, view.clock.x);
+      let d = length(at.xy - m.at * view.frame.xy) / (m.radius * view.frame.y);
+      if (d > 1.0 || (!m.front && inside)) {
+        continue;
+      }
+      let alpha = m.strength * moteShape(m.front, d);
+      colour = mix(colour, m.colour, alpha);
+    }
+  }
   return vec4f(nearest(colour + (dither - 0.5) * SPREAD), select(0.0, 1.0, inside));
 }
 `
@@ -470,44 +523,87 @@ ${PRESENT_WGSL}
 }
 `
 
-function motesWgsl(scene: Scene) {
+/** How many motes a scene has. */
+const moteCount = (scene: Scene) => Math.min(MOTES_LIMIT, scene.motes.back + scene.motes.front)
+
+// The motes, shared by the picture's pass on the page and the low picture of a recorded loop.
+function moteWgsl(scene: Scene) {
   const {back, colours, size} = scene.motes
   return /* wgsl */ `
-${PRESENT_WGSL}
-
+const MOTES = ${moteCount(scene)}u;
 const BACK = ${back}u;
 const NEAR_COLOUR = ${vec3(colours[0])};
 const FAR_COLOUR = ${vec3(colours[1])};
 const SIZE = ${size.toFixed(4)};
 
+fn scatter(n: f32) -> f32 {
+  return fract(sin(n * 127.1 + 311.7) * 43758.5453);
+}
+
+// Where a mote is, as shares of the picture's width and height from its top left; its
+// radius as a share of its height; whether it is in front of the scene; how strongly it
+// shows; and its colour.
+struct Mote {
+  at: vec2f,
+  radius: f32,
+  front: bool,
+  strength: f32,
+  colour: vec3f,
+}
+
+// Each mote rises slowly, sways a little, and comes round again from below. In a recorded
+// loop of so many seconds each lives once round the loop instead, at its own point in
+// it: it fades in, rises as it would on the page, and fades out, so the loop runs on.
+fn mote(instance: u32, seconds: f32, period: f32) -> Mote {
+  let k = f32(instance) * 1.618;
+  let front = instance >= BACK;
+  var clock = seconds;
+  var fade = 1.0;
+  if (period > 0.0) {
+    let life = fract(seconds / period + scatter(k + 8.0));
+    clock = (life - 0.5) * period;
+    fade = smoothstep(0.0, 0.2, life) * (1.0 - smoothstep(0.8, 1.0, life));
+  }
+  let rise = mix(0.004, 0.012, scatter(k + 3.0)) * select(1.0, 1.7, front);
+  let y = fract(scatter(k + 1.0) - clock * rise) * 1.2 - 0.1;
+  let x = fract(scatter(k + 2.0) + 0.015 * sin(clock * mix(0.15, 0.4, scatter(k + 4.0)) + k));
+  let radius = select(mix(0.4, 1.0, scatter(k + 5.0)), mix(1.6, 3.0, scatter(k + 5.0)), front) * SIZE;
+  let strength = select(mix(0.14, 0.34, scatter(k + 6.0)), mix(0.07, 0.15, scatter(k + 6.0)), front) * fade;
+  return Mote(vec2f(x, y), radius, front, strength, mix(NEAR_COLOUR, FAR_COLOUR, scatter(k + 7.0)));
+}
+
+// How much of a mote shows this far from its middle, in radii: behind, a soft-edged
+// disc, the way a light far off blurs; in front, a wide haze.
+fn moteShape(front: bool, d: f32) -> f32 {
+  return select(1.0 - smoothstep(0.55, 1.0, d), exp(-d * d * 3.5) * (1.0 - d), front);
+}
+`
+}
+
+function motesWgsl(scene: Scene) {
+  return /* wgsl */ `
+${PRESENT_WGSL}
+${moteWgsl(scene)}
+
 struct Out {
   @builtin(position) position: vec4f,
   @location(0) local: vec2f,
+  // The mote's colour and how strongly it shows, and whether it is in front of the scene.
   @location(1) @interpolate(flat) look: vec4f,
-}
-
-fn hash(n: f32) -> f32 {
-  return fract(sin(n * 127.1 + 311.7) * 43758.5453);
+  @location(2) @interpolate(flat) front: f32,
 }
 
 @vertex fn vs_main(@builtin(vertex_index) vertex: u32, @builtin(instance_index) instance: u32) -> Out {
   var out: Out;
-  let k = f32(instance) * 1.618;
-  let front = instance >= BACK;
   let size = present.canvas.xy;
-  let seconds = present.grid.w;
-  // Each mote rises slowly, sways a little, and comes round again from below.
-  let rise = mix(0.004, 0.012, hash(k + 3.0)) * select(1.0, 1.7, front);
-  let y = fract(hash(k + 1.0) - seconds * rise) * 1.2 - 0.1;
-  let x = fract(hash(k + 2.0) + 0.015 * sin(seconds * mix(0.15, 0.4, hash(k + 4.0)) + k));
-  let radius = select(mix(0.4, 1.0, hash(k + 5.0)), mix(1.6, 3.0, hash(k + 5.0)), front) * SIZE * size.y;
+  let m = mote(instance, present.grid.w, 0.0);
   var corners = array<vec2f, 4>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(1.0, 1.0));
   let corner = corners[vertex];
-  let pixel = vec2f(x * size.x, y * size.y) + corner * radius;
+  let pixel = m.at * size + corner * m.radius * size.y;
   out.position = vec4f(pixel.x / size.x * 2.0 - 1.0, 1.0 - pixel.y / size.y * 2.0, 0.0, 1.0);
   out.local = corner;
-  let strength = select(mix(0.14, 0.34, hash(k + 6.0)), mix(0.07, 0.15, hash(k + 6.0)), front);
-  out.look = vec4f(select(0.0, 1.0, front), strength, hash(k + 7.0), 0.0);
+  out.look = vec4f(m.colour, m.strength);
+  out.front = select(0.0, 1.0, m.front);
   return out;
 }
 
@@ -516,16 +612,13 @@ fn hash(n: f32) -> f32 {
   if (d > 1.0) {
     discard;
   }
-  let front = in.look.x > 0.5;
+  let front = in.front > 0.5;
   // A mote behind the scene shows only against the sky.
   if (!front && textureLoad(pixels, gridPixel(in.position.xy), 0).a > 0.5) {
     discard;
   }
-  // Behind, a soft-edged disc, the way a light far off blurs; in front, a wide haze.
-  let soft = select(1.0 - smoothstep(0.55, 1.0, d), exp(-d * d * 3.5) * (1.0 - d), front);
-  let colour = mix(NEAR_COLOUR, FAR_COLOUR, in.look.z);
-  let alpha = in.look.y * soft;
-  return vec4f(colour * alpha, alpha);
+  let alpha = in.look.a * moteShape(front, d);
+  return vec4f(in.look.rgb * alpha, alpha);
 }
 `
 }
@@ -537,7 +630,9 @@ export type Painter = {
   order(indices: Uint32Array<ArrayBuffer>): void
   /** Where the moving parts are now (`Scene.pose`). */
   pose(parts: Float32Array<ArrayBuffer>): void
-  /** Encodes one moment: the splats and their pixels, and the scaled picture with motes on `picture` when given. */
+  /** Encodes one moment: the splats and their pixels, and the scaled picture with motes on
+   * `picture` when given. A recorded loop's moment is drawn without a picture: its motes
+   * are in its pixels. */
   encode(f: Frame, moment: Moment, picture?: Target): void
   /** The low picture, one palette colour per pixel; alpha is 1 where the scene is. */
   readonly pixels: Target
@@ -574,9 +669,10 @@ export function createPainter(
       ahead: [ahead[0], ahead[1], ahead[2], moment.pitch],
       eye: [eye[0], eye[1], eye[2], 0.55 * Math.min(1, span * 1.6)],
       limits: [(1.3 * grid.columns) / (2 * f), (1.3 * grid.rows) / (2 * f), step[0]!, step[1]!],
+      clock: [moment.loop, 0, 0, 0],
     }
   }
-  const first: Moment = {turn: 0, pitch: scene.camera.pitch, bob: 0, flicker: 1, seconds: 0}
+  const first: Moment = {turn: 0, pitch: scene.camera.pitch, bob: 0, flicker: 1, seconds: 0, loop: 0}
 
   const splats = draw(gpu, {
     shader: prepareShader(SPLAT_WGSL, "splats.wgsl"),
@@ -604,7 +700,7 @@ export function createPainter(
     shader: prepareShader(motesWgsl(scene), "splats_motes.wgsl"),
     geometry: {topology: "triangle-strip"},
     vertices: 4,
-    instances: Math.min(MOTES_LIMIT, scene.motes.back + scene.motes.front),
+    instances: moteCount(scene),
     blend: "premultiplied",
     depth: false,
     label: "splats.motes",

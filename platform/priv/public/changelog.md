@@ -2,6 +2,12 @@
 
 Changes to Ash Template, newest first.
 
+## 16 November 2026
+
+- **Splats.** Download GIF saves the world you are looking at as a GIF that loops without a
+  seam: one full turn in about eight seconds, every moving part running, in the scene's own
+  colours.
+
 ## 15 November 2026
 
 - **Motion lab.** A new page, Splats: two small floating worlds in pixel art, a robot

@@ -18,6 +18,7 @@
     "@solana/kit": "8.6.0",
     "@vgpu/wgsl": "0.6.0",
     "animejs": "4.5.0",
+    "gifenc": "1.0.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "vgpu": "0.6.0",

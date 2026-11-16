@@ -110,9 +110,10 @@ export type Scene = {
   /** Soft motes over the picture: how many behind the scene and in front, and their two colours. */
   readonly motes: {readonly back: number; readonly front: number; readonly colours: readonly [Vec3, Vec3]; readonly size: number}
   /** How many moving parts, and where each is at a moment: 16 floats a part (three axes, a
-   * move and an opacity), part 0 standing still. */
+   * move and an opacity), part 0 standing still. In a recorded loop of `loop` seconds
+   * every part comes round a whole number of times (`rate`); 0 is the page's own clock. */
   readonly parts: number
-  pose(seconds: number, into: Float32Array<ArrayBuffer>): void
+  pose(seconds: number, into: Float32Array<ArrayBuffer>, loop: number): void
   /** The turn, tilt and moment of the still picture, the first frame and a still scene. */
   readonly still: {readonly turn: number; readonly pitch: number; readonly seconds: number}
 }
@@ -131,6 +132,17 @@ export const smoothstep = (from: number, to: number, x: number) => {
   return t * t * (3 - 2 * t)
 }
 export const UP: Vec3 = [0, 1, 0]
+
+/**
+ * The loop rule: something that comes round `cycles` times a second, as the clock runs
+ * in a recorded loop of `loop` seconds (gif.ts). In a loop it comes round the nearest
+ * whole number of times, and at least once, so the loop's last moment runs on into its
+ * first; with no loop (0, the page) it keeps its own pace. `floor(x + 0.5)` rather than
+ * `round`, so painter.ts's shaders, which round halves to even, snap the same way.
+ */
+export const rate = (cycles: number, loop: number) => (loop > 0 ? Math.max(1, Math.floor(cycles * loop + 0.5)) / loop : cycles)
+/** `rate` for a wave given in radians a second. */
+export const wave = (radians: number, loop: number) => (loop > 0 ? 2 * Math.PI * rate(radians / (2 * Math.PI), loop) : radians)
 
 export const hex = (value: string): Vec3 => {
   const n = Number.parseInt(value.slice(1), 16)
