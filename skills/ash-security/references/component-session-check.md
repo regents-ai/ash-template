@@ -37,9 +37,9 @@ A push or a result is held against `lapses_at` on the clock:
 - From it on: the same re-read an event makes, every time, with the same two outcomes.
   A later sign-in on the same browser only ever moves the true end later, so the
   instant the mount read is never too late.
-- A message that names the account as changed (the ENS lookup finishing, a sign-in
-  that changed or withdrew the account's wallets, a component reporting its lease
-  lapsed) always re-reads. The account resource publishes its sign-in refresh on the
+- A message that names the account as changed (an ENS lookup that changed the name or
+  picture, a sign-in that changed or withdrew the account's wallets, a component
+  reporting its lease lapsed) always re-reads. The account resource publishes its sign-in refresh on the
   account's own topic for this, so a sign-in elsewhere that leaves the account without
   a wallet signs its other open pages out at once. That notice reaches only this
   site's own open pages; another site learns at its own next read. It is an early

@@ -2,12 +2,14 @@ defmodule AshTemplateWeb.MessagesPagesTest do
   # The pages around a message left for the site's team:
   # - /agents and the /app home carry the Agent Message dialog for their topic, with a paste-ready
   #   text for each way an agent connects, and the form only for a signed-in person
-  #   (test/browser/agent_message.spec.ts leaves one through it);
+  #   (test/browser/agent_message.spec.ts leaves one through it), which keeps what
+  #   is typed while the same person's account is read again;
   # - /admin/messages shows the team every message, newest first, and is the
   #   not-found page for anyone who is not one of the site's admins.
   use ExUnit.Case, async: false
 
   import Phoenix.ConnTest
+  import Phoenix.LiveViewTest
   import Plug.Conn, only: [put_req_header: 3]
 
   alias AshTemplate.{Accounts, Messages}
@@ -53,6 +55,31 @@ defmodule AshTemplateWeb.MessagesPagesTest do
     end
   end
 
+  # 16 Nov 2026: the same person signing in again elsewhere changed their account,
+  # and every open page emptied the message they were typing.
+  test "what a person types survives their own account being read again" do
+    {conn, account} = signed_in()
+    view = message_view(conn)
+    type(view, "Typed before the other sign-in.")
+
+    signed_in_elsewhere(account)
+
+    assert view |> element("#agents-message-person-body") |> render() =~
+             "Typed before the other sign-in."
+  end
+
+  test "a sign-in ended elsewhere takes the form and what was typed" do
+    {conn, account} = signed_in()
+    view = message_view(conn)
+    type(view, "Typed before signing out.")
+
+    assert conn |> Plug.Conn.get_session() |> SessionAuthority.claim() |> SessionAuthority.revoke()
+    signed_in_elsewhere(account)
+
+    refute has_element?(view, "#agents-message-person-form")
+    refute render(view) =~ "Typed before signing out."
+  end
+
   test "/admin/messages shows the team every message, and is not found for anyone else" do
     {person, account} = signed_in()
     {:ok, older} = leave(account, "agents", "First")
@@ -83,6 +110,34 @@ defmodule AshTemplateWeb.MessagesPagesTest do
         actor: Human.for_account(account),
         context: %{client_key: Ecto.UUID.generate()}
       )
+
+  # /agents connected, as a browser opens it (LiveViewTest connects with the
+  # conn's own session once the connection's details are a map).
+  defp message_view(conn) do
+    {:ok, view, _html} =
+      conn
+      |> put_req_header("accept", "text/html")
+      |> Plug.Conn.put_private(:live_view_connect_info, %{})
+      |> live("/agents")
+
+    assert has_element?(view, "#agents-message-person-form")
+    view
+  end
+
+  # The same person signs in in another tab with a wallet added: the account
+  # changes, and every open page of theirs reads it again.
+  defp signed_in_elsewhere(account) do
+    added = "0x" <> Base.encode16(:crypto.strong_rand_bytes(20), case: :lower)
+    wallets = [account.wallet_address, added]
+
+    {:ok, _account} =
+      Accounts.refresh_verified(account, account.wallet_address, wallets, actor: %System{})
+  end
+
+  defp type(view, body) do
+    view |> form("#agents-message-person-form", message: %{body: body}) |> render_change()
+    assert view |> element("#agents-message-person-body") |> render() =~ body
+  end
 
   defp page(conn, path),
     do: conn |> put_req_header("accept", "text/html") |> get(path) |> html_response(200) |> LazyHTML.from_document()
