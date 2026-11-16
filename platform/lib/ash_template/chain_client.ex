@@ -2,10 +2,9 @@ defmodule AshTemplate.ChainClient do
   @moduledoc """
   JSON-RPC reads at the latest block of the chain a review names. Every read is at
   `latest`: never count confirmations and never wait for `safe` or `finalized`. The
-  node is the site's own for the chain (`:chain_nodes`), never the public address a
-  wallet adds the chain with, so a private node or a lab fork reads what the site's
-  steps sent. `RegentChain.Outcome` reads sent steps through `transaction/2` and
-  `receipt/2`.
+  node is the site's own for the chain (`:chain_nodes`), never the review's public
+  `rpc_url`, so a private node or a lab fork reads what the site's steps sent.
+  `RegentChain.Outcome` reads sent steps through `transaction/2` and `receipt/2`.
   """
 
   @behaviour RegentPoints.ChainClient

@@ -11949,3 +11949,31 @@ loaded only when the button is pressed.
   No row is changed. The column is dropped in the next release, once no running machine names
   it.
 - Checks: `platform/test/ash_template/accounts/ens_identity_test.exs`.
+
+## 2026-11-16 — Wallets switch network through Privy, and a declined switch says so
+
+- A wallet button whose wallet is on another network now asks the wallet to switch through
+  Privy's own switch, which adds the network first in the way each wallet app needs
+  (Coinbase Wallet and Base account, Rabby, and any wallet that gives the standard "unknown
+  network" answer) and moves the Privy wallet without asking. Before, the page asked the
+  wallet itself and understood only one way of saying "I don't know that network"; a person
+  on a phone pressed with their wallet on another network, saw no switch, and got
+  "different network". The page's own switch code is gone.
+- Privy now connects every wallet on the site's wallet chain (the `:wallet_chain` setting,
+  Base Sepolia in the template, passed to the page beside the Privy app id) and switches to
+  no other: the Privy wallet starts on it, and a wallet app on another network is asked to
+  switch as it connects. A person who declines still connects; the next press asks again.
+- Saying no to the switch now has its own words: "Your wallet declined the switch to Base
+  Sepolia. Nothing was sent." A switch that fails any other way, or a wallet still on
+  another network, says "Your wallet isn't on Base Sepolia. Change the network to Base
+  Sepolia in your wallet app, then press again. Nothing was sent." Every press still
+  reaches the wallet and asks for the switch again.
+- The wallet lab at `/showcase/onchain` can now decline the switch or fail it, so both
+  notes can be seen there.
+- The library pin moves to elixir-utils main `14a0691c`. It accepts the new "declined the
+  switch" reason from the page, and a refused connected-app token request now logs whether
+  its resource was left out or was another one, and for which grant (Sean's letter 86 a):
+  `code_resource_missing`, `code_resource_other`, `refresh_resource_other`. The grant type
+  is checked first, so an empty request logs `grant_type`. No request is accepted or
+  refused differently.
+- Checks: three new tests in `platform/assets/test/send_step.test.ts`.

@@ -47,9 +47,15 @@ chain events recorded in the database, use `chain-events`; for a USDC payment's 
    calldata and pushes the review to the panel before the button is pressed. The
    browser never encodes a transaction. See
    [hook pattern](references/hook-pattern.md#the-server-builds-the-steps).
-5. **Before sending**, switch the wallet to the step's chain (add it when the wallet
-   answers 4902), then check the account is the step's signer and make `eth_chainId`
-   the last read before `eth_sendTransaction`.
+5. **Before sending**, when the wallet is on another chain, ask Privy's own
+   `switchChain` for the wallet to move to the step's chain (Privy adds the network
+   to wallets that lack it, each the way that wallet app needs), on every press; never
+   a hand-written `wallet_switchEthereumChain`. Then check the account is the step's
+   signer and make `eth_chainId` the last read before `eth_sendTransaction`. A declined
+   switch is `switch_declined`; a failed one, or a wallet still elsewhere, is
+   `network_mismatch`. Privy connects wallets on the site's wallet chain from the start
+   (`defaultChain` and `supportedChains` in `privy_bridge.tsx`). See
+   [hook pattern](references/hook-pattern.md#a-press).
 6. **An approval is a step of its own.** The next step's button appears as soon as the
    approval is sent; nothing waits for it to land before the next press can reach the
    wallet. Approve and Buy are the same size, and Approve turns grey with a green border

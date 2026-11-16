@@ -25,7 +25,7 @@ this page.
 | | No wallet is active in this tab |
 | | The person switches to a second wallet linked to the same account (the figures move to it) |
 | What the wallet does | A repeat press while the wallet is open |
-| | Wrong network: switched, added, or the switch refused |
+| | Wrong network: switched, added, the switch declined, or the switch failed |
 | | Declined |
 | | No ETH for fees |
 | | Sped up or cancelled in the wallet (the hash is replaced) |
