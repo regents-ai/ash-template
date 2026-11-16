@@ -218,17 +218,19 @@ config :ash_template, :chain_heads, %{8453 => 3_600_000}
 # (`AshTemplate.ChainRefresh`).
 config :ash_template, AshTemplate.ChainRefresh, readers: [AshTemplate.ChainHead]
 
-# The chain the wallet page at /showcase/wallet sends on: Base Sepolia, a test
-# network, so nothing it sends moves value.
+# The chain the site's wallet buttons send on: Base Sepolia, a test network, so
+# nothing the wallet page at /showcase/wallet sends moves value. Privy connects
+# every wallet on it and switches to no other (`privy_bridge.tsx`), so it must be
+# a network in Privy's own list.
 config :ash_template, :wallet_chain, %{
   chain_id: 84_532,
   name: "Base Sepolia",
   rpc_url: "https://sepolia.base.org"
 }
 
-# The node the server reads each chain through, by chain id. A wallet adds a chain
-# with its public `rpc_url` above; the server may read through a private node or a
-# lab fork instead, and this address never reaches the browser.
+# The node the server reads each chain through, by chain id, never the public
+# `rpc_url` above: a private node or a lab fork, and this address never reaches
+# the browser.
 config :ash_template, :chain_nodes, %{
   84_532 => "https://sepolia.base.org",
   8453 => "https://mainnet.base.org"

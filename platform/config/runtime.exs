@@ -65,7 +65,7 @@ end
 
 # The server reads a chain through its own node when one is set, such as a
 # private node whose address carries a key, or a local copy of the chain for a
-# lab run; wallets still add the public address. The wallet chain's node is
+# lab run; wallets never see it. The wallet chain's node is
 # ASH_TEMPLATE_CHAIN_NODE_URL; Points reads NFTs through the Base one. Tests
 # read no chain, whatever the shell sets.
 if config_env() != :test do

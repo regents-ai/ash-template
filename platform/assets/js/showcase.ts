@@ -257,6 +257,7 @@ const ShowcaseWallet = {
                   address,
                   {
                     provider,
+                    switchChain: async () => undefined,
                     disconnect: () => {
                       connected = false
                     },

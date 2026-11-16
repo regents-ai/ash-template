@@ -4,6 +4,7 @@ import {
   forgetWalletDisconnected,
   replaceActiveEthereumWallet,
   type EthereumProvider,
+  type SwitchChain,
 } from "../wallet_actions/connected_wallet"
 
 type LabHook = Hook & {
@@ -17,9 +18,10 @@ type RpcError = {code: number; message: string}
 /**
  * The workshop's stand-in wallet app. It holds the lab chain's first three
  * accounts, one provider each, and takes Privy's place as the active wallet on
- * this page only. It switches to any network the page lists, and sends and signs
- * on the lab chains (`data-lab-chain-ids`) through the page; the network, a
- * refused switch, a decline and a slow answer are the tester's to set.
+ * this page only. Its switch stands in for Privy's: it moves to any network the
+ * page lists. It sends and signs on the lab chains (`data-lab-chain-ids`)
+ * through the page; the network, a declined or failed switch, a decline and a
+ * slow answer are the tester's to set.
  */
 export const OnchainLab: Hook = {
   mounted(this: LabHook) {
@@ -27,30 +29,33 @@ export const OnchainLab: Hook = {
     const labChainIds = (root.dataset.labChainIds ?? "").split(",").map(Number)
     const field = (name: string) => root.querySelector<HTMLInputElement>(`[name="${name}"]:checked`)
     const ticked = (name: string) => field(name) !== null
+    const slowly = async () => {
+      if (ticked("lab-slow")) await new Promise(resolve => setTimeout(resolve, 1500))
+    }
     const log = (words: string) => {
       const line = root.querySelector<HTMLElement>("[data-lab-log]")
       if (line) line.textContent = words
     }
     let chainId = Number(field("lab-network")?.value ?? labChainIds[0])
 
+    const switchChain: SwitchChain = async wanted => {
+      await slowly()
+      if (ticked("lab-decline-switch")) throw rpcError({code: 4001, message: "User rejected the request."})
+      const network = root.querySelector<HTMLInputElement>(`[name="lab-network"][value="${wanted}"]`)
+      if (ticked("lab-fail-switch") || !network) throw rpcError({code: 4902, message: "Unrecognized chain."})
+      chainId = wanted
+      network.checked = true
+      log(`The wallet switched to network ${wanted}.`)
+    }
+
     const provider = (address: string): EthereumProvider => ({
       request: async ({method, params = []}) => {
-        if (ticked("lab-slow")) await new Promise(resolve => setTimeout(resolve, 1500))
+        await slowly()
         switch (method) {
           case "eth_chainId":
             return `0x${chainId.toString(16)}`
           case "eth_accounts":
             return [address]
-          case "wallet_switchEthereumChain": {
-            if (ticked("lab-refuse-switch")) throw rpcError({code: 4001, message: "User rejected the request."})
-            const wanted = Number(BigInt((params[0] as {chainId: string}).chainId))
-            const network = root.querySelector<HTMLInputElement>(`[name="lab-network"][value="${wanted}"]`)
-            if (!network) throw rpcError({code: 4902, message: "Unrecognized chain."})
-            chainId = wanted
-            network.checked = true
-            log(`The wallet switched to network ${wanted}.`)
-            return null
-          }
           case "eth_sendTransaction":
           case "eth_signTypedData_v4": {
             if (ticked("lab-decline")) {
@@ -76,7 +81,7 @@ export const OnchainLab: Hook = {
     )
     const choose = () => {
       const address = field("lab-wallet")?.value || null
-      const wanted = address ? {address, provider: providers.get(address)!} : null
+      const wanted = address ? {address, provider: providers.get(address)!, switchChain} : null
       if (activeEthereumWallet()?.provider === wanted?.provider) return
       if (wanted) forgetWalletDisconnected()
       replaceActiveEthereumWallet(wanted)

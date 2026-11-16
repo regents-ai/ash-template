@@ -25,7 +25,8 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
   @gas "0x30d40"
   # What the tester can make the stand-in wallet do.
   @switches [
-    {"lab-refuse-switch", "Refuse to switch network"},
+    {"lab-decline-switch", "Decline the network switch"},
+    {"lab-fail-switch", "Fail the network switch"},
     {"lab-decline", "Decline in the wallet"},
     {"lab-slow", "Answer slowly (1.5 s a request)"}
   ]

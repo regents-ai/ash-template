@@ -11937,3 +11937,25 @@ loaded only when the button is pressed.
   migration.
 - Rollback: v264 (`67e7d1c8`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 369 script).
+
+## 2026-11-16 — Wallets switch network through Privy, and a declined switch says so
+
+- A wallet button whose wallet is on another network now asks the wallet to switch through
+  Privy's own switch, which adds the network first in the way each wallet app needs
+  (Coinbase Wallet and Base account, Rabby, and any wallet that gives the standard "unknown
+  network" answer) and moves the Privy wallet without asking. Before, the page asked the
+  wallet itself and understood only one way of saying "I don't know that network"; a person
+  on a phone pressed with their wallet on another network, saw no switch, and got
+  "different network". The page's own switch code is gone.
+- Privy now connects every wallet on the site's wallet chain (the `:wallet_chain` setting,
+  Base Sepolia in the template, passed to the page beside the Privy app id) and switches to
+  no other: the Privy wallet starts on it, and a wallet app on another network is asked to
+  switch as it connects. A person who declines still connects; the next press asks again.
+- Saying no to the switch now has its own words: "Your wallet declined the switch to Base
+  Sepolia. Nothing was sent." A switch that fails any other way, or a wallet still on
+  another network, says "Your wallet isn't on Base Sepolia. Change the network to Base
+  Sepolia in your wallet app, then press again. Nothing was sent." Every press still
+  reaches the wallet and asks for the switch again.
+- The wallet lab at `/showcase/onchain` can now decline the switch or fail it, so both
+  notes can be seen there.
+- Checks: three new tests in `platform/assets/test/send_step.test.ts`. No migration.
