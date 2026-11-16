@@ -223,7 +223,15 @@ starts on the default chain; a wallet app is prompted to switch to it as it conn
 and connects anyway if the person declines. In @privy-io/react-auth 3.51.1 that prompt
 comes only when the app's chain is outside `supportedChains`, and never for MetaMask
 through WalletConnect. A wallet app can still be moved by hand at any time, which is why
-each press reads the chain again. The hook then reports:
+each press reads the chain again.
+
+A site whose local lab runs on a chain Privy does not list (anvil's 31337, on Keyfleet)
+takes Privy's own entry when the id is listed and otherwise describes the chain with
+viem's `defineChain` from the site's own chain name and public node, which is Privy's
+documented way for an unlisted network. Production chains come from Privy's list. The
+template's chain is always listed, so its bridge only looks it up.
+
+The hook then reports:
 
 - `step_sent` `{review_id, step, transaction_hash}`
 - `step_signed` `{review_id, step, signature}`

@@ -58,6 +58,10 @@ A site's lanes differ from the template's. Skip a step whose gate the site does 
 style and scripts gates, for one), and keep the site's own order where one lane feeds the next.
 
 1. **Measure.** Run `make check` twice and note each gate's seconds.
+   A site whose `Makefile` runs everything through one `mix precommit` has no lanes to
+   measure or move: first split it into the asset build, then the lanes that read what it
+   built (Keyfleet). A plain compile ahead of the lanes hides no warning, since the lanes
+   still compile with warnings as errors.
 2. **Walk server.** Before adding browsers, start the walk's server without Phoenix's code
    reloader: the reloader lets one request through at a time, and eight browsers time out
    behind it. Give that server its own build folder so it never recompiles the everyday build.
@@ -67,6 +71,8 @@ style and scripts gates, for one), and keep the site's own order where one lane 
    (`pool: DBConnection.ConnectionPool`, for that server only): the sandbox pool keeps a
    connection per process, and eight browsers take all of them (regents.sh, 93 tests on error
    pages). The template's walk server runs in dev and never met this.
+   A walk that shares the test suite's database cannot run beside `mix test`: give it its
+   own (Keyfleet uses the partition's name plus `_walk`, dropped and created by each run).
 3. **Walk concurrency.** Copy the `workers` lines from the template's
    `platform/playwright.config.ts`. Then run the walk alone at sixteen workers with
    `--repeat-each` on any test that fails, to find tests that race the page. Fix the race in
@@ -80,7 +86,15 @@ style and scripts gates, for one), and keep the site's own order where one lane 
      whether the page should redraw at all: on regents.sh this was two site faults (a form
      that started again on any change to the account, and a lookup that saved and announced
      an unchanged answer on every sign-in). Then a test that changes shared state signs in as
-     its own person, and a file whose tests depend on each other keeps its order.
+     its own person, and a file whose tests depend on each other keeps its order. A walk
+     whose tests all sign in as the same few test accounts keeps its browser count until
+     each worker has accounts of its own (Keyfleet did not take the per-core line for this
+     reason);
+   - a test that reads the page before the page has finished its own work: wait for the
+     state the page itself sets, never for time.
+
+   A contracts gate that compiles hard (Foundry's `forge`) starves the walk's server when
+   both run at once: run it under `nice` (Keyfleet).
 
    Memory, measured on regents.sh with eight browsers: 3.2 to 3.8 GB as Activity Monitor's
    footprint. Resident size summed per process reads 6 to 7 GB, because Chromium's shared
@@ -101,5 +115,8 @@ style and scripts gates, for one), and keep the site's own order where one lane 
 ## Still slow, and why
 
 - One walk server serves every browser; past twelve browsers it is the limit.
+- A site whose walk always uses the same ports cannot walk in two worktrees at once
+  (Keyfleet). The template's `platform/test/browser/walk.sh` takes a free port on each run
+  and names the run's database after it.
 - Waiting for one of the Mac's three shared check places can cost more than the check. Machines
   off the Mac would fix that; it has not been decided.
