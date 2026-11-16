@@ -11928,3 +11928,12 @@ loaded only when the button is pressed.
 - Checks: `platform/test/ash_template/accounts/ens_identity_test.exs` (new, real sign-ins
   against a stand-in Ethereum endpoint) and two tests in
   `platform/test/ash_template_web/messages_pages_test.exs`. No migration.
+
+## 2026-11-16 — Released v265: pages stay put when the same person signs in again
+
+- v265 (`45a40c5e`) on template.regents.sh carries the entry above and the `docs/fast-check.md`
+  additions from Patchbay's and regents.sh's runs of the guide. Library pin `adf77f79`
+  (elixir-utils main); design-system pin `d4075655`; regents-cli 1.10.30; API 21.0.0. No
+  migration.
+- Rollback: v264 (`67e7d1c8`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 369 script).
