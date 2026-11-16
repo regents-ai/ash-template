@@ -11866,3 +11866,16 @@ loaded only when the button is pressed.
   `platform/test/browser/splats.spec.ts` (shows at the row's end, counts up in place, one GIF
   for two presses, saves the factory's; the failure line; switching scenes stops it; not
   offered without WebGPU; with less motion the island's saves from the keyboard).
+
+## 2026-11-16 — `make check` in about two minutes
+
+- The full check went from about five and a half minutes to under two on a 16-core Mac, with
+  every test still run (Sean's letter 80 a). No retry, wider timeout, skipped or removed test.
+- The browser walk runs one browser for every two cores, at most twelve, where it ran three.
+  Two browser tests that raced the page at that pace now wait for what they press: the copy
+  button test waits for the page to connect, and the Splats stillness test compares the picture
+  one pixel inside its box.
+- `mix test` runs beside `mix precommit` instead of after it: its script build works in its own
+  folder under `_build/test`.
+- `make check` prints `SLOW: <gate> took N s (budget M s)` when a gate goes over its budget
+  (`CHECK_BUDGETS` in the `Makefile`). It is a warning and never fails the check.
