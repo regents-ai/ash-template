@@ -34,6 +34,24 @@ slow from what they wait for (a stand-in that answers word by word, one-second s
 from running in turn, and once `mix test` runs beside precommit it is no longer on the longest
 path.
 
+## Three walks at once do not fit
+
+The walk's size above was measured with one check running. This Mac allows three full checks at
+once, and three walks at half the cores each ask for one and a half machines before their
+servers and tests. Seen on 16 Nov 2026 with three walks running: load of 90 to 180 on 16 cores,
+`platform-precommit` at 190 to 230 s, and a different failure on each run of an unchanged
+commit (a page that stopped drawing for over five seconds, then three server tests that timed
+out waiting for a database connection). None of them failed when run alone.
+
+How walks share the machine (one walk at a time, or three smaller walks) is with Sean and not
+decided. Until it is:
+
+- the two-minute figure holds only when no other walk is running;
+- a failure that appears only while other walks run is the machine, not the commit. Read the
+  load (`sysctl -n vm.loadavg`) before hunting it, and run the full check again on a quiet
+  machine. That is not a retry: the gate is still one clean full check on the exact commit;
+- do not answer it with a retry, a wider timeout or a skipped test.
+
 ## Steps for a site
 
 1. **Measure.** Run `make check` twice and note each gate's seconds.
