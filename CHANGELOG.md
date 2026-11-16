@@ -11995,3 +11995,11 @@ loaded only when the button is pressed.
   release neither reads nor writes the column, so its machines keep serving while this one's
   migration runs. Every row keeps its wallet, name and picture; undoing it adds the column back
   empty.
+
+## 2026-11-16 — Released v267: the ENS lookup state column is gone
+
+- v267 (`93ad6c5c`) on template.regents.sh carries the entry above (Sean's letter 83 a). Pins
+  unchanged from v266. One migration: the column drop.
+- Rollback: v266 (`1de9481d`) image, by hand; it runs without the column. The dropped values
+  are not kept.
+- Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 372 script).
