@@ -427,8 +427,9 @@ repository with stand-ins for Fly and the site), the required-fixes check (see
 
 It runs its gates side by side, each writing its output to
 `_build/check/<gate>.log`, then prints every gate's log, the failed ones last, and
-one line per gate with its time, and fails when any gate failed. The style check
-and `mix precommit` run in turn, in that order: both compile `_build/dev` and copy
+one line per gate with its time, and fails when any gate failed. A gate over its
+time budget (`CHECK_BUDGETS` in the `Makefile`) gets a `SLOW` line under its own,
+which never fails the check. The style check and `mix precommit` run in turn, in that order: both compile `_build/dev` and copy
 the design system's files into `assets/vendor` afresh. `mix test` runs beside
 them: it compiles `_build/test`, and its script build copies the scripts and the
 shared libraries' files into its own folder there, so it never reads
