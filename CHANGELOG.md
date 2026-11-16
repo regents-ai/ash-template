@@ -11937,3 +11937,15 @@ loaded only when the button is pressed.
   migration.
 - Rollback: v264 (`67e7d1c8`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 369 script).
+
+## 2026-11-16 — The ENS row stops keeping how its last lookup ended
+
+- The account's ENS row (`AshTemplate.Accounts.EnsIdentity`) no longer has `lookup_state`
+  (Sean's letter 83 a). Nothing has read it since v265. Sign-ins and lookups save the wallet,
+  name and picture as before. A lookup that gives up after its three tries leaves the row as it
+  was; it used to mark it failed. The job still ends the same way and logs the same one line.
+- Migration `20261116172939_ens_lookup_state_optional` makes the column accept a row without a
+  value, so this release saves rows without it while the release it replaces still writes it.
+  No row is changed. The column is dropped in the next release, once no running machine names
+  it.
+- Checks: `platform/test/ash_template/accounts/ens_identity_test.exs`.

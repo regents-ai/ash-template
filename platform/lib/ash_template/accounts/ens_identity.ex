@@ -16,8 +16,7 @@ defmodule AshTemplate.Accounts.EnsIdentity do
   `wallet_address` is the wallet the row was read for, so an account whose
   wallet has since changed is never shown the old wallet's name. A sign-in with
   another wallet clears the name and picture at once, and its own lookup fills
-  them in. `lookup_state` is how the last lookup for that wallet ended:
-  `:pending` until it answers, then `:done`, or `:failed` once one gave up.
+  them in.
 
   Lookups run only while the server has an Ethereum endpoint
   (`ETHEREUM_READ_RPC_URL`).
@@ -43,10 +42,6 @@ defmodule AshTemplate.Accounts.EnsIdentity do
     attribute :ens_name, :string, public?: true
     attribute :ens_avatar_url, :string, public?: true
 
-    attribute :lookup_state, :atom,
-      allow_nil?: false,
-      constraints: [one_of: [:pending, :done, :failed]]
-
     timestamps()
   end
 
@@ -71,11 +66,10 @@ defmodule AshTemplate.Accounts.EnsIdentity do
       accept [:human_account_id, :wallet_address]
       change set_attribute(:ens_name, nil, set_when_nil?: true)
       change set_attribute(:ens_avatar_url, nil, set_when_nil?: true)
-      change set_attribute(:lookup_state, :pending)
       change run_oban_trigger(:look_up)
       upsert? true
       upsert_identity :unique_human_account
-      upsert_fields [:wallet_address, :ens_name, :ens_avatar_url, :lookup_state, :updated_at]
+      upsert_fields [:wallet_address, :ens_name, :ens_avatar_url, :updated_at]
       upsert_condition expr(wallet_address != upsert_conflict(:wallet_address))
       return_skipped_upsert? true
     end
@@ -84,10 +78,6 @@ defmodule AshTemplate.Accounts.EnsIdentity do
       transaction? false
       require_atomic? false
       change LookUp
-    end
-
-    update :lookup_failed do
-      change set_attribute(:lookup_state, :failed)
     end
   end
 
@@ -102,8 +92,6 @@ defmodule AshTemplate.Accounts.EnsIdentity do
         queue :ens
         max_attempts 3
         worker_opts unique: [period: :infinity, states: [:available, :scheduled, :retryable]]
-        on_error :lookup_failed
-        on_error_fails_job? true
         # A job that gives up logs one safe line (RegentHttp.UnexpectedFailure), not raw text.
         log_errors? false
         log_final_error? false
@@ -131,8 +119,8 @@ defmodule AshTemplate.Accounts.EnsIdentity do
   end
 
   # A lookup that changed the name or picture reaches the open pages of the
-  # account it belongs to. One that found them as stored writes nothing, and one
-  # that changed only `lookup_state`, which no page shows, is not announced.
+  # account it belongs to. One that found them as stored writes nothing and is
+  # not announced.
   pub_sub do
     module Phoenix.PubSub
     name AshTemplate.PubSub
