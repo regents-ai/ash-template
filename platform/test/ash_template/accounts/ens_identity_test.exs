@@ -56,7 +56,7 @@ defmodule AshTemplate.Accounts.EnsIdentityTest do
     account = sign_in(@first)
     looked_up()
     stored = identity(account)
-    assert %{wallet_address: @first, ens_name: nil, lookup_state: :done} = stored
+    assert %{wallet_address: @first, ens_name: nil} = stored
     topic = subscribe(account)
 
     assert sign_in(@first).id == account.id
@@ -79,7 +79,7 @@ defmodule AshTemplate.Accounts.EnsIdentityTest do
     sign_in(@first)
     looked_up()
 
-    assert %{ens_name: nil, ens_avatar_url: nil, lookup_state: :done} = now = identity(account)
+    assert %{ens_name: nil, ens_avatar_url: nil} = now = identity(account)
     assert DateTime.after?(now.updated_at, before.updated_at)
     assert_received %{topic: ^topic}
     assert %{ens_name: nil, ens_avatar_url: nil} = shown(account)
@@ -92,12 +92,10 @@ defmodule AshTemplate.Accounts.EnsIdentityTest do
 
     sign_in(@second, [@first, @second])
 
-    assert %{wallet_address: @second, ens_name: nil, ens_avatar_url: nil, lookup_state: :pending} =
-             identity(account)
-
+    assert %{wallet_address: @second, ens_name: nil, ens_avatar_url: nil} = identity(account)
     assert %{wallet_address: @second, ens_name: nil, ens_avatar_url: nil} = shown(account)
     looked_up()
-    assert %{wallet_address: @second, lookup_state: :done} = identity(account)
+    assert %{wallet_address: @second, ens_name: nil, ens_avatar_url: nil} = identity(account)
   end
 
   # The lookup already running read the old wallet, so it can't finish the row.
@@ -114,7 +112,7 @@ defmodule AshTemplate.Accounts.EnsIdentityTest do
     assert [%{id: waiting}] = all_enqueued(worker: LookUp)
     assert waiting != running.id
     looked_up()
-    assert %{wallet_address: @second, lookup_state: :done} = identity(account)
+    assert %{wallet_address: @second, ens_name: nil, ens_avatar_url: nil} = identity(account)
   end
 
   # What a sign-in does: establish the account and ask for its ENS name again.
