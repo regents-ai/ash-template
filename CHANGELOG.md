@@ -11977,3 +11977,13 @@ loaded only when the button is pressed.
   is checked first, so an empty request logs `grant_type`. No request is accepted or
   refused differently.
 - Checks: three new tests in `platform/assets/test/send_step.test.ts`.
+
+## 2026-11-16 — Released v266: wallets switch through Privy; ENS lookup state leaves the code
+
+- v266 (`1de9481d`) on template.regents.sh carries the two entries above. Library pin
+  `14a0691c` (elixir-utils main); design-system pin `d4075655`; regents-cli 1.10.30; API
+  21.0.0. One migration: the ENS table's lookup state column stops being required; no row
+  changes.
+- Rollback: v265 (`45a40c5e`) image, by hand; it runs on the changed table as it is.
+- Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 372 script).
+- Not proven: Privy's switch with a real phone wallet through WalletConnect.
