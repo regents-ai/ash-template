@@ -11810,3 +11810,12 @@ For the design chief. No migration.
   21.0.0. No migration.
 - Rollback: v261 (`d561854b`) image; nothing to undo.
 - Full check exit 0 by the design chief's worker on the exact commit.
+
+## 2026-11-16 — Connected-app sign-in says why it refused
+
+- The library pin moves to elixir-utils main `adf77f79`. A refused connected-app sign-in request
+  now answers with a fixed sentence for its reason beside the same error code, and the site logs
+  one line naming the endpoint and the reason, never a value from the request. Nothing is accepted
+  or refused differently (Sean's letter 79 a).
+- The same pin carries the Base Builder Code on the shared fee pass-on
+  (`RegentPayments.Operator.send/3`); the template sends none, so nothing changes here.
