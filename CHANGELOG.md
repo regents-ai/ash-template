@@ -12003,3 +12003,14 @@ loaded only when the button is pressed.
 - Rollback: v266 (`1de9481d`) image, by hand; it runs without the column. The dropped values
   are not kept.
 - Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 372 script).
+
+## 2026-11-16 — Privy's own wallet changes network on the first press
+
+- Found by the Autolaunch chief's worker in Privy 3.51.1: for the wallet Privy makes at
+  sign-in, Privy's `switchChain` only changes Privy's record of the network; the provider
+  the page already holds stays where it was. On a site whose steps go to more than one
+  network, the first press would end with "isn't on" and the second would send. The bridge
+  (`switchChainOf` in `platform/assets/js/privy_bridge.tsx`) now asks that wallet's held
+  provider to move, which it does at once without a prompt; wallet apps still go through
+  Privy's own switch. The template lists one network, so nothing changes on its own pages.
+- Not proven with a real Privy wallet on two networks; read from Privy's source.

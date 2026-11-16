@@ -202,7 +202,11 @@ another chain it calls the wallet's own `switchChain(chain_id)`, Privy's, carrie
 the provider in `connected_wallet.ts`; it never sends `wallet_switchEthereumChain`
 itself. Privy's switch adds the network first when the wallet app lacks it, recognising
 each app's way of saying so (Coinbase Wallet and Base account, Rabby, 4902 in the code
-or message), and moves the Privy wallet without a prompt. It refuses a chain outside
+or message). Privy's own wallet is the one exception, made in `privy_bridge.tsx`
+(`switchChainOf`): its `switchChain` only changes Privy's record and leaves the provider
+the page already holds on the old chain, so the bridge asks that provider itself, which
+moves at once without a prompt. This matters only on a site whose steps go to more than
+one chain. Privy's switch refuses a chain outside
 Privy's `supportedChains`, so the site's wallet chain is always that list. Every press
 asks again while the wallet is elsewhere; nothing remembers a refusal. Then it checks the
 account is the signer, makes `eth_chainId` the last read, and checks Privy has not
