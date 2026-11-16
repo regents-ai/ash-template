@@ -1,6 +1,10 @@
 defmodule AshTemplateWeb.ScriptBuildTest do
-  # Builds the site's scripts exactly as `mix assets.build` does (after `mix
-  # setup`) and reads esbuild's own account of the build.
+  # Builds the site's scripts as `mix assets.build` does (after `mix assets.setup`),
+  # with its copy tasks and esbuild profile, in a folder of its own under the build
+  # path, and reads esbuild's own account of the build. `make check` runs `mix test`
+  # beside `mix precommit`, whose copy tasks rewrite assets/vendor and whose browser
+  # walk serves priv/static/assets: this build reads neither, and of the walk's
+  # folder it writes only the one piece it asks the endpoint for.
   #
   # Regressions: esbuild's shared pieces were sent with "public" alone, so every
   # return visit asked for each one again; the lab pages' hooks, the WebMCP tools
@@ -15,22 +19,48 @@ defmodule AshTemplateWeb.ScriptBuildTest do
   @loaded_elsewhere ~w(js/lab_pages.ts js/showcase.ts js/motion_lab.ts js/site_buttons_lab.ts js/public_tools.ts)
 
   setup_all do
-    metafile = Path.join(Mix.Project.build_path(), "script-build.json")
-    0 = Esbuild.run(:ash_template, ["--metafile=" <> metafile, "--log-level=warning"])
+    # The platform folder's layout, so the build's own paths (../priv/static/assets/js,
+    # ../../priv/tool_manifest.json) land inside it, and its packages are still found in
+    # platform/node_modules above it.
+    root = Path.join(Mix.Project.build_path(), "script-build")
+    assets = Path.join(root, "assets")
+    File.rm_rf!(root)
+
+    for source <- ~w(assets/js assets/css assets/tsconfig.json priv/tool_manifest.json) do
+      File.mkdir_p!(Path.dirname(Path.join(root, source)))
+      File.cp_r!(source, Path.join(root, source))
+    end
+
+    # The copy tasks `mix assets.build` runs, each writing under the folder it runs in.
+    copy_tasks = Enum.filter(Mix.Project.config()[:aliases][:"assets.build"], &String.ends_with?(&1, ".assets"))
+    File.cd!(root, fn -> Enum.each(copy_tasks, &Mix.Task.rerun/1) end)
+
+    profile = Keyword.put(Application.fetch_env!(:esbuild, :ash_template), :cd, assets)
+    Application.put_env(:esbuild, :script_build_test, profile)
+    on_exit(fn -> Application.delete_env(:esbuild, :script_build_test) end)
+    metafile = Path.join(root, "script-build.json")
+    0 = Esbuild.run(:script_build_test, ["--metafile=" <> metafile, "--log-level=warning"])
     outputs = (metafile |> File.read!() |> Jason.decode!())["outputs"]
     [app] = outputs |> Map.keys() |> Enum.filter(&String.ends_with?(&1, "/assets/js/app.js"))
 
-    %{outputs: outputs, first_load: first_load(outputs, [app], [])}
+    %{root: root, outputs: outputs, first_load: first_load(outputs, [app], [])}
   end
 
-  test "every shared piece is kept for a year", %{outputs: outputs, first_load: first_load} do
+  test "every shared piece is kept for a year", %{root: root, outputs: outputs, first_load: first_load} do
     # The two entry scripts, and the styles app.js's own imports bring with them.
     pieces = outputs |> Map.keys() |> Enum.reject(&String.ends_with?(&1, ~w(/js/app.js /js/app.css /js/privy_bridge.js)))
 
     assert pieces != []
     assert Enum.all?(pieces, &String.contains?(&1, "/assets/js/chunks/"))
 
+    # A piece's name carries its content's hash, so the rename can only replace a file
+    # holding the same bytes, and the piece lands whole for a walk serving the folder.
     piece = first_load |> Enum.find(&String.contains?(&1, "/chunks/")) |> Path.basename()
+    served = Application.app_dir(:ash_template, "priv/static/assets/js/chunks")
+    landing = Path.join(served, ".#{piece}.#{System.pid()}")
+    File.mkdir_p!(served)
+    File.cp!(Path.join([root, "priv/static/assets/js/chunks", piece]), landing)
+    File.rename!(landing, Path.join(served, piece))
     response = conn(:get, "/assets/js/chunks/" <> piece) |> AshTemplateWeb.Endpoint.call([])
 
     assert response.status == 200

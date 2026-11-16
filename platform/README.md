@@ -427,11 +427,13 @@ repository with stand-ins for Fly and the site), the required-fixes check (see
 
 It runs its gates side by side, each writing its output to
 `_build/check/<gate>.log`, then prints every gate's log, the failed ones last, and
-one line per gate with its time, and fails when any gate failed. The style check,
-`mix precommit` and `mix test` run in turn, in that order: the first two both
-compile `_build/dev` and copy the design system's files into `assets/vendor`
-afresh, which `mix test`'s script build reads, and that build writes the scripts
-the browser walk serves. The other gates write nothing another reads.
+one line per gate with its time, and fails when any gate failed. The style check
+and `mix precommit` run in turn, in that order: both compile `_build/dev` and copy
+the design system's files into `assets/vendor` afresh. `mix test` runs beside
+them: it compiles `_build/test`, and its script build copies the scripts and the
+shared libraries' files into its own folder there, so it never reads
+`assets/vendor`; of the scripts the browser walk serves it writes one piece,
+whole. The other gates write nothing another reads.
 
 `mix precommit` compiles with warnings as errors, checks unused dependency
 locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the

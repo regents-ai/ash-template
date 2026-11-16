@@ -82,10 +82,11 @@ site still replaces by hand; keep it outside this passage, which the rename drop
 - `make check` runs every gate side by side, each writing its output to
   `platform/_build/check/<gate>.log`, then prints every gate's log, the failed ones
   last, and one line per gate, and fails when any gate failed. The gates: the
-  design system's style check (`make check-style`), the platform's `mix precommit`
-  (which ends with the TypeScript typecheck and tests and the browser walk) and
-  `mix test`, which three run in turn because they share the build and the copied
-  assets; the deploy and rollback scripts' tests (`make check-scripts`); the
+  design system's style check (`make check-style`) and the platform's `mix
+  precommit` (which ends with the TypeScript typecheck and tests and the browser
+  walk), which two run in turn because they share the build and the copied assets;
+  `mix test`, which builds its own copy of the scripts; the deploy and rollback
+  scripts' tests (`make check-scripts`); the
   required-fixes check; the command description check against the site's OpenAPI
   documents (regents-cli's checker at the commit the `Makefile` pins); the SIWA
   check; and the contracts. `make check-style`, `check-platform`,

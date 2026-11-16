@@ -20,11 +20,13 @@ help:
 # $(CHECK_LOGS)/<gate>.log, then prints every gate's log, the failed ones last, and
 # one line per gate, and fails when any gate failed. The gates of one quoted lane
 # run in turn: check-style and mix precommit both compile _build/dev, and both run
-# mix regent_ui.assets, which deletes assets/vendor/regent_ui and copies it again;
-# mix test's script build (ScriptBuildTest) reads that folder and writes the
-# scripts the browser walk at the end of mix precommit serves. The other gates
-# write nothing another reads.
-CHECK_LANES := "check-style platform-precommit platform-test" check-scripts check-required-fixes check-cli check-siwa-latest check-contracts
+# mix regent_ui.assets, which deletes assets/vendor/regent_ui and copies it again.
+# mix test runs beside them: it compiles _build/test, and its script build
+# (ScriptBuildTest) copies the scripts and the shared libraries' files into its own
+# folder under _build/test and builds there, so it never reads assets/vendor; into
+# the scripts the browser walk serves it puts one piece, whole, by a rename, under a
+# name made of its content's hash. The other gates write nothing another reads.
+CHECK_LANES := "check-style platform-precommit" platform-test check-scripts check-required-fixes check-cli check-siwa-latest check-contracts
 CHECK_GATES := $(subst ",,$(CHECK_LANES))
 CHECK_LOGS := platform/_build/check
 check:
