@@ -54,8 +54,16 @@ decided. Until it is:
 
 ## Steps for a site
 
+A site's lanes differ from the template's. Skip a step whose gate the site does not have (the
+style and scripts gates, for one), and keep the site's own order where one lane feeds the next.
+
 1. **Measure.** Run `make check` twice and note each gate's seconds.
-2. **Walk concurrency.** Copy the `workers` lines from the template's
+2. **Walk server.** Before adding browsers, start the walk's server without Phoenix's code
+   reloader: the reloader lets one request through at a time, and eight browsers time out
+   behind it. Give that server its own build folder so it never recompiles the everyday build.
+   The template does both in `platform/test/browser/walk.sh` (`ASH_TEMPLATE_WALK`,
+   `MIX_BUILD_PATH=_build/walk`) and `platform/config/dev.exs`.
+3. **Walk concurrency.** Copy the `workers` lines from the template's
    `platform/playwright.config.ts`. Then run the walk alone at sixteen workers with
    `--repeat-each` on any test that fails, to find tests that race the page. Fix the race in
    the test's waiting, never with a retry:
@@ -63,16 +71,17 @@ decided. Until it is:
      mark) before pressing;
    - a pixel comparison of a box: compare the picture inside its border, since on a phone's
      fractional pixel ratio the border rows blend and can repaint late on a busy machine.
-3. **`mix test` beside precommit.** Before moving the lane, find every test that reads or
-   writes a folder precommit rewrites (`assets/vendor`, `priv/static/assets`). In the template
+4. **`mix test` beside precommit.** Before moving the lane, find every test that reads or
+   writes a folder precommit rewrites (`assets/vendor`, `priv/static/assets`). A site whose
+   Elixir tests read no built files has nothing to copy and only moves the lane. In the template
    that was one, `platform/test/ash_template_web/script_build_test.exs`: copy it, and add to
    its copied sources any file outside `assets/` that the site's scripts import. Then take the
    template's `CHECK_LANES` line and its comment.
-4. **Budgets.** Take the `CHECK_BUDGETS` table and the `SLOW` line; set each budget about 40%
+5. **Budgets.** Take the `CHECK_BUDGETS` table and the `SLOW` line; set each budget about 40%
    over the site's own measured time.
-5. **Prove it.** The full check three times in a row, with the same test and skip counts as
+6. **Prove it.** The full check three times in a row, with the same test and skip counts as
    before the change. Put the seconds in the commit messages.
-6. Update the site's `AGENTS.md` and `platform/README.md` lines that describe the lanes.
+7. Update the site's `AGENTS.md` and `platform/README.md` lines that describe the lanes.
    `make drift` in the template flags the `Makefile` until the site has taken it.
 
 ## Still slow, and why
