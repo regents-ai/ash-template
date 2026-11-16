@@ -3,17 +3,21 @@
 // shape it was placed with, and its spherical harmonics brighten it toward the view a
 // gleam was baked for; moving parts move as rigid turns; the sort hands back every
 // splat once, farthest first, from above and below too; each scene fills a wide box and
-// a phone's square without being cut off; the pixel grid covers its canvas in
-// whole-pixel squares; and the .ply file reads back as written.
+// a phone's square without being cut off; in a recorded loop every part comes round a
+// whole number of times; the pixel grid covers its canvas in whole-pixel squares; a
+// GIF's frames read back in the palette's own colours; and the .ply file reads back as
+// written.
 import {describe, expect, it} from "vitest"
 import {
-  after, createBuilder, PART_FLOAT, SH_C0, SH_C1, SPLAT_FLOATS, SURFACE, turning, unit,
+  after, createBuilder, PART_FLOAT, rate, SH_C0, SH_C1, SPLAT_FLOATS, SURFACE, turning, unit, wave,
   type Lighting, type Pose, type Scene, type Vec3,
 } from "../js/splats/build"
 import {buildFactory} from "../js/splats/factory"
+import {createGif, DELAY, LOOP, ROWS} from "../js/splats/gif"
 import {buildIsland} from "../js/splats/island"
 import {depthOrder} from "../js/splats/order"
-import {focal, pixelGrid, TILT_LIMIT, viewFrom} from "../js/splats/painter"
+import {bob, flicker, focal, pixelGrid, TILT_LIMIT, viewFrom} from "../js/splats/painter"
+import {DUSK, rgb} from "../js/splats/palette"
 import {PLY_PROPERTIES, readPlyHeader, toPly} from "../js/splats/ply"
 
 const scenes: [string, () => Scene][] = [["factory", buildFactory], ["island", buildIsland]]
@@ -51,6 +55,74 @@ const seen = (data: Float32Array, i: number, d: Vec3) => {
 const LIGHT: Lighting = {
   key: [-0.7, 0.4, 0.5], keyColour: [1, 0.8, 0.6], sky: [0.4, 0.4, 0.6], bounce: [0.3, 0.2, 0.2],
   rim: [0.6, 0.42, -0.68], rimColour: [0.6, 0.8, 0.8], shineColour: [0.5, 0.7, 0.9], warm: [1, 0.5, 0.2], lamps: [],
+}
+
+/** GIF's LZW undone: codes of a width that grows as the table does, low bits first. */
+const unpack = (minimum: number, data: number[]) => {
+  const clear = 1 << minimum
+  const out: number[] = []
+  let table: number[][] = []
+  let width = 0
+  let previous: number[] | undefined
+  const reset = () => {
+    table = Array.from({length: clear + 2}, (_, i) => [i])
+    width = minimum + 1
+    previous = undefined
+  }
+  reset()
+  for (let bit = 0; bit + width <= data.length * 8; ) {
+    let code = 0
+    for (let k = 0; k < width; k++, bit++) code |= ((data[bit >> 3]! >> (bit & 7)) & 1) << k
+    if (code === clear) {
+      reset()
+      continue
+    }
+    if (code === clear + 1) break
+    const entry = code < table.length ? table[code]! : [...previous!, previous![0]!]
+    out.push(...entry)
+    if (previous && table.length < 4096) table.push([...previous, entry[0]!])
+    if (table.length === 1 << width && width < 12) width += 1
+    previous = entry
+  }
+  return out
+}
+
+/** A GIF read back as a viewer shows it: its colour table, how often it loops, and each frame's colours once laid over the frame before. */
+const readGif = (bytes: Uint8Array) => {
+  let at = 0
+  const byte = () => bytes[at++]!
+  const word = () => byte() | (byte() << 8)
+  const blocks = () => {
+    const data: number[] = []
+    for (let n = byte(); n; n = byte()) data.push(...bytes.subarray(at, (at += n)))
+    return data
+  }
+  const signature = String.fromCharCode(...bytes.subarray(0, (at = 6)))
+  const [width, height, flags] = [word(), word(), byte()]
+  at += 2
+  const table = Array.from({length: flags & 0x80 ? 2 << (flags & 7) : 0}, () => [byte(), byte(), byte()])
+  const shown: number[][] = Array.from({length: width * height}, () => [0, 0, 0])
+  // Each frame, and whether it held one index for every pixel of its rectangle.
+  const frames: {delay: number; dispose: number; clear?: number; local: boolean; pixels: boolean; colours: number[][]}[] = []
+  let loops: number | undefined
+  let control = {delay: 0, dispose: 0, clear: undefined as number | undefined}
+  for (let kind = byte(); kind !== 0x3b; kind = byte()) {
+    if (kind === 0x21) {
+      const label = byte()
+      const data = blocks()
+      if (label === 0xf9) control = {dispose: (data[0]! >> 2) & 7, delay: data[1]! | (data[2]! << 8), clear: data[0]! & 1 ? data[3] : undefined}
+      if (label === 0xff && String.fromCharCode(...data.slice(0, 11)) === "NETSCAPE2.0") loops = data[12]! | (data[13]! << 8)
+      continue
+    }
+    const [left, top, w, h, image] = [word(), word(), word(), word(), byte()]
+    const local = Boolean(image & 0x80)
+    const indices = unpack(byte(), blocks())
+    indices.forEach((index, p) => {
+      if (index !== control.clear) shown[(top + Math.floor(p / w)) * width + left + (p % w)] = table[index]!
+    })
+    frames.push({...control, local, pixels: indices.length === w * h, colours: [...shown]})
+  }
+  return {signature, width, height, table, loops, frames}
 }
 
 describe.each(scenes)("the %s", name => {
@@ -95,6 +167,18 @@ describe.each(scenes)("the %s", name => {
         expect(parts[p * 16 + 15]).toBeGreaterThanOrEqual(0)
         expect(parts[p * 16 + 15]).toBeLessThanOrEqual(1)
       }
+    }
+  })
+
+  it("comes round to just where it was after one loop of its GIF", () => {
+    const pose = (seconds: number) => {
+      const into = new Float32Array(Math.max(1, scene.parts) * 16)
+      scene.pose(seconds, into, LOOP)
+      return Array.from(into)
+    }
+    for (const seconds of [0.7, 3.1, 5.9]) {
+      const later = pose(seconds + LOOP)
+      pose(seconds).forEach((value, k) => expect(later[k]).toBeCloseTo(value, 4))
     }
   })
 
@@ -206,6 +290,74 @@ describe("moving parts", () => {
     apply(outer, apply(inner, point)).forEach((value, a) => expect(together[a]).toBeCloseTo(value, 9))
     // A turn keeps its pivot where it is.
     apply(inner, [0.3, 0.2, 0]).forEach((value, a) => expect(value).toBeCloseTo([0.3, 0.2, 0][a]!, 9))
+  })
+})
+
+describe("a recorded loop", () => {
+  it("runs each thing a whole number of times round it, near its own pace and at least once, and leaves the page's clock alone", () => {
+    for (const cycles of [0.001, 1 / 30, 0.16, 1.1, 7.3 / (2 * Math.PI), 2.37]) {
+      const times = rate(cycles, LOOP) * LOOP
+      expect(times).toBeCloseTo(Math.round(times), 9)
+      expect(times).toBeGreaterThanOrEqual(1)
+      expect(Math.abs(times - cycles * LOOP)).toBeLessThanOrEqual(Math.max(0.5, 1 - cycles * LOOP))
+      expect(rate(cycles, 0)).toBe(cycles)
+      expect((wave(cycles * 2 * Math.PI, LOOP) * LOOP) / (2 * Math.PI)).toBeCloseTo(times, 9)
+      expect(wave(cycles * 2 * Math.PI, 0)).toBe(cycles * 2 * Math.PI)
+    }
+  })
+
+  it("brings a fire's flicker and the picture's bob round with it", () => {
+    for (const seconds of [0.4, 2.9, 6.1]) {
+      expect(flicker(seconds + LOOP, LOOP)).toBeCloseTo(flicker(seconds, LOOP), 9)
+      expect(bob(seconds + LOOP, ROWS, LOOP)).toBe(bob(seconds, ROWS, LOOP))
+    }
+  })
+})
+
+describe("a GIF of the scene", () => {
+  const columns = 6
+  const rows = 4
+  const scale = 3
+  // Palette colours as the painter hands them back: four bytes a pixel.
+  const bytes = (value: string) => rgb(value).map(c => Math.round(c * 255))
+  const drawn = (indices: number[]) => Uint8Array.from(indices.flatMap(i => [...bytes(DUSK[i]!), 255]))
+  const first = Array.from({length: columns * rows}, (_, p) => (p * 7 + 3) % DUSK.length)
+  const second = first.map((i, p) => (p % 3 ? i : (i + 11) % DUSK.length))
+  // A frame like the one before it in every pixel, and the loop's way back to its first.
+  const frames = [first, second, second, first]
+
+  const gif = createGif(DUSK, columns, rows, scale)
+  for (const indices of frames) gif.add(drawn(indices))
+  const read = readGif(gif.finish())
+
+  it("is a GIF89a that loops for ever, each frame shown for the same time", () => {
+    expect(read.signature).toBe("GIF89a")
+    expect([read.width, read.height]).toEqual([columns * scale, rows * scale])
+    expect(read.loops).toBe(0)
+    expect(read.frames.map(f => [f.delay, f.dispose, f.local, f.pixels])).toEqual(frames.map(() => [DELAY, 1, false, true]))
+  })
+
+  it("keeps the palette as its one colour table, with one more entry for a pixel left as it was", () => {
+    expect(read.table.slice(0, DUSK.length)).toEqual(DUSK.map(bytes))
+    expect(read.table.length).toBeGreaterThan(DUSK.length)
+    expect(read.frames.map(f => f.clear)).toEqual([undefined, DUSK.length, DUSK.length, DUSK.length])
+  })
+
+  it("shows every pixel in exactly its drawn colour, as a whole square of the scaled-up frame", () => {
+    read.frames.forEach((frame, k) => {
+      const expected = Array.from({length: read.width * read.height}, (_, p) => {
+        const [x, y] = [p % read.width, Math.floor(p / read.width)]
+        return bytes(DUSK[frames[k]![Math.floor(y / scale) * columns + Math.floor(x / scale)]!]!)
+      })
+      expect(frame.colours).toEqual(expected)
+    })
+  })
+
+  it("will not take a pixel that is not one of the palette's colours", () => {
+    const off = drawn(first)
+    off.set([1, 2, 3], 4 * 5)
+    expect(DUSK.map(bytes)).not.toContainEqual([1, 2, 3])
+    expect(() => createGif(DUSK, columns, rows, scale).add(off)).toThrow()
   })
 })
 

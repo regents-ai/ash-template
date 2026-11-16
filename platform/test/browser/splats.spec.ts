@@ -1,4 +1,5 @@
-import {type Locator, type Page} from "@playwright/test"
+import {readFile} from "node:fs/promises"
+import {type Download, type Locator, type Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 
 // The splats lab (/animations/splats): two small worlds in pixel art, the robot factory
@@ -9,7 +10,16 @@ import {expect, test} from "./support/test"
 // opens the island and any other link the factory; and, with less motion, that it
 // holds still, that a drag across turns it and a drag up or down tilts it, each
 // stopping where let go, and that the arrow keys turn and tilt it.
+// Download GIF: it shows at the end of the tabs' row once the scene has drawn, counts
+// up in place while it works, takes no second press, and saves the scene's GIF; a
+// failure says so beside it; choosing the other scene stops it; without WebGPU it is
+// not offered; and with less motion it still saves one, pressed from the keyboard.
 test.use({launchOptions: {args: ["--enable-unsafe-webgpu", "--enable-gpu"]}})
+
+type Scene = "factory" | "island"
+
+/** Longer than either scene's GIF takes to make here (about two seconds), with room for a busy machine. */
+const WHOLE_GIF = 15_000
 
 const size = (box: Locator) =>
   box.evaluate((element: HTMLElement) => {
@@ -17,12 +27,119 @@ const size = (box: Locator) =>
     return [width, height]
   })
 
-const drawn = async (page: Page, scene: "factory" | "island") => {
+const drawn = async (page: Page, scene: Scene) => {
   const box = page.locator(`#splats-${scene}`)
   await expect(box).toHaveAttribute("data-splats-ready", "true")
   await expect(page.locator(`#splats-${scene}-stage`)).toHaveCSS("opacity", "1")
   return box
 }
+
+/** Where the picture, the tabs and Download GIF are on the page. */
+const places = (page: Page, scene: Scene) =>
+  page.evaluate(
+    scene =>
+      [`#splats-${scene}`, ".splats-lab__bar .flair-tabs", `#splats-${scene}-gif-button`].map(selector => {
+        const {x, y, width, height} = document.querySelector(selector)!.getBoundingClientRect()
+        return [x, y, width, height]
+      }),
+    scene,
+  )
+
+/** Opens a scene and waits for it to draw; returns its Download GIF and every file the page saves from then on. */
+const openForGif = async (page: Page, scene: Scene) => {
+  await page.goto(scene === "factory" ? "/animations/splats" : `/animations/splats?scene=${scene}`)
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  await drawn(page, scene)
+  const saved: Download[] = []
+  page.on("download", download => saved.push(download))
+  return {button: page.locator(`#splats-${scene}-gif-button`), saved}
+}
+
+const opening = async (download: Download) => (await readFile((await download.path())!)).subarray(0, 6).toString()
+
+test("Download GIF shows at the end of the tabs' row, counts up in place, takes no second press and saves the factory's GIF", async ({page, isMobile}) => {
+  test.setTimeout(30_000 + WHOLE_GIF)
+  const {button, saved} = await openForGif(page, "factory")
+  await expect(button).toBeVisible()
+  await expect(button).toHaveAccessibleName("Download GIF")
+  const lastTab = (await page.locator(".flair-tabs a").last().boundingBox())!
+  const own = (await button.boundingBox())!
+  expect(own.x).toBeGreaterThanOrEqual(lastTab.x + lastTab.width)
+  if (isMobile) expect(own.height).toBeGreaterThanOrEqual(44)
+  const idle = await places(page, "factory")
+  // Counts the GPU devices asked for from here on: each GIF asks for its own.
+  await page.evaluate(() => {
+    const ask = GPUAdapter.prototype.requestDevice
+    const counted = window as unknown as {devicesAsked: number}
+    counted.devicesAsked = 0
+    GPUAdapter.prototype.requestDevice = function (this: GPUAdapter, ...options: Parameters<GPUAdapter["requestDevice"]>) {
+      counted.devicesAsked += 1
+      return ask.apply(this, options)
+    }
+  })
+
+  const download = page.waitForEvent("download", {timeout: WHOLE_GIF})
+  await button.click()
+  await expect(button).toHaveAttribute("aria-busy", "true")
+  await expect(button).toHaveAttribute("aria-disabled", "true")
+  await expect(button).toHaveAccessibleName(/^Making [1-9]\d?%$/)
+  expect(await places(page, "factory")).toEqual(idle)
+  await button.click({force: true})
+
+  const gif = await download
+  expect(gif.suggestedFilename()).toBe("regents-factory.gif")
+  expect(await opening(gif)).toBe("GIF89a")
+  await expect(button).toHaveAttribute("aria-busy", "false")
+  await expect(button).toHaveAccessibleName("Download GIF")
+  expect(await places(page, "factory")).toEqual(idle)
+  expect(saved).toHaveLength(1)
+  expect(await page.evaluate(() => (window as unknown as {devicesAsked: number}).devicesAsked)).toBe(1)
+})
+
+test("a GIF that cannot be made says so beside the button, which is ready to try again", async ({page}) => {
+  const {button, saved} = await openForGif(page, "factory")
+  const failed = page.locator("#splats-factory-gif .splats-gif__failed")
+  await expect(failed).toBeHidden()
+  const idle = await places(page, "factory")
+  // The scene on the page keeps its device; the GIF's own is refused.
+  await page.evaluate(() => {
+    GPUAdapter.prototype.requestDevice = () => Promise.reject(new Error("No device for the GIF."))
+  })
+
+  await button.click()
+  await expect(failed).toBeVisible()
+  await expect(failed).toHaveText("Could not make the GIF. Try again.")
+  await expect(button).toHaveAttribute("aria-busy", "false")
+  await expect(button).toHaveAccessibleName("Download GIF")
+  expect(await places(page, "factory")).toEqual(idle)
+  expect(saved).toEqual([])
+})
+
+test("choosing the other scene while a GIF is being made goes there at once and stops the GIF", async ({page}) => {
+  test.setTimeout(30_000 + WHOLE_GIF)
+  const {button, saved} = await openForGif(page, "factory")
+  await button.click()
+  await expect(button).toHaveAccessibleName(/^Making [1-9]\d?%$/)
+
+  await page.getByRole("link", {name: "Island"}).click()
+  await expect(page).toHaveURL(/\?scene=island$/, {timeout: 2_000})
+  await drawn(page, "island")
+  const island = page.locator("#splats-island-gif-button")
+  await expect(island).toHaveAccessibleName("Download GIF")
+  await expect(island).not.toHaveAttribute("aria-busy", "true")
+  await page.waitForTimeout(WHOLE_GIF)
+  expect(saved).toEqual([])
+})
+
+test("without WebGPU, Download GIF is not offered", async ({page}) => {
+  await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "gpu", {get: () => undefined}))
+  await page.goto("/animations/splats")
+  await expect(page.locator("#splats-factory")).toHaveAttribute("data-splats-ready", "false")
+  const button = page.locator("#splats-factory-gif-button")
+  await expect(button).toBeHidden()
+  await expect(page.getByRole("button", {name: "Download GIF"})).toHaveCount(0)
+  expect(await button.evaluate((element: HTMLElement) => (element.focus(), document.activeElement === element))).toBe(false)
+})
 
 test("the factory comes first, draws in its box and turns by itself", async ({page}) => {
   await page.goto("/animations/splats", {waitUntil: "domcontentloaded"})
@@ -106,6 +223,19 @@ test.describe("with less motion", () => {
       }
     })
   }
+
+  test("Download GIF still saves the island's GIF, pressed from the keyboard", async ({page}) => {
+    test.setTimeout(30_000 + WHOLE_GIF)
+    const {button, saved} = await openForGif(page, "island")
+    const download = page.waitForEvent("download", {timeout: WHOLE_GIF})
+    await button.focus()
+    await page.keyboard.press("Enter")
+    const gif = await download
+    expect(gif.suggestedFilename()).toBe("regents-island.gif")
+    expect(await opening(gif)).toBe("GIF89a")
+    await expect(button).toBeFocused()
+    expect(saved).toHaveLength(1)
+  })
 
   test("on a touch screen a sideways swipe turns the scene, and an up or down swipe scrolls the page", async ({page, isMobile}) => {
     test.skip(!isMobile, "Touch is the phone's.")

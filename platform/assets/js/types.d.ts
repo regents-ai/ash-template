@@ -11,6 +11,24 @@ declare module "phoenix_live_view" {
   }
 }
 
+declare module "gifenc" {
+  // The exact surface the splats page's GIF (splats/gif.ts) uses from gifenc 1.0.3.
+  type FrameOptions = {
+    palette?: number[][]
+    delay?: number
+    repeat?: number
+    transparent?: boolean
+    transparentIndex?: number
+    dispose?: number
+    colorDepth?: number
+  }
+  export function GIFEncoder(): {
+    writeFrame(index: Uint8Array, width: number, height: number, options: FrameOptions): void
+    finish(): void
+    bytes(): Uint8Array<ArrayBuffer>
+  }
+}
+
 declare module "phoenix-colocated/ash_template" {
   export const hooks: Record<string, Record<string, (...args: unknown[]) => unknown>>
 }
