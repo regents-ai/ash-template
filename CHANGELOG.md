@@ -11879,3 +11879,13 @@ loaded only when the button is pressed.
   folder under `_build/test`.
 - `make check` prints `SLOW: <gate> took N s (budget M s)` when a gate goes over its budget
   (`CHECK_BUDGETS` in the `Makefile`). It is a warning and never fails the check.
+
+## 2026-11-16 — Released v264: a two-minute check, Download GIF on Splats
+
+- v264 (`67e7d1c8`) on template.regents.sh carries the two entries above. Library pin `adf77f79`
+  (elixir-utils main); design-system pin `d4075655`; regents-cli 1.10.30; API 21.0.0. No
+  migration.
+- `docs/fast-check.md` is the how-to for a site taking the same speed-up.
+- Rollback: v263 (`b99995f5`) image; nothing to undo.
+- Full check exit 0 twice by the chief on the exact commit (126 s and 141 s for the longest gate
+  lane; 713 walk tests, 345 Elixir, 369 script).
