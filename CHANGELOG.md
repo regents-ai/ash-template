@@ -12014,3 +12014,10 @@ loaded only when the button is pressed.
   provider to move, which it does at once without a prompt; wallet apps still go through
   Privy's own switch. The template lists one network, so nothing changes on its own pages.
 - Not proven with a real Privy wallet on two networks; read from Privy's source.
+
+## 2026-11-16 — Released v268: Privy's own wallet changes network on the first press
+
+- v268 (`8f28f899`) on template.regents.sh carries the entry above. Pins unchanged. No
+  migration.
+- Rollback: v267 (`93ad6c5c`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 372 script).
