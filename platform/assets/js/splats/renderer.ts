@@ -55,6 +55,8 @@ const ease = (dt: number, over: number) => 1 - Math.exp(-dt / over)
 const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 
 export type SplatRenderer = IslandRenderer & {
+  /** The scene it draws, for a GIF of it (gif.ts). */
+  readonly scene: Scene
   /** Holds the scene still (less motion) or lets it turn and bob. */
   hold(calm: boolean): void
   /** A pointer took hold of the scene. */
@@ -121,6 +123,7 @@ export async function createSplatRenderer(
     const settle = (owed: number, dt: number) => (Math.abs(owed) < 1e-4 ? owed : owed * ease(dt, KEY_SETTLE))
 
     return {
+      scene,
       hold(next) {
         calm = next
         if (calm) {
@@ -191,7 +194,7 @@ export async function createSplatRenderer(
       },
       present() {
         const view = viewFrom(scene.camera, turn, pitch)
-        scene.pose(seconds, parts)
+        scene.pose(seconds, parts, 0)
         painter.pose(parts)
         const partsDue = moves && !calm && seconds - sortedAt >= PART_RESORT
         if (sortedAhead === undefined || dot(view.ahead, sortedAhead) < RESORT || partsDue) {
@@ -200,7 +203,7 @@ export async function createSplatRenderer(
           sortedAt = seconds
         }
         drawn = {turn, pitch}
-        const moment = {turn, pitch, bob: bob(seconds, grid.rows), flicker: flicker(seconds), seconds}
+        const moment = {turn, pitch, bob: bob(seconds, grid.rows, 0), flicker: flicker(seconds, 0), seconds, loop: 0}
         frame(gpu, f => painter.encode(f, moment, stage))
       },
       settled() {

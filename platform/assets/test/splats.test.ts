@@ -87,7 +87,7 @@ describe.each(scenes)("the %s", name => {
   it("moves each moving part as a rigid turn, at any moment", () => {
     const parts = new Float32Array(Math.max(1, scene.parts) * 16)
     for (const seconds of [0, 1.7, 6.5, 29.3, 1234.5]) {
-      scene.pose(seconds, parts)
+      scene.pose(seconds, parts, 0)
       for (let p = 0; p < Math.max(1, scene.parts); p++) {
         const m = [0, 4, 8].map(k => Array.from(parts.subarray(p * 16 + k, p * 16 + k + 3)))
         const identity = product(m, transpose(m))
@@ -101,7 +101,7 @@ describe.each(scenes)("the %s", name => {
   describe("the sort", () => {
     const sort = depthOrder(scene.data, scene.count, SPLAT_FLOATS, scene.reach)
     const parts = new Float32Array(Math.max(1, scene.parts) * 16)
-    scene.pose(3.7, parts)
+    scene.pose(3.7, parts, 0)
 
     for (const [turn, pitch] of [[0, scene.camera.pitch], [2.2, TILT_LIMIT], [-1.4, -TILT_LIMIT], [Math.PI, 0]] as const) {
       it(`hands back every splat once, farthest first, turned ${turn} and tilted ${pitch.toFixed(2)}`, () => {
@@ -126,7 +126,7 @@ describe.each(scenes)("the %s", name => {
   for (const grid of [{columns: 435, rows: 290}, {columns: 324, rows: 324}]) {
     it(`fills a ${grid.columns} by ${grid.rows} picture as it turns, cutting none of it off`, () => {
       const parts = new Float32Array(Math.max(1, scene.parts) * 16)
-      scene.pose(scene.still.seconds, parts)
+      scene.pose(scene.still.seconds, parts, 0)
       const f = focal(scene.camera, grid)
       // Only splats that stay where they were grown: steam, sparks and fireflies drift.
       const fixed = Array.from({length: scene.count}, (_, i) => i).filter(i => scene.data[i * SPLAT_FLOATS + 11] === SURFACE)
