@@ -11828,3 +11828,41 @@ For the design chief. No migration.
 - Rollback: v262 (`edd56e64`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit. v262, released from the design lane, was
   also checked in full by the chief afterwards (exit 0 on `ba911b67`).
+
+## 2026-11-16 — Splats: Download GIF
+
+For the template chief to release. No migration. New package: gifenc 1.0.3, pinned exactly,
+loaded only when the button is pressed.
+
+- Download GIF, at the end of the tabs' row on `/animations/splats`, saves one seamless loop
+  of the scene showing as `regents-factory.gif` or `regents-island.gif`: one full turn at the
+  resting tilt in 8 seconds, 160 frames at 20 a second, 864 by 576 (the 432 by 288 picture
+  scaled up twice in whole-pixel squares), looping for ever. Factory 7.9 MB, island 6.5 MB;
+  about 2 seconds to make in headless Chromium on this Mac.
+- Made in the browser from the scene itself (`platform/assets/js/splats/gif.ts`): the page's
+  own painter draws each frame on a GPU device of its own, so the scene on the page keeps
+  turning, and each frame is read back and encoded. The GIF's one colour table is the
+  scene's palette as it is, plus one entry for a pixel unchanged since the frame before;
+  nothing is matched to a colour again or dithered, and a pixel outside the palette stops
+  the GIF rather than being guessed. Two runs give the same file byte for byte.
+- Seamless: in the GIF every moving part runs a whole number of times round the loop (`rate`
+  and `wave` in `platform/assets/js/splats/build.ts`, and the same two in the painter's
+  shaders), so the last frame runs into the first. Nothing changes on the page. To fit 8
+  seconds the conveyor runs three times as fast and the walking robot about 3.75 times, its
+  steps quickened to match, and the bob takes 8 seconds rather than 5.5. Steam and sparks
+  come round because each lives a share of its own cycle; the drifting motes are drawn into
+  the picture in the palette, each living once round the loop and fading in and out; the
+  clouds hold still.
+- While it works the button reads "Making 40%" in the same width, tells a screen reader every
+  quarter, and a second press does nothing; it is ready again once the download starts. A
+  failure says "Could not make the GIF. Try again." beside the button (on a phone, under the
+  tabs in the gap that was already there). Choosing the other scene or leaving the page stops
+  it and gives its GPU device back. It shows only once the scene has drawn, so never without
+  WebGPU, and holds its place before then; nothing on the page moves in any state. It works
+  with less motion too.
+- Checks: `platform/assets/test/splats.test.ts` (the loop rule; both scenes, the flicker and
+  the bob come round after one loop; a GIF read back keeps the palette as its colour table
+  and every pixel's colour, and takes no colour outside it) and
+  `platform/test/browser/splats.spec.ts` (shows at the row's end, counts up in place, one GIF
+  for two presses, saves the factory's; the failure line; switching scenes stops it; not
+  offered without WebGPU; with less motion the island's saves from the keyboard).
