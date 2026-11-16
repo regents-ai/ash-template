@@ -11949,3 +11949,11 @@ loaded only when the button is pressed.
   No row is changed. The column is dropped in the next release, once no running machine names
   it.
 - Checks: `platform/test/ash_template/accounts/ens_identity_test.exs`.
+
+## 2026-11-16 — The ENS table's lookup state column is dropped
+
+- Migration `20261116173031_drop_ens_lookup_state` drops `account_ens_identities.lookup_state`.
+  Release it only once the release with `20261116172939_ens_lookup_state_optional` is live: that
+  release neither reads nor writes the column, so its machines keep serving while this one's
+  migration runs. Every row keeps its wallet, name and picture; undoing it adds the column back
+  empty.
