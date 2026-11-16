@@ -63,6 +63,10 @@ style and scripts gates, for one), and keep the site's own order where one lane 
    behind it. Give that server its own build folder so it never recompiles the everyday build.
    The template does both in `platform/test/browser/walk.sh` (`ASH_TEMPLATE_WALK`,
    `MIX_BUILD_PATH=_build/walk`) and `platform/config/dev.exs`.
+   A walk server that runs in the test environment also needs the ordinary database pool
+   (`pool: DBConnection.ConnectionPool`, for that server only): the sandbox pool keeps a
+   connection per process, and eight browsers take all of them (regents.sh, 93 tests on error
+   pages). The template's walk server runs in dev and never met this.
 3. **Walk concurrency.** Copy the `workers` lines from the template's
    `platform/playwright.config.ts`. Then run the walk alone at sixteen workers with
    `--repeat-each` on any test that fails, to find tests that race the page. Fix the race in
@@ -70,7 +74,17 @@ style and scripts gates, for one), and keep the site's own order where one lane 
    - a press before the page listens: wait for `.phx-connected` (or the hook's own ready
      mark) before pressing;
    - a pixel comparison of a box: compare the picture inside its border, since on a phone's
-     fractional pixel ratio the border rows blend and can repaint late on a busy machine.
+     fractional pixel ratio the border rows blend and can repaint late on a busy machine;
+   - tests that share one signed-in person: a sign-in can make every open page of that person
+     read the account again and redraw, closing an open list or emptying a form. First ask
+     whether the page should redraw at all: on regents.sh this was two site faults (a form
+     that started again on any change to the account, and a lookup that saved and announced
+     an unchanged answer on every sign-in). Then a test that changes shared state signs in as
+     its own person, and a file whose tests depend on each other keeps its order.
+
+   Memory, measured on regents.sh with eight browsers: 3.2 to 3.8 GB as Activity Monitor's
+   footprint. Resident size summed per process reads 6 to 7 GB, because Chromium's shared
+   memory is counted once for each process; use the footprint.
 4. **`mix test` beside precommit.** Before moving the lane, find every test that reads or
    writes a folder precommit rewrites (`assets/vendor`, `priv/static/assets`). A site whose
    Elixir tests read no built files has nothing to copy and only moves the lane. In the template
