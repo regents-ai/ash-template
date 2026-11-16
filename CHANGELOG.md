@@ -11908,3 +11908,23 @@ loaded only when the button is pressed.
   commands (`room-reports`, `remove-room-message`) as its model.
 - Skills only; no code, pin or database change. The served build skills change with the next
   release.
+
+## 2026-11-16 — Pages stay put when the same person signs in again
+
+- The Agent Message form keeps what the person is typing when their own account is read
+  again, after a sign-in in another tab or an ENS lookup. It starts afresh only when the
+  signed-in person changes or signs out. Before, any change to the account emptied it.
+- Each sign-in still asks Ethereum for the wallet's ENS name and picture, but the account's
+  ENS row is written only when it changes, and the person's open pages redraw only when the
+  name or picture does. The same answer again writes and announces nothing, so open menus and
+  half-typed text stay as they were. Before, every sign-in rewrote the row and redrew every
+  open page of that person.
+- A sign-in with another wallet clears the old wallet's name and picture at once, so the new
+  wallet is shown by its address until its own lookup answers. Before, the old wallet's name
+  could stay on the new wallet until then.
+- A sign-in with another wallet while a lookup for the old one runs now queues the lookup
+  for the new wallet. Before, that sign-in queued nothing, the running lookup stopped without
+  writing once it found the wallet changed, and the row waited for the next sign-in.
+- Checks: `platform/test/ash_template/accounts/ens_identity_test.exs` (new, real sign-ins
+  against a stand-in Ethereum endpoint) and two tests in
+  `platform/test/ash_template_web/messages_pages_test.exs`. No migration.

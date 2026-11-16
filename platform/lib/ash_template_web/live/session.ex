@@ -116,10 +116,10 @@ defmodule AshTemplateWeb.Live.Session do
   # from that read rather than from the struct the mount captured. A lapsed
   # lease withdraws the principal, so nothing downstream can still present it as
   # authority, and a page that stays open says the sign-in ended
-  # (`signed_out_reason: :expired`) rather than that no one signed in. A
-  # finished ENS lookup reads the account again, so the header shows the name
-  # and picture it found, and so does a sign-in that changed or withdrew the
-  # account's wallets, so its other open pages follow at once.
+  # (`signed_out_reason: :expired`) rather than that no one signed in. An ENS
+  # lookup that changed the name or picture reads the account again, so the
+  # header shows what it found, and so does a sign-in that changed or withdrew
+  # the account's wallets, so its other open pages follow at once.
   #
   # Every other message and every background result can arrive after the
   # sign-in has outlived its lifetime with no navigation or event between, so

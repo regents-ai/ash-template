@@ -11,10 +11,13 @@ defmodule AshTemplate.Accounts.EnsIdentity.LookUp do
   failed read too, never "no picture": it is slow for a name it has not been
   asked about lately, and the picture already stored must outlast that.
 
+  An answer the same as the stored one changes no attribute, so Ash writes
+  nothing and the update announces nothing (`EnsIdentity`'s `pub_sub`).
+
   The answer is written only while the row still names the wallet it was read
-  for. A sign-in with another wallet while the read runs can't queue a second
-  job for the row, so the write fails as stale instead, and the retry reads the
-  row's new wallet.
+  for. A sign-in with another wallet while the read runs queues the lookup for
+  that wallet, and this one's write fails as stale, which AshOban takes as the
+  trigger no longer applying: the job stops without writing.
   """
 
   use Ash.Resource.Change
