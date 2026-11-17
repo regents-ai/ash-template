@@ -12,6 +12,12 @@ defmodule AshTemplateWeb.ToolErrors do
   `too_many_requests` with `retry_after` when it was asked to wait, or, when no
   answer came, the words every Regent site gives it.
 
+  A connected app whose identity isn't its person's paired agent yet is listed
+  that agent's tools (`AshTemplate.Agents.Connection.Listing`), and any but its
+  identity tools is refused before anything is read, as `agent_not_paired` with
+  the message every door gives it and a hint naming the steps that pair it
+  (`check_input/3`).
+
   Input a tool's action cannot take is refused before AshAi runs it
   (`check_input/3`, the server's `tool_argument_transformer`), with the code the
   same input gets over HTTP: a room read's `room_not_found`, `invalid_limit`,
@@ -24,13 +30,26 @@ defmodule AshTemplateWeb.ToolErrors do
   which is how a tool listed with no inputs is called.
   """
 
+  alias AshTemplate.Actors.ConnectedApp
+  alias AshTemplate.Agents.Connection
   alias AshTemplateWeb.{FormErrors, MessagesController, RoomsController}
+  alias AshTemplateWeb.Plugs.AgentWallet
+
+  @pair_first "Ask your person for a one-use code from Pair New Agent on their Agents page, " <>
+                "call pair_identity with it, then call this tool again. " <>
+                "Help: https://patchbay.help/errors/agent_not_paired"
 
   @doc """
   Casts a hosted tool's `input` as its action takes it. Input it takes goes on to
-  AshAi unchanged; any other is refused as `{:error, text}` with the HTTP code.
+  AshAi unchanged; any other is refused as `{:error, text}` with the HTTP code,
+  and so is any tool but an identity tool that a connected app calls before it
+  pairs.
   """
   @spec check_input(AshAi.Tool.t(), term(), map()) :: {:ok, term()} | {:error, String.t()}
+  def check_input(%AshAi.Tool{resource: resource}, _arguments, %{actor: %ConnectedApp{}})
+      when resource != Connection,
+      do: {:error, not_paired()}
+
   def check_input(%AshAi.Tool{resource: resource, action: %{name: action}}, arguments, _context) do
     with %{} <- arguments,
          %{} = input <- arguments["input"] || %{},
@@ -57,6 +76,11 @@ defmodule AshTemplateWeb.ToolErrors do
     do: Jason.encode!(%{error: RegentMCPAgents.pairing_input_refusal()})
 
   defp refused(_identity, _error), do: Jason.encode!(RegentMCPAgents.Tools.refusal())
+
+  defp not_paired do
+    {_status, message, _hint} = Map.fetch!(AgentWallet.not_person_refusals(), "agent_not_paired")
+    Jason.encode!(%{error: %{code: "agent_not_paired", message: message, hint: @pair_first}})
+  end
 
   @doc "The rooms API's refusal `code`, with `extra` fields, as a tool error's text."
   @spec room(String.t(), map()) :: String.t()

@@ -351,9 +351,11 @@ defmodule AshTemplate.Rooms.Message do
     end
 
     # Anyone reads a room, except an app connected to a person's account calling
-    # as itself: its token is for its identity tools alone
-    # (`AshTemplate.Agents.Connection`). Paired, it calls as its agent instead.
+    # as itself: it runs its identity tools alone (`AshTemplate.Agents.Connection`),
+    # and is only listed this one until it pairs (`Listing`). Paired, it calls as
+    # its agent instead.
     policy action(:room_messages) do
+      authorize_if AshTemplate.Agents.Connection.Listing
       forbid_if actor_attribute_equals(:role, :connected_app)
       authorize_if always()
     end
@@ -365,6 +367,7 @@ defmodule AshTemplate.Rooms.Message do
 
     policy action(:agent_post) do
       authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.Connection.Listing
     end
 
     policy action_type([:update, :destroy]) do

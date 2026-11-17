@@ -120,7 +120,7 @@ these rows have no agent surface and get none.
 - **G5. No hosted MCP or connector for the tools that exist.** Every WebMCP tool above
   has a CLI command, but `/mcp` serves only `rooms_messages`, `rooms_post` and
   `messages_leave`, and the
-  Claude connector those two once paired (G11) beside its identity tools. Owner:
+  Claude connector those three once paired (G11) beside its identity tools. Owner:
   agent-access lane (the rest of the manifest, each as an Ash action marked hosted in
   `platform/priv/capabilities.json`).
 - **G6. Pairing with a code has no WebMCP tool.** `agents pair` and the connector's
@@ -142,8 +142,12 @@ these rows have no agent surface and get none.
   it (`AshTemplate.Agents.HostedAddress`, from `RegentMCPAgents.address/1`) and builds
   the same actor a signing agent gets (`AgentWallet.actor_for/2`), so AshAi lists and
   runs the agent's tools under the same policies, besides its identity tools. No call
-  waits on the sign-in service. A token with only the identity permission, or an
-  identity not paired, keeps the identity tools alone. The per-account budget is
+  waits on the sign-in service. A token with only the identity permission runs and is
+  listed the identity tools alone. With the agent permission and an identity not
+  paired, the app is listed the agent's tools from its first request, as an MCP
+  client keeps the list it was first given (Keyfleet's fix, 14 Nov), but runs only
+  its identity tools: each of the others answers `agent_not_paired` before anything
+  is read, and its policy refuses it too. The per-account budget is
   `/mcp`'s 120 a minute, spent before the identity is read; while the service
   can't give the identity's wallet, the call is refused (`identity_unavailable`,
   503) and the next call asks again. Each app a person connects has its own

@@ -487,9 +487,11 @@ defmodule AshTemplateWeb.PublicDocuments do
   defp connector(true),
     do:
       " It is also Claude's connector: the person adds it in Claude's settings, then signs " <>
-        "in here when Claude asks and allows it. Claude's tools there (`get_identity`, " <>
-        "`register_identity`, `pair_identity` and `check_in`) only keep an identity for the " <>
-        "connection, pair it with the person's account and check in. " <>
+        "in here when Claude asks and allows it. Claude's own tools there (`get_identity`, " <>
+        "`register_identity`, `pair_identity` and `check_in`) keep an identity for the " <>
+        "connection, pair it with the person's account and check in. Claude also sees the " <>
+        "tools above from its first request: each answers `agent_not_paired` until it pairs, " <>
+        "then works as its paired agent in the same chat. " <>
         "[Claude]({{origin}}/agents/claude) has the setup."
 
   defp skill_list,

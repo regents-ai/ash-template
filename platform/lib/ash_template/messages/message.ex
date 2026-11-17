@@ -117,6 +117,7 @@ defmodule AshTemplate.Messages.Message do
 
     policy action(:agent_leave) do
       authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.Connection.Listing
     end
 
     # The site's admins on their team page; the site itself when it answers a
