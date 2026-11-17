@@ -12277,3 +12277,10 @@ loaded only when the button is pressed.
   and sends. The first two fail on the previous code. The `onchain-buttons` skill and
   `docs/feature-map.md` describe the new behaviour. Not tried with a real wallet.
 - Not a release.
+
+## 2026-11-17 — Released v275: wallet presses without the account check
+
+- v275 on template.regents.sh carries the entry above. No migration; API unchanged.
+- Rollback: v274 (`07a21c72`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (713 walk tests passed, 6 skipped;
+  354 Elixir; 373 script). Not tried with a real wallet.
