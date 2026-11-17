@@ -12021,3 +12021,18 @@ loaded only when the button is pressed.
   migration.
 - Rollback: v267 (`93ad6c5c`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 372 script).
+
+## 2026-11-17 — A signed request with no body and one with an empty body are one request
+
+- The shared sign-in library (elixir-utils `e40068b3`, Sean's letter "1. a" of 16 Nov in the
+  siwa-server thread) reads the body a request declares as its `content-digest`, or the empty
+  body when it has none, and the body a site read as the digest it reports, or the empty body
+  when it reports none; the two must be equal. An agent may sign the empty body's digest or
+  leave it off, and every signed route takes both. A digest signed for a real body that does
+  not arrive is still refused, as `content_digest_mismatch`.
+- `Siwa.AgentAuthPlug`'s `:body` option keeps one value, `:declared`; `:if_present` and
+  `:always` are gone. The refusals `request_body_required` and `missing_content_digest` and
+  the code `http_body_binding_missing` left the contract. The template passed none of them.
+- Order kept: siwa-server v94 went live on this library first (17 Nov 02:41Z), then this pin.
+- A site taking this pin deletes its `body: :always` / `body: :if_present` options and any
+  test or hint naming the three removed reasons.
