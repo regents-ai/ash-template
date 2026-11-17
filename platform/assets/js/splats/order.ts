@@ -1,61 +1,49 @@
 /**
- * The order a scene's splats are drawn in: farthest from the camera first, so each one
- * lays its colour over the ones behind it, as Gaussian splatting composites them.
+ * Which splats the painter (painter.ts) must draw far to near, and in what order.
  *
- * How far a splat is from the camera, along the way the camera looks, is its depth in
- * the camera's frame up to a constant: one dot product with the camera's forward
- * direction, whatever the turn and tilt. A splat on a moving part is placed where its
- * part is now. A counting sort on that depth, cut to 16 bits, orders a few hundred
- * thousand splats in about a millisecond; the renderer sorts again only once the
- * view has moved a little, or a part has.
- *
- * Shared with the scripts beside it, so they order the splats as the browser does.
+ * FORMAT.md 5.3 draws every splat far to near. A solid splat whose density never changes
+ * hides what is behind it, so for those the graphics card's depth test keeps the nearest
+ * at each art pixel and they are drawn in file order, unsorted. The rest are sorted here
+ * every frame: soft splats, which only tint what is behind them; splats that never write
+ * depth; and those whose kind changes their density (flicker, fall, rise and pulse),
+ * since they can be solid at one moment and soft at the next. That is 3,063 of the
+ * island's 294,707 splats and 5,889 of the factory's 399,656.
  */
-import {PART_FLOAT, type Vec3} from "./build.ts"
+import {centreAt, FALL, FLICKER, PULSE, RISE} from "./motion.ts"
+import {NO_DEPTH, type Scene} from "./scene.ts"
 
-const BUCKETS = 65_536
+type Vec3 = readonly [number, number, number]
 
-/**
- * Returns a sorter for these splats: given the camera's forward direction in the
- * scene's frame and where each moving part is (`Scene.pose`), it hands back splat
- * indices, farthest first. The array is reused.
- */
-export function depthOrder(data: Float32Array, count: number, stride: number, reach: number) {
-  const keys = new Uint16Array(count)
-  const starts = new Uint32Array(BUCKETS)
-  const order = new Uint32Array(count)
-  const scale = (BUCKETS - 1) / (2 * reach)
+const FADING = new Set([FLICKER, FALL, RISE, PULSE])
 
-  return (ahead: Vec3, parts: Float32Array): Uint32Array<ArrayBuffer> => {
-    const [ax, ay, az] = ahead
-    starts.fill(0)
-    for (let i = 0; i < count; i++) {
-      const o = i * stride
-      let x = data[o]!
-      let y = data[o + 1]!
-      let z = data[o + 2]!
-      const part = data[o + PART_FLOAT]!
-      if (part !== 0) {
-        const p = part * 16
-        const px = parts[p]! * x + parts[p + 4]! * y + parts[p + 8]! * z + parts[p + 12]!
-        const py = parts[p + 1]! * x + parts[p + 5]! * y + parts[p + 9]! * z + parts[p + 13]!
-        const pz = parts[p + 2]! * x + parts[p + 6]! * y + parts[p + 10]! * z + parts[p + 14]!
-        x = px
-        y = py
-        z = pz
+export function createOrder(scene: Scene) {
+  const {header, blocks} = scene
+  const solid: number[] = []
+  const sorted: number[] = []
+  for (let n = 0; n < header.splats; n++) {
+    const style = blocks.style[n]!
+    const code = blocks.styleCode[style]!
+    const fades = n < header.moving && FADING.has(code & 15)
+    const blends = blocks.styleDensity[style]! < 1 || (code & NO_DEPTH) !== 0 || fades
+    ;(blends ? sorted : solid).push(n)
+  }
+  const keys = new Float64Array(sorted.length)
+  const places = new Uint32Array(sorted.length)
+  const ids = new Uint32Array(sorted.length)
+
+  return {
+    /** The solid splats, in file order. */
+    solid: Uint32Array.from(solid),
+    /** The rest, farthest first `seconds` into the loop for a camera whose back axis is `back`; ties keep file order. */
+    farToNear(back: Vec3, seconds: number): Uint32Array<ArrayBuffer> {
+      for (let i = 0; i < sorted.length; i++) {
+        const [x, y, z] = centreAt(scene, sorted[i]!, seconds)
+        keys[i] = back[0] * x + back[1] * y + back[2] * z
+        places[i] = i
       }
-      const ahead = x * ax + y * ay + z * az
-      const key = Math.min(BUCKETS - 1, Math.max(0, Math.floor((reach - ahead) * scale)))
-      keys[i] = key
-      starts[key]! += 1
-    }
-    let sum = 0
-    for (let k = 0; k < BUCKETS; k++) {
-      const here = starts[k]!
-      starts[k] = sum
-      sum += here
-    }
-    for (let i = 0; i < count; i++) order[starts[keys[i]!]!++] = i
-    return order
+      places.sort((a, b) => keys[a]! - keys[b]! || a - b)
+      for (let i = 0; i < sorted.length; i++) ids[i] = sorted[places[i]!]!
+      return ids
+    },
   }
 }

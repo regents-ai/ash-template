@@ -1,18 +1,19 @@
 defmodule AshTemplateWeb.SplatsLabLive do
   @moduledoc """
-  Splats: two small worlds drawn as a few hundred thousand 3D gaussians (splats) and
-  shown as pixel art, turning once every thirty seconds. The robot factory comes
-  first; `?scene=island` shows the floating island at night instead, and any other
-  value shows the factory.
+  Splats: two small worlds in pixel art, a robot factory and a floating island, each a
+  few hundred thousand 3D splats, turning once every thirty seconds while everything in
+  them plays an eight-second loop. The robot factory comes first; `?scene=island` shows
+  the floating island at night instead, and any other value shows the factory.
 
-  The box always holds the scene's still picture for its shape
+  Each scene is one baked file, `priv/static/splats/<scene>.bin` (laid out in
+  `assets/js/splats/studio/FORMAT.md`), served gzipped and digested like the other
+  static files. The box always holds the scene's still picture for its shape
   (`priv/static/images/animations/splats-<scene>-wide.png`, or `-square.png` on a phone,
-  both drawn by `npm run stills:splats`).
-  Over it the `SplatIsland` hook draws the scene with WebGPU and fades it in once its
-  first frame has landed; without WebGPU the still stays. Each scene's box has its own
-  id, so switching ends one scene's drawing before the next begins. The scenes are
-  grown from fixed seeds in `assets/js/splats/`, so the stills and the live pictures
-  match.
+  both drawn from the same files by `npm run stills:splats`). Over it the `SplatIsland`
+  hook downloads the file the box names (`data-splats-file`), draws the scene with
+  WebGPU and fades it in once its first frame has landed; until then, and without
+  WebGPU, the still stays. Each scene's box has its own id, so switching ends one
+  scene's drawing before the next begins.
 
   Download GIF, at the end of the tabs' row, saves one seamless loop of the scene
   showing as `regents-<scene>.gif`, drawn and encoded in the browser
@@ -49,6 +50,9 @@ defmodule AshTemplateWeb.SplatsLabLive do
   defp scene_path("factory"), do: ~p"/animations/splats"
   defp scene_path(scene), do: ~p"/animations/splats?#{[scene: scene]}"
 
+  defp scene_file("factory"), do: ~p"/splats/factory.bin"
+  defp scene_file("island"), do: ~p"/splats/island.bin"
+
   defp stills("factory"),
     do: %{
       wide: ~p"/images/animations/splats-factory-wide.png",
@@ -63,11 +67,11 @@ defmodule AshTemplateWeb.SplatsLabLive do
 
   defp label("factory"),
     do:
-      "A solarpunk robot factory on a floating island at dusk: a plaster hall with a planted roof and the Regents crown lit over its open door, a glass hall of plants, solar panels, two wind turbines, a water tower and robots at work. Drag, or use the arrow keys, to turn and tilt it."
+      "A solarpunk robot factory on a floating island at dusk: a workshop hall with a sawtooth roof of glass, plants and solar panels, a brick chimney, two wind turbines, a water wheel, robot arms over an assembly line and robots at work, with a brass engine underneath. Drag, or use the arrow keys, to turn and tilt it."
 
   defp label("island"),
     do:
-      "A floating island at night with a large tree, two small pines, rocks, a stone crown and a campfire. Drag, or use the arrow keys, to turn and tilt it."
+      "A floating island at night with a great tree, two pines, a cottage, a campfire and a pond whose stream falls off the edge, over glowing crystals. Drag, or use the arrow keys, to turn and tilt it."
 
   @impl true
   def render(assigns) do
@@ -135,13 +139,14 @@ defmodule AshTemplateWeb.SplatsLabLive do
         role="img"
         aria-label={label(@scene)}
         data-splats-scene={@scene}
+        data-splats-file={scene_file(@scene)}
         phx-hook="SplatIsland"
         phx-mounted={JS.ignore_attributes(["data-splats-ready"])}
       >
         <%!-- The same width as the CSS that turns the box square (splats_lab.css). --%>
         <picture>
-          <source media="(max-width: 36rem)" srcset={@stills.square} width="432" height="432" />
-          <img class="splats-lab__still" src={@stills.wide} width="432" height="288" alt="" />
+          <source media="(max-width: 36rem)" srcset={@stills.square} width="360" height="360" />
+          <img class="splats-lab__still" src={@stills.wide} width="480" height="320" alt="" />
         </picture>
         <div id={"splats-#{@scene}-stage"} class="splats-lab__stage" phx-update="ignore">
           <canvas data-splats-canvas></canvas>

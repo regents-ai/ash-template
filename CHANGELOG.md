@@ -12284,3 +12284,60 @@ loaded only when the button is pressed.
 - Rollback: v274 (`07a21c72`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (713 walk tests passed, 6 skipped;
   354 Elixir; 373 script). Not tried with a real wallet.
+
+## 2026-11-17 — Splats: the baked scenes, drawn crisp
+
+For the template chief to release. No migration. No new package.
+
+- `/animations/splats` now shows the two scenes the splat studio bakes
+  (`platform/assets/js/splats/studio/`, laid out in its `FORMAT.md`): the factory, first and
+  the default, 399,656 splats, and the island, 294,707 splats, 48 colours each. The tabs,
+  `?scene=island` and the box are as before. Each scene is one file,
+  `platform/priv/static/splats/factory.bin` and `island.bin`, sent gzipped by
+  `mix phx.digest` (`.bin` joins `:gzippable_exts` in `platform/config/config.exs`, `splats`
+  joins `AshTemplateWeb.static_paths/0`) with the year-long cache of the other digested
+  files: 4.17 MB and 3.19 MB on the wire. Only the Splats page asks for a file, after its
+  first paint; the homepage, `/animations` and `/animations/particles` ask for neither file
+  nor the painter, and `app.js` holds neither.
+- Drawn by the page's own WebGPU painter (`platform/assets/js/splats/painter.ts`, reading
+  the file through `scene.ts`, `camera.ts`, `motion.ts` and `order.ts`), written from
+  `FORMAT.md`: art pixels on a grid of 480 by 320 for a 1440 by 960 stage (360 square for a
+  1080 square), each one of the scene's palette colours, with hard-edged solid splats, soft
+  haze, glass that bends what is behind it, an outline where depth steps, a little contact
+  shade and a faint dither. Every moving part, kind of motion and the factory's flag is
+  worked in the shader from the scene's eight-second loop; the scene turns once every
+  thirty seconds. Drag, touch, keys, less motion and Download GIF behave as before. The
+  box's description for screen readers names what each new scene holds.
+- One shortcut against `FORMAT.md` 5.3, which sorts every splat: the solid splats (all but
+  3,063 of the island's and 5,889 of the factory's) are drawn unsorted with a depth test,
+  and only the rest are sorted far to near each frame. Against the toolkit's own pictures,
+  six views at three moments of the loop, 0.5% to 1.1% of art pixels differ (island 826 to
+  1,711 of 153,600, factory 792 to 1,479), nearly all single pixels where two crisp edges
+  cross or meet the sky; the toolkit drawing its own decoded file differs by 85 to 253.
+  About 60 frames a second while dragging on this Mac; a frame takes 7.4 ms (island) and
+  10.8 ms (factory), of which the processor's share, mostly the sort, is 1.7 and 2.4 ms.
+- While the file downloads the box shows the scene's still picture
+  (`platform/priv/static/images/animations/splats-<scene>-wide.png`, 480 by 320, or
+  `-square.png`, 360 by 360, drawn from the files by `npm run stills:splats`); the live
+  scene fades in over it on its first frame, and Download GIF appears then in the place
+  held for it. Nothing on the page moves. Without WebGPU the still stays.
+- Weight, bytes on the wire, headless Chromium: v270's page 432,627; now 4,588,601 for the
+  factory (its file 4,172,375) and 3,596,645 for the island. First live frame: v270 2.31 s
+  from template.regents.sh; now 0.86 s (factory) and 0.97 s (island) from a local server.
+  On a phone-shaped page with Chromium's network throttling and the processor not slowed,
+  "Fast 4G" (9 Mbit/s down, 1.5 up, 150 ms): v270 2.39 s, now 5.82 s and 4.91 s;
+  "Slow 4G" (1.6 down, 0.75 up, 150 ms): v270 4.16 s, now 24.4 s and 19.4 s. The still
+  shows from 0.44 s on Fast 4G and 1.06 s on Slow 4G (v270: 0.55 s and 1.70 s).
+- Download GIF: the same 864 by 576 loop of 160 frames in the scene's palette, now 8.3 MB
+  (factory) and 8.6 MB (island), made in about 5 and 4 seconds. The last frame runs into
+  the first with 123,696 and 121,928 pixels changed, against 100,376 to 122,680 and 103,996
+  to 127,704 between neighbouring frames: no jump shows.
+- Gone: the seeded scenes and all that only they used (`build.ts`, `factory.ts`,
+  `island.ts`, `palette.ts`, `ply.ts` and `export_ply.mjs` in `platform/assets/js/splats/`)
+  and the `ply:splats` script.
+- Checks: `platform/assets/test/splats.test.ts` (both real files: counts, every block byte
+  for byte against the studio's own decoder, centres at three frames, the loop closing, the
+  order far to near from the front, above and below, the grid and camera, the GIF read back
+  in the palette) and `platform/test/browser/splats.spec.ts` (adds: each scene shows only
+  its palette's colours; without WebGPU the still is the right size and stays). Not run:
+  Safari, Firefox, a real phone.

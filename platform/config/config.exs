@@ -300,6 +300,10 @@ config :error_tracker,
 
 config :phoenix, :json_library, Jason
 
+# phx.digest also gzips the splats page's baked scenes (priv/static/splats/*.bin), so
+# Plug.Static sends them at about half their size; the rest is Phoenix's own list.
+config :phoenix, :gzippable_exts, ~w(.js .map .css .txt .text .html .json .svg .eot .ttf .bin)
+
 # Points launch is explicit: nothing earns until a start time is set, and the hosted
 # template's is in config/prod.exs. The five
 # start actions are approved (Sean, 13 November), so the Points page lists them.

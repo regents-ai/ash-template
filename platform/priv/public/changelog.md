@@ -8,6 +8,10 @@ Changes to Ash Template, newest first.
   from its first chat, beside its pairing tools. Until you pair it they say it isn't
   paired yet and do nothing; once paired they work in the same chat, with no need to
   connect again or start a new chat.
+- **Splats.** Both worlds are new and sharper: a robot factory with a water wheel, robot
+  arms over an assembly line and a brass engine underneath, and a night island with a
+  cottage, a campfire and a pond whose stream falls off the edge. A picture of each shows
+  while it loads.
 
 ## 16 November 2026
 
