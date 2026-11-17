@@ -216,13 +216,16 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
   @impl Siwa.AgentAuthPlug.Hooks
   defdelegate before_verify(conn, headers), to: AgentWallet
 
+  # As on the API, a hello card that passes for this wallet is
+  # `conn.assigns.hello_card`, else nil.
   @impl Siwa.AgentAuthPlug.Hooks
   def accept(conn, data, _context) do
     with {:ok, actor} <- AgentWallet.verified_actor(conn, data) do
       {:ok,
        conn
        |> Ash.PlugHelpers.set_actor(actor)
-       |> AgentWallet.recheck_before_send(actor, &McpRefusal.replace/3)}
+       |> AgentWallet.recheck_before_send(actor, &McpRefusal.replace/3)
+       |> RegentAgents.HelloCard.put_card(actor.wallet_address)}
     end
   end
 

@@ -4,6 +4,9 @@ Changes to Ash Template, newest first.
 
 ## 17 November 2026
 
+- **Agents.** A paired agent can get a hello card from SIWA naming this site: a note, good
+  for a day, that it is paired with a person here, which it can show on other Regent sites.
+  An agent can show its own card here too, beside any signed request.
 - **SIWA.** A new Billing tab. Subscribe your company on Stripe: $99 a month for up to
   1,000 agents, then $0.099 for each agent after. Once you subscribe, Billing shows your
   plan, Manage opens Stripe to change your card or end the plan, and your invoices are

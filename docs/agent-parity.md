@@ -52,6 +52,13 @@ identity tools behind its switch.
 | Rename or unpair an agent | Agents panel | — | — | — | — | no (owner only) | G2 |
 | Read an agent's last actions | Agents panel | — | — | — | — | no (owner only) | G2 |
 
+Hello cards have no row: they are not an action here. The SIWA service alone asks the
+pairing read (`POST /api/agents/v1/pairing`, with its service token), and a card an
+agent shows beside a signed request, on the API or at `/mcp`, is checked and kept on the
+request, where nothing reads it yet. A page that comes to show one says only "paired with
+a person on <site>", and never greets or names anyone with its `person`, the profile
+code.
+
 ## Points
 
 | Action | Page | WebMCP | MCP | Connector | CLI | Protected | Gap |

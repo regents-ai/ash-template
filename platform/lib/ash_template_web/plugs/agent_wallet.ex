@@ -80,10 +80,17 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
       else: {:ok, nil}
   end
 
+  # The hello card the agent shows beside its signed request, once it passes for
+  # this wallet, is `conn.assigns.hello_card`, else nil (`RegentAgents.HelloCard`).
   @impl Siwa.AgentAuthPlug.Hooks
   def accept(conn, data, _context) do
-    with {:ok, actor} <- verified_actor(conn, data),
-         do: {:ok, conn |> assign(:actor, actor) |> recheck_before_send(actor)}
+    with {:ok, actor} <- verified_actor(conn, data) do
+      {:ok,
+       conn
+       |> assign(:actor, actor)
+       |> recheck_before_send(actor)
+       |> RegentAgents.HelloCard.put_card(actor.wallet_address)}
+    end
   end
 
   @doc """

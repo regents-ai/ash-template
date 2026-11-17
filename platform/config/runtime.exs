@@ -175,6 +175,11 @@ config :ash_template, AshTemplate.OAuth,
   issuer: site_url,
   resource: site_url && site_url <> "/mcp"
 
+# The sign-in service asks the site at this same address whether an agent is
+# paired here before it gives the agent a hello card, and its token names it
+# (RegentAgents.HelloCard).
+config :regent_agents, :siwa, origin: site_url
+
 config :regent_mcp_agents, :config,
   enabled?: claude_connector?,
   hosted_signer: [

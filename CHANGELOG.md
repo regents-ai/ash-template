@@ -12417,3 +12417,52 @@ For the template chief to release. No migration. No new package.
 - Rollback: v277 (`ed54df9d`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
   362 Elixir; 376 script). Not proven: Safari, Firefox, real phones.
+
+## 2026-11-17 — Agents: hello cards
+
+- The SIWA service can give an agent a hello card naming this site: its signed note, good
+  for a day, that the site said the agent is paired with a person here. Before it gives
+  one, the service asks this site with `POST /api/agents/v1/pairing` and its own service
+  token alone. The elixir-utils pin moves from `f7b3a81` to `b9063e8`, which is
+  elixir-utils main `7b0e4a5` (lock files only since `f7b3a81`) plus hello cards
+  (`RegentAgents.HelloCard` and the pairing read in `RegentAgents.HTTP`).
+- Settings. `platform/config/config.exs`:
+  `person: {AshTemplate.Agents.PairedAccount, :person}` names the person by their profile
+  code, the id of their shared Regent profile read with `RegentIdentity.profile_id/2`,
+  never their Privy id, email, wallet or name (Sean's decision).
+  `platform/config/runtime.exs`: `config :regent_agents, :siwa, origin: site_url`, the
+  site's own address (`https://<PHX_HOST>` in production, the endpoint's local address in
+  dev and test), which the service's token must name.
+- A paired person can have no profile: one is made at sign-in with a wallet (from v250),
+  so a person who last signed in before v250, signed in only without a wallet, or paired
+  from another site and never signed in here has none. The pairing read then answers 404
+  `not_paired_here` until they sign in here with a wallet; nothing stands in for the
+  profile. A profile that can't be read raises, so the service hears the site failed,
+  never that the agent is not paired.
+- The card. `AshTemplateWeb.Plugs.AgentWallet.accept/3` (the API and every signed agent
+  call through it) and `AshTemplateWeb.Plugs.McpAgent.accept/3` (signed calls at `/mcp`)
+  keep a card that passes for the request's own wallet as `conn.assigns.hello_card`, else
+  nil. Nothing reads it yet. A connected app at `/mcp` signs nothing, so it carries no card.
+- The route. `forward "/v1", RegentAgents.HTTP` already serves the pairing read, and
+  nothing on the way stops a call with only a bearer token (no signature, cookie, forms
+  token or Origin), so the pipeline is unchanged. It shares `/api`'s 120 requests a minute
+  for each address, and the visit lines write it as `tool.call` with `ok` or its error
+  code. It is not in the API contract or `/capabilities.json`: the service calls it, not an
+  agent, and the capability list has one row for each contract operation.
+- Docs: `platform/priv/public/agents.md`, `docs.md` and `llms.md` describe the pairing read
+  and the `x-siwa-hello-card` header; `docs/feature-map.md` (three rows) and
+  `docs/agent-parity.md`. A card is described only as "paired with a person on <site>", and
+  a page never greets or names anyone with the profile code.
+- Tests: `platform/test/ash_template_web/hello_card_test.exs`, through the real endpoint and
+  router with an Ed25519 key made in the test and the service's published keys stood in
+  for: 200 with exactly `name`, `person` (the profile id) and `pairedAt`; 404 when unpaired
+  and when the person has no profile; 401 for no token, an unpublished key, another site's
+  address, another agent, a card sent as a token and a body naming another agent; a card
+  kept on the API and at `/mcp` for the agent's own wallet, nil for another wallet's, an
+  expired one or none, with the request answering 200 each time.
+- Checks: `mix format --check-formatted` and `mix compile --warnings-as-errors` exit 0;
+  `mix test` 367 passed (357 tests, 10 properties); `npm test` 376 passed;
+  `sh test/browser/walk.sh pages.spec.ts` 336 passed; `make check-style` and
+  `make check-required-fixes` exit 0. Not proven: a card from the real SIWA service and
+  its real pairing read (every check uses a stand-in); the production and dev `origin`
+  values, run only in test; a busy service address meeting `/api`'s 120 a minute.

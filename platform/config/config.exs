@@ -118,11 +118,14 @@ config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 
 # through the agent pairing every Regent site shares (RegentAgents). `allowed` is
 # what an agent may do here in each status, as GET /api/agents/v1/whoami tells it
 # and the agent guides list it: true to the routes and policies, so change it with them.
+# `person` names the person, by their profile code, when the sign-in service asks
+# before giving an agent a hello card; the service's `origin` is in config/runtime.exs.
 config :regent_agents,
   repo: AshTemplate.Repo,
   pubsub: AshTemplate.PubSub,
   notifications: AshTemplate.Notifications,
   account: {AshTemplate.Agents.PairedAccount, :account},
+  person: {AshTemplate.Agents.PairedAccount, :person},
   allowed: %{
     "not_paired" => [
       "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
