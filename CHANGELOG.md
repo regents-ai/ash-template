@@ -12036,3 +12036,10 @@ loaded only when the button is pressed.
 - Order kept: siwa-server v94 went live on this library first (17 Nov 02:41Z), then this pin.
 - A site taking this pin deletes its `body: :always` / `body: :if_present` options and any
   test or hint naming the three removed reasons.
+
+## 2026-11-17 — Released v269: no body and an empty body are one signed request
+
+- v269 (`c3a5ddad`) on template.regents.sh carries the entry above. elixir-utils pin
+  `e40068b3`; other pins unchanged. No migration.
+- Rollback: v268 (`8f28f899`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 372 script).
