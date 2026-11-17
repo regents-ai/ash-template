@@ -12410,3 +12410,10 @@ For the template chief to release. No migration. No new package.
 - Checks: `sh test/browser/walk.sh splats.spec.ts` 25 passed, 1 skipped. Against live v276
   with the one style line added in the browser: no picture drag starts and all 40 moves of
   a drag reach the scene (before: one). Not proven: Safari, Firefox, real phones.
+
+## 2026-11-17 — Released v278: the Splats drag fix
+
+- v278 on template.regents.sh carries the Splats drag entry above (`239cef25`). No migration.
+- Rollback: v277 (`ed54df9d`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
+  362 Elixir; 376 script). Not proven: Safari, Firefox, real phones.
