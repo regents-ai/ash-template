@@ -62,7 +62,10 @@ defmodule AshTemplateWeb.Router do
   # policies. McpAgent admits the request first: POST /mcp alone, JSON, one call,
   # no query string and no page from another site; then an agent signing with its
   # wallet or an app connected with a Bearer token from the sign-in above, never
-  # neither. A connected app whose identity is paired calls as that agent. So
+  # neither. A connected app whose identity is paired calls as that agent. One
+  # with the agent permission whose identity isn't paired yet is listed that
+  # agent's tools all the same, the list it gets once paired, and until then each
+  # answers agent_not_paired (`AshTemplate.Agents.Connection.Listing`). So
   # AshAi's own origin check takes whatever McpAgent let through.
   # A tool's input is checked as its action takes it, and refused with the code
   # HTTP gives (`AshTemplateWeb.ToolErrors.check_input/3`). No session, cookie or
@@ -93,7 +96,9 @@ defmodule AshTemplateWeb.Router do
                   "register_identity, then get_identity. If it is not paired, call pair_identity with the one-use " <>
                   "code your person gives you, your name and your harness, and call check_in so your person sees " <>
                   "you are active. Once paired, you work here as that agent: the room tools are yours as they are " <>
-                  "any paired agent's. Never ask for a password, a private key or a wallet signature.",
+                  "any paired agent's. The room tools and messages_leave you see answer agent_not_paired until " <>
+                  "then, and work as that agent once paired, in the same chat: never ask your person to reconnect " <>
+                  "for them. Never ask for a password, a private key or a wallet signature.",
               list_ttl_ms: 0,
               read_ttl_ms: 0,
               cache_scope: "private",

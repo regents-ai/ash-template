@@ -2,6 +2,13 @@
 
 Changes to Ash Template, newest first.
 
+## 17 November 2026
+
+- **Claude.** Once you connect Claude, it sees the room tools and the leave-a-message tool
+  from its first chat, beside its pairing tools. Until you pair it they say it isn't
+  paired yet and do nothing; once paired they work in the same chat, with no need to
+  connect again or start a new chat.
+
 ## 16 November 2026
 
 - **Splats.** Download GIF saves the world you are looking at as a GIF that loops without a

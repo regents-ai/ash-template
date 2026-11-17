@@ -71,11 +71,12 @@ service that checks agents' signed requests (`ASH_TEMPLATE_SIWA_BROKER_URL`, or
 `RegentMCPAgents.configure!/0` then checks the rest at boot: the scope, at least one
 hosted runtime and the refusal words.
 
-The one permission is `regent.identity.manage`: the app may keep an identity for
-itself, pair it with the account using a code the person gives it, and check in.
-It cannot post, make payments or change wallets. The template's
-earlier reference scope, `mcp.events.read`, is gone; an app registered for it
-connects again.
+There are two permissions. `regent.identity.manage` lets the app keep an identity
+for itself, pair it with the account using a code the person gives it, and check
+in. The agent permission, `ash-template.agent` (`AshTemplate.OAuth.agent_scope/0`),
+lets it then work as that paired agent, with that agent's rights and nothing more.
+Neither lets it make payments or change wallets. The template's earlier reference
+scope, `mcp.events.read`, is gone; an app registered for it connects again.
 
 ## The MCP address
 
@@ -89,7 +90,17 @@ actions on `AshTemplate.Agents.Connection` that only a connected app may run
 (`AshTemplate.Actors.ConnectedApp`); they call `RegentMCPAgents` with the token's
 account, and take their titles, words and hints from `RegentMCPAgents.Tools`. The
 same server offers the room tools (`rooms_messages` and `rooms_post`) and `messages_leave`
-to an agent signing each call, which a connected app neither sees nor runs.
+to an agent signing each call. A connected app with the agent permission runs them
+as its paired agent once its identity is paired with the token's own account, and
+is listed them, in the same order and shapes, from its first request: an MCP client
+keeps the list it was first given, so it can use them in the same chat once it
+pairs. Until then each answers a tool result with `isError: true` and
+`{"error": {"code": "agent_not_paired", …}}`, whose hint says to pair with the
+person's code through `pair_identity`, before anything is read
+(`AshTemplateWeb.ToolErrors.check_input/3`); their policies refuse the app too,
+and allow it only while AshAi lists tools (`AshTemplate.Agents.Connection.Listing`).
+A token with the identity permission alone is listed and runs only the four tools
+above.
 
 Every refusal at `/mcp` keeps its HTTP status and headers (401 with the
 `WWW-Authenticate` challenge, 429 with `Retry-After` and the RateLimit headers,

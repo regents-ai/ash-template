@@ -10,7 +10,10 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   import Plug.Test
 
   alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
-  alias AshTemplateWeb.PairingBox
+  alias AshTemplate.Actors.ConnectedApp
+  alias AshTemplate.Agents.Connection
+  alias AshTemplate.Rooms
+  alias AshTemplateWeb.{Capabilities, PairingBox}
 
   @endpoint AshTemplateWeb.Endpoint
   @wallet "0x2222222222222222222222222222222222222222"
@@ -157,7 +160,8 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       assert policies(read) == ["mcp_address"]
 
       for _ <- 2..120,
-          do: Phoenix.ConnTest.assert_error_sent(400, fn -> post_unreadable("any-token", from) end)
+          do:
+            Phoenix.ConnTest.assert_error_sent(400, fn -> post_unreadable("any-token", from) end)
 
       refused = post_unreadable("any-token", from)
       assert refused.status == 429
@@ -545,20 +549,100 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       sign_in!(subject)
       %{access: token} = connect!(subject)
       assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
-      assert ["messages_leave", "rooms_post"] -- tool_names(token) == ["messages_leave", "rooms_post"]
+
+      assert ["messages_leave", "rooms_post"] -- tool_names(token) == [
+               "messages_leave",
+               "rooms_post"
+             ]
     end
 
-    test "a second app of an account already paired through another app has its identity tools only" do
+    # Claude reads the tool list once, when it connects, and keeps it: the list it
+    # got before pairing must be the one that works after, in the same chat.
+    test "the app is listed the same tools before and after it pairs, and a post it was refused works once paired" do
+      subject = "did:privy:agent-listed-first"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      unpaired = listed(token)
+      post = room_call()
+      {posts, left} = written()
+
+      assert not_paired?(json(post_mcp(post, token))["result"])
+      assert written() == {posts, left}
+
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+      assert listed(token) == unpaired
+
+      # The refused post spent nothing: the same operation_id posts now.
+      assert %{"isError" => false} = json(post_mcp(post, token))["result"]
+      assert written() == {posts + 1, left}
+    end
+
+    test "until it pairs, every tool it is listed but its identity tools answers agent_not_paired, and nothing is read, written or signed" do
+      subject = "did:privy:agent-not-yet"
+      sign_in!(subject)
+
+      Rooms.post_message!(%{room: "general", body: "For paired agents only"},
+        actor: human(subject),
+        context: %{client_key: "person"}
+      )
+
+      %{access: token} = connect!(subject, @agent_scopes)
+      written = written()
+      _asked = signer_asks()
+
+      working = tool_names(token) -- RegentMCPAgents.Tools.names()
+      assert working != []
+
+      answers =
+        [post_room(token), tool(token, "rooms_messages", %{"room" => "general"})] ++
+          for(name <- working, do: tool(token, name, %{}))
+
+      for answer <- answers do
+        assert not_paired?(answer), inspect(answer)
+        refute Jason.encode!(answer) =~ "For paired agents only"
+      end
+
+      assert written() == written
+      assert for({_, _, %{"operation" => "sign"} = ask} <- signer_asks(), do: ask) == []
+    end
+
+    test "the policies refuse an unpaired app each tool it is listed; only listing them lets it see them" do
+      app = %ConnectedApp{
+        principal: %{subject: "did:privy:agent-policy", scopes: String.split(@agent_scopes)}
+      }
+
+      exposed =
+        &AshAi.exposed_tools(
+          otp_app: :ash_template,
+          tools: Capabilities.hosted_tools(),
+          actor: &1
+        )
+
+      working = Enum.reject(exposed.(app), &(&1.resource == Connection))
+      assert working != []
+
+      for tool <- working do
+        refute Ash.can?({tool.resource, tool.action}, app, domain: tool.domain),
+               to_string(tool.name)
+      end
+
+      # With the identity permission alone it is listed its identity tools only.
+      identity_only = put_in(app.principal.scopes, ["regent.identity.manage"])
+      assert Enum.all?(exposed.(identity_only), &(&1.resource == Connection))
+    end
+
+    test "a second app of an account already paired through another app is listed the same tools and runs only its identity tools" do
       subject = "did:privy:agent-look-alike"
       sign_in!(subject)
       %{access: first} = connect!(subject, @agent_scopes)
       assert %{"isError" => false} = tool(first, "pair_identity", pair_args(code!(subject)))
       assert "rooms_post" in tool_names(first)
 
-      # Same account, same name, the agent permission: still not the paired agent.
+      # Same account, same name, the agent permission: listed the same tools,
+      # still not the paired agent.
       %{access: token} = connect!(subject, @agent_scopes)
-      assert Enum.sort(tool_names(token)) == Enum.sort(RegentMCPAgents.Tools.names())
-      assert %{"error" => _} = json(post_mcp(room_call(), token))
+      assert listed(token) == listed(first)
+      assert not_paired?(post_room(token))
       assert %{"structuredContent" => %{"paired" => false}} = tool(token, "get_identity")
       assert [_only] = agents(subject)
     end
@@ -580,20 +664,21 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       end)
 
       %{access: token} = connect!(other, @agent_scopes)
-      refute "rooms_post" in tool_names(token)
-      assert %{"error" => _} = json(post_mcp(room_call(), token))
+      assert not_paired?(post_room(token))
     end
 
-    test "unpairing takes the room tools away on the next call" do
+    test "unpairing refuses the room tools from the next call, and leaves the list as it was" do
       subject = "did:privy:agent-unpair"
       sign_in!(subject)
       %{access: token} = connect!(subject, @agent_scopes)
       assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
       assert %{"isError" => false} = post_room(token)
+      paired = listed(token)
 
       [agent] = agents(subject)
       :ok = RegentAgents.unpair_agent!(agent, actor: person(subject))
-      refute "rooms_post" in tool_names(token)
+      assert not_paired?(post_room(token))
+      assert listed(token) == paired
     end
 
     test "after a sign-in with no wallet the app is asked to connect, and works as the agent again after one with a wallet" do
@@ -739,7 +824,8 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       from = {10, 9, 8, 5}
 
       for _ <- 1..600,
-          do: Phoenix.ConnTest.assert_error_sent(400, fn -> post_unreadable("any-token", from) end)
+          do:
+            Phoenix.ConnTest.assert_error_sent(400, fn -> post_unreadable("any-token", from) end)
 
       refused = post_unreadable("any-token", from)
       assert refused.status == 429
@@ -755,6 +841,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
 
       # AshAi streams this answer and names its own cache-control on it.
       version = "2026-07-28"
+
       meta = %{
         "io.modelcontextprotocol/protocolVersion" => version,
         "io.modelcontextprotocol/clientCapabilities" => %{}
@@ -1078,10 +1165,34 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     end
   end
 
-  defp tool_names(token) do
-    json(post_mcp(rpc("tools/list"), token))["result"]["tools"]
-    |> Enum.map(& &1["name"])
+  defp tool_names(token), do: Enum.map(listed(token), & &1["name"])
+
+  # Every tool `tools/list` gives the token, in order, as listed.
+  defp listed(token), do: json(post_mcp(rpc("tools/list"), token))["result"]["tools"]
+
+  # A tool's refusal of an app that hasn't paired: the site's error alone, no data.
+  defp not_paired?(%{"isError" => true, "content" => [%{"text" => text}]} = result) do
+    not Map.has_key?(result, "structuredContent") and
+      match?(
+        {:ok, %{"error" => %{"code" => "agent_not_paired", "message" => _, "hint" => _} = error}}
+        when map_size(error) == 3,
+        Jason.decode(text)
+      )
   end
+
+  defp not_paired?(_answer), do: false
+
+  # How many room messages and messages for the site's team there are.
+  defp written,
+    do:
+      {AshTemplate.Repo.aggregate(Rooms.Message, :count),
+       AshTemplate.Repo.aggregate(AshTemplate.Messages.Message, :count)}
+
+  defp human(subject),
+    do:
+      subject
+      |> AshTemplate.Accounts.get_by_privy_did!(actor: %AshTemplate.Actors.System{})
+      |> AshTemplate.Actors.Human.for_account()
 
   defp room_call do
     input = %{"room" => "general", "body" => "hi", "operation_id" => Ecto.UUID.generate()}
@@ -1109,7 +1220,9 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   defp oauth_calls(fun) do
     test = self()
     handler = {__MODULE__, test}
-    :ok = :telemetry.attach(handler, [:ash_template, :repo, :query], &__MODULE__.oauth_query/4, test)
+
+    :ok =
+      :telemetry.attach(handler, [:ash_template, :repo, :query], &__MODULE__.oauth_query/4, test)
 
     try do
       fun.()

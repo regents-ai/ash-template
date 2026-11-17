@@ -12097,3 +12097,37 @@ loaded only when the button is pressed.
   had added, for a day or more (upstream row 5: the same code on regents.sh disagreed
   with Patchbay and Keyfleet for up to two days). It now keeps a list for five minutes.
   A site that could not be read is still asked again a minute later. No other change.
+
+## 2026-11-17 — A connected app is listed its agent's tools from its first request
+
+- A connected app with the agent permission (`ash-template.agent`) was listed only its four
+  identity tools until it paired. An MCP client such as Claude keeps the list it was first
+  given, and `/mcp` has no way to say the list changed, so Claude never saw the room tools in
+  the chat where it paired. It is now listed every tool its paired agent gets
+  (`rooms_messages`, `rooms_post`, `messages_leave`) from its first request, in the same order
+  with the same descriptions and inputs as once paired.
+- Until it pairs, each of those answers a tool result with `isError: true` and the site's
+  `agent_not_paired` code and message, with a hint to pair with the person's code through
+  `pair_identity`, before anything is read (`AshTemplateWeb.ToolErrors.check_input/3`, AshAi's
+  `tool_argument_transformer`). Their policies refuse the app as well:
+  `AshTemplate.Agents.Connection.Listing` holds only while AshAi lists tools
+  (`ash_ai_pre_check?`) for a connected app with the agent permission, so `rooms_post` and
+  `messages_leave` still run only for an agent and `rooms_messages` is still forbidden to a
+  connected app. The check knows the app by its role and the permission by name, so the
+  compile-connected count stays 49. A token with the identity permission alone is listed and
+  runs the identity tools alone, as before; once paired, everything works as before.
+- The server's instructions, Claude's guide (`/agents/claude`, its Unpaired step and its
+  Limits, which had said Claude can't work in rooms), the connector paragraph in `/agents.md`
+  and `/llms.txt`, `docs/oauth-reference.md` (which also named only one permission),
+  `docs/agent-parity.md`, `platform/README.md` and the feature map say so.
+- Learned from Keyfleet (`94bcac814`, `0915f1386`, `53a48a454`, `fcd0821cf` on
+  `kf/connector-tools-1114`, live in `04d70cd2c`), built in the template's own idiom.
+- Tests (`platform/test/ash_template_web/claude_connector_test.exs`): the same list before and
+  after pairing, with a refused post that works in the same chat once paired; every listed
+  tool but the identity tools refused with nothing read, written or signed, iterating over the
+  listed tools; each one's policy refusing the unpaired app; a second app of the account
+  listed the same tools and refused; another account's token refused; unpairing leaves the
+  list as it was.
+  Six of these failed on the code before the change.
+- Full check exit 0 on the worker's tree (713 walk tests passed, 6 skipped; 354 Elixir, 10 of
+  them properties; 372 script). Not tried with a live Claude yet. Not a release.

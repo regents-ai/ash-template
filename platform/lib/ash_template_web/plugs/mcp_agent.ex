@@ -41,8 +41,11 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
     agent's tools under the same policies and its identity tools besides;
     whether it still acts for its person (`AshTemplate.Agents.ForPerson`) is
     checked again before the answer leaves. Otherwise the app
-    is the actor (`AshTemplate.Actors.ConnectedApp`) and has its identity
-    tools only. Each app has its own identity, so an app pairs only with a
+    is the actor (`AshTemplate.Actors.ConnectedApp`), which runs its identity
+    tools only. With the agent permission it is still listed the paired agent's
+    tools, so the list it keeps works once it pairs, and until then each answers
+    `agent_not_paired` (`AshTemplate.Agents.Connection.Listing`).
+    Each app has its own identity, so an app pairs only with a
     code its person gives it and never takes another app's pairing. The budget
     is spent first. The identity's wallet is read from the sign-in service once
     per account and app and kept (`AshTemplate.Agents.HostedAddress`); while it can't be read the call is
