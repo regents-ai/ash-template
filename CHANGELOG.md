@@ -12418,6 +12418,19 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
   362 Elixir; 376 script). Not proven: Safari, Firefox, real phones.
 
+## 2026-11-17 — regents-cli 1.10.32
+
+- The template asks for the newest command line, 1.10.32 (source commit `a972d344`): the agent
+  guide, the install lines, the capability list and the Makefile's pin name it. The
+  `regents ash-template` commands are the same as in 1.10.31.
+
+## 2026-11-17 — Released v279: regents-cli 1.10.32
+
+- v279 on template.regents.sh carries the regents-cli 1.10.32 entry above (`fa947041`). No migration.
+- Rollback: v278 (`239cef25`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
+  362 Elixir; 376 script).
+
 ## 2026-11-17 — Agents: hello cards
 
 - The SIWA service can give an agent a hello card naming this site: its signed note, good
