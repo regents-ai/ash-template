@@ -1,9 +1,10 @@
 /**
  * The splats page's picture (`AshTemplateWeb.SplatsLabLive`): one canvas island over
  * the still picture the server sends, drawing the scene the box names
- * (`data-splats-scene`) in 3D splats once WebGPU is there (`splats/renderer.ts`,
- * loaded only when the box is on screen). Each scene is its own box, so choosing the
- * other one ends this island, and its GPU device, before the next begins.
+ * (`data-splats-scene`, its baked file `data-splats-file`) in 3D splats once WebGPU is
+ * there (`splats/renderer.ts`, loaded only when the box is on screen; the still shows
+ * while the file downloads). Each scene is its own box, so choosing the other one ends
+ * this island, and its GPU device, before the next begins.
  *
  * A mouse or pen dragged across the box turns the scene under it, and dragged up or
  * down tilts the view over it or under it. On a touch screen a sideways swipe turns
@@ -19,7 +20,7 @@
  * beside it. Choosing the other scene or leaving the page stops it and frees what it held.
  */
 import {createCanvasIsland} from "../canvas_island"
-import type {SceneName, SplatRenderer} from "../splats/renderer"
+import type {SplatRenderer} from "../splats/renderer"
 import {still} from "./motion/shared"
 
 /** How far back a release looks to measure the pointer's speed (milliseconds). */
@@ -36,7 +37,7 @@ const save = (bytes: Uint8Array<ArrayBuffer>, name: string) => {
 }
 
 /** The Download GIF control beside the tabs, for the scene this island draws. */
-function gifControl(root: HTMLElement, scene: SceneName, renderer: () => SplatRenderer | undefined) {
+function gifControl(root: HTMLElement, scene: string, renderer: () => SplatRenderer | undefined) {
   const control = document.getElementById(`${root.id}-gif`)!
   const button = control.querySelector<HTMLButtonElement>("button")!
   const done = control.querySelector<HTMLElement>("[data-count]")!
@@ -92,8 +93,9 @@ function gifControl(root: HTMLElement, scene: SceneName, renderer: () => SplatRe
 }
 
 export function createSplatIsland(root: HTMLElement) {
-  // The server names one of the scenes the renderer grows.
-  const scene = root.dataset.splatsScene as SceneName
+  // The server names the scene and the file it is baked into.
+  const scene = root.dataset.splatsScene!
+  const file = root.dataset.splatsFile!
   let calm = still(root)
   // Holds the island still or lets it turn, once it is drawing.
   let hold = () => {}
@@ -109,7 +111,7 @@ export function createSplatIsland(root: HTMLElement) {
     maxDrawingBufferPixels: 5_000_000,
     browserLoad: async (view, size, lost) => {
       const {createSplatRenderer} = await import("../splats/renderer")
-      return createSplatRenderer(view, size, lost, scene)
+      return createSplatRenderer(view, size, lost, file)
     },
     interact: island => {
       const events = new AbortController()

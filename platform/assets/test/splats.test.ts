@@ -1,61 +1,189 @@
-// The splats page's scenes without a GPU: each grows the same from its seed, in the
-// standard layout of Gaussian splatting; a splat's quaternion and scales give back the
-// shape it was placed with, and its spherical harmonics brighten it toward the view a
-// gleam was baked for; moving parts move as rigid turns; the sort hands back every
-// splat once, farthest first, from above and below too; each scene fills a wide box and
-// a phone's square without being cut off; in a recorded loop every part comes round a
-// whole number of times; the pixel grid covers its canvas in whole-pixel squares; a
-// GIF's frames read back in the palette's own colours; and the .ply file reads back as
-// written.
+/// <reference types="node" />
+// The splats page's baked scenes without a GPU: each file reads back exactly as the
+// studio's own decoder reads it, every splat standing where that decoder puts it at every
+// frame; every kind of motion comes back to where it started at the end of the loop, and
+// the moving parts with it; the splats drawn far to near are the ones that must be, and
+// come out farthest first from any side; the art-pixel grid and the camera frame the
+// scene as the reference pictures do; and a GIF's frames read back in the palette's own
+// colours, one loop of the scene long.
+import {readFileSync} from "node:fs"
+import {createRequire} from "node:module"
 import {describe, expect, it} from "vitest"
-import {
-  after, createBuilder, PART_FLOAT, rate, SH_C0, SH_C1, SPLAT_FLOATS, SURFACE, turning, unit, wave,
-  type Lighting, type Pose, type Scene, type Vec3,
-} from "../js/splats/build"
-import {buildFactory} from "../js/splats/factory"
-import {createGif, DELAY, LOOP, ROWS} from "../js/splats/gif"
-import {buildIsland} from "../js/splats/island"
-import {depthOrder} from "../js/splats/order"
-import {bob, flicker, focal, pixelGrid, TILT_LIMIT, viewFrom} from "../js/splats/painter"
-import {DUSK, rgb} from "../js/splats/palette"
-import {PLY_PROPERTIES, readPlyHeader, toPly} from "../js/splats/ply"
+import {gridFor, TILT_LIMIT, viewFrom} from "../js/splats/camera"
+import {createGif, DELAY, FRAMES} from "../js/splats/gif"
+import {centreAt, FALL, FLICKER, frameAt, motionOf, moved, PULSE, RISE, SWAY, type Vec3} from "../js/splats/motion"
+import {createOrder} from "../js/splats/order"
+import {BLOCK_NAMES, decodeScene, NO_DEPTH, restCentre} from "../js/splats/scene"
 
-const scenes: [string, () => Scene][] = [["factory", buildFactory], ["island", buildIsland]]
-const built = new Map(scenes.map(([name, build]) => [name, build()]))
+const studio = createRequire(import.meta.url)("../js/splats/studio/decode.cjs")
+const fileOf = (name: string) => new URL(`../../priv/static/splats/${name}.bin`, import.meta.url)
 
-type Matrix = number[][]
-const product = (a: Matrix, b: Matrix) => a.map(row => b[0]!.map((_, j) => row.reduce((sum, value, k) => sum + value * b[k]![j]!, 0)))
-const transpose = (a: Matrix) => a[0]!.map((_, j) => a.map(row => row[j]!))
+const scenes = [
+  {name: "island", splats: 294_707},
+  {name: "factory", splats: 399_656},
+].map(({name, splats}) => {
+  const file = readFileSync(fileOf(name))
+  const scene = decodeScene(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength))
+  return {name, splats, scene, theirs: studio.open(fileOf(name))}
+})
 
-/** The rotation of a unit quaternion, real part first, as Gaussian splatting builds it. */
-const rotation = ([w, x, y, z]: number[]): Matrix => [
-  [1 - 2 * (y! * y! + z! * z!), 2 * (x! * y! - w! * z!), 2 * (x! * z! + w! * y!)],
-  [2 * (x! * y! + w! * z!), 1 - 2 * (x! * x! + z! * z!), 2 * (y! * z! - w! * x!)],
-  [2 * (x! * z! - w! * y!), 2 * (y! * z! + w! * x!), 1 - 2 * (x! * x! + y! * y!)],
-]
-
-/** Where splat `i` stands with its moving part where `parts` puts it. */
-const posed = (data: Float32Array, parts: Float32Array, i: number): Vec3 => {
-  const o = i * SPLAT_FLOATS
-  const p = data[o + PART_FLOAT]! * 16
-  const [x, y, z] = [data[o]!, data[o + 1]!, data[o + 2]!]
-  const at = (a: number) => parts[p + a]! * x + parts[p + 4 + a]! * y + parts[p + 8 + a]! * z + parts[p + 12 + a]!
-  return [at(0), at(1), at(2)]
+/** The largest gap between two lists of numbers. */
+const furthest = (a: ArrayLike<number>, b: ArrayLike<number>) => {
+  let most = 0
+  for (let i = 0; i < a.length; i++) most = Math.max(most, Math.abs(a[i]! - b[i]!))
+  return most
 }
 
-/** A splat's colour seen along `d` (from the camera toward it), as Gaussian splatting evaluates degrees 0 and 1. */
-const seen = (data: Float32Array, i: number, d: Vec3) => {
-  const o = i * SPLAT_FLOATS
-  return [0, 1, 2].map(c => {
-    const s = data.subarray(o + 16 + c * 4, o + 19 + c * 4)
-    return 0.5 + SH_C0 * data[o + 12 + c]! + SH_C1 * (-d[1] * s[0]! + d[2] * s[1]! - d[0] * s[2]!)
+describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
+  const {header, blocks} = scene
+
+  it("holds the splats and the 48 colours the page says it does", () => {
+    expect(header.splats).toBe(splats)
+    expect(header.colours).toBe(48)
+    expect(blocks.palette).toHaveLength(48)
   })
-}
 
-const LIGHT: Lighting = {
-  key: [-0.7, 0.4, 0.5], keyColour: [1, 0.8, 0.6], sky: [0.4, 0.4, 0.6], bounce: [0.3, 0.2, 0.2],
-  rim: [0.6, 0.42, -0.68], rimColour: [0.6, 0.8, 0.8], shineColour: [0.5, 0.7, 0.9], warm: [1, 0.5, 0.2], lamps: [],
-}
+  it("reads the header and every block exactly as the studio's decoder does", () => {
+    expect({...header}).toEqual(theirs.h)
+    expect(BLOCK_NAMES).toEqual(Object.keys(theirs.A))
+    const bytesOf = (block: ArrayBufferView) => Buffer.from(block.buffer, block.byteOffset, block.byteLength)
+    for (const name of BLOCK_NAMES) expect(Buffer.compare(bytesOf(blocks[name]), bytesOf(theirs.A[name])), name).toBe(0)
+  })
+
+  it("puts every splat at rest where the studio's decoder does", () => {
+    const centres = new Float64Array(header.splats * 3)
+    const theirCentres = new Float64Array(header.splats * 3)
+    for (let n = 0; n < header.splats; n++) {
+      centres.set(restCentre(scene, n), n * 3)
+      theirCentres.set(theirs.rest.subarray(n * 16, n * 16 + 3), n * 3)
+    }
+    expect(furthest(centres, theirCentres)).toBeLessThan(1e-5)
+  })
+
+  it("carries every splat its kind leaves in place where the studio's decoder does, frame by frame", () => {
+    for (const frame of [0, 97, header.frames - 1]) {
+      const rows = studio.rowsAt(theirs, frame) as Float32Array
+      const centres = new Float64Array((header.splats - header.moving) * 3)
+      const theirCentres = new Float64Array(centres.length)
+      for (let n = header.moving; n < header.splats; n++) {
+        centres.set(centreAt(scene, n, frame / 30), (n - header.moving) * 3)
+        theirCentres.set(rows.subarray(n * 16, n * 16 + 3), (n - header.moving) * 3)
+      }
+      expect(furthest(centres, theirCentres), `frame ${frame}`).toBeLessThan(1e-4)
+    }
+  }, 30_000)
+
+  it("holds each stored frame until the next, the last up to the end of the loop", () => {
+    expect(header.frames).toBe(header.loop * 30)
+    expect(frameAt(header, 0)).toBe(0)
+    expect(frameAt(header, 1 / 30 - 1e-9)).toBe(0)
+    expect(frameAt(header, 1 / 30)).toBe(1)
+    expect(frameAt(header, header.loop - 1e-9)).toBe(header.frames - 1)
+  })
+
+  it("brings every moving splat back to how it started when the loop comes round", () => {
+    // An art pixel's width at the camera's target, on the reference pictures' grid.
+    const pixel = header.camDist / gridFor(header, 1440, 960).focal
+    let seam = 0
+    let swaySeam = 0
+    for (let n = 0; n < header.moving; n++) {
+      const motion = motionOf(scene, n)
+      const centre = restCentre(scene, n)
+      const start = moved(motion, centre, header.clockStart, header.loop)
+      const end = moved(motion, centre, header.clockStart + header.loop, header.loop)
+      const [dx, dy, dz] = start.centre.map((v, k) => Math.abs(v - end.centre[k]!))
+      seam = Math.max(seam, dx!, dz!, Math.abs(start.alpha - end.alpha), Math.abs(start.grow - end.grow), Math.abs(start.glow - end.glow))
+      // A swaying splat's up-and-down goes 1.3 times as fast as its side to side (FORMAT.md 4), so only it may not quite close.
+      if (motion.kind === SWAY) swaySeam = Math.max(swaySeam, dy!)
+      else seam = Math.max(seam, dy!)
+    }
+    expect(seam).toBeLessThan(1e-9)
+    expect(swaySeam).toBeLessThan(pixel / 2)
+  })
+
+  it("brings every moving part back from its last frame no further than it moves between any two frames", () => {
+    const track = blocks.track
+    const step = (part: number, from: number, to: number) => {
+      const a = (from * header.parts + part) * 12
+      const b = (to * header.parts + part) * 12
+      return furthest(track.subarray(a, a + 12), track.subarray(b, b + 12))
+    }
+    for (let part = 0; part < header.parts; part++) {
+      let largest = 0
+      for (let f = 1; f < header.frames; f++) largest = Math.max(largest, step(part, f - 1, f))
+      expect(step(part, header.frames - 1, 0), `part ${part}`).toBeLessThanOrEqual(largest + 1e-6)
+    }
+  })
+
+  describe("drawn far to near", () => {
+    const order = createOrder(scene)
+    const sorted = order.farToNear([0, 0, 1], 0)
+
+    it("is every splat that does not always hide what is behind it, and only those", () => {
+      const fading = new Set([FLICKER, FALL, RISE, PULSE])
+      const blends = (n: number) => {
+        const style = blocks.style[n]!
+        const code = blocks.styleCode[style]!
+        return blocks.styleDensity[style]! < 1 || (code & NO_DEPTH) !== 0 || (n < header.moving && fading.has(code & 15))
+      }
+      const drawn = [...order.solid, ...sorted].sort((a, b) => a - b)
+      expect(drawn).toEqual(Array.from({length: header.splats}, (_, n) => n))
+      expect(order.solid.some(blends)).toBe(false)
+      expect(sorted.every(blends)).toBe(true)
+    })
+
+    it.each([
+      ["the front", header.camYaw, header.camPitch, 0],
+      ["above", 1.1, TILT_LIMIT, 2.5],
+      ["below", -2.4, -TILT_LIMIT, header.loop - 0.01],
+    ])("comes out farthest first seen from %s, ties in file order", (_, yaw, pitch, seconds) => {
+      const {back} = viewFrom(header, yaw, pitch, 1)
+      const ids = Array.from(order.farToNear(back, seconds))
+      const depth = (n: number) => {
+        const [x, y, z] = centreAt(scene, n, seconds)
+        return back[0] * x + back[1] * y + back[2] * z
+      }
+      const expected = [...ids].sort((a, b) => depth(a) - depth(b) || a - b)
+      expect(ids).toEqual(expected)
+    })
+  })
+
+  describe("framed", () => {
+    it("on the reference pictures' grid on a wide stage, and on a square one for phones", () => {
+      expect(gridFor(header, 1440, 960)).toMatchObject({zoom: 1, scale: 3, columns: 480, rows: 320})
+      expect(gridFor(header, 1080, 1080)).toMatchObject({scale: 3, columns: 360, rows: 360})
+    })
+
+    for (const [width, height] of [[2172, 1446], [972, 972], [716, 716], [641, 427], [100, 60]] as const) {
+      it(`covers a ${width} by ${height} stage in whole art pixels, the scene still fitting across it`, () => {
+        const grid = gridFor(header, width, height)
+        expect(Number.isInteger(grid.scale)).toBe(true)
+        expect(grid.columns * grid.scale - width).toBeGreaterThanOrEqual(0)
+        expect(grid.columns * grid.scale - width).toBeLessThan(grid.scale)
+        expect(grid.rows * grid.scale - height).toBeGreaterThanOrEqual(0)
+        expect(grid.rows * grid.scale - height).toBeLessThan(grid.scale)
+        expect(grid.zoom).toBeCloseTo(Math.min(1, width / height / 1.5))
+      })
+    }
+
+    it("looks at the target from the scene's distance with level, upright, square axes at any tilt", () => {
+      const dot = (a: readonly number[], b: readonly number[]) => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!
+      for (const pitch of [-TILT_LIMIT, 0, header.camPitch, TILT_LIMIT]) {
+        const view = viewFrom(header, 0.7, pitch, 0.8)
+        const offset = view.eye.map((v, k) => v - header.camTarget[k]!)
+        expect(Math.hypot(...offset)).toBeCloseTo(header.camDist / 0.8)
+        expect(view.right[1]).toBe(0)
+        expect(view.up[1]).toBeGreaterThan(0)
+        for (const [a, b] of [[view.right, view.up], [view.up, view.back], [view.back, view.right]] as const) expect(dot(a, b)).toBeCloseTo(0)
+        for (const axis of [view.right, view.up, view.back]) expect(dot(axis, axis)).toBeCloseTo(1)
+      }
+    })
+  })
+
+  it("makes a GIF one loop long", () => {
+    expect((FRAMES * DELAY) / 100).toBe(header.loop)
+  })
+})
 
 /** GIF's LZW undone: codes of a width that grows as the table does, low bits first. */
 const unpack = (minimum: number, data: number[]) => {
@@ -125,208 +253,20 @@ const readGif = (bytes: Uint8Array) => {
   return {signature, width, height, table, loops, frames}
 }
 
-describe.each(scenes)("the %s", name => {
-  const scene = built.get(name)!
-
-  it("grows the same from its seed every time, a few hundred thousand splats", () => {
-    const again = scenes.find(([n]) => n === name)![1]()
-    expect(again.count).toBe(scene.count)
-    expect(again.data).toEqual(scene.data)
-    expect(scene.count).toBeGreaterThan(150_000)
-    expect(scene.count).toBeLessThan(450_000)
-    expect(scene.data.length).toBe(scene.count * SPLAT_FLOATS)
-  })
-
-  it("keeps every splat in the standard layout: a place, a unit quaternion, log scales, an opacity before the sigmoid, and colour", () => {
-    const wrong: number[] = []
-    for (let i = 0; i < scene.count; i++) {
-      const o = i * SPLAT_FLOATS
-      const [x, y, z, opacity, qw, qx, qy, qz, s0, s1, s2] = scene.data.subarray(o, o + 11)
-      const part = scene.data[o + PART_FLOAT]!
-      const fine =
-        Math.hypot(x!, y!, z!) <= scene.reach &&
-        Math.abs(Math.hypot(qw!, qx!, qy!, qz!) - 1) < 1e-5 &&
-        [s0!, s1!, s2!].every(s => Math.exp(s) > 0 && Math.exp(s) < 0.2) &&
-        1 / (1 + Math.exp(-opacity!)) > 0 &&
-        1 / (1 + Math.exp(-opacity!)) < 1 &&
-        scene.data.subarray(o + 12, o + 27).every(Number.isFinite) &&
-        Number.isInteger(part) && part >= 0 && part < Math.max(1, scene.parts)
-      if (!fine) wrong.push(i)
-    }
-    expect(wrong).toEqual([])
-  })
-
-  it("moves each moving part as a rigid turn, at any moment", () => {
-    const parts = new Float32Array(Math.max(1, scene.parts) * 16)
-    for (const seconds of [0, 1.7, 6.5, 29.3, 1234.5]) {
-      scene.pose(seconds, parts, 0)
-      for (let p = 0; p < Math.max(1, scene.parts); p++) {
-        const m = [0, 4, 8].map(k => Array.from(parts.subarray(p * 16 + k, p * 16 + k + 3)))
-        const identity = product(m, transpose(m))
-        identity.forEach((row, r) => row.forEach((value, c) => expect(value).toBeCloseTo(r === c ? 1 : 0, 5)))
-        expect(parts[p * 16 + 15]).toBeGreaterThanOrEqual(0)
-        expect(parts[p * 16 + 15]).toBeLessThanOrEqual(1)
-      }
-    }
-  })
-
-  it("comes round to just where it was after one loop of its GIF", () => {
-    const pose = (seconds: number) => {
-      const into = new Float32Array(Math.max(1, scene.parts) * 16)
-      scene.pose(seconds, into, LOOP)
-      return Array.from(into)
-    }
-    for (const seconds of [0.7, 3.1, 5.9]) {
-      const later = pose(seconds + LOOP)
-      pose(seconds).forEach((value, k) => expect(later[k]).toBeCloseTo(value, 4))
-    }
-  })
-
-  describe("the sort", () => {
-    const sort = depthOrder(scene.data, scene.count, SPLAT_FLOATS, scene.reach)
-    const parts = new Float32Array(Math.max(1, scene.parts) * 16)
-    scene.pose(3.7, parts, 0)
-
-    for (const [turn, pitch] of [[0, scene.camera.pitch], [2.2, TILT_LIMIT], [-1.4, -TILT_LIMIT], [Math.PI, 0]] as const) {
-      it(`hands back every splat once, farthest first, turned ${turn} and tilted ${pitch.toFixed(2)}`, () => {
-        const {ahead} = viewFrom(scene.camera, turn, pitch)
-        const order = sort(ahead, parts)
-        expect(new Set(order).size).toBe(scene.count)
-        // How far ahead each splat stands, where its part is now.
-        const depth = (i: number) => {
-          const place = posed(scene.data, parts, i)
-          return place[0] * ahead[0] + place[1] * ahead[1] + place[2] * ahead[2]
-        }
-        // Within one step of the sort's 16-bit keys, each splat is no nearer than the next.
-        const step = (2 * scene.reach) / 65_535
-        let nearer = 0
-        for (let k = 1; k < order.length; k++) if (depth(order[k - 1]!) < depth(order[k]!) - step) nearer += 1
-        expect(nearer).toBe(0)
-      })
-    }
-  })
-
-  // The wide box's picture, and a phone's square.
-  for (const grid of [{columns: 435, rows: 290}, {columns: 324, rows: 324}]) {
-    it(`fills a ${grid.columns} by ${grid.rows} picture as it turns, cutting none of it off`, () => {
-      const parts = new Float32Array(Math.max(1, scene.parts) * 16)
-      scene.pose(scene.still.seconds, parts, 0)
-      const f = focal(scene.camera, grid)
-      // Only splats that stay where they were grown: steam, sparks and fireflies drift.
-      const fixed = Array.from({length: scene.count}, (_, i) => i).filter(i => scene.data[i * SPLAT_FLOATS + 11] === SURFACE)
-      const xs = new Float64Array(fixed.length)
-      const ys = new Float64Array(fixed.length)
-      // The scene's span past its farthest few splats (a stray root or blade of grass).
-      const span = (values: Float64Array) => {
-        values.sort()
-        return [values[Math.floor(values.length * 0.0005)]!, values[Math.floor(values.length * 0.9995)]!]
-      }
-      let fill = 0
-      for (let turn = 0; turn < 2 * Math.PI; turn += Math.PI / 6) {
-        const {right, up, ahead, eye} = viewFrom(scene.camera, turn, scene.camera.pitch)
-        fixed.forEach((i, k) => {
-          const p = posed(scene.data, parts, i)
-          const v = [p[0] - eye[0], p[1] - eye[1], p[2] - eye[2]]
-          const z = v[0]! * ahead[0] + v[1]! * ahead[1] + v[2]! * ahead[2]
-          xs[k] = grid.columns / 2 + (f * (v[0]! * right[0] + v[1]! * right[1] + v[2]! * right[2])) / z
-          ys[k] = grid.rows / 2 - (f * (v[0]! * up[0] + v[1]! * up[1] + v[2]! * up[2])) / z
-        })
-        const [left, rightmost] = span(xs)
-        const [top, bottom] = span(ys)
-        expect(left).toBeGreaterThan(0)
-        expect(rightmost).toBeLessThan(grid.columns)
-        expect(top).toBeGreaterThan(0)
-        expect(bottom).toBeLessThan(grid.rows)
-        fill = Math.max(fill, (rightmost - left) / grid.columns, (bottom - top) / grid.rows)
-      }
-      expect(fill).toBeGreaterThan(0.8)
-    })
-  }
-})
-
-describe("a splat", () => {
-  it("keeps the shape it was placed with: Σ = R S Sᵀ Rᵀ from its quaternion and scales", () => {
-    const b = createBuilder(7)
-    const turned = turning(unit([0.3, -0.8, 0.5]), 1.1, [0, 0, 0]).columns
-    const sets: (readonly [Vec3, Vec3, Vec3])[] = [turned, [turned[1], turned[0], turned[2]], [[1, 0, 0], [0, 1, 0], [0, 0, 1]]]
-    const reaches: Vec3[] = [[0.03, 0.01, 0.002], [0.02, 0.005, 0.004], [0.01, 0.01, 0.01]]
-    sets.forEach((axes, k) => b.place({at: [0, 0, 0], axes, reach: reaches[k]!, colour: [0.5, 0.5, 0.5], opacity: 0.9, facing: [0, 1, 0], open: 1}))
-    const {data} = b.finish(LIGHT)
-    sets.forEach((axes, k) => {
-      const o = k * SPLAT_FLOATS
-      const rs = product(rotation(Array.from(data.subarray(o + 4, o + 8))), [0, 1, 2].map(r => [0, 1, 2].map(c => (r === c ? Math.exp(data[o + 8 + c]!) : 0))))
-      const sigma = product(rs, transpose(rs))
-      const placed = transpose(axes.map(a => [...a]))
-      const expected = product(product(placed, reaches[k]!.map((r, i) => [0, 1, 2].map(c => (i === c ? r * r : 0)))), transpose(placed))
-      sigma.forEach((row, r) => row.forEach((value, c) => expect(value).toBeCloseTo(expected[r]![c]!, 8)))
-    })
-  })
-
-  it("gleams toward the view its shine was baked for, through its degree-1 harmonics", () => {
-    const b = createBuilder(7)
-    const up: Vec3 = [0, 1, 0]
-    b.place({at: [0, 0, 0], axes: [[1, 0, 0], [0, 0, 1], up], reach: [0.02, 0.02, 0.004], colour: [0.2, 0.3, 0.4], opacity: 0.9, facing: up, open: 1, shine: 0.6})
-    const {data} = b.finish(LIGHT)
-    // Looking down at it along the rim light's mirror image, against looking up from below.
-    const rim = unit(LIGHT.rim)
-    const gleam: Vec3 = [rim[0], -rim[1], rim[2]]
-    const toward = seen(data, 0, gleam)
-    const away = seen(data, 0, [-gleam[0], -gleam[1], -gleam[2]])
-    toward.forEach((value, c) => expect(value - away[c]!).toBeCloseTo(LIGHT.shineColour[c]! * 0.6, 5))
-  })
-})
-
-describe("moving parts", () => {
-  it("carry a part on a part: the forearm turns with the arm that holds it", () => {
-    const apply = ({columns: [a, b, c], move}: Pose, [x, y, z]: Vec3): Vec3 => [
-      a[0] * x + b[0] * y + c[0] * z + move[0],
-      a[1] * x + b[1] * y + c[1] * z + move[1],
-      a[2] * x + b[2] * y + c[2] * z + move[2],
-    ]
-    const outer = turning([0, 1, 0], 0.7, [0.2, 0, 0.1], [0, 0.05, 0])
-    const inner = turning([0, 0, 1], -0.4, [0.3, 0.2, 0])
-    const point: Vec3 = [0.4, 0.25, -0.1]
-    const together = apply(after(outer, inner), point)
-    apply(outer, apply(inner, point)).forEach((value, a) => expect(together[a]).toBeCloseTo(value, 9))
-    // A turn keeps its pivot where it is.
-    apply(inner, [0.3, 0.2, 0]).forEach((value, a) => expect(value).toBeCloseTo([0.3, 0.2, 0][a]!, 9))
-  })
-})
-
-describe("a recorded loop", () => {
-  it("runs each thing a whole number of times round it, near its own pace and at least once, and leaves the page's clock alone", () => {
-    for (const cycles of [0.001, 1 / 30, 0.16, 1.1, 7.3 / (2 * Math.PI), 2.37]) {
-      const times = rate(cycles, LOOP) * LOOP
-      expect(times).toBeCloseTo(Math.round(times), 9)
-      expect(times).toBeGreaterThanOrEqual(1)
-      expect(Math.abs(times - cycles * LOOP)).toBeLessThanOrEqual(Math.max(0.5, 1 - cycles * LOOP))
-      expect(rate(cycles, 0)).toBe(cycles)
-      expect((wave(cycles * 2 * Math.PI, LOOP) * LOOP) / (2 * Math.PI)).toBeCloseTo(times, 9)
-      expect(wave(cycles * 2 * Math.PI, 0)).toBe(cycles * 2 * Math.PI)
-    }
-  })
-
-  it("brings a fire's flicker and the picture's bob round with it", () => {
-    for (const seconds of [0.4, 2.9, 6.1]) {
-      expect(flicker(seconds + LOOP, LOOP)).toBeCloseTo(flicker(seconds, LOOP), 9)
-      expect(bob(seconds + LOOP, ROWS, LOOP)).toBe(bob(seconds, ROWS, LOOP))
-    }
-  })
-})
-
 describe("a GIF of the scene", () => {
+  const palette = Array.from(scenes[0]!.scene.blocks.palette)
   const columns = 6
   const rows = 4
   const scale = 3
   // Palette colours as the painter hands them back: four bytes a pixel.
-  const bytes = (value: string) => rgb(value).map(c => Math.round(c * 255))
-  const drawn = (indices: number[]) => Uint8Array.from(indices.flatMap(i => [...bytes(DUSK[i]!), 255]))
-  const first = Array.from({length: columns * rows}, (_, p) => (p * 7 + 3) % DUSK.length)
-  const second = first.map((i, p) => (p % 3 ? i : (i + 11) % DUSK.length))
+  const bytes = (value: number) => [(value >> 16) & 255, (value >> 8) & 255, value & 255]
+  const drawn = (indices: number[]) => Uint8Array.from(indices.flatMap(i => [...bytes(palette[i]!), 255]))
+  const first = Array.from({length: columns * rows}, (_, p) => (p * 7 + 3) % palette.length)
+  const second = first.map((i, p) => (p % 3 ? i : (i + 11) % palette.length))
   // A frame like the one before it in every pixel, and the loop's way back to its first.
   const frames = [first, second, second, first]
 
-  const gif = createGif(DUSK, columns, rows, scale)
+  const gif = createGif(palette, columns, rows, scale)
   for (const indices of frames) gif.add(drawn(indices))
   const read = readGif(gif.finish())
 
@@ -338,16 +278,16 @@ describe("a GIF of the scene", () => {
   })
 
   it("keeps the palette as its one colour table, with one more entry for a pixel left as it was", () => {
-    expect(read.table.slice(0, DUSK.length)).toEqual(DUSK.map(bytes))
-    expect(read.table.length).toBeGreaterThan(DUSK.length)
-    expect(read.frames.map(f => f.clear)).toEqual([undefined, DUSK.length, DUSK.length, DUSK.length])
+    expect(read.table.slice(0, palette.length)).toEqual(palette.map(bytes))
+    expect(read.table.length).toBeGreaterThan(palette.length)
+    expect(read.frames.map(f => f.clear)).toEqual([undefined, palette.length, palette.length, palette.length])
   })
 
   it("shows every pixel in exactly its drawn colour, as a whole square of the scaled-up frame", () => {
     read.frames.forEach((frame, k) => {
       const expected = Array.from({length: read.width * read.height}, (_, p) => {
         const [x, y] = [p % read.width, Math.floor(p / read.width)]
-        return bytes(DUSK[frames[k]![Math.floor(y / scale) * columns + Math.floor(x / scale)]!]!)
+        return bytes(palette[frames[k]![Math.floor(y / scale) * columns + Math.floor(x / scale)]!]!)
       })
       expect(frame.colours).toEqual(expected)
     })
@@ -356,57 +296,7 @@ describe("a GIF of the scene", () => {
   it("will not take a pixel that is not one of the palette's colours", () => {
     const off = drawn(first)
     off.set([1, 2, 3], 4 * 5)
-    expect(DUSK.map(bytes)).not.toContainEqual([1, 2, 3])
-    expect(() => createGif(DUSK, columns, rows, scale).add(off)).toThrow()
-  })
-})
-
-describe("the pixel grid", () => {
-  for (const [width, height] of [[2172, 1446], [972, 972], [1074, 1074], [576, 384], [288, 192], [641, 427], [100, 60]] as const) {
-    it(`covers a ${width} by ${height} canvas in whole-pixel squares`, () => {
-      const grid = pixelGrid(width, height)
-      expect(Number.isInteger(grid.scale)).toBe(true)
-      expect(grid.scale).toBeGreaterThanOrEqual(1)
-      expect(grid.offset[0]).toBeLessThanOrEqual(0)
-      expect(grid.offset[1]).toBeLessThanOrEqual(0)
-      expect(grid.offset[0] + grid.columns * grid.scale).toBeGreaterThanOrEqual(width)
-      expect(grid.offset[1] + grid.rows * grid.scale).toBeGreaterThanOrEqual(height)
-    })
-  }
-
-  it("is about 450 pixels across on a wide screen and at least 300 on a phone", () => {
-    expect(pixelGrid(2172, 1448).columns).toBeGreaterThanOrEqual(400)
-    expect(pixelGrid(2172, 1448).columns).toBeLessThanOrEqual(480)
-    expect(pixelGrid(1074, 1074).columns).toBeGreaterThanOrEqual(300)
-    expect(pixelGrid(716, 716).columns).toBeGreaterThanOrEqual(300)
-  })
-})
-
-describe("the .ply file", () => {
-  const scene = built.get("island")!
-  const bytes = toPly(scene)
-  const header = readPlyHeader(bytes)
-
-  it("has the standard header and one vertex per splat", () => {
-    expect(header.format).toBe("binary_little_endian 1.0")
-    expect(header.count).toBe(scene.count)
-    expect(header.properties).toEqual(PLY_PROPERTIES)
-    expect(bytes.length).toBe(header.body + scene.count * PLY_PROPERTIES.length * 4)
-  })
-
-  it("holds each splat's values where a reader looks for them", () => {
-    const values = new DataView(bytes.buffer, header.body)
-    const read = (i: number, name: string) => values.getFloat32((i * PLY_PROPERTIES.length + PLY_PROPERTIES.indexOf(name)) * 4, true)
-    for (const i of [0, 1234, scene.count - 1]) {
-      const o = i * SPLAT_FLOATS
-      expect([read(i, "x"), read(i, "y"), read(i, "z")]).toEqual(Array.from(scene.data.subarray(o, o + 3)))
-      expect(read(i, "opacity")).toBe(scene.data[o + 3])
-      expect([0, 1, 2, 3].map(k => read(i, `rot_${k}`))).toEqual(Array.from(scene.data.subarray(o + 4, o + 8)))
-      expect([0, 1, 2].map(k => read(i, `scale_${k}`))).toEqual(Array.from(scene.data.subarray(o + 8, o + 11)))
-      expect([0, 1, 2].map(k => read(i, `f_dc_${k}`))).toEqual(Array.from(scene.data.subarray(o + 12, o + 15)))
-      // Degree 1, channel by channel: red's three, then green's, then blue's.
-      expect([3, 4, 5].map(k => read(i, `f_rest_${k}`))).toEqual(Array.from(scene.data.subarray(o + 20, o + 23)))
-      expect([read(i, "nx"), read(i, "ny"), read(i, "nz")]).toEqual([0, 0, 0])
-    }
+    expect(palette.map(bytes)).not.toContainEqual([1, 2, 3])
+    expect(() => createGif(palette, columns, rows, scale).add(off)).toThrow()
   })
 })

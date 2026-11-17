@@ -1,15 +1,17 @@
 import {readFile} from "node:fs/promises"
 import {type Download, type Locator, type Page} from "@playwright/test"
+import {decodeScene} from "../../assets/js/splats/scene"
 import {expect, test} from "./support/test"
 
 // The splats lab (/animations/splats): two small worlds in pixel art, the robot factory
 // first and the island second, each drawn with the GPU over a still picture of itself.
 // These checks open it with the GPU on and ask that the factory comes first and draws
-// and turns by itself; that the switch changes the scene without changing the box's
-// size, on a wide screen and on a phone, and leaves one scene drawing; that a link
-// opens the island and any other link the factory; and, with less motion, that it
-// holds still, that a drag across turns it and a drag up or down tilts it, each
-// stopping where let go, and that the arrow keys turn and tilt it.
+// and turns by itself; that each scene shows nothing but its own palette's colours;
+// that the switch changes the scene without changing the box's size, on a wide screen
+// and on a phone, and leaves one scene drawing; that a link opens the island and any
+// other link the factory; that without WebGPU the still picture stays; and, with less
+// motion, that it holds still, that a drag across turns it and a drag up or down tilts
+// it, each stopping where let go, and that the arrow keys turn and tilt it.
 // Download GIF: it shows at the end of the tabs' row once the scene has drawn, counts
 // up in place while it works, takes no second press, and saves the scene's GIF; a
 // failure says so beside it; choosing the other scene stops it; without WebGPU it is
@@ -65,7 +67,39 @@ const openForGif = async (page: Page, scene: Scene) => {
   return {button: page.locator(`#splats-${scene}-gif-button`), saved}
 }
 
-const opening = async (download: Download) => (await readFile((await download.path())!)).subarray(0, 6).toString()
+/** A saved GIF's signature and its size in pixels. */
+const opening = async (download: Download) => {
+  const bytes = await readFile((await download.path())!)
+  return {signature: bytes.subarray(0, 6).toString(), width: bytes.readUInt16LE(6), height: bytes.readUInt16LE(8)}
+}
+/** Every GIF: 432 by 288 art pixels, each two pixels square. */
+const GIF = {signature: "GIF89a", width: 864, height: 576}
+
+/** The scene's colours, as its baked file lists them. */
+const paletteOf = async (scene: Scene) => {
+  const file = await readFile(`priv/static/splats/${scene}.bin`)
+  return Array.from(decodeScene(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength)).blocks.palette)
+}
+
+/** How many colours a screenshot holds that are not in `palette` (0xRRGGBB). */
+const strangers = (page: Page, png: Buffer, palette: number[]) =>
+  page.evaluate(
+    async ([base64, palette]) => {
+      const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0))
+      const bitmap = await createImageBitmap(new Blob([bytes], {type: "image/png"}))
+      const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext("2d")!
+      context.drawImage(bitmap, 0, 0)
+      const {data} = context.getImageData(0, 0, bitmap.width, bitmap.height)
+      const known = new Set(palette)
+      const found = new Set<number>()
+      for (let p = 0; p < data.length; p += 4) {
+        const value = (data[p]! << 16) | (data[p + 1]! << 8) | data[p + 2]!
+        if (!known.has(value)) found.add(value)
+      }
+      return found.size
+    },
+    [png.toString("base64"), palette] as const,
+  )
 
 test("Download GIF shows at the end of the tabs' row, counts up in place, takes no second press and saves the factory's GIF", async ({page, isMobile}) => {
   test.setTimeout(30_000 + WHOLE_GIF)
@@ -98,7 +132,7 @@ test("Download GIF shows at the end of the tabs' row, counts up in place, takes 
 
   const gif = await download
   expect(gif.suggestedFilename()).toBe("regents-factory.gif")
-  expect(await opening(gif)).toBe("GIF89a")
+  expect(await opening(gif)).toEqual(GIF)
   await expect(button).toHaveAttribute("aria-busy", "false")
   await expect(button).toHaveAccessibleName("Download GIF")
   expect(await places(page, "factory")).toEqual(idle)
@@ -141,10 +175,15 @@ test("choosing the other scene while a GIF is being made goes there at once and 
   expect(saved).toEqual([])
 })
 
-test("without WebGPU, Download GIF is not offered", async ({page}) => {
+test("without WebGPU, the still picture stays and Download GIF is not offered", async ({page, isMobile}) => {
   await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "gpu", {get: () => undefined}))
   await page.goto("/animations/splats")
   await expect(page.locator("#splats-factory")).toHaveAttribute("data-splats-ready", "false")
+  const still = page.locator("#splats-factory .splats-lab__still")
+  await expect(still).toBeVisible()
+  // The wide picture on a wide screen, the square one on a phone, each one art pixel a pixel.
+  await expect.poll(() => still.evaluate((image: HTMLImageElement) => [image.complete, image.naturalWidth])).toEqual([true, isMobile ? 360 : 480])
+  await expect(page.locator("#splats-factory-stage")).toHaveCSS("opacity", "0")
   const button = page.locator("#splats-factory-gif-button")
   await expect(button).toBeHidden()
   await expect(page.getByRole("button", {name: "Download GIF"})).toHaveCount(0)
@@ -163,6 +202,14 @@ test("the factory comes first, draws in its box and turns by itself", async ({pa
   expect((await box.screenshot()).equals(before)).toBe(false)
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
 })
+
+for (const scene of ["factory", "island"] as const) {
+  test(`the ${scene} shows nothing but its own palette's colours`, async ({page}) => {
+    await page.goto(scene === "factory" ? "/animations/splats" : `/animations/splats?scene=${scene}`)
+    await drawn(page, scene)
+    expect(await strangers(page, await picture(page, scene), await paletteOf(scene))).toBe(0)
+  })
+}
 
 test("the switch changes the scene, keeps the box's size and leaves one scene drawing", async ({page}) => {
   await page.goto("/animations/splats")
@@ -242,7 +289,7 @@ test.describe("with less motion", () => {
     await page.keyboard.press("Enter")
     const gif = await download
     expect(gif.suggestedFilename()).toBe("regents-island.gif")
-    expect(await opening(gif)).toBe("GIF89a")
+    expect(await opening(gif)).toEqual(GIF)
     await expect(button).toBeFocused()
     expect(saved).toHaveLength(1)
   })

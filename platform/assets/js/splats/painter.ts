@@ -1,747 +1,617 @@
 /**
- * Paints a splats-page scene (build.ts) with WebGPU through vgpu, in three passes:
+ * Paints a baked splat scene (scene.ts) with WebGPU through vgpu, as studio/FORMAT.md
+ * section 5 draws it: a coarse grid of art pixels, each one of the scene's palette
+ * colours, with crisp solid splats, soft haze, glass, an outline where depth steps, a
+ * little contact shade and a faint ordered dither.
  *
- * 1. Splats, as Gaussian splatting draws them (Kerbl et al., 2023). Every splat is one
- *    instance of a single draw, in the order order.ts gives (farthest first). Its
- *    covariance Σ = R S Sᵀ Rᵀ comes from its quaternion and scales; it is carried into
- *    the camera (W) and through the perspective projection's Jacobian (J) at its centre,
- *    J W Σ Wᵀ Jᵀ, plus 0.3 of a pixel either way (the low-pass term); the quad spans
- *    three standard deviations along the ellipse's axes, and each pixel takes
- *    opacity · exp(-½ dᵀ Σ'⁻¹ d), at most 0.99, laid over what is behind it. Its colour
- *    is its spherical harmonics of degrees 0 and 1 seen along the real view direction.
- * 2. Pixels. On a low grid of about 450 columns: where the splats cover a pixel past a
- *    dithered threshold it takes their colour, elsewhere the sky's; the outline's edge
- *    toward the rim light brightens and glows are added; then every pixel takes the
- *    nearest colour of the scene's palette after a 4 by 4 ordered dither. The grid moves
- *    with the bob in whole pixels only, so bobbing never makes the picture shimmer.
- * 3. Picture. The low picture is scaled up by a whole number onto the canvas, each
- *    pixel a crisp square of device pixels, and soft motes drift over it.
+ * Four passes a frame:
  *
- * A recorded loop (`Moment.loop`, for a GIF: gif.ts) is drawn as the low picture alone:
- * every moving thing comes round a whole number of times in it (build.ts `rate`), the
- * clouds hold still, and the motes are drawn into the low picture before its palette,
- * each living once round the loop, so every pixel stays a palette colour.
+ * 1. Layers, on the art-pixel grid: the solid splats in file order, the depth test keeping
+ *    the nearest at each art pixel, then the splats that blend (order.ts), far to near over
+ *    them. Each writes three layers: colour, depth and glass, each with its cover.
+ * 2. Finish (FORMAT.md 5.4): glass bends what is behind it, contact shade, outline, dither,
+ *    and the nearest palette colour, into the picture.
+ * 3. On the page, the picture onto the canvas, each art pixel a square of screen pixels.
  *
- * The camera orbits the scene: a turn round its upright axis and a tilt to nearly
- * straight above or below (`TILT_LIMIT`). Shared by the renderer (renderer.ts) and the
- * scripts beside it, so it imports only vgpu and build.ts.
+ * Every splat is read straight from the scene file, which goes to the graphics card once
+ * as one buffer, and posed in the vertex shader: its part, the cloth, and its kind of
+ * motion, worked from the loop's clock.
+ *
+ * Shared by the page (renderer.ts), the GIF (gif.ts) and the stills (stills.mjs), so it
+ * imports only vgpu and the files beside it.
  */
 import {prepareShader} from "@vgpu/wgsl/prepare"
 import {draw, effect, storage, target, type Frame, type Gpu, type Target} from "vgpu"
 
-import {wave, type Camera, type Glow, type Scene, type Vec3} from "./build.ts"
+import {gridFor, viewFrom, type Grid, type View} from "./camera.ts"
+import {frameAt} from "./motion.ts"
+import {createOrder} from "./order.ts"
+import {GLASS, NO_DEPTH, NO_FOG, type Scene} from "./scene.ts"
 
-/** About how many columns of pixels the picture has on its longer side. */
-export const COLUMNS = 450
-/** The tilt reaches this close to straight above or below, so the view never flips. */
-export const TILT_LIMIT = (86 * Math.PI) / 180
-/** At most this many motes; on the page they are drawn at the canvas's own resolution. */
-const MOTES_LIMIT = 64
+/** A moment to draw: the camera's yaw and pitch, and seconds into the loop. */
+export type Moment = {readonly yaw: number; readonly pitch: number; readonly seconds: number}
 
-export type PixelGrid = {
-  /** Device pixels per picture pixel, a whole number. */
-  readonly scale: number
-  readonly columns: number
-  readonly rows: number
-  /** Where the grid's first pixel starts on the canvas, in device pixels (zero or less). */
-  readonly offset: readonly [number, number]
+const float = (x: number) => `${x}f`
+const frac = (x: number) => x - Math.floor(x)
+
+// The scene's own numbers, as constants of every shader that reads it.
+function sceneWgsl({header: h, at}: Scene) {
+  return /* wgsl */ `
+// Where each block of the scene file starts, in 32-bit words.
+const PALETTE = ${at.palette}u;
+const STYLE_DENSITY = ${at.styleDensity}u;
+const STYLE_CODE = ${at.styleCode}u;
+const STYLE_PART = ${at.stylePart}u;
+const MOTION_RANGE = ${at.motionRange}u;
+const MOTION_EXTRA = ${at.motionExtra}u;
+const CHUNK_BOUNDS = ${at.chunkBounds}u;
+const POSITION = ${at.position}u;
+const ROTATION = ${at.rotation}u;
+const SCALE = ${at.scale}u;
+const COLOUR = ${at.colour}u;
+const STYLE = ${at.style}u;
+const CYCLES = ${at.cycles}u;
+const PHASE = ${at.phase}u;
+const MOTION = ${at.motion}u;
+const TRACK = ${at.track}u;
+const CLOTH_POSITION = ${at.clothPosition}u;
+const CLOTH_NORMAL = ${at.clothNormal}u;
+const CLOTH_COLOUR = ${at.clothColour}u;
+
+const MOVING = ${h.moving}u;
+const PARTS = ${h.parts}u;
+const CLOTH = ${h.cloth}u;
+const CLOTH_FIRST = ${h.clothFirst}u;
+const CHUNK = ${h.chunkSize}u;
+const COLOURS = ${h.colours}u;
+const FOG_INDEX = ${h.fogIndex}u;
+const OUTLINE_INDEX = ${h.outlineIndex}u;
+const BACKDROP_INDEX = ${h.backdropIndex}u;
+
+const LOG_SCALE_MIN = ${float(h.logScaleMin)};
+const LOG_SCALE_SPAN = ${float(h.logScaleMax - h.logScaleMin)};
+const CLOTH_MIN = vec3f(${h.clothMin.map(float).join(", ")});
+const CLOTH_SPAN = vec3f(${h.clothMax.map((v, k) => float(v - h.clothMin[k]!)).join(", ")});
+const CLOTH_RADIUS = ${float(h.clothRadius)};
+const CLOTH_THICKNESS = ${float(h.clothThickness)};
+const RADIUS = ${float(h.radius)};
+const FOG_START = ${float(h.fogStart)};
+const FOG_MAX = ${float(h.fogMax)};
+const OUTLINE_EDGE = ${float(h.outlineEdge)};
+const SHADE_STRENGTH = ${float(h.shadeStrength)};
+const SHADE_RANGE = ${float(h.shadeRange)};
+const DITHER = ${float(h.dither)};
+const GLASS_BEND = ${float(h.glassBend)};
+// Where the loop starts in each cycle of a motion that makes a whole number of them a loop,
+// and in each of the sway's second motion, 1.3 times as fast (FORMAT.md 3 and 4). Taken
+// apart from the time into the loop, so a 32-bit float never holds a large angle.
+const START_TURNS = ${float(frac(h.clockStart / h.loop))};
+const SWAY_START_TURNS = ${float(frac((1.3 * h.clockStart) / h.loop))};
+
+const NO_DEPTH = ${NO_DEPTH}u;
+const NO_FOG = ${NO_FOG}u;
+const GLASS = ${GLASS}u;
+
+@group(0) @binding(1) var<storage, read> words: array<u32>;
+
+// The k-th byte, 16-bit number, signed byte and 32-bit float of a block.
+fn u8At(block: u32, k: u32) -> u32 {
+  return (words[block + (k >> 2u)] >> ((k & 3u) * 8u)) & 255u;
+}
+fn u16At(block: u32, k: u32) -> u32 {
+  return (words[block + (k >> 1u)] >> ((k & 1u) * 16u)) & 65535u;
+}
+fn i8At(block: u32, k: u32) -> i32 {
+  return (i32(u8At(block, k)) << 24u) >> 24u;
+}
+fn f32At(block: u32, k: u32) -> f32 {
+  return bitcast<f32>(words[block + k]);
 }
 
-/** The low picture for a canvas of this many device pixels: at most `COLUMNS` on its longer side, scaled by a whole number to cover it. */
-export function pixelGrid(width: number, height: number): PixelGrid {
-  const scale = Math.max(1, Math.ceil(Math.max(width, height) / COLUMNS))
-  const columns = Math.ceil(width / scale)
-  const rows = Math.ceil(height / scale)
-  return {scale, columns, rows, offset: [Math.floor((width - columns * scale) / 2), Math.floor((height - rows * scale) / 2)]}
+fn paletteColour(index: u32) -> vec3f {
+  let value = words[PALETTE + index];
+  return vec3f(f32((value >> 16u) & 255u), f32((value >> 8u) & 255u), f32(value & 255u)) / 255.0;
+}
+`
 }
 
-/** The focal length in picture pixels: the field fits the picture's height, or the scene's width (`Camera.width`) its width, whichever is smaller. */
-export const focal = (camera: Camera, grid: {columns: number; rows: number}) =>
-  Math.min(grid.rows, grid.columns / camera.width) / (2 * Math.tan(camera.field / 2))
-
-/** The camera stands back a little further as it tilts toward straight above or below, so the whole scene fits. */
-const standBack = (camera: Camera, pitch: number) =>
-  camera.distance * (1 + 0.32 * Math.pow(Math.max(0, (Math.abs(pitch) - camera.pitch) / (Math.PI / 2 - camera.pitch)), 1.5))
-
-/** The camera, in the scene's own frame, at a turn and tilt: its right, up and forward, and where it stands. */
-export function viewFrom(camera: Camera, turn: number, pitch: number) {
-  const ct = Math.cos(turn)
-  const st = Math.sin(turn)
-  const cp = Math.cos(pitch)
-  const sp = Math.sin(pitch)
-  const right: Vec3 = [ct, 0, st]
-  const up: Vec3 = [sp * st, cp, -sp * ct]
-  const ahead: Vec3 = [cp * st, -sp, -cp * ct]
-  const back = standBack(camera, pitch)
-  const eye: Vec3 = [-ahead[0] * back, camera.lookAt - ahead[1] * back, -ahead[2] * back]
-  return {right, up, ahead, eye}
-}
-
-/** One frame's moment: the view, the bob in whole pixels, the flicker of any fire, the
- * clock, and the length of the loop being recorded in seconds (0 on the page). */
-export type Moment = {
-  readonly turn: number
-  readonly pitch: number
-  readonly bob: number
-  readonly flicker: number
-  readonly seconds: number
-  readonly loop: number
-}
-
-/** A fire's flicker at a moment: a few slow waves, never quite repeating but in a recorded loop. */
-export const flicker = (seconds: number, loop: number) =>
-  0.84 +
-  0.08 * Math.sin(seconds * wave(7.3, loop)) +
-  0.05 * Math.sin(seconds * wave(13.1, loop) + 1.7) +
-  0.04 * Math.sin(seconds * wave(21.7, loop) + 0.4)
-
-/** The bob, in whole pixels of a low picture this many rows high. */
-export const bob = (seconds: number, rows: number, loop: number) =>
-  Math.round(rows * 0.01 * Math.sin(seconds * wave((Math.PI * 2) / 5.5, loop)))
-
-const vec3 = (c: readonly number[]) => `vec3f(${c.map(v => v.toFixed(6)).join(", ")})`
-
-// What every pass that looks at the scene knows of the camera.
-const VIEW_WGSL = /* wgsl */ `
+const SPLATS_WGSL = /* wgsl */ `
 struct View {
-  // The low picture's columns and rows, its focal length in pixels, and the clock in seconds.
-  frame: vec4f,
-  // The camera's right in the scene's frame, and the bob in whole pixels.
+  // The camera's right axis, and its focal length in art pixels.
   right: vec4f,
-  // The camera's up, and the flicker of any fire.
+  // Its up axis, and the nearest a splat may be.
   up: vec4f,
-  // The camera's forward, and the camera's tilt.
-  ahead: vec4f,
-  // Where the camera stands, and how strongly the outline's lit edge shows.
+  // Its back axis, and the depth test's scale: one over the farthest a splat can be.
+  back: vec4f,
+  // The eye, and its distance from the target.
   eye: vec4f,
-  // How far off the middle a splat's centre may sit before the projection's slope is
-  // taken at the edge instead (1.3 times the view's half width and half height, as in
-  // the original renderer), then the step in pixels toward the rim light on the picture.
-  limits: vec4f,
-  // The length of the loop being recorded in seconds, 0 on the page (the last three are padding).
+  // The grid's columns and rows, and how far off the middle a splat's slope is taken
+  // (1.3 times the grid's half width and half height, over the focal length).
+  grid: vec4f,
+  // The time into the loop over the loop, and the stored frame shown (the last two are padding).
   clock: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> view: View;
+@group(0) @binding(2) var<storage, read> ids: array<u32>;
 
 const TAU = 6.283185307179586;
+const FLICKER = 1u;
+const FALL = 2u;
+const RISE = 3u;
+const BLINK = 4u;
+const ORBIT = 5u;
+const BOB = 6u;
+const PULSE = 7u;
+const SWAY = 11u;
 
-// The loop rule (rate in build.ts): something that comes round so many times a second
-// comes round a whole number of times in a recorded loop, at least once.
-fn rate(cycles: f32) -> f32 {
-  let period = view.clock.x;
-  if (period <= 0.0) {
-    return cycles;
-  }
-  return max(1.0, floor(cycles * period + 0.5)) / period;
-}
+// A splat drawn nowhere: its corners all outside what the graphics card draws.
+const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
 
-// The same for a wave given in radians a second.
-fn wave(radians: f32) -> f32 {
-  if (view.clock.x <= 0.0) {
-    return radians;
-  }
-  return TAU * rate(radians / TAU);
-}
-
-// A point of the scene in the camera's own frame: x right, y up, z straight ahead.
-fn seen(p: vec3f) -> vec3f {
-  let v = p - view.eye.xyz;
-  return vec3f(dot(v, view.right.xyz), dot(v, view.up.xyz), dot(v, view.ahead.xyz));
-}
-
-// Where a seen point lands on the low picture, in pixels from its bottom left.
-fn onPicture(v: vec3f) -> vec2f {
-  return vec2f(view.frame.x * 0.5, view.frame.y * 0.5 + view.right.w) + view.frame.z * v.xy / v.z;
-}
-`
-
-const SPLAT_WGSL = /* wgsl */ `
-${VIEW_WGSL}
-
-// One splat in the standard layout, then how it moves.
-struct Splat {
-  // Place, and opacity before the sigmoid.
-  place: vec4f,
-  // Rotation as a unit quaternion, real part first.
-  rotation: vec4f,
-  // The log of its scale on each axis, and its kind.
-  scale: vec4f,
-  // Colour, degree 0 (f_dc), and a phase for anything that moves by itself.
-  dc: vec4f,
-  // Colour, degree 1 (f_rest) for red, green and blue, each followed by: the moving
-  // part it belongs to; the share of its colour a flickering fire gives; how often it blinks.
-  red: vec4f,
-  green: vec4f,
-  blue: vec4f,
-}
-
-// Where a moving part is: three axes, a shift, and an opacity.
-struct Part {
-  x: vec4f,
-  y: vec4f,
-  z: vec4f,
-  shift: vec4f,
-}
-
-@group(0) @binding(1) var<storage, read> splats: array<Splat>;
-@group(0) @binding(2) var<storage, read> order: array<u32>;
-@group(0) @binding(3) var<storage, read> parts: array<Part>;
-
-struct Out {
+struct Dab {
   @builtin(position) position: vec4f,
-  @location(0) local: vec2f,
-  @location(1) colour: vec3f,
-  @location(2) opacity: f32,
+  // Its centre on the grid, in art pixels from the bottom left, and its density.
+  @location(0) @interpolate(flat) centre: vec3f,
+  // Its footprint on the grid: the covariance a, b, c.
+  @location(1) @interpolate(flat) shape: vec3f,
+  // Its colour, and its depth from the front of the scene (0) to the back (1).
+  @location(2) @interpolate(flat) colour: vec4f,
+  // Its style's code: kind and flags.
+  @location(3) @interpolate(flat) code: u32,
 }
 
-const SH_C0 = 0.28209479177387814;
-const SH_C1 = 0.4886025119029199;
-// How many standard deviations each quad reaches, as in the original renderer.
-const EXTENT = 3.0;
+// Splat n's centre at rest (FORMAT.md 2.1).
+fn restCentre(n: u32) -> vec3f {
+  let box = CHUNK_BOUNDS + (n / CHUNK) * 6u;
+  let lo = vec3f(bitcast<f32>(words[box]), bitcast<f32>(words[box + 1u]), bitcast<f32>(words[box + 2u]));
+  let hi = vec3f(bitcast<f32>(words[box + 3u]), bitcast<f32>(words[box + 4u]), bitcast<f32>(words[box + 5u]));
+  let at = vec3f(f32(u16At(POSITION, 3u * n)), f32(u16At(POSITION, 3u * n + 1u)), f32(u16At(POSITION, 3u * n + 2u)));
+  return lo + (hi - lo) * at / 65535.0;
+}
 
-fn rotation(q: vec4f) -> mat3x3f {
-  let r = q.x;
-  let x = q.y;
-  let y = q.z;
-  let z = q.w;
-  return mat3x3f(
-    vec3f(1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y + r * z), 2.0 * (x * z - r * y)),
-    vec3f(2.0 * (x * y - r * z), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z + r * x)),
-    vec3f(2.0 * (x * z + r * y), 2.0 * (y * z - r * x), 1.0 - 2.0 * (x * x + y * y)),
+// Splat n's covariance at rest (FORMAT.md 2.2).
+fn restShape(n: u32) -> mat3x3f {
+  let packed = words[ROTATION + n];
+  let left = packed >> 30u;
+  var q = vec4f(0.0);
+  var kept = 0u;
+  for (var place = 0u; place < 4u; place++) {
+    if (place == left) {
+      continue;
+    }
+    let v = f32((packed >> (20u - 10u * kept)) & 1023u);
+    q[place] = (2.0 * v / 1023.0 - 1.0) * 0.7071067811865476;
+    kept++;
+  }
+  q[left] = sqrt(max(0.0, 1.0 - dot(q, q)));
+  let x = q.x;
+  let y = q.y;
+  let z = q.z;
+  let w = q.w;
+  let turn = mat3x3f(
+    vec3f(1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y + z * w), 2.0 * (x * z - y * w)),
+    vec3f(2.0 * (x * y - z * w), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z + x * w)),
+    vec3f(2.0 * (x * z + y * w), 2.0 * (y * z - x * w), 1.0 - 2.0 * (x * x + y * y)),
   );
+  let size = exp(LOG_SCALE_MIN + LOG_SCALE_SPAN * vec3f(
+    f32(u16At(SCALE, 3u * n)), f32(u16At(SCALE, 3u * n + 1u)), f32(u16At(SCALE, 3u * n + 2u))) / 65535.0);
+  let m = mat3x3f(turn[0] * size.x, turn[1] * size.y, turn[2] * size.z);
+  return m * transpose(m);
 }
 
-@vertex fn vs_main(@builtin(vertex_index) vertex: u32, @builtin(instance_index) instance: u32) -> Out {
-  var out: Out;
-  let s = splats[order[instance]];
-  let part = parts[u32(s.red.w)];
-  let moved = mat3x3f(part.x.xyz, part.y.xyz, part.z.xyz);
-  let kind = u32(s.scale.w);
-  let phase = s.dc.w;
-  let seconds = view.frame.w;
-  var at = moved * s.place.xyz + part.shift.xyz;
-  var opacity = part.shift.w / (1.0 + exp(-s.place.w));
+// Cloth entry k's centre and its disc (FORMAT.md 3.2).
+fn clothCentre(k: u32) -> vec3f {
+  let at = vec3f(f32(u16At(CLOTH_POSITION, 3u * k)), f32(u16At(CLOTH_POSITION, 3u * k + 1u)), f32(u16At(CLOTH_POSITION, 3u * k + 2u)));
+  return CLOTH_MIN + CLOTH_SPAN * at / 65535.0;
+}
+fn clothShape(k: u32) -> mat3x3f {
+  var u = 2.0 * f32(u8At(CLOTH_NORMAL, 2u * k)) / 255.0 - 1.0;
+  var v = 2.0 * f32(u8At(CLOTH_NORMAL, 2u * k + 1u)) / 255.0 - 1.0;
+  let z = 1.0 - abs(u) - abs(v);
+  if (z < 0.0) {
+    let folded = vec2f((1.0 - abs(v)) * select(-1.0, 1.0, u >= 0.0), (1.0 - abs(u)) * select(-1.0, 1.0, v >= 0.0));
+    u = folded.x;
+    v = folded.y;
+  }
+  let facing = normalize(vec3f(u, v, z));
+  let r2 = CLOTH_RADIUS * CLOTH_RADIUS;
+  return mat3x3f(vec3f(r2, 0.0, 0.0), vec3f(0.0, r2, 0.0), vec3f(0.0, 0.0, r2))
+    + (CLOTH_THICKNESS * CLOTH_THICKNESS - r2) * mat3x3f(facing * facing.x, facing * facing.y, facing * facing.z);
+}
+
+// How many cycles into a motion making this many a loop the clock is, apart from where it starts.
+fn turns(cycles: f32, start: f32, rate: f32) -> f32 {
+  return fract(cycles * start + cycles * rate * view.clock.x);
+}
+
+@vertex fn vs_main(@builtin(vertex_index) corner: u32, @builtin(instance_index) instance: u32) -> Dab {
+  var out: Dab;
+  out.position = NOWHERE;
+  let n = ids[instance];
+  let style = u8At(STYLE, n);
+  let code = u8At(STYLE_CODE, style);
+  let frame = u32(view.clock.y);
+  var alpha = f32At(STYLE_DENSITY, style);
+
+  // At rest, or where the cloth is this frame.
+  var p = restCentre(n);
+  var sigma = restShape(n);
+  var colourIndex = u8At(COLOUR, n);
+  if (n >= CLOTH_FIRST && n < CLOTH_FIRST + CLOTH) {
+    let k = frame * CLOTH + (n - CLOTH_FIRST);
+    p = clothCentre(k);
+    sigma = clothShape(k);
+    colourIndex = u8At(CLOTH_COLOUR, k);
+  }
+
+  // Carried by its part (FORMAT.md 3.1).
+  let track = TRACK + (frame * PARTS + u8At(STYLE_PART, style)) * 12u;
+  let carry = transpose(mat3x3f(
+    vec3f(f32At(track, 0u), f32At(track, 1u), f32At(track, 2u)),
+    vec3f(f32At(track, 3u), f32At(track, 4u), f32At(track, 5u)),
+    vec3f(f32At(track, 6u), f32At(track, 7u), f32At(track, 8u)),
+  ));
+  p = carry * p + vec3f(f32At(track, 9u), f32At(track, 10u), f32At(track, 11u));
+  sigma = carry * sigma * transpose(carry);
+
+  // Moved by its kind (FORMAT.md 4).
+  let kind = select(0u, code & 15u, n < MOVING);
   var grow = 1.0;
-
-  // Its colour seen from the camera, in the splat's own frame (a moving part turns its look with it).
-  let d = transpose(moved) * normalize(at - view.eye.xyz);
-  let lobe = vec3f(-d.y, d.z, -d.x);
-  var colour = max(vec3f(0.0), 0.5 + SH_C0 * s.dc.rgb + SH_C1 * vec3f(dot(lobe, s.red.xyz), dot(lobe, s.green.xyz), dot(lobe, s.blue.xyz)));
-  colour *= 1.0 + s.green.w * (view.up.w - 1.0);
-  if (s.blue.w > 0.0) {
-    colour *= mix(0.2, 1.0, step(0.45, fract(seconds * rate(s.blue.w) + phase)));
+  var glow = 0.0;
+  if (kind != 0u) {
+    let m = u8At(MOTION, n);
+    let range = f32At(MOTION_RANGE, m);
+    let extra = f32At(MOTION_EXTRA, m);
+    let cycles = f32(i8At(CYCLES, n));
+    let phase = f32(u16At(PHASE, n)) / 65536.0;
+    let angle = TAU * (turns(cycles, START_TURNS, 1.0) + phase);
+    switch kind {
+      case FLICKER: {
+        alpha *= 0.62 + 0.38 * sin(angle);
+      }
+      case FALL: {
+        let u = fract(turns(cycles, START_TURNS, 1.0) + phase);
+        p.y -= u * range;
+        alpha *= 1.0 - u * u;
+        grow = 1.0 + u * extra;
+      }
+      case RISE: {
+        let u = fract(turns(cycles, START_TURNS, 1.0) + phase);
+        p += vec3f(0.25 * u * sin(7.0 * u + 50.0 * phase), u * range, 0.0);
+        alpha *= (1.0 - u) * smoothstep(0.0, 0.1, u);
+        grow = 0.6 + u * extra;
+      }
+      case BLINK: {
+        glow = 0.3 * smoothstep(0.75, 1.0, sin(angle));
+      }
+      case ORBIT: {
+        let turn = TAU * turns(cycles, START_TURNS, 1.0);
+        p = vec3f(p.x * cos(turn) + p.z * sin(turn), p.y, p.z * cos(turn) - p.x * sin(turn));
+      }
+      case BOB: {
+        p.y += range * sin(angle);
+      }
+      case PULSE: {
+        alpha *= 0.82 + 0.18 * sin(angle);
+      }
+      case SWAY: {
+        let before = p;
+        p.x += range * sin(angle + 1.3 * before.y + 0.9 * before.z);
+        p.y += 0.6 * range * sin(TAU * (turns(cycles, SWAY_START_TURNS, 1.3) + phase) + 1.1 * before.x);
+      }
+      default: {}
+    }
+  }
+  if (alpha <= 0.0) {
+    return out;
   }
 
-  if (kind == 1u) {
-    // A flame licks upward, shrinking and fading as it goes, and brightens with the flicker.
-    let lick = fract(seconds * rate(1.1 + phase * 0.8) + phase);
-    at.y += lick * 0.05 * (0.4 + (s.place.y + 0.1) * 2.0);
-    grow = 1.0 - lick * 0.45;
-    opacity *= 1.0 - lick * lick;
-    colour *= 0.82 + 0.3 * view.up.w;
-  } else if (kind == 2u) {
-    // A spark rises from the fire on its own slow path, wavers, and goes out.
-    let life = fract(seconds * rate(0.3 + phase * 0.25) + phase * 7.0);
-    at += vec3f(sin(life * 5.0 + phase * 40.0) * 0.06 * life, life * (0.55 + phase * 0.45), cos(life * 4.0 + phase * 23.0) * 0.06 * life);
-    opacity *= smoothstep(0.0, 0.06, life) * (1.0 - life);
-    colour = mix(vec3f(1.0, 0.95, 0.75), colour, smoothstep(0.0, 0.4, life));
-  } else if (kind == 3u) {
-    // Steam leaves the chimney as a faint wisp, then rises, spreads, swells and thins,
-    // leaning with a light breeze. Each puff drifts out its own way, so the plume widens
-    // as it goes rather than rising as one rope.
-    let life = fract(seconds * rate(0.16) + phase);
-    let away = fract(phase * 97.0) * 6.2831853;
-    let spread = 0.1 * life * sqrt(fract(phase * 57.0));
-    at += vec3f(
-      0.16 * life * life + 0.025 * sin(seconds * wave(0.7) + phase * 9.0 + life * 4.0) + spread * cos(away),
-      0.36 * life,
-      0.05 * life * life + 0.02 * cos(seconds * wave(0.5) + phase * 13.0 + life * 3.0) + spread * sin(away),
-    );
-    grow = 1.0 + 2.5 * life;
-    opacity *= smoothstep(0.0, 0.15, life) * pow(1.0 - life, 1.5);
-  } else if (kind == 4u) {
-    // A firefly drifts round where it lives and glows on and off.
-    let pace = 0.25 + phase * 0.2;
-    at += vec3f(
-      sin(seconds * wave(pace * 1.3) + phase * 17.0),
-      0.5 * sin(seconds * wave(pace * 1.9) + phase * 5.0),
-      cos(seconds * wave(pace * 1.1) + phase * 11.0),
-    ) * 0.05;
-    opacity *= smoothstep(0.2, 0.8, 0.5 + 0.5 * sin(seconds * wave(1.2 + phase) + phase * 31.0));
-  } else if (kind == 5u) {
-    // Water: small ripples run across it and catch the light.
-    let ripple = sin(at.x * 61.0 + seconds * wave(1.7) + sin(at.z * 23.0)) * sin(at.z * 53.0 - seconds * wave(1.3) + phase * 6.0);
-    colour += vec3f(0.7, 0.85, 0.9) * pow(max(ripple, 0.0), 12.0) * 1.4;
+  // Seen by the camera (FORMAT.md 5.1 and 5.2).
+  let seen = p - view.eye.xyz;
+  let c = vec3f(dot(view.right.xyz, seen), dot(view.up.xyz, seen), dot(view.back.xyz, seen));
+  if (c.z > -view.up.w) {
+    return out;
   }
-
-  let middle = seen(at);
-  let z = middle.z;
-  let f = view.frame.z;
-  let scale = exp(s.scale.xyz) * grow;
-  let m = moved * rotation(s.rotation);
-  let shape = mat3x3f(m[0] * scale.x, m[1] * scale.y, m[2] * scale.z);
-  let cov = shape * transpose(shape);
-  // The projection's slope at the centre, J W, row by row; past 1.3 times the edge of
-  // the view it is taken at the edge, so splats far off to the side do not blow up.
-  let tx = clamp(middle.x / z, -view.limits.x, view.limits.x) * z;
-  let ty = clamp(middle.y / z, -view.limits.y, view.limits.y) * z;
-  let t0 = view.right.xyz * (f / z) - view.ahead.xyz * (f * tx / (z * z));
-  let t1 = view.up.xyz * (f / z) - view.ahead.xyz * (f * ty / (z * z));
-  // The low-pass term: every splat covers at least about a pixel.
-  let a = dot(t0, cov * t0) + 0.3;
-  let b = dot(t0, cov * t1);
-  let c = dot(t1, cov * t1) + 0.3;
-  let mid = 0.5 * (a + c);
-  let spread = sqrt(max(mid * mid - (a * c - b * b), 0.0));
-  let major = mid + spread;
-  let minor = max(mid - spread, 0.1);
-  var axis = vec2f(1.0, 0.0);
-  if (abs(b) > 1e-6) {
-    axis = normalize(vec2f(b, major - a));
-  } else if (c > a) {
-    axis = vec2f(0.0, 1.0);
+  let focal = view.right.w;
+  let iota = -1.0 / c.z;
+  var centre = view.grid.xy * 0.5 + focal * c.xy * iota;
+  if (kind == FLICKER) {
+    centre = floor(centre) + 0.5;
   }
+  let slope = clamp(c.xy * iota, -view.grid.zw, view.grid.zw);
+  let across = focal * iota * (view.right.xyz + slope.x * view.back.xyz);
+  let upward = focal * iota * (view.up.xyz + slope.y * view.back.xyz);
+  let s = sigma * (grow * grow);
+  let shape = vec3f(dot(across, s * across) + 0.15, dot(across, s * upward), dot(upward, s * upward) + 0.15);
+  if (shape.x * shape.z - shape.y * shape.y <= 0.0) {
+    return out;
+  }
+  let reach = min(3.0 * sqrt(shape.xz), vec2f(2048.0));
   var corners = array<vec2f, 4>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(1.0, 1.0));
-  let k = corners[vertex] * EXTENT;
-  let pixel = onPicture(middle) + axis * (k.x * sqrt(major)) + vec2f(-axis.y, axis.x) * (k.y * sqrt(minor));
-  out.position = vec4f(pixel / view.frame.xy * 2.0 - 1.0, 0.0, 1.0);
-  // Behind or right at the camera: nothing to draw (the original renderer's near plane).
-  if (z < 0.2) {
-    out.position = vec4f(2.0, 2.0, 2.0, 1.0);
+  let at = centre + corners[corner] * reach;
+
+  // Its colour, its depth and the fog (FORMAT.md 5.3).
+  let depth = clamp((-c.z - (view.eye.w - RADIUS)) / (2.0 * RADIUS), 0.0, 1.0);
+  var colour = paletteColour(colourIndex) + glow;
+  if ((code & NO_FOG) == 0u) {
+    colour = mix(colour, paletteColour(FOG_INDEX), smoothstep(FOG_START, 1.0, depth) * FOG_MAX);
   }
-  out.local = k;
-  out.colour = colour;
-  out.opacity = opacity;
+
+  out.position = vec4f(at / view.grid.xy * 2.0 - 1.0, -c.z * view.back.w, 1.0);
+  out.centre = vec3f(centre, alpha);
+  out.shape = shape;
+  out.colour = vec4f(min(colour, vec3f(1.0)), depth);
+  out.code = code;
   return out;
 }
 
-@fragment fn fs_main(in: Out) -> @location(0) vec4f {
-  let alpha = min(0.99, in.opacity * exp(-0.5 * dot(in.local, in.local)));
-  if (alpha < 1.0 / 255.0) {
+// A splat's cover of this art pixel (FORMAT.md 5.2): crisp for a solid splat, soft for the rest.
+fn weight(dab: Dab) -> f32 {
+  let d = vec2f(dab.position.x, view.grid.y - dab.position.y) - dab.centre.xy;
+  let s = dab.shape;
+  let power = -(s.z * d.x * d.x - 2.0 * s.y * d.x * d.y + s.x * d.y * d.y) / (2.0 * (s.x * s.z - s.y * s.y));
+  if (power < -4.5) {
+    return 0.0;
+  }
+  return dab.centre.z * exp(power);
+}
+
+fn cover(dab: Dab, w: f32) -> f32 {
+  if (dab.centre.z >= 1.0) {
+    return 0.99 * smoothstep(0.38, 0.62, w);
+  }
+  return min(0.99, w);
+}
+
+struct Layers {
+  // Colour, and cover.
+  @location(0) colour: vec4f,
+  // Depth times cover, and cover.
+  @location(1) depth: vec4f,
+  // Glass, and cover (only a solid splat that writes depth clears the glass behind it).
+  @location(2) glass: vec4f,
+}
+
+// A solid splat drawn unsorted: where it covers fully, it hides what is behind it.
+@fragment fn fs_solid(dab: Dab) -> Layers {
+  if (weight(dab) < 0.62) {
     discard;
   }
-  return vec4f(in.colour * alpha, alpha);
+  return Layers(vec4f(dab.colour.rgb, 1.0), vec4f(dab.colour.a, 1.0, 0.0, 1.0), vec4f(0.0));
+}
+
+// Its crisp edge, over whatever is behind it.
+@fragment fn fs_edge(dab: Dab) -> Layers {
+  let w = weight(dab);
+  if (w >= 0.62 || w <= 0.38) {
+    discard;
+  }
+  return over(dab, cover(dab, w));
+}
+
+// A splat drawn far to near, over what is behind it by its cover.
+@fragment fn fs_sorted(dab: Dab) -> Layers {
+  return over(dab, cover(dab, weight(dab)));
+}
+
+fn over(dab: Dab, a: f32) -> Layers {
+  if (a < 0.004) {
+    discard;
+  }
+  let solid = dab.centre.z >= 1.0 && (dab.code & NO_DEPTH) == 0u;
+  let glass = !solid && (dab.code & GLASS) != 0u;
+  var out = Layers(vec4f(a * dab.colour.rgb, a), vec4f(0.0), vec4f(0.0));
+  if (solid) {
+    out.depth = vec4f(a * dab.colour.a, a, 0.0, a);
+    out.glass = vec4f(0.0, 0.0, 0.0, a);
+  } else if (glass) {
+    out.glass = vec4f(0.5 * a, 0.0, 0.0, 0.0);
+  }
+  return out;
 }
 `
 
-const BAYER_WGSL = `const BAYER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);`
+const FINISH_WGSL = /* wgsl */ `
+@group(0) @binding(2) var colourLayer: texture_2d<f32>;
+@group(0) @binding(3) var depthLayer: texture_2d<f32>;
+@group(0) @binding(4) var glassLayer: texture_2d<f32>;
 
-function glowsWgsl(glows: readonly Glow[]) {
-  const rows = glows.map(g => `Glow(${vec3(g.at)}, ${vec3(g.colour)}, ${vec3(g.facing ?? [0, 0, 0])}, ${g.radius.toFixed(4)}, ${g.strength.toFixed(4)})`)
-  return `
-struct Glow { at: vec3f, colour: vec3f, facing: vec3f, radius: f32, strength: f32 }
-const GLOWS = ${glows.length}u;
-const GLOW = array<Glow, ${Math.max(1, glows.length)}>(${rows.length ? rows.join(", ") : "Glow(vec3f(0.0), vec3f(0.0), vec3f(0.0), 1.0, 0.0)"});`
+// Art pixel (x, y), counted from the bottom left, as a texel; reads off the grid take the nearest edge.
+fn texel(x: i32, y: i32) -> vec2i {
+  let size = vec2i(textureDimensions(colourLayer));
+  return vec2i(clamp(x, 0, size.x - 1), size.y - 1 - clamp(y, 0, size.y - 1));
 }
 
-function pixelWgsl(scene: Scene, palette: readonly (readonly [number, number, number])[], lab: readonly (readonly [number, number, number])[]) {
-  const sky = scene.sky
-  return /* wgsl */ `
-${VIEW_WGSL}
-
-@group(0) @binding(1) var splatsDrawn: texture_2d<f32>;
-
-const COLOURS = ${palette.length}u;
-const PALETTE = array<vec3f, ${palette.length}>(${palette.map(vec3).join(", ")});
-const PALETTE_LAB = array<vec3f, ${lab.length}>(${lab.map(vec3).join(", ")});
-${BAYER_WGSL}
-// How far the dither nudges a colour before it is matched to the palette.
-const SPREAD = 0.05;
-const EDGE = ${vec3(scene.edge)};
-const ZENITH = ${vec3(sky.zenith)};
-const HIGH = ${vec3(sky.high)};
-const HORIZON = ${vec3(sky.horizon)};
-const BELOW = ${vec3(sky.below)};
-const SKY_GLOW = ${vec3(sky.glow)};
-const GLOW_AT = ${sky.glowAt.toFixed(6)};
-const CLOUD = ${vec3(sky.cloud)};
-const STARS = ${sky.stars.toFixed(4)};
-${glowsWgsl(scene.glows)}
-${moteWgsl(scene)}
-
-fn threshold(p: vec2i) -> f32 {
-  let x = ((p.x % 4) + 4) % 4;
-  let y = ((p.y % 4) + 4) % 4;
-  return (BAYER[y * 4 + x] + 0.5) / 16.0;
+// The layers, laid over the backdrop: depth 1 and no glass where nothing covers.
+fn colourAt(x: i32, y: i32) -> vec3f {
+  let c = textureLoad(colourLayer, texel(x, y), 0);
+  return c.rgb + (1.0 - c.a) * paletteColour(BACKDROP_INDEX);
+}
+fn depthAt(x: i32, y: i32) -> f32 {
+  let d = textureLoad(depthLayer, texel(x, y), 0);
+  return d.r + 1.0 - d.g;
+}
+fn glassAt(x: i32, y: i32) -> f32 {
+  return textureLoad(glassLayer, texel(x, y), 0).r;
 }
 
-fn toLinear(c: vec3f) -> vec3f {
-  return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045));
-}
-
-fn oklab(c: vec3f) -> vec3f {
-  let r = toLinear(clamp(c, vec3f(0.0), vec3f(1.0)));
-  let l = pow(0.4122214708 * r.x + 0.5363325363 * r.y + 0.0514459929 * r.z, 1.0 / 3.0);
-  let m = pow(0.2119034982 * r.x + 0.6806995451 * r.y + 0.1073969566 * r.z, 1.0 / 3.0);
-  let s = pow(0.0883024619 * r.x + 0.2817188376 * r.y + 0.6299787005 * r.z, 1.0 / 3.0);
-  return vec3f(
-    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
-    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
-    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
-  );
-}
-
+// The nearest palette colour, by 0.3 red, 0.55 green and 0.15 blue; the first of a tie.
 fn nearest(c: vec3f) -> vec3f {
-  let want = oklab(c);
-  var best = 0u;
-  var bestDistance = 1e9;
+  var best = vec3f(0.0);
+  var bestGap = 1e9;
   for (var i = 0u; i < COLOURS; i++) {
-    let gap = PALETTE_LAB[i] - want;
-    let distance = dot(gap, gap);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      best = i;
+    let candidate = paletteColour(i);
+    let d = candidate - c;
+    let gap = dot(vec3f(0.3, 0.55, 0.15), d * d);
+    if (gap < bestGap) {
+      best = candidate;
+      bestGap = gap;
     }
   }
-  return PALETTE[best];
-}
-
-fn hash(p: vec2f) -> f32 {
-  return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453);
-}
-
-fn noise(p: vec2f) -> f32 {
-  let i = floor(p);
-  let f = fract(p);
-  let u = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2f(1.0, 0.0)), u.x), mix(hash(i + vec2f(0.0, 1.0)), hash(i + vec2f(1.0, 1.0)), u.x), u.y);
-}
-
-// The sky along the ray through a pixel (y down). The sky stays still while the scene
-// turns; tilting the camera moves the horizon up and down the picture.
-fn sky(p: vec2f) -> vec3f {
-  let tilt = view.ahead.w;
-  let x = p.x - view.frame.x * 0.5;
-  let y = view.frame.y * 0.5 - p.y;
-  let f = view.frame.z;
-  let ray = normalize(vec3f(x, y * cos(tilt) - f * sin(tilt), -(y * sin(tilt) + f * cos(tilt))));
-  let height = ray.y;
-  let round = atan2(ray.x, -ray.z);
-  var c = mix(HORIZON, HIGH, smoothstep(0.0, 0.3, height));
-  c = mix(c, ZENITH, smoothstep(0.3, 0.95, height));
-  c = mix(c, BELOW, smoothstep(0.0, -0.45, height));
-  let side = round - GLOW_AT;
-  let toward = exp(-side * side / 0.5);
-  c += SKY_GLOW * toward * exp(-abs(height - 0.01) / 0.09);
-  // The clouds drift, but never come round, so in a recorded loop they hold still.
-  let drift = select(view.frame.w, 0.0, view.clock.x > 0.0);
-  let q = vec2f(round * 3.0 + drift * 0.01, height * 14.0);
-  let cloud = noise(q) * 0.6 + noise(q * 2.3 + vec2f(5.2, 1.3)) * 0.3 + noise(q * 5.1) * 0.1;
-  let band = smoothstep(-0.25, 0.02, height) * smoothstep(0.45, 0.08, height);
-  c = mix(c, CLOUD + SKY_GLOW * toward * 0.35, smoothstep(0.5, 0.82, cloud) * band * 0.6);
-  // Stars: cells about a pixel across on a grid of directions, so they stay points all
-  // the way up to straight overhead.
-  let cell = floor(ray * f);
-  let star = hash(cell.xy + cell.z * vec2f(17.31, 43.17));
-  c += vec3f(0.85, 0.88, 0.95) * step(1.0 - STARS, star) * smoothstep(0.08, 0.3, height) * (0.6 + 0.4 * sin(view.frame.w * wave(2.0) + star * 90.0));
-  return c;
-}
-
-fn covered(pixel: vec2i, lifted: vec2i) -> bool {
-  return textureLoad(splatsDrawn, pixel, 0).a > 0.2 + 0.6 * threshold(pixel + lifted);
+  return best;
 }
 
 @fragment fn fs_main(@builtin(position) at: vec4f) -> @location(0) vec4f {
-  let pixel = vec2i(at.xy);
-  let size = vec2i(textureDimensions(splatsDrawn));
-  let drawn = textureLoad(splatsDrawn, pixel, 0);
-  // The scene's dither moves with its bob, so a step of the bob never reshuffles it.
-  let lifted = vec2i(0, -i32(view.right.w));
-  let inside = covered(pixel, lifted);
-  var colour = sky(vec2f(pixel) + 0.5);
-  var dither = threshold(pixel);
-  if (inside) {
-    colour = drawn.rgb / drawn.a;
-    dither = threshold(pixel + lifted);
-    // The outline's edge toward the rim light catches it: a line of bright pixels along
-    // solid shapes, not along strands a pixel thin (hanging grass, roots, steam).
-    let step = vec2i(view.limits.zw);
-    let toward = clamp(pixel + step, vec2i(0), size - 1);
-    let behind = clamp(pixel - step, vec2i(0), size - 1);
-    if (!covered(toward, lifted) && covered(behind, lifted)) {
-      colour = mix(colour, EDGE, view.eye.w);
+  let x = i32(at.x);
+  let y = i32(textureDimensions(colourLayer).y) - 1 - i32(at.y);
+
+  // 1. Glass bends what is behind it.
+  var colour = colourAt(x, y);
+  let gx = glassAt(x + 1, y) - glassAt(x - 1, y);
+  let gy = glassAt(x, y + 1) - glassAt(x, y - 1);
+  if (glassAt(x, y) + abs(gx) + abs(gy) > 0.0) {
+    colour = colourAt(x + i32(floor(GLASS_BEND * gx + 0.5)), y + i32(floor(GLASS_BEND * gy + 0.5)));
+  }
+
+  // 2. Contact shade, where nearby art pixels are a little deeper.
+  let depth = depthAt(x, y);
+  var around = array<vec2i, 8>(
+    vec2i(2, 0), vec2i(-2, 0), vec2i(0, 2), vec2i(0, -2), vec2i(1, 1), vec2i(1, -1), vec2i(-1, 1), vec2i(-1, -1));
+  var shut = 0.0;
+  for (var i = 0u; i < 8u; i++) {
+    let gap = (depth - depthAt(x + around[i].x, y + around[i].y)) / (SHADE_RANGE / (2.0 * RADIUS));
+    if (gap > 0.08 && gap < 3.0) {
+      shut += min(1.0, gap);
     }
   }
-  for (var g = 0u; g < GLOWS; g++) {
-    let light = GLOW[g];
-    let seenAt = seen(light.at);
-    if (seenAt.z < 0.2) {
-      continue;
-    }
-    let spot = onPicture(seenAt);
-    let reach = light.radius * view.frame.z / seenAt.z;
-    let gap = at.xy - vec2f(spot.x, view.frame.y - spot.y);
-    // Every light sits on the island's top, so seen from below the island it is hidden.
-    let toEye = normalize(view.eye.xyz - light.at);
-    var facing = smoothstep(-0.12, 0.02, toEye.y);
-    if (dot(light.facing, light.facing) > 0.0) {
-      facing *= smoothstep(-0.2, 0.3, dot(light.facing, toEye));
-    }
-    colour += light.colour * light.strength * facing * exp(-dot(gap, gap) / (reach * reach)) * mix(1.0, view.up.w, 0.6);
+  colour *= 1.0 - SHADE_STRENGTH * min(1.0, shut / 4.0);
+
+  // 3. The outline, where depth steps.
+  let step = max(2.0 * depth - depthAt(x - 1, y) - depthAt(x + 1, y), 2.0 * depth - depthAt(x, y - 1) - depthAt(x, y + 1));
+  if (step > OUTLINE_EDGE / (2.0 * RADIUS)) {
+    return vec4f(paletteColour(OUTLINE_INDEX), 1.0);
   }
-  // In a recorded loop the motes are drawn here, before the palette, rather than over the
-  // picture, laid on in the order the picture's pass lays them.
-  if (view.clock.x > 0.0) {
-    for (var i = 0u; i < MOTES; i++) {
-      let m = mote(i, view.frame.w, view.clock.x);
-      let d = length(at.xy - m.at * view.frame.xy) / (m.radius * view.frame.y);
-      if (d > 1.0 || (!m.front && inside)) {
-        continue;
-      }
-      let alpha = m.strength * moteShape(m.front, d);
-      colour = mix(colour, m.colour, alpha);
-    }
-  }
-  return vec4f(nearest(colour + (dither - 0.5) * SPREAD), select(0.0, 1.0, inside));
+
+  // 4. The ordered dither, then 5. the nearest palette colour.
+  var bayer = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
+  let b = bayer[u32(y & 3) * 4u + u32(x & 3)];
+  return vec4f(nearest(clamp(colour + ((b + 0.5) / 16.0 - 0.5) * 0.105 * DITHER, vec3f(0.0), vec3f(1.0))), 1.0);
 }
 `
-}
 
 const PRESENT_WGSL = /* wgsl */ `
 struct Present {
-  // Device pixels per picture pixel, where the grid starts (device pixels), the motes' clock in seconds.
-  grid: vec4f,
-  // The canvas's width and height in device pixels (the last two are padding).
-  canvas: vec4f,
+  // Screen pixels to a side of an art pixel (the last three are padding).
+  scale: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> present: Present;
-@group(0) @binding(1) var pixels: texture_2d<f32>;
-
-fn gridPixel(at: vec2f) -> vec2i {
-  let size = vec2i(textureDimensions(pixels));
-  return clamp(vec2i(floor((at - present.grid.yz) / present.grid.x)), vec2i(0), size - 1);
-}
-`
-
-const PICTURE_WGSL = /* wgsl */ `
-${PRESENT_WGSL}
+@group(0) @binding(1) var picture: texture_2d<f32>;
 
 @fragment fn fs_main(@builtin(position) at: vec4f) -> @location(0) vec4f {
-  return vec4f(textureLoad(pixels, gridPixel(at.xy), 0).rgb, 1.0);
+  let size = vec2i(textureDimensions(picture));
+  return vec4f(textureLoad(picture, clamp(vec2i(floor(at.xy / present.scale.x)), vec2i(0), size - 1), 0).rgb, 1.0);
 }
 `
-
-/** How many motes a scene has. */
-const moteCount = (scene: Scene) => Math.min(MOTES_LIMIT, scene.motes.back + scene.motes.front)
-
-// The motes, shared by the picture's pass on the page and the low picture of a recorded loop.
-function moteWgsl(scene: Scene) {
-  const {back, colours, size} = scene.motes
-  return /* wgsl */ `
-const MOTES = ${moteCount(scene)}u;
-const BACK = ${back}u;
-const NEAR_COLOUR = ${vec3(colours[0])};
-const FAR_COLOUR = ${vec3(colours[1])};
-const SIZE = ${size.toFixed(4)};
-
-fn scatter(n: f32) -> f32 {
-  return fract(sin(n * 127.1 + 311.7) * 43758.5453);
-}
-
-// Where a mote is, as shares of the picture's width and height from its top left; its
-// radius as a share of its height; whether it is in front of the scene; how strongly it
-// shows; and its colour.
-struct Mote {
-  at: vec2f,
-  radius: f32,
-  front: bool,
-  strength: f32,
-  colour: vec3f,
-}
-
-// Each mote rises slowly, sways a little, and comes round again from below. In a recorded
-// loop of so many seconds each lives once round the loop instead, at its own point in
-// it: it fades in, rises as it would on the page, and fades out, so the loop runs on.
-fn mote(instance: u32, seconds: f32, period: f32) -> Mote {
-  let k = f32(instance) * 1.618;
-  let front = instance >= BACK;
-  var clock = seconds;
-  var fade = 1.0;
-  if (period > 0.0) {
-    let life = fract(seconds / period + scatter(k + 8.0));
-    clock = (life - 0.5) * period;
-    fade = smoothstep(0.0, 0.2, life) * (1.0 - smoothstep(0.8, 1.0, life));
-  }
-  let rise = mix(0.004, 0.012, scatter(k + 3.0)) * select(1.0, 1.7, front);
-  let y = fract(scatter(k + 1.0) - clock * rise) * 1.2 - 0.1;
-  let x = fract(scatter(k + 2.0) + 0.015 * sin(clock * mix(0.15, 0.4, scatter(k + 4.0)) + k));
-  let radius = select(mix(0.4, 1.0, scatter(k + 5.0)), mix(1.6, 3.0, scatter(k + 5.0)), front) * SIZE;
-  let strength = select(mix(0.14, 0.34, scatter(k + 6.0)), mix(0.07, 0.15, scatter(k + 6.0)), front) * fade;
-  return Mote(vec2f(x, y), radius, front, strength, mix(NEAR_COLOUR, FAR_COLOUR, scatter(k + 7.0)));
-}
-
-// How much of a mote shows this far from its middle, in radii: behind, a soft-edged
-// disc, the way a light far off blurs; in front, a wide haze.
-fn moteShape(front: bool, d: f32) -> f32 {
-  return select(1.0 - smoothstep(0.55, 1.0, d), exp(-d * d * 3.5) * (1.0 - d), front);
-}
-`
-}
-
-function motesWgsl(scene: Scene) {
-  return /* wgsl */ `
-${PRESENT_WGSL}
-${moteWgsl(scene)}
-
-struct Out {
-  @builtin(position) position: vec4f,
-  @location(0) local: vec2f,
-  // The mote's colour and how strongly it shows, and whether it is in front of the scene.
-  @location(1) @interpolate(flat) look: vec4f,
-  @location(2) @interpolate(flat) front: f32,
-}
-
-@vertex fn vs_main(@builtin(vertex_index) vertex: u32, @builtin(instance_index) instance: u32) -> Out {
-  var out: Out;
-  let size = present.canvas.xy;
-  let m = mote(instance, present.grid.w, 0.0);
-  var corners = array<vec2f, 4>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(1.0, 1.0));
-  let corner = corners[vertex];
-  let pixel = m.at * size + corner * m.radius * size.y;
-  out.position = vec4f(pixel.x / size.x * 2.0 - 1.0, 1.0 - pixel.y / size.y * 2.0, 0.0, 1.0);
-  out.local = corner;
-  out.look = vec4f(m.colour, m.strength);
-  out.front = select(0.0, 1.0, m.front);
-  return out;
-}
-
-@fragment fn fs_main(in: Out) -> @location(0) vec4f {
-  let d = length(in.local);
-  if (d > 1.0) {
-    discard;
-  }
-  let front = in.front > 0.5;
-  // A mote behind the scene shows only against the sky.
-  if (!front && textureLoad(pixels, gridPixel(in.position.xy), 0).a > 0.5) {
-    discard;
-  }
-  let alpha = in.look.a * moteShape(front, d);
-  return vec4f(in.look.rgb * alpha, alpha);
-}
-`
-}
 
 export type Painter = {
-  /** Fits the low picture to a canvas of this many device pixels. */
-  resize(width: number, height: number): PixelGrid
-  /** The order to draw the splats in, farthest first. */
-  order(indices: Uint32Array<ArrayBuffer>): void
-  /** Where the moving parts are now (`Scene.pose`). */
-  pose(parts: Float32Array<ArrayBuffer>): void
-  /** Encodes one moment: the splats and their pixels, and the scaled picture with motes on
-   * `picture` when given. A recorded loop's moment is drawn without a picture: its motes
-   * are in its pixels. */
-  encode(f: Frame, moment: Moment, picture?: Target): void
-  /** The low picture, one palette colour per pixel; alpha is 1 where the scene is. */
-  readonly pixels: Target
+  /** Fits the grid to a stage of this many screen pixels. */
+  resize(width: number, height: number): Grid
+  /** Encodes one moment into the picture, and onto `stage`, scaled up, when given. */
+  encode(f: Frame, moment: Moment, stage?: Target): void
+  /** The art-pixel picture: each pixel one of the palette's colours. */
+  readonly picture: Target
   /** Prepares every pipeline before the first frame. */
-  compile(picture?: Target): Promise<void>
+  compile(stage?: Target): Promise<void>
 }
 
-export function createPainter(
-  gpu: Gpu,
-  scene: Scene,
-  palette: readonly (readonly [number, number, number])[],
-  lab: readonly (readonly [number, number, number])[],
-): Painter {
-  let grid = pixelGrid(COLUMNS, Math.round(COLUMNS / 1.5))
-  const splatsDrawn = target(gpu, {size: [grid.columns, grid.rows], format: "rgba16float", label: "splats.drawn"})
-  const pixels = target(gpu, {size: [grid.columns, grid.rows], format: "rgba8unorm", label: "splats.pixels"})
-  const data = storage(gpu, scene.data.byteLength, "read")
-  data.write(scene.data)
-  const order = storage(gpu, scene.count * 4, "read")
-  const parts = storage(gpu, Math.max(1, scene.parts) * 64, "read")
+export function createPainter(gpu: Gpu, scene: Scene): Painter {
+  const {header} = scene
+  let grid = gridFor(header, 3, 2)
+  const layers = target(gpu, {
+    size: [grid.columns, grid.rows],
+    colors: [{format: "rgba16float"}, {format: "rg16float"}, {format: "r8unorm"}],
+    depth: "depth32float",
+    label: "splats.layers",
+  })
+  const picture = target(gpu, {size: [grid.columns, grid.rows], format: "rgba8unorm", label: "splats.picture"})
+  const words = storage(gpu, scene.words.byteLength, "read")
+  words.write(scene.words)
+  const order = createOrder(scene)
+  const solidIds = storage(gpu, Math.max(4, order.solid.byteLength), "read")
+  solidIds.write(order.solid)
+  const sortedIds = storage(gpu, Math.max(4, (header.splats - order.solid.length) * 4), "read")
 
-  const view = (moment: Moment) => {
-    const f = focal(scene.camera, grid)
-    const {right, up, ahead, eye} = viewFrom(scene.camera, moment.turn, moment.pitch)
-    // The rim light's way across the picture, as a step to the next pixel (y down).
-    const across = scene.rim[0] * right[0] + scene.rim[1] * right[1] + scene.rim[2] * right[2]
-    const upward = scene.rim[0] * up[0] + scene.rim[1] * up[1] + scene.rim[2] * up[2]
-    const span = Math.hypot(across, upward)
-    const step = span > 1e-3 ? [Math.round(across / span), -Math.round(upward / span)] : [0, -1]
+  // How far from the world's middle any splat reaches, so the depth test can take each depth as a share of twice the
+  // farthest a splat can be from the eye, leaving room for the moving parts.
+  const extent =
+    Math.sqrt(3) * [...header.clothMin, ...header.clothMax, ...scene.blocks.chunkBounds].reduce((most, v) => Math.max(most, Math.abs(v)), 0)
+
+  const viewOf = ({right, up, back, eye, distance}: View, seconds: number) => {
+    const limit = 1.3 / (2 * grid.focal)
     return {
-      frame: [grid.columns, grid.rows, f, moment.seconds],
-      right: [right[0], right[1], right[2], moment.bob],
-      up: [up[0], up[1], up[2], moment.flicker],
-      ahead: [ahead[0], ahead[1], ahead[2], moment.pitch],
-      eye: [eye[0], eye[1], eye[2], 0.55 * Math.min(1, span * 1.6)],
-      limits: [(1.3 * grid.columns) / (2 * f), (1.3 * grid.rows) / (2 * f), step[0]!, step[1]!],
-      clock: [moment.loop, 0, 0, 0],
+      right: [...right, grid.focal],
+      up: [...up, Math.max(0.4, 0.15 * distance)],
+      back: [...back, 1 / (2 * (distance + Math.hypot(...header.camTarget) + extent))],
+      eye: [...eye, distance],
+      grid: [grid.columns, grid.rows, limit * grid.columns, limit * grid.rows],
+      clock: [seconds / header.loop, frameAt(header, seconds), 0, 0],
     }
   }
-  const first: Moment = {turn: 0, pitch: scene.camera.pitch, bob: 0, flicker: 1, seconds: 0, loop: 0}
-
-  const splats = draw(gpu, {
-    shader: prepareShader(SPLAT_WGSL, "splats.wgsl"),
-    geometry: {topology: "triangle-strip"},
-    vertices: 4,
-    instances: scene.count,
+  const first = viewOf(viewFrom(header, header.camYaw, header.camPitch, grid.zoom), 0)
+  const shader = prepareShader(sceneWgsl(scene) + SPLATS_WGSL, "splats.wgsl")
+  const splats = {shader, geometry: {topology: "triangle-strip"}, vertices: 4, label: "splats.splats"} as const
+  const solid = draw(gpu, {
+    ...splats,
+    instances: order.solid.length,
+    depth: {write: true, compare: "less-equal"},
+    entry: {vertex: "vs_main", fragment: "fs_solid"},
+    set: {view: first, words, ids: solidIds},
+  })
+  const edges = draw(gpu, {
+    ...splats,
+    instances: order.solid.length,
     blend: "premultiplied",
-    depth: false,
-    label: "splats.splats",
-    set: {view: view(first), splats: data, order, parts},
+    depth: {write: false, compare: "less"},
+    entry: {vertex: "vs_main", fragment: "fs_edge"},
+    set: {view: first, words, ids: solidIds},
   })
-  const pixelPass = effect(gpu, prepareShader(pixelWgsl(scene, palette, lab), "splats_pixels.wgsl"), {
-    label: "splats.pixels",
-    set: {view: view(first), splatsDrawn},
-  })
-  const presentation = (seconds: number, size: readonly [number, number]) => ({
-    grid: [grid.scale, grid.offset[0], grid.offset[1], seconds],
-    canvas: [size[0], size[1], 0, 0],
-  })
-  const picture = effect(gpu, prepareShader(PICTURE_WGSL, "splats_picture.wgsl"), {
-    label: "splats.picture",
-    set: {present: presentation(0, [1, 1]), pixels},
-  })
-  const motes = draw(gpu, {
-    shader: prepareShader(motesWgsl(scene), "splats_motes.wgsl"),
-    geometry: {topology: "triangle-strip"},
-    vertices: 4,
-    instances: moteCount(scene),
+  const blended = draw(gpu, {
+    ...splats,
     blend: "premultiplied",
-    depth: false,
-    label: "splats.motes",
-    set: {present: presentation(0, [1, 1]), pixels},
+    depth: {write: false, compare: "less"},
+    entry: {vertex: "vs_main", fragment: "fs_sorted"},
+    set: {view: first, words, ids: sortedIds},
   })
+  const finish = effect(gpu, prepareShader(sceneWgsl(scene) + FINISH_WGSL, "splats_finish.wgsl"), {label: "splats.finish"})
+  const show = effect(gpu, prepareShader(PRESENT_WGSL, "splats_present.wgsl"), {label: "splats.present"})
+  const bind = () => {
+    finish.set({words, colourLayer: layers.colors[0], depthLayer: layers.colors[1], glassLayer: layers.colors[2]})
+    show.set({present: {scale: [grid.scale, 0, 0, 0]}, picture: picture.color})
+  }
+  bind()
 
   return {
-    pixels,
+    picture,
     resize(width, height) {
-      grid = pixelGrid(width, height)
-      splatsDrawn.resize([grid.columns, grid.rows])
-      pixels.resize([grid.columns, grid.rows])
+      grid = gridFor(header, width, height)
+      layers.resize([grid.columns, grid.rows])
+      picture.resize([grid.columns, grid.rows])
+      bind()
       return grid
     },
-    order(indices) {
-      order.write(indices)
-    },
-    pose(where) {
-      parts.write(where)
-    },
-    encode(f, moment, destination) {
-      const looking = view(moment)
-      splats.set({view: looking})
-      pixelPass.set({view: looking})
-      f.pass({target: splatsDrawn, clear: [0, 0, 0, 0]}, pass => pass.draw(splats))
-      f.pass({target: pixels, clear: [0, 0, 0, 0]}, pixelPass)
-      if (!destination) return
-      const present = presentation(moment.seconds, destination.size)
-      picture.set({present})
-      motes.set({present})
-      f.pass({target: destination, clear: [0, 0, 0, 1]}, pass => {
-        pass.draw(picture)
-        pass.draw(motes)
+    encode(f, {yaw, pitch, seconds}, stage) {
+      const camera = viewFrom(header, yaw, pitch, grid.zoom)
+      const view = viewOf(camera, seconds)
+      const ids = order.farToNear(camera.back, seconds)
+      sortedIds.write(ids)
+      solid.set({view})
+      edges.set({view})
+      blended.set({view})
+      f.pass({target: layers, clear: [0, 0, 0, 0]}, pass => {
+        pass.draw(solid)
+        pass.draw(edges)
+        pass.draw(blended, {instances: ids.length})
       })
+      f.pass({target: picture}, finish)
+      if (stage) f.pass({target: stage}, show)
     },
-    async compile(destination) {
-      await splats.compile(splatsDrawn)
-      await pixelPass.compile(pixels)
-      if (!destination) return
-      await picture.compile(destination)
-      await motes.compile(destination)
+    async compile(stage) {
+      await solid.compile(layers)
+      await edges.compile(layers)
+      await blended.compile(layers)
+      await finish.compile(picture)
+      if (stage) await show.compile(stage)
     },
   }
 }
