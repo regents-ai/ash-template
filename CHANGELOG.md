@@ -12388,3 +12388,11 @@ For the template chief to release. No migration. No new package.
   exit 0. Not proven: the real SIWA service and Stripe (every check uses a stand-in); SIWA
   takes only an https address to come back to, so Subscribe and Manage on a local
   `http://localhost` server are refused by the real service.
+
+## 2026-11-17 — Released v277: the Billing page
+
+- v277 on template.regents.sh carries the Billing page entry above (`ed54df9d`). No migration.
+- Rollback: v276 (`f72ed29b`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
+  362 Elixir; 376 script). Not proven: the page against the real sign-in service and
+  Stripe (every check uses the walk's stand-in); Safari, Firefox, real phones.
