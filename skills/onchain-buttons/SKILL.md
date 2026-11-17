@@ -50,10 +50,20 @@ chain events recorded in the database, use `chain-events`; for a USDC payment's 
 5. **Before sending**, when the wallet is on another chain, ask Privy's own
    `switchChain` for the wallet to move to the step's chain (Privy adds the network
    to wallets that lack it, each the way that wallet app needs), on every press; never
-   a hand-written `wallet_switchEthereumChain`. Then check the account is the step's
-   signer and make `eth_chainId` the last read before `eth_sendTransaction`. A declined
-   switch is `switch_declined`; a failed one, or a wallet still elsewhere, is
-   `network_mismatch`. Privy connects wallets on the site's wallet chain from the start
+   a hand-written `wallet_switchEthereumChain`. Once the switch resolves, send: the
+   page never reads the chain or the account again to refuse the press, and never
+   compares the wallet's account with the step's signer (founder decision, 17 Nov
+   2026). The press goes to Privy's active wallet with the step as built, `from` and
+   every address inside the call (a recipient, an owner, a USDC authorization's payer)
+   naming the account the step was built for. A press that reaches a wallet on a
+   different account sends from that account, if the wallet sends at all, while the
+   call still names the account the step was built for: accepted, not guarded. After
+   the switch, the step's chain rests on the chain id the request itself carries
+   (`chainId` on the transaction, the typed data's domain on a signature). A switch
+   the wallet declines is `switch_declined` and one that fails any other way
+   `network_mismatch`; that press sends nothing, its note asks the person to switch,
+   and the next press asks the wallet again. Privy connects wallets on the site's
+   wallet chain from the start
    (`defaultChain` and `supportedChains` in `privy_bridge.tsx`). See
    [hook pattern](references/hook-pattern.md#a-press).
 6. **An approval is a step of its own.** The next step's button appears as soon as the

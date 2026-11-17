@@ -129,33 +129,27 @@ defmodule AshTemplateWeb.OnchainSteps do
       when reason in ~w(step_unknown wallet_unavailable),
       do: ["#{@no_wallet} Nothing was sent."]
 
+  # A wallet the account doesn't link is ignored, as if none were open.
   def failure_note(reason, linked, active, _chain_name)
       when reason in ~w(step_unknown wallet_unavailable) do
-    cond do
-      # A wallet the account doesn't link is ignored, as if none were open.
-      signer(linked, active) == nil ->
-        ["You're signed in with "] ++
-          wallets(linked, " and ") ++
-          [". Open "] ++
-          wallets(linked, " or ") ++ [" in your wallet app, then press again. Nothing was sent."]
-
-      reason == "step_unknown" ->
-        [
-          "This can't be sent as it stands. Check the details above, then press again. Nothing was sent."
-        ]
-
-      true ->
-        ["Your wallet changed during the press, so nothing was sent. Press again."]
+    if reason == "step_unknown" and signer(linked, active) != nil do
+      [
+        "This can't be sent as it stands. Check the details above, then press again. Nothing was sent."
+      ]
+    else
+      ["You're signed in with "] ++
+        wallets(linked, " and ") ++
+        [". Open "] ++
+        wallets(linked, " or ") ++ [" in your wallet app, then press again. Nothing was sent."]
     end
   end
 
+  # The wallet declined or failed the switch; the next press asks again.
   def failure_note("switch_declined", _linked, _active, chain_name),
-    do: ["Your wallet declined the switch to #{chain_name}. Nothing was sent."]
+    do: ["Press again to switch your wallet to #{chain_name}. Nothing was sent."]
 
   def failure_note("network_mismatch", _linked, _active, chain_name),
-    do: [
-      "Your wallet isn't on #{chain_name}. Change the network to #{chain_name} in your wallet app, then press again. Nothing was sent."
-    ]
+    do: ["Switch your wallet to #{chain_name}, then press again. Nothing was sent."]
 
   def failure_note("wallet_declined", _linked, _active, _chain_name),
     do: ["Your wallet declined this. Nothing was sent."]

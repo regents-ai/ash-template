@@ -14,7 +14,7 @@ on a real account at `/showcase/wallet`, on Base Sepolia.
 | `lib/ash_template_web/onchain_steps.ex` | `AshTemplateWeb.OnchainSteps`: the server half every wallet component shares |
 | `lib/ash_template/chain_client.ex` | Reads at `latest` for the review's chain: `transaction/2`, `receipt/2`, `balance/2` |
 | `assets/js/hooks/onchain_steps.ts` | The hook: presses, the review, reports what the wallet said |
-| `assets/js/wallet_actions/send_step.ts` | One send or signature: chain switch, account check, why it failed |
+| `assets/js/wallet_actions/send_step.ts` | One send or signature: chain switch, why it failed |
 | `assets/js/wallet_actions/connected_wallet.ts` | `activeEthereumWallet()`: Privy's active wallet in this tab, with its provider and Privy's own `switchChain` |
 | `assets/js/privy_bridge.tsx` | Privy's settings: the site's wallet chain as `defaultChain` and the only `supportedChains` entry, read from the page's `wallet-chain-id` meta (`:wallet_chain`) |
 | `lib/ash_template/access_context.ex` | `AccessContext.linked_wallets/1`: the signed-in account's own wallets, lowercase and each once, or `nil` signed out |
@@ -191,8 +191,14 @@ The hook's own click listener runs every press on its own:
    opened a Privy wallet holding no Keys because this reply skipped the check
    An empty reply is `step_unknown`; no reply
    at all (a lost connection) shows the `data-onchain-lost` line.
-4. **Otherwise** it sends the step from the review it holds, if the active wallet is the
-   review's signer.
+4. **Otherwise** it sends the step from the review it holds through Privy's active
+   wallet. The page never compares that wallet's account with the review's signer: the
+   wallet gets the step, `from` the signer, and decides (founder decision, 17 Nov 2026).
+   A press that reaches a wallet on a different account sends from that account, if the
+   wallet sends at all, while the call still names the account the step was built for
+   (as `from`, or inside the call as a recipient, owner or a USDC authorization's
+   payer); this is accepted, not guarded, and the server's check shows such a hash as
+   not this page's step.
 
 `press(review, name, push)` returns what it reported (`{transaction_hash}`, `{signature}`
 or `{reason}`), so an agent tool can take the same path as a person's press.
@@ -208,11 +214,14 @@ the page already holds on the old chain, so the bridge asks that provider itself
 moves at once without a prompt. This matters only on a site whose steps go to more than
 one chain. Privy's switch refuses a chain outside
 Privy's `supportedChains`, so the site's wallet chain is always that list. Every press
-asks again while the wallet is elsewhere; nothing remembers a refusal. Then it checks the
-account is the signer, makes `eth_chainId` the last read, and checks Privy has not
-swapped the wallet meanwhile. A switch the person declines (4001, however the wallet
-wraps it) is `switch_declined`; a switch that fails any other way, or a wallet still on
-another chain at that last read, is `network_mismatch`. Either way nothing was sent.
+asks again while the wallet is elsewhere; nothing remembers a refusal. Once the switch
+resolves, the same press sends or signs: the page reads neither the chain nor the
+account again, so nothing it reads can refuse the press (founder decision, 17 Nov
+2026). From there the step's chain rests on the chain id the request carries: `chainId`
+on `eth_sendTransaction`, and the typed data's domain `chainId` on a signature. A switch the person declines (4001, however the wallet
+wraps it) is `switch_declined`; a switch that fails any other way is
+`network_mismatch`. Either way that press sent nothing, its note asks the person to
+switch, and the next press asks the wallet again.
 
 Privy connects wallets on the site's wallet chain from the start
 (`privy_bridge.tsx`: `defaultChain` and the only `supportedChains` entry, the
@@ -267,11 +276,10 @@ The hook sends only reason codes; the words live in `OnchainSteps.failure_note/4
 | Reason or outcome | Meaning | Words |
 | --- | --- | --- |
 | Signed out | No account | No words: the press opens Privy's sign-in |
-| `wallet_unavailable` or `step_unknown`, no account wallet | Signed in, and none of the account's wallets is open in the wallet app (another wallet counts as none) | "You're signed in with 0x1234..abcd. Open 0x1234..abcd in your wallet app, then press again. Nothing was sent." |
+| `wallet_unavailable`, or `step_unknown` with no account wallet | Signed in, and none of the account's wallets is open in the wallet app (another wallet counts as none), or the wallet did not answer | "You're signed in with 0x1234..abcd. Open 0x1234..abcd in your wallet app, then press again. Nothing was sent." |
 | `step_unknown` | No step by that name for these figures | "This can't be sent as it stands. Check the details above, then press again. Nothing was sent." |
-| `wallet_unavailable`, mid-press | Privy swapped the wallet during the press | "Your wallet changed during the press, so nothing was sent. Press again." |
-| `switch_declined` | The person said no to the network switch (4001) | "Your wallet declined the switch to Base. Nothing was sent." |
-| `network_mismatch` | The switch failed any other way, or the wallet is still on another chain | "Your wallet isn't on Base. Change the network to Base in your wallet app, then press again. Nothing was sent." |
+| `switch_declined` | The person said no to the network switch (4001) | "Press again to switch your wallet to Base. Nothing was sent." |
+| `network_mismatch` | The switch failed any other way | "Switch your wallet to Base, then press again. Nothing was sent." |
 | `wallet_declined` | The person said no (4001) | "Your wallet declined this. Nothing was sent." |
 | `insufficient_funds` | The wallet refused for lack of fees | "Your wallet doesn't have enough on Base to pay the network fee. Nothing was sent." |
 | `send_unconfirmed` | The wallet failed after the send began | "Your wallet may have sent this. Check your wallet activity." |
@@ -299,8 +307,8 @@ further press still reaches the wallet.
 
 ## Signing instead of sending
 
-A `Review.signature/2` step asks for `eth_signTypedData_v4` after the same chain and
-account checks. The server verifies the signature against its own typed data and does
+A `Review.signature/2` step asks for `eth_signTypedData_v4`, as the review's signer,
+after the same chain switch. The server verifies the signature against its own typed data and does
 the rest. A declined signature is `wallet_declined`. Agents sign in with SIWA
 (`elixir-utils/siwa`), which is not a button.
 
@@ -311,12 +319,15 @@ the rest. A declined signature is `wallet_declined`. Agents sign in with SIWA
   accounts A and B (linked) and C (not linked), a network choice, a declined switch, a
   failed switch, a decline and a slow mode; its switch stands in for Privy's. Run every
   row of the table above there before changing the pattern.
-  `assets/test/send_step.test.ts` proves the switch: asked only off the step's chain and
-  on every such press, and nothing sent with `switch_declined` or `network_mismatch`
-  reported when it is declined, fails or leaves the wallet elsewhere. `/showcase/wallet` then runs the same buttons with real Privy sign-in and a
+  `assets/test/send_step.test.ts` proves the press: a wallet answering for another
+  account still gets the step; the switch is asked only off the step's chain and on
+  every such press, and once it resolves the same press sends, even from a wallet that
+  still names another chain; a declined or failed switch sends nothing, reports
+  `switch_declined` or `network_mismatch`, and the next press asks again.
+  `/showcase/wallet` then runs the same buttons with real Privy sign-in and a
   real wallet on Base Sepolia; a press there needs a little Base Sepolia test ETH.
 - Sites keep their own test policy. A site that keeps a Vitest suite proves with a
   stand-in wallet that two presses in a row both reach `eth_sendTransaction`, that a
-  decline reports `wallet_declined`, and that nothing is sent on the wrong chain or
-  account.
+  decline reports `wallet_declined`, that a wallet on another account still gets the
+  step, and that a press on another chain asks the switch and sends once it resolves.
 - LiveView tests do not run hooks.

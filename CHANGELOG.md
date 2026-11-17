@@ -12180,3 +12180,35 @@ loaded only when the button is pressed.
   Elixir, 373 script. Not timed on a quiet Mac, so `CHECK_BUDGETS` is unchanged and
   `platform-precommit` may print SLOW until it is.
 - Check settings only; the running site is unchanged, so this is not a release.
+
+## 2026-11-17 — Wallet presses: no account check, a prompt to switch network
+
+- A wallet button's press now goes to Privy's active wallet without the page comparing
+  that wallet's account with the signer the server built the step for, before the press
+  or before the send, and without checking that Privy still holds the same wallet
+  (`platform/assets/js/wallet_actions/send_step.ts`, `press` in
+  `platform/assets/js/hooks/onchain_steps.ts`). The wallet gets the step as the server
+  built it, from its signer, and decides. A press that reaches a wallet on a different
+  account sends from that account, if the wallet sends at all, while the call still names
+  the account the step was built for; this is accepted, not guarded. The template's own
+  example steps name no address inside the call; the shared USDC payment's authorization
+  names its payer, but no template page sends it. The note "Your wallet changed during the press"
+  is gone with the check that produced it; `wallet_unavailable` now means only that no
+  wallet answered, and its note asks the person to open one of their wallets.
+- A press with the wallet on another network still asks the wallet to switch, on every
+  press, and once the switch resolves the same press sends or signs: the page no longer
+  reads the chain again afterwards and refuses, so the step's chain rests on the chain id
+  the request carries (`chainId` on the transaction, the typed data's domain on a
+  signature). When the wallet declines or fails the
+  switch, that press sends nothing, and the note asks for the switch
+  (`AshTemplateWeb.OnchainSteps.failure_note/4`): "Press again to switch your wallet to
+  Base." for a declined switch and "Switch your wallet to Base, then press again." for a
+  failed one, each followed by "Nothing was sent.", with the site's wallet chain named.
+  The next press asks again.
+- Tests (`platform/assets/test/send_step.test.ts`): a wallet answering for another
+  account still gets the send and the signature; on another network the switch is asked
+  on every press and the send goes out once it resolves, even from a wallet still naming
+  another chain; a declined or failed switch sends nothing and the next press asks again
+  and sends. The first two fail on the previous code. The `onchain-buttons` skill and
+  `docs/feature-map.md` describe the new behaviour. Not tried with a real wallet.
+- Not a release.
