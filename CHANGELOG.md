@@ -12168,3 +12168,15 @@ loaded only when the button is pressed.
   354 Elixir; 373 script). An earlier run on the same commit, on a heavily loaded machine,
   had one walk test time out (`test/browser/code_card.spec.ts`, a card not open within
   five seconds); it passed on the rerun.
+
+## 2026-11-17 — The browser walk runs five browsers, not eight
+
+- `platform/playwright.config.ts`: one browser for every three cores, at most five (it was
+  one for every two, at most twelve: eight on the 16-core Mac). The Mac runs three checks
+  at once; with eight browsers each, a walk test waited past its five seconds for a card
+  to open (17 Nov, load 66). Sean's 263 a: keep three checks at once, about five browsers
+  each, on every site.
+- Full check exit 0 with five browsers at load 81: 713 walk tests passed in 4.9 min, 354
+  Elixir, 373 script. Not timed on a quiet Mac, so `CHECK_BUDGETS` is unchanged and
+  `platform-precommit` may print SLOW until it is.
+- Check settings only; the running site is unchanged, so this is not a release.

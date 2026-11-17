@@ -19,10 +19,11 @@ import {defineConfig, devices} from "@playwright/test"
 // Every walk starts with the homepage's guided tour seen, so it never opens over what
 // a walk presses; the saved sign-ins say the same (support/sign_in.exs), and
 // tour.spec.ts starts with nothing seen.
-// One browser for every two of the machine's cores, so the walk's server, its database
-// and the check's other lanes have the rest; at most twelve, past which the one server
-// is the limit (on a 16-core Mac, twelve browsers walked in 80 s and sixteen in 75 s).
-const workers = Math.max(1, Math.min(12, Math.floor(availableParallelism() / 2)))
+// One browser for every three of the machine's cores, at most five: the Mac runs three
+// checks at once, and each walk's server, its database and the check's other lanes need
+// cores too. With eight browsers a walk, three checks at once left a browser waiting
+// past a check's five seconds (17 Nov, load 66).
+const workers = Math.max(1, Math.min(5, Math.floor(availableParallelism() / 3)))
 const port = Number(process.env.ASH_TEMPLATE_WALK_PORT)
 const baseURL = `http://127.0.0.1:${port}`
 

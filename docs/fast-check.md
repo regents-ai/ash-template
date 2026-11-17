@@ -21,7 +21,7 @@ the same. Every test still runs; nothing was retried, skipped, removed or given 
 
 | Change | Before | After |
 | --- | --- | --- |
-| Browser walk: one browser per two cores, at most twelve (`platform/playwright.config.ts`) | about 4 min | about 1.7 min |
+| Browser walk: one browser per three cores, at most five, since three checks share the Mac (`platform/playwright.config.ts`) | about 4 min | about 1.7 min with eight browsers on a quiet Mac; five browsers are not timed on a quiet Mac yet (4.9 min at load 81, 17 Nov) |
 | `mix test` in its own lane beside `mix precommit` (`CHECK_LANES` in the `Makefile`) | 60 s after precommit | 60 s beside it |
 | Whole check | about 330 s | 110 to 140 s |
 
@@ -114,7 +114,8 @@ style and scripts gates, for one), and keep the site's own order where one lane 
 
 ## Still slow, and why
 
-- One walk server serves every browser; past twelve browsers it is the limit.
+- The walk runs five browsers, not eight, so that three checks at once do not starve each
+  other; alone on the Mac it is slower than it could be.
 - A site whose walk always uses the same ports cannot walk in two worktrees at once
   (Keyfleet). The template's `platform/test/browser/walk.sh` takes a free port on each run
   and names the run's database after it.
