@@ -12158,3 +12158,13 @@ loaded only when the button is pressed.
 
 - `plug` moves from 1.20.3 to 1.20.4, released today; the dependency check in
   `make check` refuses 1.20.3 from today. Lock file only.
+
+## 2026-11-17 — Released v272: name form's "Sign in again", plug 1.20.4
+
+- v272 on template.regents.sh carries the two entries above (upstream row 4 and the plug
+  update). No migration; API unchanged.
+- Rollback: v271 (`d850cec8`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (713 walk tests passed, 6 skipped;
+  354 Elixir; 373 script). An earlier run on the same commit, on a heavily loaded machine,
+  had one walk test time out (`test/browser/code_card.spec.ts`, a card not open within
+  five seconds); it passed on the rerun.
