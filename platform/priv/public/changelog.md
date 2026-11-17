@@ -2,6 +2,13 @@
 
 Changes to Ash Template, newest first.
 
+## 17 November 2026
+
+- **Splats.** Both worlds are new and sharper: a robot factory with a water wheel, robot
+  arms over an assembly line and a brass engine underneath, and a night island with a
+  cottage, a campfire and a pond whose stream falls off the edge. A picture of each shows
+  while it loads.
+
 ## 16 November 2026
 
 - **Splats.** Download GIF saves the world you are looking at as a GIF that loops without a
