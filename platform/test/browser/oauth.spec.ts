@@ -6,9 +6,9 @@ import {unreachableScrollers} from "./support/scrollers"
 import {signedIn, watch} from "./support/person"
 
 // The connector's pages open only for an app registered here (RegentOAuth, from
-// elixir-utils): the consent page names the app, what it may do and the site it
-// returns to, and the person allows or cancels; Connected apps lists each app with
-// Disconnect. Each fits the screen, shows every address with its copy icon and lets
+// elixir-utils): the consent page names the app, a row for each thing it may do and
+// the host it returns to, and the person allows or cancels; Connected apps lists
+// each app with the day it connected and Disconnect. Each fits the screen, shows every address with its copy icon and lets
 // a keyboard scroll every box that scrolls, at every width the walk runs. The app
 // has a long name and a long return address, as a real one may; Chromium keeps a
 // .localhost name on this machine, so the return goes nowhere else.
@@ -65,15 +65,15 @@ test.describe("signed in", () => {
 
     await page.goto(await consent(page.request, clientId, verifier))
     await expect(page.getByRole("heading", {level: 1})).toHaveText(`Connect ${name}`)
-    await expect(page.getByText(`You will return to ${new URL(callback).host}.`)).toBeVisible()
-    await expect(page.getByRole("button", {name: "Allow connection"})).toBeVisible()
+    await expect(page.getByText(`Returns to ${new URL(callback).host}`)).toBeVisible()
+    await expect(page.getByRole("button", {name: "Allow"})).toBeVisible()
     await expect(page.getByRole("button", {name: "Cancel"})).toBeVisible()
     await fits(page, problems)
 
     // Allow returns the person to the app with a code, which the app trades for its
     // tokens.
     const returned = page.waitForRequest(request => request.url().startsWith(`${callback}?`))
-    await page.getByRole("button", {name: "Allow connection"}).click()
+    await page.getByRole("button", {name: "Allow"}).click()
     const code = new URL((await returned).url()).searchParams.get("code")!
     const {resource} = await (await page.request.get("/.well-known/oauth-protected-resource")).json()
     const token = await page.request.post("/oauth/token", {
