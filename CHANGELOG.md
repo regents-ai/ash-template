@@ -12236,3 +12236,12 @@ loaded only when the button is pressed.
   malformed HTTP/2 requests. With plug 1.20.4 (v272) the web server's libraries are on
   their newest published versions; phoenix 1.8.16 and plug_crypto 2.2.1 have no open
   advisory.
+
+## 2026-11-17 — Released v274: bandit 1.15.0
+
+- v274 on template.regents.sh carries the entry above. Lock file only; no migration.
+- Rollback: v273 (`2466fe0a`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (713 walk tests passed, 6 skipped;
+  354 Elixir; 373 script). A first run on the same commit at machine load 150 to 190 had
+  two walk tests time out (`chat.spec.ts` line 11, `busy_room.spec.ts` line 104); both
+  passed three times alone on bandit 1.15.0 and in the rerun.
