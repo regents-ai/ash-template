@@ -1,7 +1,7 @@
 # Operator actions
 
 An operator is someone who changes live data outside a customer's own journey:
-clearing a stopped reader, binding a deployment, hiding a reported post. No site has an
+binding a deployment, hiding a reported post. No site has an
 admin dashboard in production, and the template has no staff page. This is the pattern
 for adding one operator action when a product needs it. Staff lists stay per site
 (founder decision, 2026-09-28).
@@ -29,36 +29,39 @@ for adding one operator action when a product needs it. Staff lists stay per sit
   role for a staff page.
 - The plug in front of a staff page only decides who sees it. It is never the only
   place authority lives.
-- Never `authorize?: false`, for staff or for commands (see
-  [shared contract](../../ash-stack/references/shared-contract.md)). Patchbay's
+- Never `authorize?: false`, for staff or for commands (ash-stack, "Never loosen to
+  pass"). Patchbay's
   moderation and Techtree's catalog commands still skip policies; do not copy them.
 
 ## Release commands
 
-Keyfleet's are the model (keyfleet@985dc31 `platform/lib/keyfleet/release.ex`,
-`platform/rel/overlays/bin/clear-fleet-stop`).
+The template's own are the model: `AshTemplate.Release.room_reports/0` and
+`remove_room_message/2` (`platform/rel/overlays/bin/room-reports` and
+`remove-room-message`): an operator reads reported room messages and removes one, through
+actions only the system actor may run (`AshTemplate.Rooms.Moderation`).
 
 - Each command is one `Release.<command>/n` function run through
   `with_release_repo/1`, which loads the app and starts only the database connection.
   Never `Application.ensure_all_started(@app)` for a one-off command: that starts the
   web server, readers and jobs beside the running site.
 - It calls domain code interfaces with `actor: %AshTemplate.Actors.System{}`, which the
-  policy admits (keyfleet@985dc31 `platform/lib/keyfleet/chain.ex:145-153`).
-- It has one named script in `rel/overlays/bin/`, which takes its argument and passes
-  it through an environment variable, never spliced into the code it evaluates:
+  policy admits (the `:remove` bypass in `platform/lib/ash_template/rooms/message.ex`).
+- It has one named script in `rel/overlays/bin/`, which takes its arguments and passes
+  them through environment variables, never spliced into the code it evaluates:
 
   ```sh
   #!/bin/sh
   set -eu
 
-  fleet="${1:?usage: clear-fleet-stop <fleet id>}"
+  message="${1:?usage: remove-room-message <message id> <reason>}"
+  reason="${2:?usage: remove-room-message <message id> <reason>}"
 
-  KEYFLEET_RELEASE_COMMAND=migrate KEYFLEET_STOPPED_FLEET="$fleet" exec "$(dirname "$0")/keyfleet" eval 'Keyfleet.Release.clear_fleet_stop(System.fetch_env!("KEYFLEET_STOPPED_FLEET"))'
+  ASH_TEMPLATE_RELEASE_COMMAND=migrate ASH_TEMPLATE_REMOVE_MESSAGE="$message" ASH_TEMPLATE_REMOVE_REASON="$reason" exec "$(dirname "$0")/ash_template" eval 'AshTemplate.Release.remove_room_message(System.fetch_env!("ASH_TEMPLATE_REMOVE_MESSAGE"), System.fetch_env!("ASH_TEMPLATE_REMOVE_REASON"))'
   ```
 
 - It prints what it changed, in words, and changes nothing when it has nothing to do.
 - The operator runs it on the deployment: `fly ssh console --app <app> -C
-  "/app/bin/clear-fleet-stop <id>"`.
+  "/app/bin/remove-room-message <id> <reason>"`.
 
 ## A record of what was done
 

@@ -110,3 +110,13 @@ starts, and the server watches no files, so no page reloads under a check.
 - The agent harbour's drawing and ripples: the walk turns WebGPU on for the harbour's
   sea and presses ships and islands on it, but nothing checks what the sea looks like
   or that a ripple spreads.
+
+## Development checks
+
+`make check-change` runs the configured platform checks for changed platform files
+and uses full gates for unknown/shared/build/dependency paths. Regression proofs are
+`scripts/tests/test_check_change.py`: all changed/new/deleted paths are included,
+every ExUnit file runs once, failed parts fail the command, owned child processes
+are stopped, and callers cannot redirect the local database. The complete platform
+suites and configured browser walk provide integration evidence. No release authority
+or live deployment follows from this command. WebKit is not run on the Mac.

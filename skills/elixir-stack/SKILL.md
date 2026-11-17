@@ -45,12 +45,18 @@ page (ash-frontend, [public figures](../ash-frontend/references/public-figures.m
   next one. The next read is scheduled when the last has finished, never on a fixed
   interval. Its Req call has `retry: false` and gives up well inside one tick. One
   runs per chain per machine, with telemetry for the age of its reading and for each
-  failed read.
+  failed read. It runs on a slow clock and reads again early only when asked, by the
+  rule in `chain-events` (read the chain on a slow clock).
 - **A reread on notice.** The producer of a reading built from the site's own rows
   subscribes to those rows' notices and rereads at most once a second however many
   arrive. It holds nothing but "a reread is due" (`AshTemplate.Rooms.Activity`). A
   lost notice is healed by an Oban schedule line, once a minute for each kind
   (`AshTemplate.SharedReading.Heal`); the producer never schedules that itself.
+
+A page's own clock never reads the database for what notices already carry: a time
+the page holds, such as a poll's close, changes the page without a read, and one
+timer waits for the next such moment instead of ticking. It reads only a figure that
+first exists at that moment, such as a closed poll's totals, and only once.
 
 The watcher that records chain events keeps its own rules in `chain-events`. Anything
 else that loops, polls or schedules itself is Oban's, and a third shape needs the lane
@@ -83,7 +89,8 @@ Read [Oban recipes](references/oban.md) before adding or changing a job. The rul
 - Queue the job in the same transaction as the change it follows: inside
   `Ash.transact`, an action's `after_action`, an `Ecto.Multi` or the AshOban
   `run_oban_trigger` change. A rolled-back change then queues nothing, and a
-  committed change always has its job.
+  committed change always has its job. A unique job whose keys other saves share is
+  queued after the commit instead (references/oban.md, "Queue a job with the change").
 - Never make an HTTP or chain call inside a database transaction. A job reads, calls
   out, then writes.
 - A job can run twice: after a retry, or when Lifeline rescues it from a node that
@@ -95,11 +102,16 @@ Read [Oban recipes](references/oban.md) before adding or changing a job. The rul
 - Set `max_attempts` on purpose (AshOban triggers default to 1) and decide what
   running out of attempts means. With AshOban, the `on_error` update action
   records it.
-- One job at a time per key: `unique: [keys: [...], period: :infinity, states:
-  :incomplete]`, where `:incomplete` includes executing jobs. AshOban trigger workers
-  already do this for each record.
-- The queue `limit` bounds concurrency. Give slow outside calls their own queue so
-  they cannot hold up other work.
+- Every job that can be queued twice for the same thing names its uniqueness:
+  `unique: [keys: [...], period: :infinity, states: :incomplete]` for one at a time
+  (`:incomplete` includes executing jobs), waiting states only for a notice of change.
+  AshOban trigger workers already do this for each record. The effect still carries a
+  stable operation key, since a job can run twice
+  ([Oban recipes](references/oban.md#one-job-per-thing-and-effects-safe-to-repeat)).
+- Each queue holds one class of work: the database alone, chain reads, model calls,
+  or other calls to another website. The classes never share a queue, so a slow
+  service holds up only the jobs that wait on it. The queue `limit` bounds
+  concurrency; [Oban recipes](references/oban.md#queues) says how to choose it.
 - Tests: `testing: :manual` in `config/test.exs`, `use Oban.Testing, repo: ...`, then
   `perform_job/2` and `assert_enqueued/1`.
 - Oban never queues, retries, defers or deduplicates a person's on-chain action;
@@ -111,3 +123,10 @@ Read [Oban recipes](references/oban.md) before adding or changing a job. The rul
 [OTP, Phoenix and Ecto essentials](references/otp-phoenix-ecto.md) covers
 supervision, PubSub, transactions and locks, Req, telemetry, and the mistakes that
 make these slow or unsafe.
+
+Broadcast text that arrives in pieces, such as a model's streamed answer, piece by
+piece with `Phoenix.PubSub`, since pieces are not records and Ash publishes only on
+create, update and destroy. Save it through its Ash action when it starts and once
+more when it is whole, never once per piece: every commit waits for the write-ahead
+log to be flushed, on a database every site shares
+([Oban recipes](references/oban.md#queues)).

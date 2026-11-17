@@ -1,6 +1,6 @@
 ---
 name: checkpoint
-description: Save a concise local handoff before clearing or resuming a long Regent task.
+description: Write a HANDOFF.md so another session can pick up a long Regent task. Use before context is cleared, when handing work to another session, or when asked for a checkpoint or handoff.
 ---
 
 Write or update `HANDOFF.md` in the owning repository only when a handoff is needed.

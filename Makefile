@@ -1,11 +1,16 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-browser check-required-fixes check-cli check-contracts check-dependency-parity release drift readiness
+.PHONY: help check check-change check-change-runner check-platform check-browser check-required-fixes check-cli check-contracts check-dependency-parity release drift readiness
 help:
+	@echo "Run make check-change for the template change checks; BASE=<ref> selects the comparison."
 	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
 	@echo "Run make drift to list where each site's copies of the shared, build and deploy files differ from the template's, then run make readiness."
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
-check: check-platform check-required-fixes check-cli check-contracts
+check-change:
+	python3 scripts/check-change.py
+check-change-runner:
+	python3 -m unittest discover -s scripts/tests -p 'test_check_change.py'
+check: check-change-runner check-platform check-required-fixes check-cli check-contracts
 # mix precommit ends with the TypeScript typecheck, the script tests and the
 # browser walk.
 check-platform:

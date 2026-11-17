@@ -1,29 +1,42 @@
 ---
 name: ash-security
-description: Change or review Ash authorization, trusted scopes and field exposure.
+description: Ash authorization on Regent's sites - policies, where the actor and tenant come from, field exposure, staff pages, release commands that change live data, and LiveComponent session checks. Use when adding or reviewing a policy, an action reachable by a new actor or entry point, a read that could reveal another account's data, an operator or staff action, or any code that passes actor, tenant, scope or authorize? options.
 ---
 
-# Ash Security
+# Ash security
 
-Follow the operation's actor, tenant and accepted inputs from its actual entry point
-to the resource action. Reuse the application's trusted scope representation.
-A supplied tenant ID is not proof of membership; a browser state is not authorization.
+Load `ash-stack` first. Follow the operation's actor, tenant and accepted inputs from
+its real entry point to the resource action.
 
-[Threat cases](references/threat-cases.md) covers cross-tenant references, privilege
-changes, nested data, field exposure and background execution.
-[Operator actions](references/operator-actions.md) covers who an operator is, staff
-pages, release commands that change live data, the record they leave and development
-tools.
-[Component session check](references/component-session-check.md) covers LiveComponents,
-whose events skip the page's session re-check.
+- A supplied tenant id is not proof of membership, and browser state is not
+  authorization. Reuse the site's trusted scope.
+- **Explicit options replace scope-derived values**: `actor: nil` erases the scope's
+  actor. Inspect wrapper defaults and keyword merges. In callbacks, pass on the
+  supplied context through the installed API, never stale request state.
+- **Reads may filter or answer not-found.** Test non-disclosure under the policy's
+  actual contract; do not demand Forbidden everywhere.
+- **For writes, prove the refused operation changed nothing.**
+- **Every way in that reaches the database before sign-in has a per-address
+  limit**, counted in `RequestRateLimiter` on `AshTemplateWeb.ClientAddress`:
+  page loads (600 a minute, so an office behind one address is never refused),
+  API and agent routes. The live socket's connect never reaches the endpoint's
+  plugs, and behind Fly its peer is Fly's proxy, so its pages are counted per
+  address as they join (`AshTemplateWeb.Live.OpenPages`). Fly's limit counts
+  connections, not requests.
+- **Every write that other people's open pages hear about** (a message, a like, a vote,
+  a join) carries a per-account and per-address allowance through
+  `AshTemplate.Limits.LimitWrites`, so one script cannot multiply its writes by the
+  number of viewers. The allowance is checked in `Ash.Changeset.before_transaction/2`,
+  never `before_action`, so a refused write takes no database connection and opens no
+  transaction.
 
-Explicit Ash options can replace scope-derived values: `actor: nil` may erase the
-scope's actor. Inspect wrapper defaults and keyword merges. In callbacks, propagate
-the supplied context using the installed API rather than stale request state.
+## References
 
-Unauthorized reads can filter records or return not-found; test non-disclosure under
-the actual policy contract instead of requiring Forbidden everywhere. For writes,
-prove that a rejected operation did not change protected state.
-
-For Regent Privy/session work, consult [Privy reconciliation](../ash-stack/references/privy-reconciliation.md).
-This review guidance does not create another workflow stage or approval boundary.
+- [Threat cases](references/threat-cases.md): cross-tenant references, privilege
+  changes, nested data, field exposure, background execution.
+- [Operator actions](references/operator-actions.md): who an operator is, staff pages,
+  release commands that change live data, the record they leave, development tools.
+- [Component session check](references/component-session-check.md): LiveComponents,
+  whose events skip the page's session re-check.
+- [Privy reconciliation](../ash-stack/references/privy-reconciliation.md): Privy
+  bridge and session work.

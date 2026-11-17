@@ -5,10 +5,12 @@ description: Buttons that make a person's wallet act on Regent's Phoenix LiveVie
 
 # On-chain buttons
 
-**Load `ash-stack` and `ash-frontend` first.** The wallet rules in
-[regent-integration](../ash-stack/references/regent-integration.md#wallet-actions) apply
-and are not repeated here. For chain events recorded in the database, use `chain-events`;
-for a USDC payment's button, `payments`.
+**Load `ash-stack` and `ash-frontend` first.** The wallet rules in regent-workflow's
+"Wallets and transactions" apply and are not repeated here; their effect on engineering
+patterns is in
+[regent-integration](../ash-stack/references/regent-integration.md#wallet-actions). For
+chain events recorded in the database, use `chain-events`; for a USDC payment's button,
+`payments`.
 
 ## Rules
 
@@ -30,12 +32,13 @@ for a USDC payment's button, `payments`.
    (lab). So an on-chain button has no `phx-click`, is never inside a `phx-submit` form,
    and never waits for a server round trip before the wallet opens when the step is
    already on the page.
-3. **Privy's active wallet sends, when it is one of the account's own** (founder decision
-   "1 a", 2026-09-27: "the Privy active wallet is the only wallet that can make actions, and so if the user wallet differs, make them switch"). The hook reports the active wallet; when it is one of the
-   signed-in account's linked wallets, the panel shows its figures and the server builds
-   the steps for it. When it is not linked, or none is active, the figures stay on the
-   account's own wallet, a note beside the button names both short addresses and asks
-   the person to switch, and a press sends nothing and says why. Signed out, the active
+3. **Privy's active wallet sends, when it is one of the account's own** (founder,
+   21 Oct 2026, which replaces the 27 Sep "make them switch" decision). The hook reports
+   the active wallet; when it is one of the signed-in account's linked wallets, the panel
+   shows its figures and the server builds the steps for it. A wallet the account does
+   not link is ignored, as if none were open: the figures stay on the account's own
+   wallet, no note asks the person to switch, and a press sends nothing and names the
+   account's wallets to open. Signed out, the active
    wallet's figures show and the first press opens Privy's sign-in (founder,
    2026-10-19). The account's linked wallets
    come from `AccessContext.linked_wallets/1` (`nil` signed out), never a hard-coded
@@ -44,9 +47,15 @@ for a USDC payment's button, `payments`.
    calldata and pushes the review to the panel before the button is pressed. The
    browser never encodes a transaction. See
    [hook pattern](references/hook-pattern.md#the-server-builds-the-steps).
-5. **Before sending**, switch the wallet to the step's chain (add it when the wallet
-   answers 4902), then check the account is the step's signer and make `eth_chainId`
-   the last read before `eth_sendTransaction`.
+5. **Before sending**, when the wallet is on another chain, ask Privy's own
+   `switchChain` for the wallet to move to the step's chain (Privy adds the network
+   to wallets that lack it, each the way that wallet app needs), on every press; never
+   a hand-written `wallet_switchEthereumChain`. Then check the account is the step's
+   signer and make `eth_chainId` the last read before `eth_sendTransaction`. A declined
+   switch is `switch_declined`; a failed one, or a wallet still elsewhere, is
+   `network_mismatch`. Privy connects wallets on the site's wallet chain from the start
+   (`defaultChain` and `supportedChains` in `privy_bridge.tsx`). See
+   [hook pattern](references/hook-pattern.md#a-press).
 6. **An approval is a step of its own.** The next step's button appears as soon as the
    approval is sent; nothing waits for it to land before the next press can reach the
    wallet. Approve and Buy are the same size, and Approve turns grey with a green border

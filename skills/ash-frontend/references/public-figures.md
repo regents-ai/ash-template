@@ -11,14 +11,29 @@ on Autolaunch, Patchbay and Keyfleet, with as many agents.
 
 | What the page shows | How it reaches the page |
 | --- | --- |
-| Anything that differs by viewer: balances, positions, drafts, what a person muted, anything a policy narrows | Reread under the viewer's scope when a notice arrives. The notice says "read again" and carries nothing (`forms-and-liveview.md`). This is the default and it does not change. |
+| Anything that differs by viewer: balances, positions, drafts, what a person muted, anything a policy narrows | Reread under the viewer's scope when a notice arrives. The notice says "read again" and carries nothing (`forms-and-liveview.md`). This is the default and it does not change. Read only the one row the notice names and insert it into the stream, never the whole list it sits in: rereading the list made each direct message read two lists of 100 conversations on every tab. |
 | A public figure held in one saved row: an auction's raised total, a post's reply count | The row's own `pub_sub` publication carries the public fields. Pages apply the payload; nobody rereads. |
 | A public figure no saved row carries (a chain's newest block), or one built from many rows (the latest trades across a market) | `AshTemplate.SharedReading`: one producer reads it, every page fetches the one copy. |
+
+A notice that changes one row's public count carries the count: hold the count on
+the row, move it with `atomic_update` and a version in the action that changes it,
+and publish both, so pages keep the newer version and only the person who pressed
+changes their own state, from the press. Answered with a reread on every open page
+instead, one like cost 3 to 4 queries for each page open on its room.
 
 A figure is public only when a signed-out read answers it, with the same value
 for every visitor. If a policy, a filter on the actor or a field policy could
 change the answer for anyone, it is the first kind. When unsure, it is the first
 kind.
+
+One more figure may be shared: one that is the same for every signed-in reader,
+such as the Points board. It is a `SharedReading` kind whose `audience` names those
+readers, and every page or answer that shows it admits only them. What differs by
+reader (their own row, their own place) is worked out from the shared reading and
+their own read, on the server; the reading itself never reaches a page. A shared
+reading holds a bounded figure, such as the board's ten rows, never a list that
+grows with the site's accounts; a reader's own place is their own read (an
+indexed count), not a search through the shared reading.
 
 ## A public row: publish its public fields
 
@@ -85,10 +100,42 @@ The rules, each with its reason:
    once. A page showing a public row heals on its next navigation; a figure that
    must never be stale past a few seconds is a shared reading with a producer,
    below.
+8. **A notice carries what every viewer needs** (a count, a tally, a closed
+   state), set by the publication's `transform`, so viewers apply it without a
+   read. A notice that makes every open page read the database multiplies one
+   write by the number of viewers.
 
 `SharedReading` is not for a single public row. A site reaching for it there is a
 review finding: the row already has a save, and the save already has a
 publication.
+
+### A chain figure that belongs to one record
+
+An auction's price, raised total and price ladder are read from its contract, but
+they belong to one auction, so they are a public row too. One Oban job for each
+record reads the contract at the newest block, then writes in one transaction
+under the record's row lock, and the save publishes. Under that lock it writes
+only a newer block, so a repeated or rescued job changes nothing. Before
+reading, it asks whether the block of the reading it holds is still part of the
+chain. If not, the new reading replaces it, even at a lower block, so a reading
+from a block the chain left heals on the next pass. A job never writes
+`SharedReading`: it runs on whichever machine claims it, and each machine's
+table is its own. A fresh machine needs no warm-up, because a page reads the
+row. Writing the row only when a figure changed, or once its reading has reached
+a stated age, keeps quiet records from waking pages.
+
+`Autolaunch.AuctionMarket` and `Autolaunch.AuctionReading` (Autolaunch v180, 24
+October 2026) are the worked example:
+
+- One job per auction. It reads every five minutes while the auction is open and
+  every twenty once it has finished, and a press that lands brings the next read
+  forward to ten seconds away.
+- The reading has a table of its own, so the auction's protected row keeps its
+  columns.
+- The figures go out on `public:auction_market:<id>`. The price ladder, up to
+  128 KB, goes out on `public:auction_page:<id>`, so only the auction's own page
+  receives it.
+- A reading whose figures have not moved is saved again after twenty minutes.
 
 ## A shared reading: `AshTemplate.SharedReading`
 
@@ -116,12 +163,14 @@ What it holds, and what it refuses:
 - **A key is `{kind, id}`**, built only by site code: `kind` from the module's
   fixed list and `id` a value the site already holds in its own rows or settings.
   Never a key, or any part of one, taken from a request.
-- **A kind is a reviewed entry.** It states why a signed-out visitor may see the
-  reading, the most keys it may hold and the largest reading it accepts. For a
-  kind built from rows, that reason names the resource and the read a signed-out
-  visitor is allowed. A
-  reading over the size, a key past the count and a reading that is not small
-  plain data are refused and counted; the reading held before stays.
+- **A kind is a reviewed entry.** It states who may see the reading and why
+  (`audience`), the most keys it may hold and the largest reading it accepts. For
+  a kind every visitor sees, built from rows, that reason names the resource and
+  the read a signed-out visitor is allowed. For a kind only signed-in readers see,
+  it names them and the pages and answers that admit them. Nothing hands out a
+  reading by its kind: each page fetches the keys it shows. A reading over the
+  size, a key past the count and a reading that is not small plain data are
+  refused and counted; the reading held before stays.
 - **A reading is small plain data**: numbers, strings, atoms, dates, `Decimal`s,
   and maps, lists or tuples of them. Never an Ash record and never a field that
   belongs to one viewer.
@@ -163,7 +212,10 @@ keeps the site from starting. Two shapes are allowed (`elixir-stack`):
 
 - **A supervised reader of an outside clock**, such as `AshTemplate.ChainHead`.
   One that also records what it read writes its rows first and stores the
-  reading after, so a page never shows a figure the database does not hold.
+  reading after, so a page never shows a figure the database does not hold. It
+  reads on a slow clock and early when `ChainRefresh` asks (`chain-events`, rule
+  12); the page shows the entry's `at` and a read-again icon with
+  `Regent.Primitives.last_read`, whose press calls `ChainRefresh.request/1`.
 - **A reread on notice**, for a reading built from the site's own rows: the
   producer subscribes to the rows' notices, rereads at most once a second however
   many arrive, and holds nothing but "a reread is due". `AshTemplate.Rooms.Activity`
@@ -188,9 +240,12 @@ keeps the site from starting. Two shapes are allowed (`elixir-stack`):
 
 A producer's cost no longer grows with the pages open, but it does not stop when
 nobody is looking: it is keys times passes, every pass, with no visitor on the
-site. Bound it on purpose and say the bound beside the kind (Autolaunch reads at
-most 100 open auctions a pass, plus up to 100 finished ones every fourth pass,
-at about 29 chain requests an auction).
+site. Bound it on purpose and say the bound beside the kind (`AshTemplate.ChainHead`
+makes one request for each chain it watches, on each tick).
+
+A producer reads only keys it may hold: it bounds its own pass to its kind's key
+limit (`SharedReading.keys/1`), so it never reads a key the table would refuse.
+The room counter once counted every room each minute and kept 16.
 
 Measure a producer at a production provider's pace, not at a local node's. At
 25 ms a request, Autolaunch's pass took longer than one two-second block; its
@@ -218,12 +273,34 @@ bounds, and `.woken.total` counts the wake-ups sent to pages, by kind.
 A page does work only for what it shows. It subscribes to the topics of its own
 subject and ignores a message that changes nothing on screen.
 
+No page queries the database in mount for something every visitor sees alike,
+the site's own health included. Use what the page's own reads returned, or a
+`SharedReading` key: the shell's health line turns false when one of the page's
+reads fails (`Read` tells the page). A probe in mount runs twice per page view
+and waits in the queue it reports on.
+
+Publish on a topic per subject (one room, one poll), and keep a site-wide topic for
+what every listener acts on, such as a poll starting or ending. A page reads only
+for a notice about what it shows: one site-wide polls topic made every vote reread
+100 polls on every polls page.
+
+A page's timer fires once, at the next moment its state changes on its own (a
+poll's close), never as a repeating reread while notices already carry the
+changes. The time it holds changes the page without a read; it reads only what
+first exists at that moment (a closed poll's totals), once.
+
 Any rule of the form "only when it concerns me" or "not again if I just
 updated" has one case to trace before it is cleared: a message about a sibling
 arrives, and a message about the page's own subject arrives right after it, in
 the same second. The page's own reading must still land. Write that case down
 and follow it through the code. A filter keyed on the subject's id is safe; one
 keyed on "I handled something a moment ago" is not.
+
+Presence uses `Phoenix.Presence` `init/1` and `handle_metas/4`: the presence
+process turns each change into who arrived and who left once on each machine,
+pages keep people in a stream, and a page that does not show presence does not
+subscribe to it. A page that listed the whole presence on each change paid
+n² log n per join, even for a hidden panel (`AshTemplateWeb.Presence`).
 
 ## Memory for each open page
 
@@ -294,7 +371,12 @@ What still holds for any page:
 - **Assign what the page renders.** An Ash record carries its metadata and every
   loaded relationship; assign the fields as a map, or one record with nothing
   loaded. A list the page only renders goes in a stream, which the server does
-  not keep.
+  not keep. This includes the value a `Read` holds and any `Ash.Page` assigned
+  for paging.
+- **A paged list keeps only its cursor and `more?`.** The read behind a stream
+  returns the rendered maps, so `Read` never holds records the stream already
+  sent, and every list a page reads has an Ash `limit` or keyset paging. Each
+  room page once held 50 full records and every room.
 - **The same figure on every page is held once**, in `SharedReading` or a
   publication's payload, and each page keeps only what it renders. A shared
   reading saves the reads, not the copy: a page that assigns what it fetched
@@ -335,3 +417,18 @@ section, not a setting to flip.
 - Which messages a reader sees is the first kind of thing (their mutes), and it
   stays a filter on the page: the payload is the same for everyone, and each
   page leaves out what its reader muted.
+- A message holds its `like_count` and `like_version`, moved by `:count_like` in
+  the like's own transaction, and the like's notice carries `%{id, room,
+  like_count, like_version}`. Each message's heart (`RoomsLive.Heart`) keeps the
+  newer version, and only the reader who pressed changes whether it shows the
+  like as theirs.
+- The page's read returns `Message.public/1` maps, the keyset cursor of the
+  oldest and `more?`; older messages are the next keyset page.
+- Who is here arrives from `AshTemplateWeb.Presence` as arrivals and departures
+  into a stream, on a topic only a signed-in reader's page, which shows the
+  panel, subscribes to.
+- The list of rooms is ordered by a time on the room's own row
+  (`Room.last_active_at`), moved by `:mark_active` in the post's own transaction
+  and published as `"active"` with `Room.public/1`. The page reads the first 50
+  once into a stream and moves a room to the top from the notice alone; More
+  reads the next keyset page.

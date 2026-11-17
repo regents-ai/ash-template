@@ -7,10 +7,10 @@ authority are related but not interchangeable.
 ## Keep three state machines separate
 
 The product's acting wallet is Privy's active wallet when the server finds it among
-the verified session's linked wallets (founder, 2026-09-27: "the Privy active wallet is the only wallet that can make actions, and so if the user wallet differs, make them switch"). Then the page shows
-that wallet's data and the server builds its steps. Any other selection, including
-an extension account that is not linked, shows none of its private data and sends
-nothing; the page asks the person to switch to one of their own wallets. Linking a
+the verified session's linked wallets. Then the page shows that wallet's data and the
+server builds its steps. Any other selection, including an extension account that is
+not linked, is ignored (founder, 21 Oct 2026): it shows none of its private data,
+sends nothing, and no note asks the person to switch. Linking a
 new wallet happens through Privy and a fresh verified session, never from the page's
 own report of a wallet.
 Use the shared `regent-workflow` rule: never preserve pending transactions; refresh
@@ -19,10 +19,17 @@ website state from verified chain evidence instead of restoring transaction queu
 1. `usePrivy().ready/authenticated` is Privy's browser authentication state.
 2. `useWallets().ready/wallets` is connected-wallet hydration for wallet actions.
 3. Regent's server session and `SessionAuthority` exist only after server-side
-   verification and product authorization. A sign-in ends 30 days after the bind
-   that made it, and a refresh never extends it (founder, 2026-10-15, 2a): the bind
-   records `signed_in_at`, and `SessionAuthority` treats a bound row past
-   `signed_in_at` plus the session cookie's `max_age` (30 days) as reset.
+   verification and product authorization. A sign-in ends seven days after the
+   bind that made it (founder, 2026-11-13, 52 b), and a refresh never extends it
+   (founder, 2026-10-15, 2a, then for 30 days): the bind records `signed_in_at`,
+   and `SessionAuthority` treats a bound row past `signed_in_at` plus the session
+   cookie's `max_age` (seven days) as reset. That is how Privy is asked again: the
+   next page the person opens signs them back in with fresh tokens, which Privy
+   issues only while its own session in that browser lasts, so a person whose
+   Privy session has ended is signed out within seven days. The server never calls
+   Privy, so Privy being down signs out only those whose seven days end meanwhile,
+   until it answers again. The session cookie is `__Host-` prefixed: secure, for
+   this host only, path `/`.
 
 Never use a missing token, an empty wallet list, `walletsReady: false`, bridge
 import failure, a timeout, or a rejected sync as evidence that Privy logged the

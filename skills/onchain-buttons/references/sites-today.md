@@ -54,6 +54,7 @@ site.
 2. No reader for contract return data or log data: `Event.one` reads fixed-width words
    only, so Keyfleet keeps its own readers (`Keyfleet.Chain.Abi`: `bytes/1`,
    `quantity/1`, `hash/1`, `word/2`, `decode/2`).
-3. A review's chain keeps only `chain_id`, `name` and `rpc_url`, so the hook's request to
-   add a chain the wallet lacks names Ether as its currency (`send_step.ts`). Right for
-   every chain in use today; a chain with another currency needs the review to carry it.
+3. A review's chain still requires `rpc_url`, which nothing reads since the template's
+   hook switches through Privy's own `switchChain` (16 Nov 2026): Privy adds a network a
+   wallet lacks from its own list. The package can drop it, with each site's chain
+   settings.

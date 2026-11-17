@@ -41,8 +41,11 @@ without JavaScript.
    profile or a session id the server issued, never a value from the request, with an
    identity on `[thread_id, viewer]` and the same no-op upsert. A reload, a like or a reply
    never counts again.
-4. **Counts are aggregates** on the thread (`count :view_count, :views`,
-   `count :like_count, :likes`) and the post, loaded with the page, not stored columns.
+4. **A post holds its like count**, moved with `atomic_update` and a version in the
+   like's own transaction and published, so open pages apply the count without a read
+   (`ash-frontend/references/public-figures.md`, "Three kinds of thing on a page"). The
+   view count, which no open page hears, is an aggregate (`count :view_count, :views`)
+   loaded with the page.
 5. **Show who liked it**: load each post's likes oldest first with their authors and pass the
    first three to `like` as `likers`, the rest as `others`.
 6. **Filters are links** (`?replies=all|solution|…`), so each view has its own address and

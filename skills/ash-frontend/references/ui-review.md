@@ -74,8 +74,8 @@ a local polish task. One restrained visual idea per page. Do not add: gradient w
 blurred glass panels, pill-shaped buttons, cards nested in cards, an icon or emoji beside
 every heading, numbered 01/02/03 section labels, italic accent words in headlines, a
 cream or off-white page background, decorative stats rows, or a decorative gradient in
-place of a real image. The tokens' flat square and cut skins, ruled frames and the Geist
-Pixel/Sans pairing are the look.
+place of a real image. The tokens' flat square and cut skins, ruled frames and Geist
+Serif type are the look.
 
 **Browser proof:** Inspect the changed route at a narrow mobile width and a normal
 desktop width, with long text and realistic records. Test the actual primary action,

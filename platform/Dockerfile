@@ -33,10 +33,13 @@ RUN mix local.hex 2.5.1 --force && \
 
 # Shared Regent libraries arrive here from GitHub at the commits mix.lock pins;
 # a mix.lock that no longer matches mix.exs stops the build.
+# Stable package layers stay cached when application source changes.
+COPY --from=assets /app/node_modules node_modules
 COPY platform/mix.exs platform/mix.lock ./
-COPY platform/config config
+COPY platform/config/config.exs platform/config/prod.exs config/
 RUN mix deps.get --only prod --check-locked && mix deps.compile
 
+COPY platform/config/runtime.exs config/
 COPY platform/lib lib
 COPY platform/priv priv
 COPY platform/rel rel
@@ -44,7 +47,6 @@ COPY platform/assets assets
 COPY platform/contracts contracts
 COPY skills /app/skills
 COPY cli/commands.json /app/cli/commands.json
-COPY --from=assets /app/node_modules node_modules
 RUN mix compile && mix assets.deploy && mix release
 
 # The release carries its own ERTS, so the runtime image needs no Elixir and no

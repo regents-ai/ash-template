@@ -22,25 +22,22 @@ database was created. Do not put owner records or credentials into skill example
 
 ## Source map
 
-Relative to `repos/regents` (or its reviewed readiness worktree/revision):
+Relative to `repos/regents` on main:
 
 | Behavior | Source |
 | --- | --- |
-| Accept selection, Vary merging, public-document Markdown, recovery bodies | shared `elixir-utils/agent_access` (`RegentAgentAccess`), plugged in `platform/lib/ash_platform_web/endpoint.ex` |
-| Public sources, configured origin, schema and sitemap data | `platform/lib/ash_platform_web/public_documents.ex` |
-| Docs/trust/discovery responses | `platform/lib/ash_platform_web/controllers/public_pages_controller.ex` |
+| Accept selection, Vary merging, public-document Markdown, recovery bodies | shared `elixir-utils/agent_access` (`RegentAgentAccess`), plugged in `platform/lib/regents_web/endpoint.ex` |
+| Public sources, configured origin, schema and sitemap data | `platform/lib/regents_web/public_documents.ex` |
+| Docs/trust/discovery responses | `platform/lib/regents_web/controllers/public_pages_controller.ex` |
 | Authoritative public Markdown and read-API definition | `platform/priv/public/` |
-| Safe missing-page responses | `platform/lib/ash_platform_web/controllers/error_html.ex`, `error_md.ex`, `error_json.ex` |
-| Actual route/pipeline ownership | `platform/lib/ash_platform_web/router.ex` |
-| Shared metadata consumer | `platform/lib/ash_platform_web/components/layouts/root.html.heex` |
-| Frozen YAML contract headers | `platform/lib/ash_platform_web/plugs/contract_headers.ex` |
-| Derived CLI major/digest | `scripts/sync-platform-contract-digest.mjs` in `regents-cli` |
+| Safe missing-page responses | `platform/lib/regents_web/controllers/error_html.ex`, `error_md.ex`, `error_json.ex` |
+| Actual route/pipeline ownership | `platform/lib/regents_web/router.ex` |
+| Shared metadata consumer | `platform/lib/regents_web/components/layouts/root.html.heex` |
+| Frozen YAML contract headers | Sent by the route that serves the contract, as the template's `api_contract/2` in `AshTemplateWeb.PublicPagesController` does; never a plug in front of the static files |
+| The CLI's pinned copies of each site's contracts, with their sha256 | `scripts/sync_platforms.py` and `platforms.lock.json` in `regents-cli` |
 
-The shared presentation owner is
-`repos/design-system/regent_ui/lib/regent/agent_metadata.ex` on the approved
-`feat/agent-readiness` branch until its owner integrates that commit. The matching
-Regents consumer lives on `feat/regents-agent-readiness`. Check branch availability
-and the approved commit before pinning it; do not assume local work is published.
+The shared head is `repos/design-system/regent_ui/lib/regent/agent_metadata.ex`, on
+design-system main; Regents' root layout consumes it on main.
 
 ## Non-transferable product details
 
@@ -50,9 +47,8 @@ pages in other products. Its claims API is owner-authorized historical data, not
 anonymous ownership lookup or proof of current token holdings.
 
 Keep the existing YAML bytes separate from the new documented read-only OpenAPI
-scope. Header major/digest describe the actual YAML. The then-published npm CLI was
-older than the source checkout: source/header alignment did not publish a package
-or establish every CLI command's production acceptance.
+scope. Header major/digest describe the actual YAML. Aligning source and headers does
+not publish a CLI package or establish every CLI command's production acceptance.
 
 The shared head consumes the product's structured-data map and capability flags.
 Metadata encoding is reusable; entity facts, route allowlists, deployment pins,

@@ -49,6 +49,10 @@ shared=(
   platform/assets/js/wallet_actions/connected_wallet.ts
   platform/assets/js/wallet_actions/send_step.ts
   platform/assets/css/components/motion.css
+  scripts/check-change.py
+  scripts/check-change.sh
+  scripts/tests/test_check_change.py
+  platform/scripts/check_change_cleanup.exs
   scripts/readiness.sh
   scripts/release.sh
 )

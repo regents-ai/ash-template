@@ -180,29 +180,47 @@ defmodule AshTemplate.MixProject do
         "esbuild ash_template --minify",
         "phx.digest"
       ],
-      precommit: [
-        "compile --warnings-as-errors",
-        "deps.unlock --check-unused",
-        "cmd mix hex.audit",
-        "format --check-formatted",
-        "credo --strict",
-        "cmd env SOBELOW_HOME=_build/sobelow mix sobelow --exit",
-        # Ash 3.32.1's retained policy-check compile dependencies (ash #2886) set the floor.
-        # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
-        "xref graph --label compile-connected --fail-above 28",
-        "ash.codegen --check",
-        "usage_rules.sync --check",
-        "ash_template.route_handoff --check",
-        "ash_template.sync_api_contract --check",
-        "regent_ui.assets",
-        "regent_identity.assets",
-        "regent_agent_access.assets",
-        "cmd npm run typecheck",
-        "cmd npm test",
-        # The browser walk (test/browser): every page at phone and desktop width,
-        # and the paths a person takes, on its own server and database.
-        "cmd npm run test:browser"
-      ]
+      precommit: precommit_checks(),
+      "check.static": Enum.reject(precommit_checks(), &slow_check?/1)
+    ]
+  end
+
+  # The fast loop keeps the same static gates; only suites run by the change
+  # runner and the network advisory audit remain in the full loop.
+  defp slow_check?(check) do
+    check in [
+      "cmd mix hex.audit",
+      "test",
+      "test --warnings-as-errors",
+      "cmd npm test",
+      "cmd npm run test:browser",
+      "cmd --cd assets npm run test:browser"
+    ]
+  end
+
+  defp precommit_checks do
+    [
+      "compile --warnings-as-errors",
+      "deps.unlock --check-unused",
+      "cmd mix hex.audit",
+      "format --check-formatted",
+      "credo --strict",
+      "cmd env SOBELOW_HOME=_build/sobelow mix sobelow --exit",
+      # Ash 3.32.1's retained policy-check compile dependencies (ash #2886) set the floor.
+      # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
+      "xref graph --label compile-connected --fail-above 28",
+      "ash.codegen --check",
+      "usage_rules.sync --check",
+      "ash_template.route_handoff --check",
+      "ash_template.sync_api_contract --check",
+      "regent_ui.assets",
+      "regent_identity.assets",
+      "regent_agent_access.assets",
+      "cmd npm run typecheck",
+      "cmd npm test",
+      # The browser walk (test/browser): every page at phone and desktop width,
+      # and the paths a person takes, on its own server and database.
+      "cmd npm run test:browser"
     ]
   end
 end

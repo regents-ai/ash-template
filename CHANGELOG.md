@@ -3157,3 +3157,13 @@ The first stage of the gap map (`docs/gap-map-plan.md`), from the regents-cli re
 - Commands: `about`, `docs`, `sites tools <site>`, `siwa help`, `rooms message <room> <id>`, `rooms messages --author-kind`, `notes pin-price <id>`; `notes edit` takes `--title`/`--body` (at least one) and `notes rate-label` takes `--report fits|does_not_fit`. `rooms post`, `notes create`, `notes edit` and `notes pin-price` name the next command. Every moved or new command is marked as waiting for the next regents-cli release.
 - Operation ids drop `AsAgent`, and the OpenAPI documents move to 6.0.0.
 - `docs/gap-map-plan.md` records the naming rules every site copies and the calls made where the map asked for a decision: `agents pair` has no browser tool anywhere; a note serves as a saved draft.
+
+## 2026-10-19 — Faster development checks and cached builds
+
+- Adopt Keyfleet's stable-first image layers and partitioned test approach in the
+  template. Keep full checks for shared/build changes and use the full browser walk
+  for server pages, CSS and new files.
+- Bound simultaneous check runs, clean up owned processes and databases, and retain
+  the existing static gates. Reconcile delivery guidance with current authority and
+  remove the retired Sentinel gate. Local verification is recorded in the rollout
+  evidence; this entry does not claim publication or deployment.

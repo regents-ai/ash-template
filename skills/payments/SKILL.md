@@ -1,6 +1,6 @@
 ---
 name: payments
-description: Taking USDC payments on Regent's Phoenix and Ash sites with the shared RegentPayments library — tips, paid actions and fees paid from a person's own wallet on Base through x402, their USDC Balance, and paid tools for agents. Use when adding or changing anything a person or agent pays for, an offer, a pay button, the USDC Balance shown on a page, a paid HTTP endpoint or MCP tool, a paid-fix fee forwarded to REGENT staking, or the words shown for a payment's outcome.
+description: Taking payments on Regent's Phoenix and Ash sites with the shared RegentPayments library — tips, paid actions and fees paid in USDC from a person's or agent's own wallet on Base through x402, their USDC Balance, and paid tools for agents. Use when adding or changing anything a person or agent pays for, an offer, a pay button, the USDC Balance shown on a page, a paid HTTP endpoint or MCP tool, a paid-fix fee forwarded to REGENT staking, or the words shown for a payment's outcome.
 ---
 
 # Payments
@@ -18,24 +18,23 @@ a site fits around it.
 
 ## Rules
 
-1. **Regents keeps no balance for anyone.** Available funds stay in the person's own
-   wallet; there is no Regent-kept balance, top-up or withdrawal (founder, 2026-09-28,
-   confirmed 2026-10-05). A payment goes from the payer's own wallet straight to the
-   wallet the offer names, settled by an x402 facilitator. Funds committed to a product
-   sit in that product's own escrow under its stated rules (Patchbay Offers) and are
-   shown apart from wallet funds. The library stores what was promised and what happened.
-   Say "Regents does not keep a balance for you", never "Regent never holds your money".
-2. **USDC Balance** is what the person's signed-in Privy wallet holds in USDC on Base,
-   read live with `RegentPayments.Balance.usdc_balance_atomic/1`. It gets there when they
-   send USDC to their address or buy it by card through Privy. Call it "USDC Balance" on
-   every site, never Credits, credit or account balance (founder, 2026-10-05). The
-   template's `/showcase/funds` shows funds on other networks, commitments, card
-   purchases and cash-outs; the plan is `docs/wallet-funds-plan.md`.
+1. **One way to pay: USDC on Base from the payer's own wallet.** USDC goes from the
+   payer's wallet straight to the wallet the offer names, settled by an x402
+   facilitator. Regents keeps no balance for anyone: no top-up, no withdrawal and no
+   prepaid units (Credits were dropped, Sean, 6 Nov 2026; never build or propose them).
+   Funds committed to a product sit in that product's own escrow contract under its
+   stated rules (Patchbay Offers) and are shown apart from wallet funds.
+2. **USDC Balance is the wallet's own figure.** It is what the person's signed-in Privy
+   wallet holds in USDC on Base, read live with
+   `RegentPayments.Balance.usdc_balance_atomic/1`. Call it "USDC Balance" on every site,
+   never "credit" or "account balance". The template's `/showcase/funds` shows funds on
+   other networks, commitments, card purchases and cash-outs; the plan is
+   `docs/wallet-funds-plan.md`.
 3. **One offer per paid action.** A site writes a module implementing
    `RegentPayments.Offer` for each thing it sells (a tip, a paid fix, a run) and lists it
    in `config :regent_payments, offers: [...]`. The offer freezes the terms (`freeze/2`:
-   amount, the wallet paid, what it is for, the sentence the payer sees). It then carries
-   out what was bought (`carry_out/4`). The library owns everything between.
+   amount, the wallet paid, what it is for and the sentence the payer sees). It then
+   carries out what was bought (`carry_out/4`). The library owns everything between.
 4. **Terms are frozen, never taken from the request.** Amount and destination are read
    from the stored intent on every call. Nothing a page or agent sends changes them.
 5. **What a payment buys is saved once.** `carry_out/4` runs inside the transaction that
@@ -67,11 +66,16 @@ config :regent_payments, RegentPayments.Facilitator,
 ```
 
 - Start `RegentPayments.Supervisor` after the repository.
+- Pin `regent_chain` from git with `override: true`, because `regent_payments` names
+  it by a sibling path.
 - The CDP key goes in Fly secrets. `BASE_RPC_URL` may carry a provider key; the library
   never logs it, so don't log it either.
-- **Only Regents migrates the tables.** Its release runs `RegentPayments.Migrator.up/1`
-  and creates the shared `regent_payments` schema. Every other site reads and writes it,
-  seeing only the rows its own `site` wrote. The rows are the record of money that moved:
+- **No deployment migrates the tables.** Every site carries the same `bin/migrate-shared`,
+  which runs `RegentPayments.Migrator.up/1` with the other shared migrators; after the
+  founder's go, the site whose release first carries a change runs it. Each site's
+  release check refuses to deploy while a payments change is missing. Every site reads
+  and writes the one `regent_payments` schema, seeing only the rows its own `site`
+  wrote. The rows are the record of money that moved:
   `payment_intents` and `payment_receipts` are on the production protected-table lock
   (founder, 2026-09-29), so a migration or reset that deletes from, empties or drops them
   fails, and only Sean lifts it. Tests use the Ecto sandbox or a fresh local database.
@@ -83,7 +87,7 @@ config :regent_payments, RegentPayments.Facilitator,
 
 | Who pays | Call | Notes |
 | --- | --- | --- |
-| A person on a page | `RegentPayments.WalletPayment.pay/4` | Unsigned, it answers `{:review, intent, review}`: a `RegentChain.Review` with one signature step for the signed-in wallet. The hook signs it and sends back the `review_id` and signature; the same call then settles. `{:wallet_mismatch, id, note}` carries the note to show beside the button. |
+| A person on a page | `RegentPayments.WalletPayment.pay/4` | The actor carries `wallet_address` and `wallet_addresses`, every wallet the account links; each pays as the account. Unsigned, it answers `{:review, intent, review}`: a `RegentChain.Review` with one signature step for the page's open wallet, when the account links it. The hook signs it and sends back the `review_id` and signature; the same call then settles. Any other wallet, or none, answers `{:wallet_unavailable, id}`; the note beside the button names the account's wallets and asks the person to open one. |
 | An agent over HTTP | `RegentPayments.Purchase.prepare/3`, then `execute/3` | No payment answers `{:payment_required, intent}`; send `Purchase.terms/3` as the x402 402 body. A signed `payment-signature` then settles. `on_offer/3` answers a repeated request with the purchase already started. |
 | An agent over hosted MCP | `Purchase` with `RegentPayments.MCP` | The tool names the wallet (`MCP.wallet/1`); the payment is in `_meta` (`MCP.payment/1`) and must come from that wallet. An action that moves money without a payment proves the wallet with `RegentPayments.WalletProof`. |
 
@@ -119,11 +123,12 @@ For recovery after unpairing, authenticate the original agent signer, then use
 `Purchase.complete(actor, intent_id)`. Accept no payment signature on this route and
 return only intent ID, status and receipt. It never starts or retries settlement.
 Legacy pending intents without a frozen wallet or receipt are refused by this new
-API; legacy settled/applied intents require the receipt payer to match the signer.
+API. A person's settled or applied intent is finished by the account whose wallets
+(`wallet_address` and `wallet_addresses`) include the receipt's payer.
 Do not guess historical ownership or widen authorization to make recovery succeed.
 
-The template documents this integration and keeps its payment showcase illustrative;
-it does not configure a payable offer. Product sites adopt the shared implementation.
+The template's note pin (`AshTemplate.Payments.NotePin`) is the reference offer: a
+paired agent pays 1 USDC from its own wallet over x402. Product sites copy its wiring.
 
 ## Fees handed on to REGENT staking
 
@@ -136,8 +141,8 @@ the forward again.
 
 ## Checks
 
-- The library's own suite covers the payment path; a site tests its offers' `freeze/2`
-  and `carry_out/4` only where the founder agreed tests.
+- The library's own suite covers the payment path; a site tests its own offers'
+  `freeze/2` and `carry_out/4`.
 - A person pays a small real amount from a Privy wallet and from a browser-extension
   wallet before release. Say so in the report rather than claiming it.
 - `make check-required-fixes` passes with `regent_payments` pinned to a git commit.

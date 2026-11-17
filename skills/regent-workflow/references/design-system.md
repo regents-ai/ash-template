@@ -6,7 +6,9 @@ current founder request overrides older rollout notes. Re-read the working tree:
 
 ## Ownership and sources
 
-- `repos/design-system/STYLE.md` describes the canonical visual language.
+- `STYLE.md` on design-system's main describes the canonical visual language. Read it with
+  `git -C repos/design-system show origin/main:STYLE.md`: the local checkout holds other
+  sessions' work and can sit far behind main.
 - `repos/design-system/design_system_tokens.css` owns palette and typography values.
   Generate mirrors with `node scripts/generate-tokens-json.mjs`; do not hand-edit
   generated JSON/CSS or a consumer's `assets/vendor/regent_ui/` copies.
@@ -22,10 +24,11 @@ current founder request overrides older rollout notes. Re-read the working tree:
 
 ## Current visual defaults
 
-- **Geist Pixel Square, upright 400** for titles/headings and title-like subtitles;
-  **Geist UI Sans** for body, navigation, controls and general UI. Keep Geist Mono
-  selectively for code, addresses, hashes and technical identifiers. Do not restore
-  Mono as the general body font or synthesize bold Pixel.
+- **Geist Serif, upright 400** for everything: titles, headings, body, navigation,
+  controls, labels, addresses, hashes and amounts (Sean, 30 Oct 2026). Geist Mono only
+  for code (`code`, `kbd`, `pre`, `samp`, pairing messages). Use the role tokens
+  (`--font-family-title`, `--font-family-ui`, `--font-family-paragraph`, `--font-family-mono`
+  for code), never a face name. Never synthesize bold: Vercel ships Serif in 400 only.
 - Root brand IDs are `platform` (Regents), `techtree`, `autolaunch`, `patchbay`;
   mode IDs are `light` and `dark`. Preserve the eight canonical palette definitions
   and Patchbay aliases. Use paired supporting surface/ink roles rather than recoloring
@@ -34,8 +37,30 @@ current founder request overrides older rollout notes. Re-read the working tree:
   tokens then follow the device, dark unless it asks for light (founder, 2026-09-28).
   A choice travels in the `regent_theme` cookie and always wins. A product's own
   theme CSS covers the no-choice case too. The template's theme plug, root layout and
-  `app.ts` theme block are the reference; the theme switch names itself, so the
+  `assets/js/theme.ts` are the reference; the theme switch names itself, so the
   server passes it no theme.
+- The theme switch is the template's `Shell.theme_toggle/1` (Sean, 8 Nov 2026), not
+  `Regent.ThemeToggle`: a `role="switch"` button named "Light theme", night (dark) on
+  the left and day (light) on the right. Signed in it is a row of the account menu
+  (`Regent.Account.menu`'s `theme` slot, words at the start, switch at the end); signed
+  out, with no account menu, it is in the app shell's bottom bar; the public footer has
+  its own. Never put it in the top bar. A press, Enter or Space turns it; the knob can
+  be dragged and settles on the nearer side, and the theme changes once, on release. The
+  moon and the sun are pictures of tiny square blocks held once, in `Shell`'s
+  `@theme_moon` and `@theme_sun` (equal block counts, square, outer ring clear); the
+  server's still face draws them as SVG squares and the browser reads the blocks from
+  there, so a new picture is an edit to those two lists alone. The still face is flat
+  and square, with no shadow, glow or rounded corner, and is a whole working switch.
+  Over it a vgpu island draws the square glass knob: bevel refraction with a little
+  colour fringing and frost, a light strip that circles the glass from below at night to
+  above by day and spills a little past the button inside its own canvas, and the blocks
+  behind the glass, crisp on whole pixels at rest, tumbling from moon to sun as the knob
+  moves and catching the strip's light on the edge that faces it. Its motion is
+  Anime.js: the knob's settle and one paused timeline for the swarm, seeked by the knob.
+  The strip's colours are `--rg-theme-laser-light`/`--rg-theme-laser-dark` (Tangerine
+  and Powder Blue unless the brand sets them, as Techtree does), set a fixed distance
+  from the page (`theme_switch/light.ts`) so the light reads as boldly on either theme.
+  Less motion, forced colours and no WebGPU keep the still face.
 - Canonical identities: Tangerine `#FF5B19`, Powder Blue `#AECACD`, Platinum
   `#E5E3D2`, Charcoal `#161616`. Typography/background/semantic roles still come from
   the tokens, not scattered literals. Do not replace real project images or site
@@ -45,6 +70,15 @@ current founder request overrides older rollout notes. Re-read the working tree:
   Circles remain appropriate for avatars and meaningful indicators.
 - Shared selects reserve a **24px right chevron inset** and **48px text padding**;
   forced colors restores native appearance.
+- Every page a person can reach from the site's own links opens inside the site's shell;
+  reading pages (about, docs, changelog, agent guide, privacy, terms) use the shared
+  reading view, never a separate bare layout. Machine reads at the same address
+  (Markdown, JSON) are answers, not pages. The template's reading view
+  (`AshTemplateWeb.Components.Reading`) is the reference: the document's title, then its
+  prose at about 70 characters a line, with the section's list of documents in the
+  shell's side menu (founder, 12 Nov 2026). The developer documentation's title row says
+  Docs, as its menu link does, while its Markdown keeps its longer title (founder, 12 Nov
+  2026).
 
 ## Primary buttons and card imagery
 
@@ -77,17 +111,19 @@ current founder request overrides older rollout notes. Re-read the working tree:
 
 ## Preserve each homepage's purpose
 
-- **Regents `/`:** dark-only. Preserve the actual VGPU 13-cube crown and lasers,
-  weighted middle-right. Title/subtitle/compact CTA sit above a compact lower-left
-  row ordered **Autolaunch / Techtree / Patchbay**, with orange / blue / platinum
-  opaque faces and readable dark ink. Preserve the saved theme for other routes.
+- **Regents `/` and the template's `/`:** dark-only. The VGPU datascape fills the window
+  and the page opens on the picture alone. Pressing a panel in the picture brings up one
+  glass panel holding the header, the name and its line, the actions, the product tabs and
+  the document links; two seconds after the last press, steering the picture shrinks it
+  away until the next press. The copyright stands at the window's bottom right. Preserve
+  the saved theme for other routes.
 - **Techtree `/`:** preserve its actual VGPU 13-cube crown/lasers and existing light/dark
   material mapping. Keep the same content-first hero composition and its functional
   setup/release content. Do not replace the shader with an oversized static diagram.
 - **Autolaunch `/`:** auction and token market listings remain primary content.
 - **Patchbay `/`:** WebMCP site directory and message-board content remain primary.
-- Generic page-background retirement is not permission to delete the two crown heroes.
-  Bound artwork independently of text; reuse existing island visibility, resize,
+- Generic page-background retirement is not permission to delete the Techtree crown hero
+  or the homepage datascape. Bound artwork independently of text; reuse existing island visibility, resize,
   reduced-motion, device-loss and disposal behavior. Verify a completed real GPU frame,
   not merely the existence of a canvas or a WebGPU adapter.
 - For Regents token-economics copy, reuse the actual `/stake` wording: eligible USDC
@@ -96,8 +132,8 @@ current founder request overrides older rollout notes. Re-read the working tree:
   guaranteed revenue, or universal distributions. Distinguish desired copy from copy
   already integrated into the homepage.
 - The USDC in a person's signed-in Privy wallet is their **USDC Balance** on every site
-  (founder, 2026-09-28). It arrives when they send USDC to their address or buy it
-  through MoonPay, and payments are signed from it. Regent holds no balance for anyone:
+  (founder, 2026-09-28). It arrives when they send USDC to their address or buy it by
+  card in Privy's card window, and payments are signed from it. Regent holds no balance for anyone:
   never call it credit, a prepaid balance or an account balance, and never offer refunds
   or withdrawals of it.
 
@@ -131,6 +167,6 @@ current founder request overrides older rollout notes. Re-read the working tree:
   in a handoff/work record, not as timeless skill rules. Reconcile delayed agent reports
   against current source and newer founder corrections before acting on them.
 
-For visual craft, also read `/Users/sean/.agents/skills/emil-design-eng/SKILL.md` and
+For visual craft, also read `skills/third-party/emil-design-eng/SKILL.md` and
 canonical `ash-frontend` guidance. Retain the founder's explicit motion/design choices
 when general design advice differs; keep auth/transaction semantics unchanged by polish.

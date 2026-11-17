@@ -68,7 +68,7 @@ A read of the site's own database answers in milliseconds, so it runs inside the
 callback with `Read.now/4` instead of `start`. `start_async` does not run on the
 first, unconnected render, so a page built on `start` sends "Loading…" and shows its
 content only once the page has connected. On an emulated low-end phone over slow 4G
-the template's Credits history showed its table after 6.9 s with `start` and 1.8 s
+a template page of one table showed it after 6.9 s with `start` and 1.8 s
 with `now` (19 Oct 2026). `now` takes the same owner, lands the same states and moves the read to a new
 generation, so an earlier `start` still running is dropped; a database that refuses
 the read lands as `:error` or `:stale`, never as empty. Keep `start` for a chain, an
@@ -80,6 +80,11 @@ socket
 |> Read.now(:notes, actor.human_account_id, fn -> Notes.list_my_notes(actor: actor) end)
 |> show_notes()
 ```
+
+A read whose rows the page streams returns the public maps and the keyset cursor,
+never the records or the `Ash.Page`. `Read` keeps its value for the life of the
+page, so a value holding records keeps every streamed row in memory. Ask for older
+rows with Ash keyset pagination (`page: [after: cursor]`), as `AshTemplateWeb.RoomsLive` does.
 
 A controller action that reads the database likewise answers in one step, but it
 still needs its own error state instead of an empty list.

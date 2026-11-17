@@ -35,8 +35,8 @@ python3 /Users/sean/Documents/regent/repos/ash-template/skills/regent-workflow/s
   --name example --branch wt/example --ref origin/main --dry-run
 ```
 
-The worktree's branch is short-lived: its commits go to main once checked, and the
-branch and worktree are removed the same day.
+The worktree is short-lived: its commits go to main once checked and the worktree is
+removed the same day. The branch stays (Sean, 2 Nov: never delete a branch).
 
 Inspect the dry run, then omit `--dry-run` to create. One operating-system file lock
 spans the actual Git count, creation and registration. Failed creation does not

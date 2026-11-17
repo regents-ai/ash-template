@@ -34,6 +34,14 @@
 - Controllers stay thin: parse the request, call an Ash action or domain function,
   render. A route carrying secrets or private addresses is declared with
   `log: false`.
+- Give the live socket a drainer that closes pages in batches over most of the
+  shutdown time, and make the browser's LiveSocket reconnect and rejoin with
+  jitter. The template's `drainer: [batch_size: 125, batch_interval: 1_000,
+  shutdown: 25_000]` closes 2,500 pages over 20 seconds, and the server's and
+  Oban's 15 seconds each still fit Fly's 60-second kill timeout
+  (`platform/assets/js/reconnect.ts` spreads each wait over its upper half). With Phoenix's
+  defaults every page is closed in one batch and comes back within the same
+  10 milliseconds, each mount reading from the same small pool.
 
 ## Ecto and Postgres
 
@@ -58,9 +66,32 @@
 - Calls to addresses that users supply must resolve the name, refuse private and
   local addresses, and connect to the address that was checked. That is shared code
   (Regent's `mcp_events` callback module does it); never write a second copy.
+- Measure every call to another service as a distribution tagged by service, not
+  only as a log line, so a slow service shows as a trend before it holds requests
+  open. The template measures Finch's request event, which every Req call emits,
+  and names the service from the hosts in its own configuration.
 
 ## Telemetry
 
 Emit `:telemetry` events for work worth measuring and attach them in the site's
 `Telemetry` module. Log a decision with its identifiers, never secrets, signatures
 or user text.
+
+- Export the measurements that tell one limit from another: both halves of every
+  Repo query, `queue_time` (the wait for a connection) and `query_time`, as
+  separate distributions by table; scheduler use beside the run queue; the
+  message queue length and memory of each named process on a hot path, every
+  singleton that touches the database among them (telemetry_poller
+  `:process_info`); counts of open pages and open feeds; and LiveView mount,
+  handle_params and handle_event durations. Without query time beside the wait, a
+  pool that is too small cannot be told from queries that hold connections too
+  long. A wait whose p95 passes 50 ms is pages queuing for the pool.
+- Tag a metric only with values the site chooses, such as the view module, route
+  pattern, queue, table or service, and never with values a client sends, such as
+  event names, paths or parameters. Each tag value is a series kept in memory for
+  the life of the machine.
+- Cap saved errors per fault (ErrorTracker's fingerprint: the kind and the line
+  that raised it) over a window, and count a refused pool checkout as a
+  measurement instead of saving it (`AshTemplate.SavedErrors`). Saving a refusal
+  uses the pool that just refused it, and a cap on the kind alone lets one fault's
+  flood hide another of the same kind.

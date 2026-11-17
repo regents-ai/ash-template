@@ -51,7 +51,7 @@ scope.abort() // the only way to remove it
 Headers and browsers:
 
 - Send `Permissions-Policy: tools=(self)`. Never send `Origin-Agent-Cluster: ?0`.
-- Chrome runs WebMCP as an origin trial ("WebMCP", Chrome 149–156). The token is
+- Chrome runs WebMCP as an origin trial ("WebMCP", Chrome 149–162). The token is
   public, tied to one host and expires; keep it beside a comment naming its host and
   expiry, and send it as an `Origin-Trial` response header next to the
   Permissions-Policy, so Chrome knows it before reading `tools`. Locally, turn on
@@ -68,7 +68,7 @@ priv/tool_manifest.json ─┘      └─► llms.txt and docs tables
         └─► assets/js/webmcp/tools.ts ──► document.modelContext.registerTool
                                               │ execute(input, {signal})
                                               ▼
-                     prepare exact request → existing SIWA signer
+                     exact request → agent's browser host signs (window.regentsSign)
                      → named JSON operation (credentials omitted, signal)
                                               ▼
                      SIWA verification → current pairing → Domain interface (user + agent)
@@ -95,7 +95,8 @@ rows. ash-template's `platform/priv/capabilities.json` and
 Each manifest entry: `name`, `title`, `description`, `input_schema`, `annotations`,
 and for a tool that calls an operation, `route` and `operation_id`; signed tools also
 carry what the shared signing transport reads (`authentication`, `availability`,
-`request_body`, `operation_id_field`, `operation_input_schema`). A site with tools only
+`request_body`, `operation_id_field`). A signed tool's `input_schema` is its
+operation's own input; nothing else passes through the tool. A site with tools only
 some pages register adds `scope` (`site` or that page). Include page-scoped tools and
 the shared profile tools too, so the published list never denies a tool a page
 registers.
@@ -177,8 +178,7 @@ The human profile UI may continue using its authenticated owner session.
 
 ## Checks
 
-1. Compile and typecheck. Tests only where the founder agreed them; a fake
-   `modelContext` proves the adapter, not the browser.
+1. Compile and typecheck. A fake `modelContext` proves the adapter, not the browser.
 2. The HTTP routes behind each tool: public reads, signed agent requests and
    unpaired/revoked/cookie-only refusals. A refused write returns a fixable error.
 3. Native discovery: Chrome with the flag (or the trial token on the real host) and
@@ -219,8 +219,8 @@ tools in `priv/tool_manifest.json`, read by `Techtree.Capabilities` (`manifest`,
 
 The template is the signed-access reference. `priv/tool_manifest.json` includes
 public discovery, signed identity and protected account, note and room operations.
-`assets/js/public_tools.ts` prepares and forwards signed requests through the shared
-transport; `AshTemplateWeb.Plugs.AgentWallet` resolves the agent and pairing.
+`assets/js/public_tools.ts` asks each public read at the route its manifest entry names,
+and prepares and forwards signed requests through the shared transport; `AshTemplateWeb.Plugs.AgentWallet` resolves the agent and pairing.
 Read the current manifest for exact tool coverage, and
 `docs/signed-agent-access-release.md` for what has and has not been accepted. Historical product examples above are
 layout references, not evidence of signed-access adoption.
@@ -235,12 +235,15 @@ ownership. Mutations lock the exact pairing in their transaction. Queued work
 rechecks before starting. Security, pairing and grant management remain owner-only.
 
 Use `elixir-utils/agent_access/assets/signed_tools.ts`, copied by
-`mix regent_agent_access.assets`, for manifest-restricted request preparation and
-exact-byte forwarding. Bind it to the server's configured trusted origin. It is
-transport only: signer access must be supplied and demonstrated by each runtime.
-No arbitrary URL/signing proxy, browser keys, replayed proofs or automatic retries.
-Declare typed inputs in `operation_input_schema`; the shared transport validates
-its bounded JSON Schema subset before preparing a request. Use declared array
+`mix regent_agent_access.assets`: `signedTools(config).execute(name, input)` builds
+the exact request from the manifest, has the agent's browser host sign it through
+`window.regentsSign` (regents-cli's `regents browser` is the reference host), and
+sends those same bytes. Bind it to the server's configured trusted origin. It never
+signs and never sees a key; with no host signer, or a refusal, it rejects with
+`Refused` before anything is sent, and the tool answers that refusal. No arbitrary
+URL/signing proxy, browser keys, replayed proofs or automatic retries. Declare
+typed inputs in the signed tool's `input_schema`; the shared transport validates
+its bounded JSON Schema subset before building a request. Use declared array
 items and object properties instead of encoding structured product data as strings.
 Opaque JSON objects must opt into `additionalProperties: true` and a byte bound.
 

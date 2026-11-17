@@ -68,6 +68,9 @@ After renaming, a new site must still replace, by hand:
   Add an entry the day such a fix is published and push it to `main`; every
   site's `make check-required-fixes` reads `main` and fails until the site takes
   it. A new shared library must be listed before any site can use it.
+- `make check-change` is the template change loop; see platform/README.md. It
+  keeps static checks, partitions the whole ExUnit suite and runs the configured
+  browser walk. Unknown/build/dependency changes use the full gate.
 - `make check` runs every gate: the platform's `mix precommit` (which ends with the
   TypeScript typecheck, the script tests and the browser walk) and `mix test`, the
   required-fixes check, then the command description check against the

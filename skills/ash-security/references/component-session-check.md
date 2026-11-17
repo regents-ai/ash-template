@@ -1,7 +1,7 @@
 # Pages and components check the session before every event, push and result
 
-A server push (`handle_info`: a PubSub notification such as a points award or a
-Credits change) and a background result (`handle_async`) arrive with no navigation or
+A server push (`handle_info`: a PubSub notification such as a points award or an
+agent change) and a background result (`handle_async`) arrive with no navigation or
 event in between. A socket idle past the sign-in lifetime would otherwise read and show
 fresh private data with the actor it saved at mount. The session module that holds a
 signed-in socket attaches `:handle_params`, `:handle_event`, `:handle_info` and
@@ -18,6 +18,16 @@ A navigation or an event is a person acting, so each one re-reads the lease
   and says the sign-in ended. A navigation (`:handle_params`) goes to the public root
   instead. No timer, no polling.
 
+Read each sign-in once per answer, never twice in the same instant. The first render
+takes the account the request's own plug read, from the conn (`assign_new`), and the
+`handle_params` LiveView calls straight after the connected mount, for the address the
+page opened on, takes the mount's read: neither is a person acting, and a second read
+there would only repeat the first. Every navigation after that reads again. The
+template's `platform/test/ash_template_web/session_checks_test.exs` counts these reads
+and refuses a revoked sign-in at the next navigation and press on a connected shell
+page; LiveViewTest connects one once the conn's private `:live_view_connect_info` is a
+map, which hands the socket the conn's own session.
+
 A push or a result is held against `lapses_at` on the clock:
 
 - Before it: `{:cont, socket}` with no read. A page that receives twenty results and
@@ -27,9 +37,9 @@ A push or a result is held against `lapses_at` on the clock:
 - From it on: the same re-read an event makes, every time, with the same two outcomes.
   A later sign-in on the same browser only ever moves the true end later, so the
   instant the mount read is never too late.
-- A message that names the account as changed (the ENS lookup finishing, a sign-in
-  that changed or withdrew the account's wallets, a component reporting its lease
-  lapsed) always re-reads. The account resource publishes its sign-in refresh on the
+- A message that names the account as changed (an ENS lookup that changed the name or
+  picture, a sign-in that changed or withdrew the account's wallets, a component
+  reporting its lease lapsed) always re-reads. The account resource publishes its sign-in refresh on the
   account's own topic for this, so a sign-in elsewhere that leaves the account without
   a wallet signs its other open pages out at once. That notice reaches only this
   site's own open pages; another site learns at its own next read. It is an early
