@@ -12341,3 +12341,16 @@ For the template chief to release. No migration. No new package.
   in the palette) and `platform/test/browser/splats.spec.ts` (adds: each scene shows only
   its palette's colours; without WebGPU the still is the right size and stays). Not run:
   Safari, Firefox, a real phone.
+
+## 2026-11-17 — Released v276: the Splats page's two richer scenes
+
+- v276 on template.regents.sh carries the design chief's Splats entries above (merge
+  `f72ed29b` of `wt/tpl-splat-ink-1117`). No migration.
+- Weight, as measured by the design chief: the page was 0.43 MB on the wire and is now
+  4.6 MB (Factory) and 3.6 MB (Island); the scene files are served compressed with a
+  year-long cache and are requested only by this page, after first paint. On a slow phone
+  connection the live scene appears after about 20 to 24 seconds (it was about 4); the
+  scene's still picture shows in about a second and nothing shifts.
+- Rollback: v275 (`bffb7103`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (717 walk tests passed, 6 skipped;
+  354 Elixir; 376 script). Not proven: Safari, Firefox, real phones.
