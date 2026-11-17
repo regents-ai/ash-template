@@ -143,7 +143,8 @@ the motion maths. A 32-bit float holds t to about one hundred-thousandth of a se
 
 Frame f of the loop is the moment τ = f / 30: the part matrices and the cloth are stored for those moments (section 8 shows how near
 the toolkit they come). Between them a painter may hold the frame before or blend the two frames either side; the motions of section 4
-are worked from t directly at any moment.
+are worked from t directly at any moment. The page's painter holds the frame before, f = floor(30 τ), so at every stored moment it
+draws exactly what the file holds.
 
 What changes from frame to frame, and nothing else does:
 
@@ -195,8 +196,9 @@ it is u²(3 − 2u). frac(x) = x − floor(x).
 | 11 | sway | x ← x + r sin(ωt + 1.3y + 0.9z + φ); y ← y + 0.6 r sin(1.3ωt + 1.1x + φ), with x, y, z the values before the sway |
 
 Kinds 8 to 10 and 12 to 15 are not used. The sway's second term turns 1.3 times as fast as its first, so over one loop it makes 3.9
-cycles where the first makes 3: where the loop wraps, a swaying leaf's height jumps by at most about 0.0074 world units (a seventh of
-an art pixel). The toolkit's own loops have the same small seam.
+cycles where the first makes 3: where the loop wraps, a swaying leaf's height jumps by at most 0.6 r × 2 sin(0.1π) ≈ 0.37 r. Every
+sway in these scenes has c = 3 and r from 0.012 to 0.045, so the jump is at most 0.017 world units, about a third of an art pixel at
+the scene's own distance (0.0074 for the r = 0.02 sways). The toolkit's own loops have the same small seam.
 
 Whether a splat is solid is decided after its kind has changed α: a falling drop of density 3 at 60% stays solid.
 
@@ -221,7 +223,8 @@ On a stage w by h screen pixels, an art pixel is q screen pixels wide:
     s = z (the zoom), ρ = detail * s^(1/2 if s > 1, else 1/4)
     q = clamp(round(h / (2 tan(fov/2) ρ d)), 1, 18)
 
-The grid is W = ceil(w / q) by H = ceil(h / q) art pixels, shown as q by q blocks from the top left. The focal length in art pixels is
+Here, and in section 5.4, round takes halves up, round(x) = floor(x + 0.5), as JavaScript's Math.round does. The grid is W = ceil(w /
+q) by H = ceil(h / q) art pixels, shown as q by q blocks from the top left. The focal length in art pixels is
 F = H / (2 tan(fov / 2)). Below, art-pixel rows count up from the bottom (row 0 is the bottom row on screen); flip them for the screen.
 
 A splat's centre lands at sx = W/2 + F c_x / (−c_z), sy = H/2 + F c_y / (−c_z) (a flickering splat then snaps, section 4).
@@ -288,6 +291,7 @@ Reads outside the grid take the nearest pixel inside it. For the art pixel (x, y
 | Cloth dabs | 0 | 540 |
 | Raw | 5.79 MB (5.52 MiB) | 8.91 MB (8.49 MiB) |
 | Gzipped (level 9) | 3.19 MB | 4.19 MB |
+| On the wire from the page, gzipped by `mix phx.digest` | 3.19 MB | 4.17 MB |
 
 A splat costs 18 bytes at rest (6 centre, 4 turn, 6 size, 1 colour, 1 style) and a moving one 4 more. The factory's moving parts cost
 0.32 MB and its flag 1.17 MB (9 bytes a dab a frame, 240 frames).
@@ -368,8 +372,9 @@ Each of these changes what the page shows or what the painter must do, so none w
    does. Saves about 0.9 MB, but moves the toolkit's cloth lighting into the painter.
 3. **The flag at 15 frames a second**, blended between: halves its 1.17 MB; it would move a little differently between stored frames.
 4. **Leaving out splats no view can see** (those buried inside solid shapes): not measured.
-5. **Sending the files gzipped**: 3.19 MB and 4.19 MB instead of 5.79 MB and 8.91 MB. Phoenix only serves a ready-made `.gz` for the
-   file types its digest step compresses, and `.bin` is not one of them by default.
+
+The page sends the files gzipped: `.bin` is among the file types `mix phx.digest` compresses (`config/config.exs`), and the scenes
+keep a year-long cache under their digested names like every other static file.
 
 ## 10. Notes for a painter
 
@@ -391,4 +396,16 @@ Each of these changes what the page shows or what the painter must do, so none w
 - A flickering splat (kind 1, 9 on the island and 45 on the factory) snaps its centre to the middle of its art pixel.
 - The part matrices (0.32 MB) and the flag's frames (1.17 MB) can go to the graphics card once and be picked by frame number.
 - The art-pixel size follows the stage's height in screen pixels (section 5.2): decide whether that means CSS pixels or device pixels.
-  The reference pictures use a 1440 x 960 stage, so 3 screen pixels an art pixel.
+  The reference pictures use a 1440 x 960 stage, so 3 screen pixels an art pixel. The page uses device pixels (up to three a CSS
+  pixel), so a scene has about the same number of art pixels on any screen.
+- The page steps the camera back on a stage narrower than three by two, so the scene still fits across it: z = min(1, (w / h) / 1.5).
+  A phone's square stage is drawn at z = 2/3.
+- The page's painter (`../painter.ts`) does not sort every splat. Solid splats whose density never changes are drawn unsorted, their
+  middles (w ≥ 0.62) fully opaque with a depth test and their crisp edges (0.38 < w < 0.62) blended over them; only the rest (soft
+  splats, those without depth and those whose kind changes α: 3,063 on the island and 5,889 on the factory) are sorted far to near on
+  the processor. Against the reference pictures that differs in 0.5% to 1.1% of the art pixels of a view (792 to 1,711 of 153,600),
+  mostly single pixels along edges; drawing every splat sorted brings the island to 335 to 548. `../painter.ts` says where.
+- Colour and depth blended in 16-bit floats drift a shade dark over many thin layers on some graphics cards. Keeping each less a half,
+  round 0, where a 16-bit float is finer, and adding the half back when reading, took about 5% off the differing pixels above;
+  32-bit float targets would take about 15%, but blending them needs WebGPU's optional float32-blendable feature, which many phones
+  lack.
