@@ -123,9 +123,15 @@
   image-rendering: pixelated;
 }
 
+/* The box itself takes the pointer, so a drag turns the scene and the browser never
+   picks the still up to carry it off. */
+.splats-lab__still,
+.splats-lab__stage {
+  pointer-events: none;
+}
+
 .splats-lab__stage {
   opacity: 0;
-  pointer-events: none;
   transition: opacity var(--duration-base) var(--ease-out);
 }
 

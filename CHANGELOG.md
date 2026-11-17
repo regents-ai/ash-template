@@ -12396,3 +12396,17 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
   362 Elixir; 376 script). Not proven: the page against the real sign-in service and
   Stripe (every check uses the walk's stand-in); Safari, Firefox, real phones.
+
+## 2026-11-17 — Splats: a mouse drag turns the scene again
+
+- On `/animations/splats` a mouse drag picked up the still picture under the scene, as a
+  browser does with any picture, and carried a faint copy of it about; the scene got one
+  small move and then nothing. The still no longer takes the pointer
+  (`platform/assets/css/pages/splats_lab.css`), so the box does and the whole drag turns
+  and tilts the scene. Seen by Sean on v276; touch and the arrow keys were not affected.
+- The walk's drag check looked only at the end of a drag, which that first small move
+  satisfied. It now also asks that the second half of a drag changes the picture
+  (`platform/test/browser/splats.spec.ts`); it fails without the fix and passes with it.
+- Checks: `sh test/browser/walk.sh splats.spec.ts` 25 passed, 1 skipped. Against live v276
+  with the one style line added in the browser: no picture drag starts and all 40 moves of
+  a drag reach the scene (before: one). Not proven: Safari, Firefox, real phones.

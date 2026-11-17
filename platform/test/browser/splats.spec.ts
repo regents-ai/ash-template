@@ -260,11 +260,16 @@ test.describe("with less motion", () => {
       for (const [dx, dy] of [[15, 0], [0, 12]]) {
         await page.mouse.move(middle.x, middle.y)
         await page.mouse.down()
-        for (let step = 1; step <= 8; step++) await page.mouse.move(middle.x + step * dx, middle.y + step * dy)
+        for (let step = 1; step <= 4; step++) await page.mouse.move(middle.x + step * dx, middle.y + step * dy)
+        await page.waitForTimeout(100)
+        const halfway = await picture(page, scene)
+        expect(halfway.equals(last)).toBe(false)
+        for (let step = 5; step <= 8; step++) await page.mouse.move(middle.x + step * dx, middle.y + step * dy)
         await page.mouse.up()
         await page.waitForTimeout(100)
         const moved = await picture(page, scene)
-        expect(moved.equals(last)).toBe(false)
+        // The drag stays the scene's to its end: the browser never takes the still to carry off.
+        expect(moved.equals(halfway)).toBe(false)
         await page.waitForTimeout(400)
         expect((await picture(page, scene)).equals(moved)).toBe(true)
         last = moved
