@@ -12089,3 +12089,11 @@ loaded only when the button is pressed.
   `2b45076d`; other pins unchanged. No migration.
 - Rollback: v269 (`c3a5ddad`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-17 — The sites' tool lists are at most five minutes old
+
+- `AshTemplate.SiteTools` kept each site's published tool list for 24 hours on each
+  machine, so the home page's cards could show a tool a site had removed, or miss one it
+  had added, for a day or more (upstream row 5: the same code on regents.sh disagreed
+  with Patchbay and Keyfleet for up to two days). It now keeps a list for five minutes.
+  A site that could not be read is still asked again a minute later. No other change.

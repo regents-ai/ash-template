@@ -1,8 +1,9 @@
 defmodule AshTemplate.SiteTools do
   @moduledoc """
   The browser tools each Regent site offers on its home page, read from the
-  site's own published tool list and kept for a day, so a page that shows them
-  asks each site at most once a day. A site that could not be read is asked
+  site's own published tool list and kept for five minutes, so a page that shows
+  them asks each site at most once in five minutes and a tool a site adds or
+  removes shows here within that time. A site that could not be read is asked
   again a minute later, never sooner, however often its card is opened.
 
   Only the five addresses below are ever asked, and a redirect is not followed.
@@ -19,7 +20,7 @@ defmodule AshTemplate.SiteTools do
   use GenServer
 
   @table __MODULE__
-  @keep_ms :timer.hours(24)
+  @keep_ms :timer.minutes(5)
   @again_ms :timer.minutes(1)
   # A read still under way after this is stopped and counts as a failed read,
   # since Req's receive_timeout bounds each wait for more of the answer, not the
