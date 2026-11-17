@@ -12131,3 +12131,10 @@ loaded only when the button is pressed.
   Six of these failed on the code before the change.
 - Full check exit 0 on the worker's tree (713 walk tests passed, 6 skipped; 354 Elixir, 10 of
   them properties; 372 script). Not tried with a live Claude yet. Not a release.
+
+## 2026-11-17 — Released v271: tools listed before pairing, five-minute tool lists
+
+- v271 on template.regents.sh carries the two entries above (upstream rows 2 and 5).
+  No migration, no pin change; API unchanged.
+- Rollback: v270 (`956da3d5`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit.
