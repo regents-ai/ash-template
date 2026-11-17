@@ -12153,3 +12153,8 @@ loaded only when the button is pressed.
 - A site takes this design-system commit only once it has the shared profile change of
   v250 (`rollouts/2026-11-14-public-name-saves.md`); before it, the removed second
   request is what makes the profile.
+
+## 2026-11-17 — plug 1.20.4
+
+- `plug` moves from 1.20.3 to 1.20.4, released today; the dependency check in
+  `make check` refuses 1.20.3 from today. Lock file only.
