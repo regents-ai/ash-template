@@ -44,8 +44,16 @@ API routes expose resource/server metadata (the resource's also at
 `/oauth/register`, `/oauth/token` and `/oauth/revoke`. Browser routes are GET/POST
 `/oauth/authorize`, GET `/oauth/connections` and POST `/oauth/connections/revoke`.
 Credential routes disable logging; the existing address limiter bounds registration
-and token requests. A connected-app link is present on consent pages. There is no
-change to Account's existing social-connections page.
+and token requests. There is no change to Account's existing social-connections
+page.
+
+The Connect page (`/oauth/authorize`) shows one row for each permission the app
+asks for, in the words `config/config.exs` gives it as `{lead, detail}`, then the
+`never` row, then Allow and Cancel, the host of the address it returns to (never
+the full address) and a link to Connected apps. Connected apps
+(`/oauth/connections`) lists each app, the most recently connected first, with the
+day it connected (`17 Nov 2026`) and Disconnect, which revokes at once without a
+second step.
 
 ## The Claude connector: one switch
 
@@ -75,7 +83,13 @@ There are two permissions. `regent.identity.manage` lets the app keep an identit
 for itself, pair it with the account using a code the person gives it, and check
 in. The agent permission, `ash-template.agent` (`AshTemplate.OAuth.agent_scope/0`),
 lets it then work as that paired agent, with that agent's rights and nothing more.
-Neither lets it make payments or change wallets. The template's earlier reference
+Neither lets it sign with the person's wallets or move money: the tools they
+reach are the four identity tools, rooms and messages, and none of them does
+either. That is what the Connect page's `never` row says ("Never signs with your
+wallets or moves money"); a hosted tool that pays or signs with a wallet takes the
+row out of `config/config.exs`. The app's own agent identity does sign its
+requests to the sign-in service, with its own key, never the person's. The
+template's earlier reference
 scope, `mcp.events.read`, is gone; an app registered for it connects again.
 
 ## The MCP address

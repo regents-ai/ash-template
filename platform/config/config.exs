@@ -323,25 +323,28 @@ config :regent_points,
   }
 
 # The Claude connector's sign-in, through the person's verified account
-# (AshTemplate.OAuth). Its one permission lets the app pair with the account and
-# check in; nothing else. config/runtime.exs switches it on and sets its issuer
-# and resource from the site's own address. Lifetimes are the library's, not set
-# here: a Bearer token lives at most an hour and a refresh token 30 days
-# (RegentOAuth.configure/1). A refresh token used again within 30 seconds of its
-# rotation is only refused, as the app's own retry; later, it disconnects the app
-# (`@refresh_grace_seconds` in RegentOAuth.Protocol).
+# (AshTemplate.OAuth). Its first permission lets the app keep an agent identity,
+# pair it with the account and check in; the second lets it work here as that
+# agent. The Connect page shows a {lead, detail} row for each one asked for,
+# then the `never` row. `never` holds only while no tool these scopes reach uses
+# the person's wallets or moves money: the identity tools, rooms and messages
+# (AshTemplate.Agents.Connection, AshTemplate.Rooms, AshTemplate.Messages); a new
+# hosted tool that pays or signs with a wallet takes it out.
+# config/runtime.exs switches it on and sets its issuer and resource from the
+# site's own address. Lifetimes are the library's, not set here: a Bearer token
+# lives at most an hour and a refresh token 30 days (RegentOAuth.configure/1). A
+# refresh token used again within 30 seconds of its rotation is only refused, as
+# the app's own retry; later, it disconnects the app (`@refresh_grace_seconds` in
+# RegentOAuth.Protocol).
 config :ash_template, AshTemplate.OAuth,
   brand: "platform",
   scope: "regent.identity.manage",
-  permission_description:
-    "pair with your account using a code you give it, and check in so you see it is active",
+  permission: {"Pairs", "an agent identity with your account"},
   # Once paired, the app works here as that agent (AshTemplate.OAuth.agent_scope/0).
   additional_scopes: %{
-    "ash-template.agent" =>
-      "work here as the agent you paired, with the same rights as any agent you pair"
+    "ash-template.agent" => {"Acts", "as your paired agent here, with its rights"}
   },
-  consent_note:
-    "This connection works here only as the agent you pair it with, with that agent's rights. Each app you connect here pairs on its own, with its own code from Pair New Agent. It cannot make payments or change your wallets."
+  never: "signs with your wallets or moves money"
 
 # The connector's identity tools (RegentMCPAgents): which site's signers they use
 # at the sign-in service, and the words a refused tool call ends with.

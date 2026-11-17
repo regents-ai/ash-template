@@ -12138,3 +12138,34 @@ loaded only when the button is pressed.
   No migration, no pin change; API unchanged.
 - Rollback: v270 (`956da3d5`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-17 — Shorter Connect and Connected apps pages
+
+- Sean asked (14 Nov, through the Keyfleet chief) for the Connect page and Connected apps to
+  read with far less text. With elixir-utils `f7b3a81` (branch `eu/consent-short-1117`), the
+  Connect page shows one row for each permission the app asks for, then "Never signs with
+  your wallets or moves money", then Allow and Cancel, "Returns to" the host of the address
+  it goes back to, and a link to Connected apps. Connected apps lists each app, the most
+  recently connected first, with the day it connected and Disconnect. The line above each
+  title is the site's host alone.
+- `platform/config/config.exs` takes the library's new shape:
+  `permission: {"Pairs", "an agent identity with your account"}`, the agent permission's row
+  `{"Acts", "as your paired agent here, with its rights"}` and
+  `never: "signs with your wallets or moves money"`; `permission_description` and
+  `consent_note` are gone. The Never row is true of every tool the two permissions reach
+  (`register_identity`, `get_identity`, `pair_identity`, `check_in`, `rooms_messages`,
+  `rooms_post`, `messages_leave`): none uses the person's wallets or moves money.
+- Who may connect, every check, the Allow, Cancel and Disconnect forms and their handling,
+  and token issue are unchanged. Disconnect still acts at once, with no second step.
+- The pin is not moved here: this config needs the new library, so it ships with the pin
+  moved to the library commit once that is on elixir-utils main. The browser walk
+  (`platform/test/browser/oauth.spec.ts`) uses the new button and return words.
+- `docs/oauth-reference.md`, `platform/README.md`, `docs/standardization-plan.md`,
+  `docs/agent-parity.md` (the consent page no longer says each app pairs with its own code)
+  and the feature map say so.
+- Checks against the local library: `make check` passed every gate but
+  `check-required-fixes`, which refuses a local library folder by design and passes on the
+  pin, as do `check-cli` and `check-contracts` (713 walk tests passed, 6 skipped, the OAuth
+  walk at every width among them; 354 Elixir, 10 of them properties; 372 script; 37 scripts).
+  elixir-utils: `oauth` `mix check` 51 passed, `mcp_agents` `mix check` 24 passed. Not a
+  release.

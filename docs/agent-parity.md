@@ -151,7 +151,7 @@ these rows have no agent surface and get none.
   `/mcp`'s 120 a minute, spent before the identity is read; while the service
   can't give the identity's wallet, the call is refused (`identity_unavailable`,
   503) and the next call asks again. Each app a person connects has its own
-  identity and pairs only with its own code, and the consent page says so. Protected (sign-in): waits for Sean's go. Owner: template
+  identity and pairs only with its own code. Protected (sign-in): waits for Sean's go. Owner: template
   chief.
 - **G12. Live feed.** Closed on the CLI 12 Nov (regents-cli 1.10.26, `feed`, with
   `--wake`): `GET /api/v1/feed` is a stream that stays open, and `cli/COMMANDS.md`
