@@ -12082,3 +12082,10 @@ loaded only when the button is pressed.
   dark: no sideways scroll, nothing outside the disclosure, no repeated ids, Load more shows
   all twelve, and both disclosures stay open across a server update. WebKit is not run on the
   Mac.
+
+## 2026-11-17 — Released v270: the articles list
+
+- v270 (`956da3d5`) on template.regents.sh carries the entry above. design-system pin
+  `2b45076d`; other pins unchanged. No migration.
+- Rollback: v269 (`c3a5ddad`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit.
