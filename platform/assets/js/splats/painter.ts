@@ -4,14 +4,23 @@
  * colours, with crisp solid splats, soft haze, glass, an outline where depth steps, a
  * little contact shade and a faint ordered dither.
  *
- * Four passes a frame:
+ * Three passes a frame:
  *
- * 1. Layers, on the art-pixel grid: the solid splats in file order, the depth test keeping
- *    the nearest at each art pixel, then the splats that blend (order.ts), far to near over
- *    them. Each writes three layers: colour, depth and glass, each with its cover.
+ * 1. Layers, on the art-pixel grid. First the solid splats whose density never changes,
+ *    unsorted: where a splat's weight reaches the middle of its crisp edge (0.62) it covers
+ *    the art pixel fully and the depth test keeps the nearest. The same splats then lay
+ *    their crisp edges (weights 0.38 to 0.62) over that, still unsorted, any edge behind a
+ *    nearer middle hidden by the depth test. Last, the splats that blend (order.ts), far
+ *    to near over them. Each writes three layers: colour, depth and glass, each with its
+ *    cover.
  * 2. Finish (FORMAT.md 5.4): glass bends what is behind it, contact shade, outline, dither,
  *    and the nearest palette colour, into the picture.
  * 3. On the page, the picture onto the canvas, each art pixel a square of screen pixels.
+ *
+ * FORMAT.md 5.3 draws every splat far to near and lets 1% of what is behind a solid
+ * middle show through it. The unsorted solids give both up for speed: against the
+ * toolkit's reference pictures about one art pixel in a hundred differs, nearly all
+ * single pixels where two crisp edges cross or meet the sky.
  *
  * Every splat is read straight from the scene file, which goes to the graphics card once
  * as one buffer, and posed in the vertex shader: its part, the cloth, and its kind of
@@ -363,10 +372,13 @@ fn cover(dab: Dab, w: f32) -> f32 {
   return min(0.99, w);
 }
 
+// Colour and depth are each kept less a half, round 0, where a 16-bit float holds them two
+// to four times as finely as from a half to 1: blended there, the many thin layers of a
+// splat's edge drifted dark by a shade and the contact shade's small depth steps blurred.
 struct Layers {
-  // Colour, and cover.
+  // Colour less a half, times cover, and cover.
   @location(0) colour: vec4f,
-  // Depth times cover, and cover.
+  // Depth less a half, times cover, and cover.
   @location(1) depth: vec4f,
   // Glass, and cover (only a solid splat that writes depth clears the glass behind it).
   @location(2) glass: vec4f,
@@ -377,7 +389,7 @@ struct Layers {
   if (weight(dab) < 0.62) {
     discard;
   }
-  return Layers(vec4f(dab.colour.rgb, 1.0), vec4f(dab.colour.a, 1.0, 0.0, 1.0), vec4f(0.0));
+  return Layers(vec4f(dab.colour.rgb - 0.5, 1.0), vec4f(dab.colour.a - 0.5, 1.0, 0.0, 1.0), vec4f(0.0));
 }
 
 // Its crisp edge, over whatever is behind it.
@@ -400,9 +412,9 @@ fn over(dab: Dab, a: f32) -> Layers {
   }
   let solid = dab.centre.z >= 1.0 && (dab.code & NO_DEPTH) == 0u;
   let glass = !solid && (dab.code & GLASS) != 0u;
-  var out = Layers(vec4f(a * dab.colour.rgb, a), vec4f(0.0), vec4f(0.0));
+  var out = Layers(vec4f(a * (dab.colour.rgb - 0.5), a), vec4f(0.0), vec4f(0.0));
   if (solid) {
-    out.depth = vec4f(a * dab.colour.a, a, 0.0, a);
+    out.depth = vec4f(a * (dab.colour.a - 0.5), a, 0.0, a);
     out.glass = vec4f(0.0, 0.0, 0.0, a);
   } else if (glass) {
     out.glass = vec4f(0.5 * a, 0.0, 0.0, 0.0);
@@ -422,14 +434,14 @@ fn texel(x: i32, y: i32) -> vec2i {
   return vec2i(clamp(x, 0, size.x - 1), size.y - 1 - clamp(y, 0, size.y - 1));
 }
 
-// The layers, laid over the backdrop: depth 1 and no glass where nothing covers.
+// The layers, their halves given back, laid over the backdrop: depth 1 and no glass where nothing covers.
 fn colourAt(x: i32, y: i32) -> vec3f {
   let c = textureLoad(colourLayer, texel(x, y), 0);
-  return c.rgb + (1.0 - c.a) * paletteColour(BACKDROP_INDEX);
+  return c.rgb + 0.5 * c.a + (1.0 - c.a) * paletteColour(BACKDROP_INDEX);
 }
 fn depthAt(x: i32, y: i32) -> f32 {
   let d = textureLoad(depthLayer, texel(x, y), 0);
-  return d.r + 1.0 - d.g;
+  return d.r + 0.5 * d.g + (1.0 - d.g);
 }
 fn glassAt(x: i32, y: i32) -> f32 {
   return textureLoad(glassLayer, texel(x, y), 0).r;
