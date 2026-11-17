@@ -12043,3 +12043,13 @@ loaded only when the button is pressed.
   `e40068b3`; other pins unchanged. No migration.
 - Rollback: v268 (`8f28f899`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (713 walk tests, 351 Elixir, 372 script).
+
+## 2026-11-17 — The SIWA gate compares the library's folder, not its history
+
+- `scripts/check-siwa-latest.sh` asked that the pinned elixir-utils commit contain the newest
+  commit that changed the SIWA library on main. A site whose pin is its own line plus the
+  SIWA change (the narrow branches of the empty-body rollout) can never contain it, so the
+  gate refused the new pin and the old one, and no such site could release. It now compares
+  `siwa/siwa-elixir/apps/siwa` at the pin with the same folder on main, file for file. The
+  rule is unchanged: every site runs the newest SIWA library. Found and first fixed by the
+  regents.sh chief. No site code changed; not a release.

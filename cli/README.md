@@ -54,9 +54,10 @@ and fails until `REGENTS_CLI_REV` is that release's tag commit,
 wheel's SHA256, every `uv tool install --python 3.14 'regents-cli[browser,mcp]==…'` line
 names it, and
 `platform/priv/capabilities.json` names it as `cli.release`. A new release therefore stops
-the next `make check` until those move together in one commit. It also fails until the
-elixir-utils commit `platform/mix.exs` pins contains the newest change to
-`siwa/siwa-elixir/apps/siwa` on elixir-utils main. A site copying the script sets the
+the next `make check` until those move together in one commit. It also fails until
+`siwa/siwa-elixir/apps/siwa` at the elixir-utils commit `platform/mix.exs` pins is the same
+folder as on elixir-utils main; the folder is compared, not the history, so a pin that is a
+site's own line plus the SIWA change passes. A site copying the script sets the
 three places named at its top (its agent guide, the folders holding install lines, its
 `capabilities.json`) and keeps every check the same.
 
