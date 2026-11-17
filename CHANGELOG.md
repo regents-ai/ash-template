@@ -12211,3 +12211,9 @@ loaded only when the button is pressed.
   walk at every width among them; 354 Elixir, 10 of them properties; 372 script; 37 scripts).
   elixir-utils: `oauth` `mix check` 51 passed, `mcp_agents` `mix check` 24 passed. Not a
   release.
+
+## 2026-11-17 — regents-cli 1.10.31
+
+- The template asks for the newest command line, 1.10.31 (source commit `2e8b98c7`): the agent
+  guide, the install lines, the capability list and the Makefile's pin name it. The
+  `regents ash-template` commands are the same as in 1.10.30.

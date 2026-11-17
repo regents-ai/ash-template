@@ -18,15 +18,15 @@ One sign-in works across every Regent site, and so does a pairing. A person can 
 Install the Regents command line and sign in:
 
 ```sh
-uv tool install --python 3.14 'regents-cli[browser,mcp]==1.10.30'
+uv tool install --python 3.14 'regents-cli[browser,mcp]==1.10.31'
 regents --version
 regents auth login --site ash-template
 regents ash-template doctor
 ```
 
-Expect `1.10.30` from source commit `4a781568f763e2f7c1165684c4d8d8e2341ce0ee`; the
+Expect `1.10.31` from source commit `2e8b98c7a4dd24a8751c4dfe9979ae7902f7bd06`; the
 published wheel's SHA256 is
-`4d51172835865116b571495c59b78061f13c2238534322447e3ad392e2b043bf`.
+`3d2b468b1718ba8c5b7cccd90b664aea47ca3dddbc58da8aab90847e9a36b70d`.
 
 The ordinary installation includes SOCKS proxy support. Keep your proxy settings and signer folder unchanged. The page's
 browser tools need a browser host that signs for you: see [Browser tools](#browser-tools).
