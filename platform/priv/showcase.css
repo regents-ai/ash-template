@@ -61,12 +61,13 @@ html:has(.sc) { scroll-behavior: auto; }
 body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); overflow: auto; }
 .sc { min-height: 100vh; font-family: var(--font-family-ui); font-size: 14px; background: var(--color-bg); }
 .sc a { text-decoration: none; }
-.sc a:hover { text-decoration: underline; }
+/* The articles list (Regent.Blog.gallery) keeps its own heading and links, as on a site. */
+.sc a:where(:not(.rg-blog a)):hover { text-decoration: underline; }
 .sc :where(button, input, select, textarea) { font: inherit; font-family: var(--font-family-ui); }
 .sc button { cursor: pointer; }
 .sc button:disabled { cursor: not-allowed; }
 .sc :where(h1, h2, h3) { font-family: var(--font-family-title); font-weight: 400; font-synthesis: none; overflow-wrap: anywhere; }
-.sc h1 { font-size: clamp(2.5rem, 4.8vw, 4.5rem); line-height: 1.03; letter-spacing: -.045em; margin: 0; }
+.sc h1:where(:not(.rg-blog h1)) { font-size: clamp(2.5rem, 4.8vw, 4.5rem); line-height: 1.03; letter-spacing: -.045em; margin: 0; }
 .sc h1 span { color: var(--color-fg-muted); }
 .sc h2 { margin: 0; }
 .sc h3 { font-size: clamp(1.25rem, 2vw, 1.75rem); line-height: 1.15; margin: 0 0 24px; }

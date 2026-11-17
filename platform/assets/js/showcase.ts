@@ -64,8 +64,9 @@ const Showcase = {
       root.dataset.theme = mode
       root.style.colorScheme = mode
       this.el.removeAttribute("style")
+      const brandTokens = tokens[`:root[data-brand="${brand}"]`]
       const themeTokens = tokens[`:root[data-brand="${brand}"][data-theme="${mode}"]`]
-      Object.entries({...tokens[":root"], ...themeTokens}).forEach(([key, value]) =>
+      Object.entries({...tokens[":root"], ...brandTokens, ...themeTokens}).forEach(([key, value]) =>
         !key.startsWith("--rg-") && this.el.style.setProperty(key, value),
       )
       colorKeys.forEach((key) => {

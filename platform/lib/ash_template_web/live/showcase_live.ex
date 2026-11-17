@@ -701,8 +701,90 @@ defmodule AshTemplateWeb.ShowcaseLive do
           </div>
         </div>
       </.disclosure>
+      <.disclosure id="articles-detail" summary="Articles">
+        <Regent.Blog.gallery posts={example_posts()} name="Articles" path="/showcase/articles" />
+      </.disclosure>
     </.section>
     """
+  end
+
+  # Twelve made-up posts, newest first, so the list shows nine and Load more once.
+  defp example_posts do
+    [
+      %{
+        slug: "calendar-view",
+        title: "Calendar view",
+        description:
+          "See every due date on one calendar, and drag a task to another day to move it.",
+        date: ~D[2026-11-12]
+      },
+      %{
+        slug: "faster-search",
+        title: "Faster search",
+        description: "Search finds a page by any word in it and shows results as you type.",
+        date: ~D[2026-10-28]
+      },
+      %{
+        slug: "a-calmer-home-page",
+        title:
+          "A calmer home page with your recent work, your saved pages and everything shared with you this week, all in one place",
+        description:
+          "Open the app and pick up where you left off, without looking through folders.",
+        date: ~D[2026-10-09]
+      },
+      %{slug: "dark-mode", title: "Dark mode", description: "", date: ~D[2026-09-17]},
+      %{
+        slug: "shared-folders",
+        title: "Shared folders",
+        description:
+          "Invite people to a folder and they see every page in it, up to date as you edit.",
+        date: ~D[2026-08-26]
+      },
+      %{
+        slug: "comments",
+        title: "Comments on any page",
+        description: "Leave a note beside any paragraph and mention a teammate to bring them in.",
+        date: ~D[2026-07-30]
+      },
+      %{
+        slug: "page-history",
+        title: "Page history",
+        description:
+          "Every page keeps its earlier versions. Open the history to see who changed what, compare any two versions side by side, and bring back an older one with a single press if something went wrong.",
+        date: ~D[2026-06-18]
+      },
+      %{
+        slug: "reading-offline",
+        title: "Reading offline",
+        description: "Pages you opened recently stay readable on a plane or a train.",
+        date: ~D[2026-05-21]
+      },
+      %{
+        slug: "keyboard-shortcuts",
+        title: "Keyboard shortcuts",
+        description: "Press the question mark key on any page to see every shortcut.",
+        date: ~D[2026-04-08]
+      },
+      %{
+        slug: "templates",
+        title: "Templates",
+        description: "Start a new page from a meeting note, a project plan or a weekly review.",
+        date: ~D[2026-02-26]
+      },
+      %{
+        slug: "phone-app",
+        title: "Phone app",
+        description:
+          "Read, write and reply from your phone, with the same pages you see on your computer.",
+        date: ~D[2026-01-14]
+      },
+      %{
+        slug: "getting-started",
+        title: "Getting started",
+        description: "A short tour of pages, folders and sharing for your first day.",
+        date: ~D[2025-12-03]
+      }
+    ]
   end
 
   attr :privy_mode, :atom, required: true

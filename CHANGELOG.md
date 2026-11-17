@@ -12053,3 +12053,32 @@ loaded only when the button is pressed.
   `siwa/siwa-elixir/apps/siwa` at the pin with the same folder on main, file for file. The
   rule is unchanged: every site runs the newest SIWA library. Found and first fixed by the
   regents.sh chief. No site code changed; not a release.
+
+## 2026-11-17 — Design system 2b45076d: the articles list, shown on the showcase
+
+- Design-system pin `d4075655` → `2b45076d` (`platform/mix.exs`, `platform/mix.lock`).
+  `Regent.Blog.gallery` is now a plain list in one reading column: a heading, then each post
+  newest first with its date, title and a summary cut to two lines. From 48rem the dates sit
+  left of a dotted rail with a tick beside each title; on a phone the date sits above the
+  title. The first nine posts show, and each next nine open under Load more, with no script.
+  The template has no articles page of its own, so none of its pages changes.
+- `/showcase` gains an Articles disclosure beside Article tables: the list with twelve made-up
+  posts, one with a long title and one with no summary, so Load more shows once. The posts
+  link to addresses under `/showcase/articles`, which have no page; the example shows the list
+  only.
+- The showcase's own link underline and large heading (`platform/priv/showcase.css`) no longer
+  reach into the list, so it looks as it does on a site. The showcase's palette script
+  (`platform/assets/js/showcase.ts`) now also applies each product's own colours, between the
+  shared ones and that product's light or dark ones, as the stylesheet does. Before, the tick
+  beside each title took the page's accent, which in the template's colours is almost the
+  page's background. Nothing else on the page changes in any of the four palettes, light or
+  dark (picture compare at 1280 wide).
+- The move brings two smaller design-system changes. `Regent.Primitives.status_word` puts
+  only the word showing into the page; `platform/assets/js/app.ts` imports `status_word.mjs`,
+  which moves the old word out and the new one in when it changes, as on the activity line at
+  `/animations/parts`. A leaderboard rank of five digits or more no longer runs into "You" or
+  the wallet (styles only).
+- Checked in headless Chromium at 1280, 1024, 900, 768, 767, 390 and 320 wide, light and
+  dark: no sideways scroll, nothing outside the disclosure, no repeated ids, Load more shows
+  all twelve, and both disclosures stay open across a server update. WebKit is not run on the
+  Mac.
