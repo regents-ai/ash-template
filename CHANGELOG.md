@@ -12227,3 +12227,12 @@ loaded only when the button is pressed.
 - Rollback: v272 (`84d5bc2c`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (713 walk tests passed, 6 skipped;
   354 Elixir; 373 script).
+
+## 2026-11-17 — bandit 1.15.0
+
+- `bandit` moves from 1.14.1 to 1.15.0 (lock file only), which carries the fix for
+  advisory GHSA-j9wq-h5xx-5qx5. The same release stops compressing responses under 300
+  bytes and already-compressed types, lets idle connections hibernate, and rejects some
+  malformed HTTP/2 requests. With plug 1.20.4 (v272) the web server's libraries are on
+  their newest published versions; phoenix 1.8.16 and plug_crypto 2.2.1 have no open
+  advisory.
