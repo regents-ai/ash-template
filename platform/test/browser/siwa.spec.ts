@@ -7,18 +7,32 @@ import {ready, watch} from "./support/person"
 // SIWA, against the walk's own SIWA stand-in (AshTemplate.WalkControl): each width
 // has its own person who has never used it (sign_in.exs), names their company, is
 // refused an origin a sandbox site can't list, adds the site, makes a key, sees it
-// once, revokes it through the confirm window, opens Settings, and on Overview finds
-// billing not started and sets, is refused and removes a cap. Each width also has a
-// person whose company is billed, who reads the period on Overview, lists more of its
-// agents, is refused a cap below the fee so far, and on its proven production site
-// adds an origin, which sets the proof back, and checks it. With SIWA off, the page
-// says it is unavailable.
+// once, revokes it through the confirm window, opens Settings, on Overview finds
+// billing not started and sets, is refused and removes a cap, then follows its link
+// to Billing, subscribes on Stripe, comes back to Manage and a first invoice, and
+// goes to Stripe and back again with Manage. Each width also has a person whose
+// company is billed, who reads the period on Overview, lists more of its agents, is
+// refused a cap below the fee so far, on its proven production site adds an origin,
+// which sets the proof back, and checks it, and on Billing lists more invoices; and
+// one whose SIWA has billing off, whose Billing page offers nothing to press. With
+// SIWA off, the page says it is unavailable.
 
 // The sign-in bridge trades as `did` with the access token `access`.
 const trading = (page: Page, did: string, access?: string) =>
   page.route(
     url => bridge.test(url.pathname),
     route => route.fulfill({contentType: "text/javascript", body: standIn(did, access)}),
+  )
+
+// Stripe's pages, which the walk never reaches: each sends the person straight back
+// to Billing, as Stripe does once they are done there.
+const stripe = /^(checkout|billing)\.stripe\.com$/
+
+const fromStripe = (page: Page) =>
+  page.route(
+    url => stripe.test(url.host),
+    route =>
+      route.fulfill({status: 303, headers: {location: new URL("/siwa/billing", page.url()).href}}),
   )
 
 const connected = (page: Page) => expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
@@ -95,7 +109,7 @@ test.describe("a new SIWA customer", () => {
 
     await page.goto("/siwa")
     await connected(page)
-    await expect(page.locator("#siwa-billing")).toContainText("Not started")
+    await expect(page.locator("#siwa-period-panel")).toBeVisible()
     await expect(page.locator("#siwa-usage")).toHaveCount(0)
     await expect(page.locator("#siwa-agents-panel")).toHaveCount(0)
     await capRefusedThenSaved(page, press, "50", "$99.00", "250")
@@ -103,9 +117,44 @@ test.describe("a new SIWA customer", () => {
     await removeCap(page, press)
     await expect(page.locator("#siwa-cap-amount")).toHaveValue("")
     await tidy(page)
+
+    // Overview's link to Billing, where the company subscribes on Stripe and comes back.
+    await fromStripe(page)
+    await press(page.locator("#siwa-period-billing"))
+    await expect(page).toHaveURL(/\/siwa\/billing$/)
+    const plan = page.locator("#siwa-plan")
+    await expect(plan).toHaveAttribute("data-plan", "subscribe")
+    await expect(page.locator("#siwa-manage")).toHaveCount(0)
+    await expect(page.locator("#siwa-invoices-panel")).toHaveCount(0)
+    await tidy(page)
+
+    await throughStripe(page, "checkout.stripe.com", () => press(page.locator("#siwa-subscribe")))
+    await expect(plan).toHaveAttribute("data-plan", "active")
+    await expect(page.locator("#siwa-subscribe")).toHaveCount(0)
+    const invoices = page.locator("#siwa-invoices > li")
+    await expect(invoices).toHaveCount(1)
+    await expect(invoices.first().locator("a[target='_blank']")).toBeVisible()
+    await expect(page.locator("#siwa-invoices-more")).toHaveCount(0)
+    await tidy(page)
+
+    await throughStripe(page, "billing.stripe.com", () => press(page.locator("#siwa-manage")))
+    await expect(plan).toHaveAttribute("data-plan", "active")
+    await expect(invoices).toHaveCount(1)
     await problems.expect()
   })
 })
+
+// A press that opens Stripe's `host`, and Billing loaded again once Stripe sends the
+// person back.
+async function throughStripe(page: Page, host: string, pressed: () => Promise<void>) {
+  const left = page.waitForRequest(request => new URL(request.url()).host === host)
+  const back = page.waitForEvent("load")
+  await pressed()
+  await left
+  await back
+  await expect(page).toHaveURL(/\/siwa\/billing$/)
+  await connected(page)
+}
 
 // A cap below the least the service takes is refused beside the field, in the
 // page's words with the least it takes; one above it is saved.
@@ -193,6 +242,42 @@ test.describe("a billed SIWA customer", () => {
     await press(page.locator("#siwa-proof-check"))
     await expect(page.locator("#siwa-proof-failure")).toHaveAttribute("data-reason", "not_found")
     await expect(page.locator("#siwa-proof-checked")).toBeVisible()
+    await tidy(page)
+
+    // Fifteen months of invoices, twelve to a page, newest first.
+    await page.goto("/siwa/billing")
+    await connected(page)
+    await expect(page.locator("#siwa-plan")).toHaveAttribute("data-plan", "active")
+    await expect(page.locator("#siwa-manage")).toBeVisible()
+    const invoices = page.locator("#siwa-invoices > li")
+    await expect(invoices).toHaveCount(12)
+    await expect(invoices.first()).toHaveId(`siwa-invoice-in_walk_${info.project.name}_1`)
+    await tidy(page)
+    await press(page.locator("#siwa-invoices-more"))
+    await expect(invoices).toHaveCount(15)
+    await expect(invoices.last()).toHaveId(`siwa-invoice-in_walk_${info.project.name}_15`)
+    await expect(page.locator("#siwa-invoices-more")).toHaveCount(0)
+    await tidy(page)
+    await problems.expect()
+  })
+})
+
+test.describe("a SIWA customer whose SIWA has billing off", () => {
+  test.use({
+    storageState: async ({}, use, info) =>
+      use(`test/browser/.auth/siwa-billing-off-${info.project.name}.json`),
+  })
+
+  test("finds billing unavailable, with nothing to press", async ({page}, info) => {
+    const problems = watch(page)
+    await trading(page, `did:privy:browser-walk-siwa-billing-off-${info.project.name}`)
+    await page.goto("/siwa/billing")
+    await connected(page)
+
+    const plan = page.locator("#siwa-plan")
+    await expect(plan).toHaveAttribute("data-plan", "off")
+    await expect(plan.locator("button")).toHaveCount(0)
+    await expect(page.locator("#siwa-invoices-panel")).toHaveCount(0)
     await tidy(page)
     await problems.expect()
   })

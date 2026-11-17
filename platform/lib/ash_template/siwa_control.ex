@@ -3,9 +3,10 @@ defmodule AshTemplate.SiwaControl do
   The sign-in service's control API (`/api/control/v1` at the address in
   `config :regent_agents, :siwa`), which keeps a person's SIWA company, its cap,
   its billing period and the agents counted in it, its sites, each production
-  site's proof that its origins are its own, and each site's server keys. This
-  site keeps no copy of them: the SIWA pages
-  (`AshTemplateWeb.SiwaLive`) read them here every time.
+  site's proof that its origins are its own, each site's server keys, and the
+  company's subscription and invoices, which Stripe holds. This site keeps no
+  copy of them: the SIWA pages (`AshTemplateWeb.SiwaLive`) read them here every
+  time.
 
   The person is proven to the service by trading their Privy sign-in for a
   control token (`session/1`), which lasts fifteen minutes and is kept only on
@@ -57,9 +58,11 @@ defmodule AshTemplate.SiwaControl do
     do: call(access, method: :post, url: "/session", headers: [{"privy-id-token", identity}])
 
   @doc """
-  The person the token names, their company and its current billing period,
-  `%{"did", "customer", "usage"}`. No company is nil, and so is `usage` while no
-  period is running.
+  The person the token names, their company, its current billing period and its
+  billing, `%{"did", "customer", "usage", "billing"}`. No company is nil, and so
+  is `usage` while no period is running. `billing` is
+  `%{"configured", "subscriptionStatus"}`: whether the service bills at all, and
+  the company's Stripe subscription status, nil before its first.
   """
   @spec account(String.t()) :: result()
   def account(token), do: token |> call(method: :get, url: "/account") |> exact_fee()
@@ -82,6 +85,33 @@ defmodule AshTemplate.SiwaControl do
 
   def list_agents(token, cursor),
     do: call(token, method: :get, url: "/agents", params: [after: cursor])
+
+  @doc """
+  Stripe's Checkout page, where the person subscribes their company, as
+  `%{"url" => _}`. Stripe sends them back to `return_url`, an https address on
+  one of the origins the service allows.
+  """
+  @spec checkout(String.t(), String.t()) :: result()
+  def checkout(token, return_url), do: billing_page(token, "/billing/checkout", return_url)
+
+  @doc """
+  Stripe's billing page for the company, where the person changes its card or
+  ends its subscription, as `%{"url" => _}`. Stripe sends them back to
+  `return_url`, as `checkout/2` does.
+  """
+  @spec portal(String.t(), String.t()) :: result()
+  def portal(token, return_url), do: billing_page(token, "/billing/portal", return_url)
+
+  @doc """
+  The company's invoices, newest first, a page at a time, as
+  `%{"invoices", "next"}`. `cursor` is the `next` of the page before, nil for the
+  first; the last page's `next` is nil.
+  """
+  @spec list_invoices(String.t(), String.t() | nil) :: result()
+  def list_invoices(token, nil), do: call(token, method: :get, url: "/billing/invoices")
+
+  def list_invoices(token, cursor),
+    do: call(token, method: :get, url: "/billing/invoices", params: [after: cursor])
 
   @doc "Makes the person's company from `%{\"name\" => _}`."
   @spec create_customer(String.t(), map()) :: result()
@@ -156,6 +186,16 @@ defmodule AshTemplate.SiwaControl do
         url: "/sites/:id/keys/:key_id",
         path_params: [id: id, key_id: key_id]
       )
+
+  # A page on Stripe's own site the person is sent to. An answer without one, or
+  # with an address that isn't https, means the service answered something else.
+  defp billing_page(token, path, return_url) do
+    case call(token, method: :post, url: path, json: %{"returnUrl" => return_url}) do
+      {:ok, %{"url" => "https://" <> _rest}} = page -> page
+      {:ok, _no_page} -> {:error, :unavailable}
+      refused_or_unavailable -> refused_or_unavailable
+    end
+  end
 
   # The body is read here rather than by Req, so a body that is not JSON is an
   # answer like any other and never an exception carrying the request.

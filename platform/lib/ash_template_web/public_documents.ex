@@ -45,6 +45,9 @@ defmodule AshTemplateWeb.PublicDocuments do
        "Your company's SIWA billing period: the agents counted, the fee so far and your cap."},
     "/siwa/sites" =>
       {"SIWA sites", "Your company's sites where agents sign in with SIWA, and their keys."},
+    "/siwa/billing" =>
+      {"SIWA billing",
+       "Your company's SIWA plan: subscribe, manage it on Stripe and see invoices."},
     "/siwa/settings" =>
       {"SIWA settings", "Your company's name, its owner and where to get help."},
     "/pair" =>

@@ -1,7 +1,8 @@
 defmodule AshTemplate.SiwaControlTest do
   # The sign-in service's control API (`AshTemplate.SiwaControl`), stood in for
   # here: each answer is the service's data, its refusal or unavailable, nothing
-  # is sent twice, a period's fee stays exact and a new site key never prints.
+  # is sent twice, a period's fee stays exact, a new site key never prints and
+  # Stripe's pages come only as https addresses.
   use ExUnit.Case, async: true
 
   alias AshTemplate.SiwaControl
@@ -119,17 +120,85 @@ defmodule AshTemplate.SiwaControlTest do
       maxAgents: nil
     }
 
-    answer(200, %{code: "account", data: %{did: "did:privy:a", customer: nil, usage: usage}})
-    assert {:ok, %{"usage" => %{"feeCents" => fee}}} = SiwaControl.account("control-token")
-    assert Decimal.equal?(fee, Decimal.new("9909.9"))
+    billing = %{configured: true, subscriptionStatus: "active"}
+    account = %{did: "did:privy:a", customer: nil, usage: usage, billing: billing}
 
-    answer(200, %{code: "account", data: %{did: "did:privy:a", customer: nil, usage: nil}})
+    answer(200, %{code: "account", data: account})
+    assert {:ok, %{"usage" => %{"feeCents" => fee}, "billing" => billed}} = SiwaControl.account("control-token")
+    assert Decimal.equal?(fee, Decimal.new("9909.9"))
+    assert billed == %{"configured" => true, "subscriptionStatus" => "active"}
+
+    answer(200, %{code: "account", data: %{account | usage: nil}})
     assert {:ok, %{"usage" => nil}} = SiwaControl.account("control-token")
 
     for fee <- [9909.9, "9909.90", "9,909.9"] do
-      answer(200, %{code: "account", data: %{did: "did:privy:a", customer: nil, usage: %{usage | feeCents: fee}}})
+      answer(200, %{code: "account", data: %{account | usage: %{usage | feeCents: fee}}})
       assert SiwaControl.account("control-token") == {:error, :unavailable}
     end
+  end
+
+  test "Subscribe and Manage send only the address to come back to, and answer Stripe's https page" do
+    return_url = "https://acme.example/siwa/billing"
+
+    for {call, path, code, url} <- [
+          {&SiwaControl.checkout/2, "/api/control/v1/billing/checkout", "billing_checkout",
+           "https://checkout.stripe.com/c/pay/cs_test_a1"},
+          {&SiwaControl.portal/2, "/api/control/v1/billing/portal", "billing_portal",
+           "https://billing.stripe.com/p/session/test_a1"}
+        ] do
+      answer(200, %{code: code, data: %{url: url}})
+      assert call.("control-token", return_url) == {:ok, %{"url" => url}}
+      assert_received {:asked, "POST", ^path, headers, sent}
+      assert header(headers, "authorization") == ["Bearer control-token"]
+      assert Jason.decode!(sent) == %{"returnUrl" => return_url}
+
+      # No page, or one that isn't https, is not Stripe's page.
+      for data <- [%{}, %{url: nil}, %{url: "http://checkout.stripe.com/c/pay/cs_test_a1"}] do
+        answer(200, %{code: code, data: data})
+        assert call.("control-token", return_url) == {:error, :unavailable}
+      end
+
+      # Billing off at SIWA is its refusal, like any other.
+      answer(503, %{error: %{code: "billing_not_configured", message: "billing is off"}})
+
+      assert {:error, %Refusal{status: 503, code: "billing_not_configured"}} =
+               call.("control-token", return_url)
+    end
+  end
+
+  test "invoices are asked a page at a time, after the cursor of the page before" do
+    test = self()
+
+    page = %{
+      invoices: [
+        %{
+          id: "in_2",
+          createdAt: "2026-12-01T09:31:02Z",
+          periodStartsAt: "2026-11-01T09:30:00Z",
+          periodEndsAt: "2026-12-01T09:30:00Z",
+          totalCents: 24_750,
+          status: "paid",
+          hostedUrl: "https://invoice.stripe.com/i/acct_1/test_a1",
+          agents: 2_500
+        }
+      ],
+      next: "in_2"
+    }
+
+    for _page <- 1..2 do
+      Req.Test.expect(SiwaControl, fn conn ->
+        send(test, {:asked, conn.method, conn.request_path, conn.query_string})
+        Req.Test.json(conn, %{code: "invoices", data: page})
+      end)
+    end
+
+    assert {:ok, %{"invoices" => [%{"totalCents" => 24_750}], "next" => "in_2"}} =
+             SiwaControl.list_invoices("control-token", nil)
+
+    assert_received {:asked, "GET", "/api/control/v1/billing/invoices", ""}
+
+    assert {:ok, _page} = SiwaControl.list_invoices("control-token", "in_2")
+    assert_received {:asked, "GET", "/api/control/v1/billing/invoices", "after=in_2"}
   end
 
   test "a cap is sent in whole cents, and null removes it" do

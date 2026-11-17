@@ -4,6 +4,11 @@ Changes to Ash Template, newest first.
 
 ## 17 November 2026
 
+- **SIWA.** A new Billing tab. Subscribe your company on Stripe: $99 a month for up to
+  1,000 agents, then $0.099 for each agent after. Once you subscribe, Billing shows your
+  plan, Manage opens Stripe to change your card or end the plan, and your invoices are
+  listed newest first, each with a link to see it on Stripe. Overview links to Billing
+  until your first period starts.
 - **Claude.** Once you connect Claude, it sees the room tools and the leave-a-message tool
   from its first chat, beside its pairing tools. Until you pair it they say it isn't
   paired yet and do nothing; once paired they work in the same chat, with no need to

@@ -4,24 +4,36 @@ defmodule AshTemplate.WalkControl do
   this server's memory for the run (`AshTemplate.WalkOffline`) under the
   service's own rules and in its own shapes: each person's company and its cap,
   its billing period and the agents counted in it, its sites, each production
-  site's proof of its origins and each site's keys, at most five of them in use.
+  site's proof of its origins, each site's keys, at most five of them in use,
+  and the company's subscription and invoices.
 
   The walk publishes no proof file anywhere, so checking a production site that
   isn't proven fails at its first origin with `not_found`; a proven one is
   answered as it is.
+
+  The walk never reaches Stripe either. Subscribing is taken as paid at once:
+  Checkout's answer is a Stripe address the walk's browser turns back to Billing
+  (siwa.spec.ts), and the subscription is then active, with its first period
+  and a first invoice for nothing yet. The page to come back to must be on this
+  server's own origin, the one origin it allows.
 
   The identity token of the Privy pair a page trades is taken as the person's
   DID, and the token it gets back names them. The access token
   `walk-unavailable` is answered as a service whose control API is off.
 
   A person starts with nothing, as a new company has no billing period, except
-  one whose DID starts `did:privy:browser-walk-siwa-billed-`: their company is
-  already billed, with a proven production site, an archived one and a period
-  this UTC month that has counted more agents than it includes.
+  one whose DID starts `did:privy:browser-walk-siwa-billed-`: their company
+  already subscribes, with a proven production site, an archived one, a period
+  this UTC month that has counted more agents than it includes, and an invoice
+  for each of the fifteen months before; and one whose DID starts
+  `did:privy:browser-walk-siwa-billing-off-`, whose company is made but whose
+  SIWA bills no one: its account says billing is off, and every billing route
+  answers so.
   """
 
   @base "/api/control/v1/"
   @billed "did:privy:browser-walk-siwa-billed-"
+  @billing_off "did:privy:browser-walk-siwa-billing-off-"
   @max_keys 5
 
   # The service's price: $99 a period covers the first 1,000 agents and each one
@@ -34,11 +46,18 @@ defmodule AshTemplate.WalkControl do
   @billed_agents 1_204
   @default_page 50
   @most_page 200
+  @billed_invoices 15
+  @default_invoices 12
+  @most_invoices 50
+  @running ~w(active trialing past_due)
+  @checkout_page "https://checkout.stripe.com/c/pay/cs_test_walk"
+  @portal_page "https://billing.stripe.com/p/session/test_walk"
   @service_audiences ~w(agent-book agent-link)
   @audience ~r/\A[a-z0-9][a-z0-9_-]{0,63}\z/
   @https ~r/\Ahttps:\/\/(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?\z/
   @local ~r/\Ahttp:\/\/localhost:[1-9][0-9]{0,4}\z/
   @off "the control API is not configured on this server"
+  @no_billing "billing is not configured on this server"
   @no_token "the control token is missing, not valid or expired"
 
   @doc "Whether `request` is for the control API at `url`, the walk's SIWA address."
@@ -98,10 +117,18 @@ defmodule AshTemplate.WalkControl do
     do: refusal(401, "privy_proof_invalid", "the Privy sign-in was not accepted")
 
   defp step(:get, ["account"], _params, did, state) do
-    %{customer: customer, period: period} = person(state, did)
+    %{customer: customer, period: period, subscription: subscription} = person(state, did)
 
-    {:ok, 200, "account", %{"did" => did, "customer" => customer, "usage" => usage(period)},
-     state}
+    {:ok, 200, "account",
+     %{
+       "did" => did,
+       "customer" => customer,
+       "usage" => usage(period),
+       "billing" => %{
+         "configured" => not String.starts_with?(did, @billing_off),
+         "subscriptionStatus" => subscription
+       }
+     }, state}
   end
 
   defp step(:put, ["cap"], params, did, state) do
@@ -122,7 +149,7 @@ defmodule AshTemplate.WalkControl do
   defp step(:get, ["agents"], params, did, state) do
     with {:ok, params} <- only(params, ~w(after limit)),
          {:ok, _customer} <- customer(state, did),
-         :ok <- valid(page(params)) do
+         :ok <- valid(Map.merge(limit(params["limit"], @most_page), cursor(params["after"]))) do
       offset = if params["after"], do: offset(params["after"]), else: 0
       limit = if params["limit"], do: String.to_integer(params["limit"]), else: @default_page
 
@@ -282,6 +309,42 @@ defmodule AshTemplate.WalkControl do
     end
   end
 
+  defp step(_method, ["billing" | _route], _params, @billing_off <> _width, _state),
+    do: {:error, refusal(503, "billing_not_configured", @no_billing)}
+
+  defp step(:post, ["billing", "checkout"], params, did, state) do
+    with {:ok, params} <- only(params, ~w(returnUrl)),
+         {:ok, customer} <- customer(state, did),
+         :ok <- valid(return_url(params)),
+         :ok <- may_subscribe(customer, person(state, did).subscription) do
+      {:ok, 200, "billing_checkout", %{"url" => @checkout_page},
+       update_person(state, did, &subscribe/1)}
+    end
+  end
+
+  defp step(:post, ["billing", "portal"], params, did, state) do
+    with {:ok, params} <- only(params, ~w(returnUrl)),
+         {:ok, _customer} <- customer(state, did),
+         :ok <- valid(return_url(params)),
+         :ok <- subscribed(person(state, did).subscription) do
+      {:ok, 200, "billing_portal", %{"url" => @portal_page}, state}
+    end
+  end
+
+  # The company's invoices, newest first, a page at a time after an invoice's id.
+  defp step(:get, ["billing", "invoices"], params, did, state) do
+    with {:ok, params} <- only(params, ~w(after limit)),
+         {:ok, _customer} <- customer(state, did),
+         %{invoices: invoices} = person(state, did),
+         :ok <- valid(invoice_page(params, invoices)) do
+      offset = if params["after"], do: invoice_offset(invoices, params["after"]), else: 0
+      limit = if params["limit"], do: String.to_integer(params["limit"]), else: @default_invoices
+      {shown, rest} = invoices |> Enum.drop(offset) |> Enum.split(limit)
+      next = if rest != [], do: List.last(shown)["id"]
+      {:ok, 200, "invoices", %{"invoices" => shown, "next" => next}, state}
+    end
+  end
+
   defp step(_method, _path, _params, _did, _state),
     do: {:error, refusal(404, "not_found", "no such route")}
 
@@ -298,23 +361,22 @@ defmodule AshTemplate.WalkControl do
     |> Map.update!(:people, &Map.put(&1, did, billed))
   end
 
-  defp known(state, did),
-    do: put_in(state.people[did], %{customer: nil, sites: [], keys: %{}, period: nil})
+  defp known(state, @billing_off <> width = did) do
+    customer = made_customer("Walk Billing Off #{String.capitalize(width)}", now())
+    put_in(state.people[did], %{new_person() | customer: customer})
+  end
+
+  defp known(state, did), do: put_in(state.people[did], new_person())
+
+  defp new_person,
+    do: %{customer: nil, sites: [], keys: %{}, period: nil, subscription: nil, invoices: []}
 
   defp billed(@billed <> width = did) do
     at = DateTime.utc_now(:second)
     starts = %{at | day: 1, hour: 0, minute: 0, second: 0}
     ends = starts |> DateTime.to_date() |> Date.shift(month: 1) |> DateTime.new!(~T[00:00:00])
     made = DateTime.to_iso8601(starts)
-
-    customer = %{
-      "id" => Ecto.UUID.generate(),
-      "name" => "Walk Billed #{String.capitalize(width)}",
-      "kind" => "internal",
-      "capCents" => nil,
-      "createdAt" => made,
-      "updatedAt" => made
-    }
+    customer = made_customer("Walk Billed #{String.capitalize(width)}", made)
 
     live =
       billed_site("Main site", "walk-billed-#{width}", "https://example.com", made, nil)
@@ -331,7 +393,63 @@ defmodule AshTemplate.WalkControl do
         ends: ends,
         cap: nil,
         agents: billed_agents(did, starts, at, [live["id"], archived["id"]])
-      }
+      },
+      subscription: "active",
+      invoices: billed_invoices(width, starts)
+    }
+  end
+
+  # An invoice at the start of each month before this one, newest first, each for
+  # more agents than the month before it.
+  defp billed_invoices(width, starts) do
+    for n <- 1..@billed_invoices do
+      at = DateTime.shift(starts, month: -n)
+      agents = 1_200 - n * 40
+      invoice("in_walk_#{width}_#{n}", at, agents, div(fee_tenths(agents) + 5, 10))
+    end
+  end
+
+  defp invoice(id, at, agents, total_cents) do
+    %{
+      "id" => id,
+      "createdAt" => DateTime.to_iso8601(at),
+      "periodStartsAt" => at |> DateTime.shift(month: -1) |> DateTime.to_iso8601(),
+      "periodEndsAt" => DateTime.to_iso8601(at),
+      "totalCents" => total_cents,
+      "status" => "paid",
+      "hostedUrl" => "https://invoice.stripe.com/i/acct_walk/#{id}",
+      "agents" => agents
+    }
+  end
+
+  # Checkout, taken as paid: the subscription runs from now, its first period
+  # opens with the company's cap, and its first invoice is for nothing yet.
+  defp subscribe(person) do
+    at = DateTime.utc_now(:second)
+    first = invoice("in_walk_#{System.unique_integer([:positive])}", at, 0, 0)
+
+    %{
+      person
+      | subscription: "active",
+        invoices: [first | person.invoices],
+        period: %{
+          starts: at,
+          ends: DateTime.shift(at, month: 1),
+          cap: person.customer["capCents"],
+          agents: []
+        }
+    }
+  end
+
+  # A company as the walk makes it for a person who starts with one.
+  defp made_customer(name, made) do
+    %{
+      "id" => Ecto.UUID.generate(),
+      "name" => name,
+      "kind" => "paid",
+      "capCents" => nil,
+      "createdAt" => made,
+      "updatedAt" => made
     }
   end
 
@@ -414,14 +532,12 @@ defmodule AshTemplate.WalkControl do
 
   defp below_fee, do: %{"capCents" => ["is below the fee this period has already reached"]}
 
-  defp page(params), do: Map.merge(limit(params["limit"]), cursor(params["after"]))
+  defp limit(nil, _most), do: %{}
 
-  defp limit(nil), do: %{}
-
-  defp limit(limit) do
+  defp limit(limit, most) do
     case Integer.parse(limit) do
-      {limit, ""} when limit in 1..@most_page -> %{}
-      _other -> %{"limit" => ["must be from 1 to #{@most_page}"]}
+      {limit, ""} when limit in 1..most//1 -> %{}
+      _other -> %{"limit" => ["must be from 1 to #{most}"]}
     end
   end
 
@@ -439,6 +555,49 @@ defmodule AshTemplate.WalkControl do
       _not_a_cursor -> nil
     end
   end
+
+  defp invoice_page(params, invoices) do
+    after_id = params["after"]
+
+    Map.merge(
+      limit(params["limit"], @most_invoices),
+      if(is_nil(after_id) or invoice_offset(invoices, after_id),
+        do: %{},
+        else: %{"after" => ["is not an invoice id"]}
+      )
+    )
+  end
+
+  # How many invoices come before the one after `id`.
+  defp invoice_offset(invoices, id) do
+    case Enum.find_index(invoices, &(&1["id"] == id)) do
+      nil -> nil
+      index -> index + 1
+    end
+  end
+
+  # Stripe sends the person back only to an origin the service allows: the walk's
+  # is this server's own.
+  defp return_url(%{"returnUrl" => url}) when is_binary(url) do
+    if String.starts_with?(url, AshTemplateWeb.Endpoint.url() <> "/"),
+      do: %{},
+      else: %{"returnUrl" => ["must be an address on an origin this server allows"]}
+  end
+
+  defp return_url(_params), do: %{"returnUrl" => ["can't be blank"]}
+
+  defp may_subscribe(%{"kind" => "internal"}, _subscription),
+    do: {:error, refusal(409, "billing_not_needed", "an internal customer is not billed")}
+
+  defp may_subscribe(_customer, subscription) when subscription in @running,
+    do: {:error, refusal(409, "subscription_exists", "this customer already subscribes")}
+
+  defp may_subscribe(_customer, _subscription), do: :ok
+
+  defp subscribed(nil),
+    do: {:error, refusal(409, "billing_not_started", "this customer has not subscribed yet")}
+
+  defp subscribed(_subscription), do: :ok
 
   defp update_person(state, did, fun),
     do: %{state | people: Map.put(state.people, did, fun.(person(state, did)))}

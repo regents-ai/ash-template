@@ -420,6 +420,7 @@ defmodule AshTemplateWeb.Router do
       live "/siwa", ShellLive, :siwa_overview
       live "/siwa/sites", ShellLive, :siwa_sites
       live "/siwa/sites/:site_id", ShellLive, :siwa_site
+      live "/siwa/billing", ShellLive, :siwa_billing
       live "/siwa/settings", ShellLive, :siwa_settings
       # Account, the same on every Regent site (AshTemplateWeb.AccountRoutes).
       account_routes(ShellLive)

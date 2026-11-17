@@ -113,6 +113,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     siwa: [
       %{route_id: :siwa_overview, label: "Overview", path: "/siwa"},
       %{route_id: :siwa_sites, label: "Sites", path: "/siwa/sites"},
+      %{route_id: :siwa_billing, label: "Billing", path: "/siwa/billing"},
       %{route_id: :siwa_settings, label: "Settings", path: "/siwa/settings"}
     ],
     settings:
@@ -171,6 +172,9 @@ defmodule AshTemplateWeb.RouteCatalog do
     siwa_site:
       {:siwa,
        %{route_id: :siwa_sites, destination: "/siwa/sites/:site_id", page_display_label: "Sites"}},
+    siwa_billing:
+      {:siwa,
+       %{route_id: :siwa_billing, destination: "/siwa/billing", page_display_label: "Billing"}},
     siwa_settings:
       {:siwa,
        %{route_id: :siwa_settings, destination: "/siwa/settings", page_display_label: "Settings"}},
@@ -224,6 +228,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{label: "Chat", path: "/chat"},
     %{label: "SIWA overview", path: "/siwa"},
     %{label: "SIWA sites", path: "/siwa/sites"},
+    %{label: "SIWA billing", path: "/siwa/billing"},
     %{label: "SIWA settings", path: "/siwa/settings"},
     %{label: "Account", path: "/account"},
     %{label: "Agents", path: "/account/agents"},

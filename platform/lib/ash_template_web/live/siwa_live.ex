@@ -2,17 +2,27 @@ defmodule AshTemplateWeb.SiwaLive do
   @moduledoc """
   The SIWA pages, where a person runs their company's agent sign-in: Overview
   (`/siwa`), Sites (`/siwa/sites`), one site with its proof and keys
-  (`/siwa/sites/:site_id`) and Settings (`/siwa/settings`). All of it is read
-  from the sign-in service's control API (`AshTemplate.SiwaControl`) each time;
-  this site keeps none of it. A person with no company names it first, then
-  lands on Sites.
+  (`/siwa/sites/:site_id`), Billing (`/siwa/billing`) and Settings
+  (`/siwa/settings`). All of it is read from the sign-in service's control API
+  (`AshTemplate.SiwaControl`) each time; this site keeps none of it. A person
+  with no company names it first, then lands on Sites.
 
   Overview shows the company's billing period from the account read: its dates,
   the agents counted against those included, the fee so far and the cap, which
   the person sets, changes or removes there. With no period running it says
-  billing hasn't started. Once one runs, a second read lists the period's agents,
-  newest first, into a stream, a page at a time by the service's cursor, so the
-  page keeps none of the rows.
+  billing hasn't started, with a link to Billing. Once one runs, a second read
+  lists the period's agents, newest first, into a stream, a page at a time by the
+  service's cursor, so the page keeps none of the rows.
+
+  Billing shows the company's plan from the same account read, in exactly one
+  state (`plan/1`): billing off at SIWA, an internal company SIWA doesn't bill,
+  no subscription running (the price and Subscribe), or one running (its status,
+  Manage and the invoices, listed as the agents are). Subscribe and Manage ask the
+  service for a Stripe page that sends the person back to this page, and send the
+  browser there. Back from Stripe, the page reads the account again as it does on
+  any visit; a subscription Stripe hasn't told SIWA about yet shows Subscribe until
+  the person reloads. A billing route that says billing is off is what the account
+  would say now, so the page shows billing off.
 
   A production site takes agents only once the company has proven its origins
   are its own: its Proof section shows the site's token, which is public, and
@@ -49,7 +59,7 @@ defmodule AshTemplateWeb.SiwaLive do
   alias AshTemplateWeb.{Motion, Read}
   alias Regent.Primitives, as: P
 
-  @reads [:company, :sites, :site, :agents, :more_agents]
+  @reads [:company, :sites, :site, :agents, :more_agents, :invoices, :more_invoices]
   @forms ~w(company site details cap)
   @fields %{
     "company" => ~w(name),
@@ -62,6 +72,14 @@ defmodule AshTemplateWeb.SiwaLive do
   @least_cap 9_900
   @most_cap 2_147_483_647
   @dollars ~r/\A[0-9]+(\.[0-9]{1,2})?\z/
+
+  # The one SIWA price: the base fee covers this many agents a month, and each
+  # agent after adds this many cents.
+  @included_agents 1_000
+  @agent_cents Decimal.new("9.9")
+
+  # The subscription statuses that keep a company's production sites taking agents.
+  @running ~w(active trialing past_due)
 
   # An agent is a wallet on one of the chains SIWA signs agents in on.
   @subject ~r/\Aeip155:(1|8453):(0x[0-9a-f]{40})\z/
@@ -80,7 +98,11 @@ defmodule AshTemplateWeb.SiwaLive do
     "site_key_not_found" => "This key doesn't exist. Reload the page to see the site's keys.",
     "site_key_limit" => "A site can have 5 keys in use. Revoke one, then make another.",
     "customer_not_found" => "Your company isn't set up yet. Reload the page to name it.",
-    "rate_limited" => "Too many checks in a short time. Wait a moment, then check again."
+    "rate_limited" => "Too many tries in a short time. Wait a moment, then try again.",
+    "subscription_exists" => "Your company already subscribes. Reload the page to manage it.",
+    "billing_not_needed" => "Your company isn't billed.",
+    "billing_not_started" => "Your company hasn't subscribed yet. Reload the page to subscribe.",
+    "billing_provider_failed" => "Stripe didn't answer, so try again in a moment."
   }
 
   @unavailable "SIWA isn't available right now. Try again later."
@@ -91,8 +113,9 @@ defmodule AshTemplateWeb.SiwaLive do
      socket
      |> Session.check_component_lease(&assign(&1, :account, &2))
      |> assign(owner: nil, company: %Read{}, sites: %Read{}, site: %Read{})
-     |> assign(agents: %Read{}, more_agents: %Read{})
+     |> assign(agents: %Read{}, more_agents: %Read{}, invoices: %Read{}, more_invoices: %Read{})
      |> stream_configure(:agents, dom_id: &"siwa-agent-#{&1.chain}-#{&1.address}")
+     |> stream_configure(:invoices, dom_id: &"siwa-invoice-#{&1.id}")
      |> fresh()}
   end
 
@@ -111,8 +134,8 @@ defmodule AshTemplateWeb.SiwaLive do
   defp owner(%{account: nil}), do: nil
   defp owner(%{account: account, page: page, site_id: site_id}), do: {account.id, page, site_id}
 
-  # The agents listed so far go too, and any page of them still on its way is
-  # dropped when it lands.
+  # The agents and invoices listed so far go too, and any page of them still on
+  # its way is dropped when it lands.
   defp fresh(socket) do
     socket
     |> assign(
@@ -126,14 +149,19 @@ defmodule AshTemplateWeb.SiwaLive do
       notices: %{},
       revealed: nil,
       next: nil,
-      names: %{}
+      names: %{},
+      invoices_next: nil
     )
     |> Read.clear(:agents)
     |> Read.clear(:more_agents)
+    |> Read.clear(:invoices)
+    |> Read.clear(:more_invoices)
     |> stream(:agents, [], reset: true)
+    |> stream(:invoices, [], reset: true)
   end
 
-  # Overview and Settings read the company each time; the other pages read it once.
+  # Overview, Billing and Settings read the company each time; the other pages
+  # read it once.
   defp begin(%{assigns: %{owner: nil}} = socket), do: socket
 
   defp begin(socket) do
@@ -165,7 +193,26 @@ defmodule AshTemplateWeb.SiwaLive do
        when counted > 0,
        do: run(socket, :agents)
 
+  # Only a running subscription has invoices to list.
+  defp run_page(%{assigns: %{page: :siwa_billing, company: %Read{value: company}}} = socket) do
+    case plan(company) do
+      {:running, _status} -> run(socket, :invoices)
+      _no_invoices -> socket
+    end
+  end
+
   defp run_page(socket), do: socket
+
+  # The one Billing state the account is in. Billing off at SIWA comes first,
+  # then a company SIWA doesn't bill; any subscription status but these three
+  # keeps the company's production sites from taking agents.
+  defp plan(%{"billing" => %{"configured" => false}}), do: :off
+  defp plan(%{"customer" => %{"kind" => "internal"}}), do: :internal
+
+  defp plan(%{"billing" => %{"subscriptionStatus" => status}}) when status in @running,
+    do: {:running, status}
+
+  defp plan(_company), do: :subscribe
 
   @impl true
   def handle_event("traded", %{"outcome" => outcome}, socket),
@@ -252,6 +299,16 @@ defmodule AshTemplateWeb.SiwaLive do
 
   def handle_event("more_agents", _params, socket), do: {:noreply, run(socket, :more_agents)}
 
+  def handle_event("subscribe", _params, socket), do: {:noreply, act(socket, :checkout)}
+  def handle_event("manage", _params, socket), do: {:noreply, act(socket, :portal)}
+  def handle_event("list_invoices", _params, socket), do: {:noreply, run(socket, :invoices)}
+
+  def handle_event("more_invoices", _params, %{assigns: %{invoices_next: nil}} = socket),
+    do: {:noreply, socket}
+
+  def handle_event("more_invoices", _params, socket),
+    do: {:noreply, run(socket, :more_invoices)}
+
   defp name(params), do: Map.take(params, ["name"])
 
   # Dollars as the person typed them, with or without its sign and commas, in
@@ -304,13 +361,21 @@ defmodule AshTemplateWeb.SiwaLive do
     |> start_async({:write, ref}, fn -> call(ctx, &write(op, &1)) end)
   end
 
-  defp ctx(%{lease: lease, account: account, site_id: site_id, next: next, names: names}) do
+  defp ctx(%{
+         lease: lease,
+         account: account,
+         site_id: site_id,
+         next: next,
+         names: names,
+         invoices_next: invoices_next
+       }) do
     %{
       topic: SessionAuthority.topic(lease.lineage),
       account_id: account.id,
       site_id: site_id,
       next: next,
-      names: names
+      names: names,
+      invoices_next: invoices_next
     }
   end
 
@@ -322,7 +387,25 @@ defmodule AshTemplateWeb.SiwaLive do
   defp read(:company, ctx) do
     ctx
     |> call(&SiwaControl.account/1)
-    |> then(&with({:ok, data} <- &1, do: {:ok, Map.take(data, ["customer", "usage"])}))
+    |> then(&with({:ok, data} <- &1, do: {:ok, Map.take(data, ["customer", "usage", "billing"])}))
+    |> shown()
+  end
+
+  # The first page of invoices; a company with none at all has nothing to list,
+  # which `Read` shows as empty.
+  defp read(:invoices, ctx) do
+    ctx
+    |> call(&with({:ok, page} <- SiwaControl.list_invoices(&1, nil), do: invoices(page)))
+    |> then(fn
+      {:ok, %{rows: []}} -> {:ok, nil}
+      result -> result
+    end)
+    |> shown()
+  end
+
+  defp read(:more_invoices, %{invoices_next: next} = ctx) do
+    ctx
+    |> call(&with({:ok, page} <- SiwaControl.list_invoices(&1, next), do: invoices(page)))
     |> shown()
   end
 
@@ -361,10 +444,42 @@ defmodule AshTemplateWeb.SiwaLive do
     |> shown()
   end
 
-  defp shown({:error, %Refusal{status: status} = refusal}) when status != 503,
-    do: {:ok, {:refused, refusal}}
+  # Billing off at SIWA is an answer to show, too.
+  defp shown({:error, %Refusal{status: status, code: code} = refusal})
+       when status != 503 or code == "billing_not_configured",
+       do: {:ok, {:refused, refusal}}
 
   defp shown(result), do: result
+
+  # A page of invoices as the list shows them. One that isn't an invoice, or an
+  # invoice whose page isn't an https address, means the service answered
+  # something else.
+  defp invoices(%{"invoices" => invoices, "next" => next}) when is_list(invoices) do
+    rows = Enum.map(invoices, &invoice/1)
+
+    if Enum.all?(rows, &is_map/1),
+      do: {:ok, %{rows: rows, next: next}},
+      else: {:error, :unavailable}
+  end
+
+  defp invoices(_other), do: {:error, :unavailable}
+
+  defp invoice(%{
+         "id" => id,
+         "createdAt" => at,
+         "agents" => agents,
+         "totalCents" => total,
+         "hostedUrl" => url
+       })
+       when is_binary(id) and is_binary(at) and is_integer(agents) and is_integer(total) and
+              (is_nil(url) or is_binary(url)) do
+    with {:ok, at, _offset} <- DateTime.from_iso8601(at),
+         true <- is_nil(url) or String.starts_with?(url, "https://") do
+      %{id: id, at: at, agents: agents, total: total, url: url}
+    end
+  end
+
+  defp invoice(_other), do: nil
 
   # A page of agents as the list shows them. An agent that isn't a wallet on a
   # chain SIWA signs in on means the service answered something else.
@@ -405,6 +520,8 @@ defmodule AshTemplateWeb.SiwaLive do
   defp write({:revoke_key, id, key_id}, token), do: SiwaControl.revoke_site_key(token, id, key_id)
   defp write({:archive, id}, token), do: SiwaControl.archive_site(token, id)
   defp write({:check_proof, id}, token), do: SiwaControl.check_site_proof(token, id)
+  defp write(:checkout, token), do: SiwaControl.checkout(token, url(~p"/siwa/billing"))
+  defp write(:portal, token), do: SiwaControl.portal(token, url(~p"/siwa/billing"))
 
   # The token this browser's sign-in holds here, or word that a trade is needed:
   # there is none, or the service says it is no longer good (`control_token_invalid`
@@ -497,6 +614,24 @@ defmodule AshTemplateWeb.SiwaLive do
     |> stream(:agents, rows)
   end
 
+  # Invoices go the same way, the first page in place of any before; billing off
+  # at SIWA shows as billing off.
+  defp landed(socket, name) when name in [:invoices, :more_invoices] do
+    case Map.fetch!(socket.assigns, name) do
+      %Read{value: {:refused, %Refusal{code: "billing_not_configured"}}} ->
+        billing_off(socket)
+
+      %Read{value: %{rows: rows, next: next}} = read ->
+        socket
+        |> assign(name, %{read | value: nil})
+        |> assign(invoices_next: next)
+        |> stream(:invoices, rows, reset: name == :invoices)
+
+      %Read{} ->
+        socket
+    end
+  end
+
   defp landed(socket, _name), do: socket
 
   defp wrote(socket, op, {:ok, {:ok, answer}}), do: done(socket, op, answer)
@@ -518,6 +653,13 @@ defmodule AshTemplateWeb.SiwaLive do
            %Refusal{status: 422, code: "control_fields_invalid", fields: %{"capCents" => _}}}}
        ),
        do: cap_error(socket, too_low(socket.assigns.company))
+
+  defp wrote(socket, _op, {:ok, {:error, %Refusal{code: "billing_not_configured"}}}),
+    do: billing_off(socket)
+
+  # The only field Subscribe and Manage send is this page's own address.
+  defp wrote(socket, op, {:ok, {:error, %Refusal{status: 422}}}) when op in [:checkout, :portal],
+    do: notice(socket, "billing", :error, "Billing can't open from this site right now.")
 
   defp wrote(socket, op, {:ok, {:error, %Refusal{status: 422, fields: fields}}})
        when map_size(fields) > 0,
@@ -590,6 +732,10 @@ defmodule AshTemplateWeb.SiwaLive do
   # The site after the check, proven or with why it isn't.
   defp done(socket, {:check_proof, id}, site), do: put_site(socket, id, &%{&1 | site: site})
 
+  # Stripe's own page, which sends the person back to Billing.
+  defp done(socket, op, %{"url" => url}) when op in [:checkout, :portal],
+    do: redirect(socket, external: url)
+
   # What a change answered is what a read would show now.
   defp put_read(socket, name, owner, value),
     do: Read.now(socket, name, owner, fn -> {:ok, value} end)
@@ -605,6 +751,12 @@ defmodule AshTemplateWeb.SiwaLive do
         socket
     end
   end
+
+  # A billing route that says billing is off says what the account would say now.
+  defp billing_off(%{assigns: %{company: %Read{value: %{"billing" => billing}}}} = socket),
+    do: put_company(socket, %{"billing" => %{billing | "configured" => false}})
+
+  defp billing_off(socket), do: socket
 
   defp put_site(socket, id, change) do
     case socket.assigns.site do
@@ -655,6 +807,7 @@ defmodule AshTemplateWeb.SiwaLive do
   defp section({:revoke_key, _id, _key_id}), do: "keys"
   defp section({:archive, _id}), do: "archive"
   defp section({:check_proof, _id}), do: "proof"
+  defp section(op) when op in [:checkout, :portal], do: "billing"
 
   @impl true
   def render(assigns) do
@@ -755,6 +908,16 @@ defmodule AshTemplateWeb.SiwaLive do
             pending={@pending}
             myself={@myself}
           />
+        <% {:billing, plan} -> %>
+          <.billing
+            plan={plan}
+            invoices={@invoices}
+            more={@more_invoices}
+            rows={@streams.invoices}
+            next={@invoices_next}
+            notice={@notices["billing"]}
+            myself={@myself}
+          />
         <% {:settings, customer} -> %>
           <.settings
             customer={customer}
@@ -811,6 +974,8 @@ defmodule AshTemplateWeb.SiwaLive do
   defp page_screen(%{page: :siwa_settings}, %{"customer" => customer}),
     do: {:settings, customer}
 
+  defp page_screen(%{page: :siwa_billing}, company), do: {:billing, plan(company)}
+
   defp page_screen(%{page: :siwa_sites, sites: sites}, _customer) do
     case view(sites) do
       {:ready, sites} -> {:sites, sites}
@@ -834,6 +999,7 @@ defmodule AshTemplateWeb.SiwaLive do
   defp title(:siwa_overview, _screen), do: "Overview"
   defp title(:siwa_sites, _screen), do: "Sites"
   defp title(:siwa_settings, _screen), do: "Settings"
+  defp title(:siwa_billing, _screen), do: "Billing"
   defp title(:siwa_site, {:site, site, _keys}), do: site["name"]
   defp title(:siwa_site, _screen), do: "Site"
 
@@ -841,6 +1007,7 @@ defmodule AshTemplateWeb.SiwaLive do
     do: "Your company's billing period: the agents counted, the fee so far and your cap."
 
   defp tip(:siwa_settings), do: "Your company's name, its owner and where to get help."
+  defp tip(:siwa_billing), do: "Your company's plan and its invoices."
 
   defp tip(:siwa_site),
     do: "This site's audience, origins, proof and keys, and how to check an agent."
@@ -923,12 +1090,12 @@ defmodule AshTemplateWeb.SiwaLive do
     ~H"""
     <section
       :if={is_nil(@usage)}
-      id="siwa-billing"
+      id="siwa-period-panel"
       class="account-panel siwa-card"
-      aria-labelledby="siwa-billing-title"
+      aria-labelledby="siwa-period-title"
     >
       <div class="siwa-head">
-        <h2 id="siwa-billing-title">Billing</h2>
+        <h2 id="siwa-period-title">Period</h2>
         <P.status>Not started</P.status>
       </div>
       <p class="rg-muted">
@@ -937,6 +1104,13 @@ defmodule AshTemplateWeb.SiwaLive do
         shows the period, its agents and the fee so far.
       </p>
       <div class="siwa-actions">
+        <.link
+          id="siwa-period-billing"
+          patch={~p"/siwa/billing"}
+          class="rg-button rg-button--secondary rg-button--no-arrow"
+        >
+          <span class="rg-button__label">Billing</span>
+        </.link>
         <.link patch={~p"/siwa/sites"} class="rg-button rg-button--secondary rg-button--no-arrow">
           <span class="rg-button__label">View sites</span>
         </.link>
@@ -1158,6 +1332,197 @@ defmodule AshTemplateWeb.SiwaLive do
 
   defp refusal(%Read{value: {:refused, refusal}}), do: {:error, refusal_words(refusal)}
   defp refusal(%Read{}), do: nil
+
+  attr :plan, :any, required: true, doc: "the Billing state, `plan/1`"
+  attr :invoices, Read, required: true
+  attr :more, Read, required: true
+  attr :rows, :any, required: true, doc: "the invoices stream"
+  attr :next, :string, default: nil
+  attr :notice, :any, default: nil
+  attr :myself, :any, required: true
+
+  defp billing(assigns) do
+    ~H"""
+    <section
+      id="siwa-plan"
+      class="account-panel"
+      aria-labelledby="siwa-plan-title"
+      data-plan={plan_name(@plan)}
+    >
+      <div class="siwa-head">
+        <h2 id="siwa-plan-title">Plan</h2>
+        <.plan_status plan={@plan} />
+      </div>
+      <%= case @plan do %>
+        <% :off -> %>
+          <p class="rg-muted">Billing is unavailable.</p>
+        <% :internal -> %>
+          <p class="rg-muted">Your company isn't billed.</p>
+        <% :subscribe -> %>
+          <.price />
+          <p class="rg-muted">
+            Production sites take no agents until you subscribe. Sandbox sites keep working.
+          </p>
+          <div class="siwa-actions">
+            <P.button
+              id="siwa-subscribe"
+              type="button"
+              phx-click="subscribe"
+              phx-target={@myself}
+              phx-disable-with="Opening…"
+            >
+              Subscribe
+            </P.button>
+            <span class="rg-muted">You'll pay on Stripe.</span>
+          </div>
+        <% {:running, status} -> %>
+          <.price />
+          <P.notice :if={status == "past_due"} id="siwa-past-due" tone="warning">
+            Your last payment failed. Press Manage to update your card.
+          </P.notice>
+          <div class="siwa-actions">
+            <P.button
+              id="siwa-manage"
+              type="button"
+              variant="secondary"
+              phx-click="manage"
+              phx-target={@myself}
+              phx-disable-with="Opening…"
+            >
+              Manage
+            </P.button>
+            <span class="rg-muted">Opens Stripe.</span>
+          </div>
+      <% end %>
+      <.notice id="siwa-billing-notice" notice={@notice} />
+    </section>
+
+    <section
+      :if={match?({:running, _status}, @plan)}
+      id="siwa-invoices-panel"
+      class="account-panel"
+      aria-labelledby="siwa-invoices-title"
+    >
+      <h2 id="siwa-invoices-title">Invoices</h2>
+      <p :if={@invoices.state == :empty} id="siwa-invoices-none" class="rg-muted">
+        No invoices yet.
+      </p>
+      <.invoice_list
+        :if={@invoices.state != :empty}
+        invoices={@invoices}
+        more={@more}
+        rows={@rows}
+        next={@next}
+        myself={@myself}
+      />
+    </section>
+    """
+  end
+
+  defp plan_name({:running, status}), do: status
+  defp plan_name(plan), do: Atom.to_string(plan)
+
+  attr :plan, :any, required: true
+
+  defp plan_status(%{plan: {:running, "active"}} = assigns),
+    do: ~H|<P.status tone="success">Active</P.status>|
+
+  defp plan_status(%{plan: {:running, "trialing"}} = assigns),
+    do: ~H|<P.status tone="info">Trial</P.status>|
+
+  defp plan_status(%{plan: {:running, "past_due"}} = assigns),
+    do: ~H|<P.status tone="warning">Past due</P.status>|
+
+  defp plan_status(assigns), do: ~H""
+
+  # The one SIWA price, in one figure and one line.
+  defp price(assigns) do
+    assigns =
+      assign(assigns,
+        base: money(@least_cap),
+        included: count(@included_agents),
+        each: money(@agent_cents)
+      )
+
+    ~H"""
+    <p>
+      <span id="siwa-price" class="siwa-stat__value">{@base}</span>
+      <span class="siwa-stat__note">a month</span>
+    </p>
+    <p class="rg-muted">Up to {@included} agents, then {@each} for each agent after.</p>
+    """
+  end
+
+  attr :invoices, Read, required: true
+  attr :more, Read, required: true
+  attr :rows, :any, required: true
+  attr :next, :string, default: nil
+  attr :myself, :any, required: true
+
+  defp invoice_list(assigns) do
+    ~H"""
+    <P.waiting id="siwa-invoices-box" state={box(@invoices)} class="siwa-invoices-box">
+      <div class="siwa-invoices__head" aria-hidden="true">
+        <span>Date</span>
+        <span>Agents</span>
+        <span>Total</span>
+        <span>Invoice</span>
+      </div>
+      <ul id="siwa-invoices" class="siwa-invoices" phx-update="stream">
+        <li :for={{dom_id, invoice} <- @rows} id={dom_id} class="siwa-invoices__row">
+          <time class="siwa-invoices__date" datetime={DateTime.to_iso8601(invoice.at)}>
+            {date(invoice.at)}
+          </time>
+          <span class="siwa-invoices__cell">{agent_count(invoice.agents)}</span>
+          <span class="siwa-invoices__cell">
+            <span class="visually-hidden">Total</span>
+            {money(invoice.total)}
+          </span>
+          <span :if={invoice.url} class="siwa-invoices__cell">
+            <a
+              id={"#{dom_id}-link"}
+              class="siwa-link"
+              href={invoice.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={"View the invoice of #{date(invoice.at)}"}
+            >
+              View
+            </a>
+          </span>
+        </li>
+      </ul>
+      <:retry>
+        <P.button
+          type="button"
+          variant="secondary"
+          arrow={false}
+          phx-click="list_invoices"
+          phx-target={@myself}
+        >
+          Try again
+        </P.button>
+      </:retry>
+    </P.waiting>
+    <div :if={@next && box(@invoices) == :ready} class="siwa-actions">
+      <P.button
+        id="siwa-invoices-more"
+        type="button"
+        variant="secondary"
+        arrow={false}
+        disabled={@more.state == :loading}
+        phx-click="more_invoices"
+        phx-target={@myself}
+      >
+        More
+      </P.button>
+    </div>
+    <P.notice :if={@more.state in [:error, :stale]} id="siwa-invoices-failed" tone="error">
+      The next invoices couldn't be loaded. Press More to try again.
+    </P.notice>
+    <.notice id="siwa-invoices-notice" notice={refusal(@invoices) || refusal(@more)} />
+    """
+  end
 
   attr :customer, :map, required: true
   attr :owner, :map, required: true, doc: "`AshTemplate.PublicIdentity.person/1`"
@@ -1774,6 +2139,9 @@ defmodule AshTemplateWeb.SiwaLive do
   end
 
   defp count(number), do: number |> Integer.to_string() |> RegentFormat.add_delimiters()
+
+  defp agent_count(1), do: "1 agent"
+  defp agent_count(agents), do: "#{count(agents)} agents"
 
   defp included(%{"activeAgents" => counted, "includedAgents" => included})
        when counted > included,

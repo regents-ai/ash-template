@@ -12354,3 +12354,37 @@ For the template chief to release. No migration. No new package.
 - Rollback: v275 (`bffb7103`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (717 walk tests passed, 6 skipped;
   354 Elixir; 376 script). Not proven: Safari, Firefox, real phones.
+
+## 2026-11-17 — SIWA: Billing
+
+- A Billing tab on the SIWA pages (`/siwa/billing`, between Sites and Settings) where a
+  person subscribes their company on Stripe, opens Stripe's billing page and reads the
+  company's invoices. It reads the company's `billing` from the account each visit and
+  shows one state (`AshTemplateWeb.SiwaLive.plan/1`): billing off at SIWA
+  (`configured: false`, or any billing route's `503 billing_not_configured`), then a
+  company SIWA doesn't bill (`kind: internal`), both with no buttons; a subscription that
+  isn't `active`, `trialing` or `past_due` with the price and Subscribe; a running one
+  with its status (past due says to update the card), Manage and its invoices, newest
+  first, twelve at a time into a stream with More, each with its date, agents, exact
+  total and Stripe's page when there is one. With no company the page asks for its name,
+  as every SIWA page does.
+- Subscribe and Manage ask SIWA for Stripe's page with Billing's own address to come back
+  to, and send the browser there; no timer and no waiting state, and the page reads the
+  account again on return. Too many tries, Stripe not answering, a subscription already
+  running or an address SIWA won't take are said beside the button; a refused page of
+  invoices is said beside the list; nothing changes.
+- `AshTemplate.SiwaControl` gains `checkout/2`, `portal/2` (an answer without an https
+  `url` is unavailable) and `list_invoices/2`. Overview's billing-not-started section is
+  now Period (`#siwa-period-panel`), with a link to Billing. Route catalog, search, page
+  descriptions, `docs/feature-map.md` and `docs/agent-parity.md` (person-only, money)
+  list the new page.
+- The walk's SIWA stand-in (`platform/test/browser/support/server/walk_control.ex`)
+  answers the account's `billing` and the three billing routes; Checkout is taken as paid
+  at once, since the walk never reaches Stripe, and the walk's browser turns Stripe's
+  addresses straight back to Billing. The billed person now subscribes, with fifteen
+  months of invoices; a new person for each width has billing off.
+- Checks: `mix test` 362 passed (352 tests, 10 properties); `npm test` 376 passed;
+  `sh test/browser/walk.sh siwa.spec.ts pages.spec.ts` 344 passed; `make check-style`
+  exit 0. Not proven: the real SIWA service and Stripe (every check uses a stand-in); SIWA
+  takes only an https address to come back to, so Subscribe and Manage on a local
+  `http://localhost` server are refused by the real service.

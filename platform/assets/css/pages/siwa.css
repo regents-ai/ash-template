@@ -223,7 +223,7 @@
   overflow-wrap: normal;
 }
 
-/* Overview: a card for billing before it starts and for each figure of a period. */
+/* Overview: a card for the period before it starts and for each figure of one. */
 .siwa-card {
   padding: var(--space-3);
   border: 1px solid var(--ash-raised);
@@ -333,26 +333,30 @@
   pointer-events: none;
 }
 
-/* Agents: on a phone, the wallet on its line and its chain, site and first day
-   on a quieter one below, a dot between each; columns once there is room. Each
-   cell keeps its name for screen readers. The box keeps a list's height while
-   the first page is on its way. */
-.siwa-agents-box:not([data-state="ready"]) {
+/* Agents and invoices: on a phone, the wallet or the date on its line and the
+   rest on a quieter one below, a dot between each; columns once there is room.
+   Each cell keeps its name for screen readers. The box keeps a list's height
+   while the first page is on its way. */
+.siwa-agents-box:not([data-state="ready"]),
+.siwa-invoices-box:not([data-state="ready"]) {
   min-block-size: 12rem;
 }
 
-.siwa-agents {
+.siwa-agents,
+.siwa-invoices {
   display: grid;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.siwa-agents__head {
+.siwa-agents__head,
+.siwa-invoices__head {
   display: none;
 }
 
-.siwa-agents__row {
+.siwa-agents__row,
+.siwa-invoices__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -361,36 +365,43 @@
   padding-block: var(--space-2);
 }
 
-.siwa-agents__row + .siwa-agents__row {
+.siwa-agents__row + .siwa-agents__row,
+.siwa-invoices__row + .siwa-invoices__row {
   border-block-start: 1px solid var(--ash-raised);
 }
 
-.siwa-agents__agent {
+.siwa-agents__agent,
+.siwa-invoices__date {
   flex-basis: 100%;
 }
 
-.siwa-agents__cell {
+.siwa-agents__cell,
+.siwa-invoices__cell {
   min-width: 0;
   color: var(--ash-quiet);
   font-size: var(--type-caption-size);
   line-height: var(--type-caption-line);
 }
 
-.siwa-agents__cell + .siwa-agents__cell::before {
+.siwa-agents__cell + .siwa-agents__cell::before,
+.siwa-invoices__cell + .siwa-invoices__cell::before {
   content: "·" / "";
   margin-inline-end: var(--space-1);
 }
 
 @media (min-width: 48rem) {
   .siwa-agents__head,
-  .siwa-agents__row {
+  .siwa-agents__row,
+  .siwa-invoices__head,
+  .siwa-invoices__row {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.7fr) minmax(0, 1.3fr) minmax(0, 0.8fr);
     align-items: center;
     gap: var(--space-3);
   }
 
-  .siwa-agents__head {
+  .siwa-agents__head,
+  .siwa-invoices__head {
     padding-block-end: var(--space-1);
     border-block-end: 1px solid var(--ash-raised);
     color: var(--ash-quiet);
@@ -399,13 +410,15 @@
     line-height: var(--type-label-line);
   }
 
-  .siwa-agents__cell {
+  .siwa-agents__cell,
+  .siwa-invoices__cell {
     color: inherit;
     font-size: inherit;
     line-height: inherit;
   }
 
-  .siwa-agents__cell + .siwa-agents__cell::before {
+  .siwa-agents__cell + .siwa-agents__cell::before,
+  .siwa-invoices__cell + .siwa-invoices__cell::before {
     content: none;
   }
 }

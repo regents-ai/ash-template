@@ -70,6 +70,11 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     "createdAt" => @at,
     "revokedAt" => nil
   }
+  # Billing on at SIWA, for a company that hasn't subscribed.
+  @billing %{"configured" => true, "subscriptionStatus" => nil}
+  @checkout "https://checkout.stripe.com/c/pay/cs_test_a1"
+  @portal "https://billing.stripe.com/p/session/test_a1"
+  @hosted "https://invoice.stripe.com/i/acct_1/test_a1"
 
   setup do
     owner = Ecto.Adapters.SQL.Sandbox.start_owner!(AshTemplate.Repo, shared: true)
@@ -130,10 +135,47 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     {status, %{error: if(fields, do: Map.put(error, :fields, fields), else: error)}}
   end
 
-  defp company(customer \\ @customer, usage \\ nil) do
-    account = %{did: "did:privy:siwa-live", customer: customer, usage: usage}
+  defp company(customer \\ @customer, usage \\ nil, billing \\ @billing) do
+    account = %{did: "did:privy:siwa-live", customer: customer, usage: usage, billing: billing}
     %{{"GET", @base <> "/account"} => ok("account", account)}
   end
+
+  # A company whose subscription is `status`, with `invoices` as its first page.
+  defp subscribed(status, invoices) do
+    billing = %{@billing | "subscriptionStatus" => status}
+
+    Map.put(
+      company(@customer, @usage, billing),
+      {"GET", @base <> "/billing/invoices"},
+      ok("invoices", invoices)
+    )
+  end
+
+  defp invoice(id, at, agents, total_cents, hosted_url) do
+    %{
+      id: id,
+      createdAt: at,
+      periodStartsAt: at,
+      periodEndsAt: at,
+      totalCents: total_cents,
+      status: "paid",
+      hostedUrl: hosted_url,
+      agents: agents
+    }
+  end
+
+  # The invoices listed, top to bottom.
+  defp invoice_ids(view) do
+    view
+    |> element("#siwa-invoices")
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("li")
+    |> LazyHTML.attribute("id")
+  end
+
+  # Where Stripe sends the person back to: Billing on this site.
+  defp return_url, do: AshTemplateWeb.Endpoint.url() <> "/siwa/billing"
 
   defp agent(chain_id, digit, site_id, at) do
     %{
@@ -425,11 +467,12 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     assert has_element?(view, "#siwa-company-name[value='Acme Labs']")
   end
 
-  test "Overview before billing starts says so, asks for no agents, and sets, refuses and removes a cap",
+  test "Overview before billing starts says so, links to Billing, asks for no agents, and sets, refuses and removes a cap",
        %{browser: browser} do
     service(company())
     view = open(browser, "/siwa")
-    assert has_element?(view, "#siwa-billing")
+    assert has_element?(view, "#siwa-period-panel")
+    assert has_element?(view, "#siwa-period-billing[href='/siwa/billing']")
     refute has_element?(view, "#siwa-usage")
     refute has_element?(view, "#siwa-agents-panel")
     assert_received {:asked, "GET", "/api/control/v1/account", _sent}
@@ -547,10 +590,183 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     assert has_element?(view, "#siwa-agents-more")
   end
 
+  test "Billing asks a person with no company to name it, and offers a company not subscribed Subscribe, which opens Stripe's page and comes back here",
+       %{browser: browser} do
+    service(company(nil))
+    view = open(browser, "/siwa/billing")
+    assert has_element?(view, "#siwa-company-form")
+    refute has_element?(view, "#siwa-plan")
+
+    # Any status but a running one has no subscription to manage.
+    for status <- [nil, "incomplete", "incomplete_expired", "canceled", "unpaid", "paused"] do
+      service(company(@customer, nil, %{@billing | "subscriptionStatus" => status}))
+      view = open(browser, "/siwa/billing")
+
+      assert has_element?(view, "#siwa-plan[data-plan='subscribe']")
+      assert view |> element("#siwa-price") |> render() =~ "$99.00"
+      assert has_element?(view, "#siwa-subscribe")
+      refute has_element?(view, "#siwa-manage")
+      refute has_element?(view, "#siwa-invoices-panel")
+    end
+
+    refute_received {:asked, "GET", "/api/control/v1/billing/invoices", _sent}
+
+    checkout = @base <> "/billing/checkout"
+    service(Map.put(company(), {"POST", checkout}, ok("billing_checkout", %{url: @checkout})))
+    view = open(browser, "/siwa/billing")
+    view |> element("#siwa-subscribe") |> render_click()
+
+    assert_redirect(view, @checkout)
+    assert_received {:asked, "POST", ^checkout, sent}
+    assert Jason.decode!(sent) == %{"returnUrl" => return_url()}
+  end
+
+  test "a running subscription shows its status and Manage, which opens Stripe's billing page, and lists its invoices newest first, a page at a time",
+       %{browser: browser} do
+    first = %{
+      invoices: [
+        invoice("in_3", "2026-11-01T09:31:02Z", 2_500, 24_750, @hosted),
+        invoice("in_2", "2026-10-01T09:31:02Z", 1, 9_900, nil)
+      ],
+      next: "in_2"
+    }
+
+    for {status, past_due?} <- [{"active", false}, {"trialing", false}, {"past_due", true}] do
+      service(subscribed(status, first))
+      view = open(browser, "/siwa/billing")
+
+      assert has_element?(view, "#siwa-plan[data-plan='#{status}']")
+      assert has_element?(view, "#siwa-manage")
+      refute has_element?(view, "#siwa-subscribe")
+      assert has_element?(view, "#siwa-past-due") == past_due?
+    end
+
+    service(subscribed("active", first))
+    view = open(browser, "/siwa/billing")
+
+    assert invoice_ids(view) == ["siwa-invoice-in_3", "siwa-invoice-in_2"]
+    assert has_element?(view, "#siwa-invoice-in_3 time[datetime='2026-11-01T09:31:02Z']")
+    assert view |> element("#siwa-invoice-in_3") |> render() =~ "2,500"
+    assert view |> element("#siwa-invoice-in_3") |> render() =~ "$247.50"
+    assert has_element?(view, "#siwa-invoice-in_3-link[href='#{@hosted}']")
+    # An invoice Stripe gives no page for has no link.
+    refute has_element?(view, "#siwa-invoice-in_2-link")
+    assert_received {:asked, "GET", "/api/control/v1/billing/invoices", _sent}
+
+    last = %{invoices: [invoice("in_1", "2026-09-01T09:31:02Z", 0, 0, @hosted)], next: nil}
+    more = {"GET", @base <> "/billing/invoices?after=in_2"}
+    service(Map.put(subscribed("active", first), more, ok("invoices", last)))
+    view |> element("#siwa-invoices-more") |> render_click()
+    render_async(view)
+
+    assert invoice_ids(view) == ["siwa-invoice-in_3", "siwa-invoice-in_2", "siwa-invoice-in_1"]
+    assert view |> element("#siwa-invoice-in_1") |> render() =~ "$0.00"
+    refute has_element?(view, "#siwa-invoices-more")
+    assert_received {:asked, "GET", "/api/control/v1/billing/invoices?after=in_2", _sent}
+
+    portal = @base <> "/billing/portal"
+    service(Map.put(subscribed("active", first), {"POST", portal}, ok("billing_portal", %{url: @portal})))
+    view |> element("#siwa-manage") |> render_click()
+
+    assert_redirect(view, @portal)
+    assert_received {:asked, "POST", ^portal, sent}
+    assert Jason.decode!(sent) == %{"returnUrl" => return_url()}
+  end
+
+  test "a subscription with no invoices yet lists none", %{browser: browser} do
+    service(subscribed("trialing", %{invoices: [], next: nil}))
+    view = open(browser, "/siwa/billing")
+
+    assert has_element?(view, "#siwa-invoices-none")
+    refute has_element?(view, "#siwa-invoices-box")
+  end
+
+  test "billing off at SIWA, said by the account or by any billing route, shows no buttons",
+       %{browser: browser} do
+    off = %{"configured" => false, "subscriptionStatus" => nil}
+
+    # Off comes first, even for a company SIWA doesn't bill.
+    for customer <- [@customer, %{@customer | "kind" => "internal"}] do
+      service(company(customer, nil, off))
+      view = open(browser, "/siwa/billing")
+
+      assert has_element?(view, "#siwa-plan[data-plan='off']")
+      refute has_element?(view, "#siwa-plan button")
+      refute has_element?(view, "#siwa-invoices-panel")
+    end
+
+    invoices = {"GET", @base <> "/billing/invoices"}
+    service(Map.put(subscribed("active", nil), invoices, refused(503, "billing_not_configured")))
+    view = open(browser, "/siwa/billing")
+    assert has_element?(view, "#siwa-plan[data-plan='off']")
+    refute has_element?(view, "#siwa-plan button")
+    refute has_element?(view, "#siwa-invoices-panel")
+
+    checkout = {"POST", @base <> "/billing/checkout"}
+    service(Map.put(company(), checkout, refused(503, "billing_not_configured")))
+    view = open(browser, "/siwa/billing")
+    view |> element("#siwa-subscribe") |> render_click()
+    render_async(view)
+    assert has_element?(view, "#siwa-plan[data-plan='off']")
+    refute has_element?(view, "#siwa-plan button")
+  end
+
+  test "a company SIWA doesn't bill is told so, with no buttons", %{browser: browser} do
+    service(company(%{@customer | "kind" => "internal"}, @usage))
+    view = open(browser, "/siwa/billing")
+
+    assert has_element?(view, "#siwa-plan[data-plan='internal']")
+    refute has_element?(view, "#siwa-plan button")
+    refute has_element?(view, "#siwa-invoices-panel")
+    refute_received {:asked, "GET", "/api/control/v1/billing/invoices", _sent}
+  end
+
+  test "too many tries, Stripe not answering or a page SIWA won't open is said beside the button, and nothing changes",
+       %{browser: browser} do
+    checkout = {"POST", @base <> "/billing/checkout"}
+    service(company())
+    view = open(browser, "/siwa/billing")
+
+    for refusal <- [
+          refused(429, "rate_limited"),
+          refused(502, "billing_provider_failed"),
+          refused(409, "subscription_exists"),
+          refused(422, "control_fields_invalid", %{returnUrl: ["is not an allowed origin"]})
+        ] do
+      service(Map.put(company(), checkout, refusal))
+      view |> element("#siwa-subscribe") |> render_click()
+      render_async(view)
+
+      assert has_element?(view, "#siwa-billing-notice")
+      assert has_element?(view, "#siwa-plan[data-plan='subscribe']")
+      assert has_element?(view, "#siwa-subscribe")
+    end
+
+    # The first page of invoices, refused, lists none and says why.
+    invoices = {"GET", @base <> "/billing/invoices"}
+    service(Map.put(subscribed("active", nil), invoices, refused(429, "rate_limited")))
+    view = open(browser, "/siwa/billing")
+    assert has_element?(view, "#siwa-invoices-notice")
+    refute has_element?(view, "#siwa-invoices li")
+    assert has_element?(view, "#siwa-manage")
+
+    # The next page, refused, keeps the invoices listed and More.
+    first = %{invoices: [invoice("in_3", "2026-11-01T09:31:02Z", 2_500, 24_750, @hosted)], next: "in_3"}
+    more = {"GET", @base <> "/billing/invoices?after=in_3"}
+    service(Map.put(subscribed("active", first), more, refused(502, "billing_provider_failed")))
+    view = open(browser, "/siwa/billing")
+    view |> element("#siwa-invoices-more") |> render_click()
+    render_async(view)
+
+    assert has_element?(view, "#siwa-invoices-notice")
+    assert invoice_ids(view) == ["siwa-invoice-in_3"]
+    assert has_element?(view, "#siwa-invoices-more")
+  end
+
   test "signed out, the pages offer sign-in and ask SIWA nothing" do
     service(company())
 
-    for path <- ["/siwa", "/siwa/sites", "/siwa/sites/#{@site["id"]}", "/siwa/settings"] do
+    for path <- ["/siwa", "/siwa/sites", "/siwa/sites/#{@site["id"]}", "/siwa/billing", "/siwa/settings"] do
       html = build_conn() |> get(path) |> html_response(200)
       assert html |> LazyHTML.from_document() |> LazyHTML.query("#siwa-signed-out") |> Enum.any?()
     end

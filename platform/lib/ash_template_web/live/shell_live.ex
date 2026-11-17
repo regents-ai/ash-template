@@ -403,7 +403,7 @@ defmodule AshTemplateWeb.ShellLive do
         <DesignLive.page :if={@route_spec.route_id == :design} />
 
         <.live_component
-          :if={@route_spec.route_id in [:siwa_overview, :siwa_sites, :siwa_settings]}
+          :if={@route_spec.route_id in [:siwa_overview, :siwa_sites, :siwa_billing, :siwa_settings]}
           module={SiwaLive}
           id="siwa"
           lease={@session_lease}
