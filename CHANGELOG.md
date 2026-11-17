@@ -12217,3 +12217,13 @@ loaded only when the button is pressed.
 - The template asks for the newest command line, 1.10.31 (source commit `2e8b98c7`): the agent
   guide, the install lines, the capability list and the Makefile's pin name it. The
   `regents ash-template` commands are the same as in 1.10.30.
+
+## 2026-11-17 — Released v273: shorter Connect and Connected apps pages
+
+- v273 on template.regents.sh carries the three entries above: the shorter Connect and
+  Connected apps pages (elixir-utils pin `f7b3a81`; upstream row 3), regents-cli 1.10.31,
+  and the walk at five browsers. No migration; no sign-in address, token or permission
+  changed.
+- Rollback: v272 (`84d5bc2c`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (713 walk tests passed, 6 skipped;
+  354 Elixir; 373 script).
