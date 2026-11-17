@@ -95,6 +95,22 @@ it("nothing is written without a sign-in", async () => {
   expect(page.saved).toEqual([])
 })
 
+it("a person with no profile yet is answered after one read, with nothing written", async () => {
+  const service = site("did:a")
+  // Signed in before profiles were made at sign-in: the session is good, the profile is not there.
+  service.profiles.delete("did:a")
+  let requests = 0
+  const counting: typeof globalThis.fetch = (input, init) => { requests += 1; return service.fetch(input, init) }
+  const page = accountPage(counting)
+
+  await page.press("Ada")
+  expect(requests).toBe(1)
+  expect(service.writes).toEqual([])
+  expect(page.attributes.has("aria-busy")).toBe(false)
+  expect(page.status.textContent).not.toBe("")
+  expect(page.saved).toEqual([])
+})
+
 it("a switch of account after the first read saves nothing to either account", async () => {
   const service = site("did:a")
   // Another tab signs in as someone else once this save has read the profile.

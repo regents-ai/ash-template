@@ -12138,3 +12138,18 @@ loaded only when the button is pressed.
   No migration, no pin change; API unchanged.
 - Rollback: v270 (`956da3d5`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-17 — Name form: "Sign in again" for a person with no profile yet
+
+- The design-system pin moves to `539a9e49` (one commit on `2b45076d`; upstream row 4).
+  A profile is made at sign-in since v250, so a person who signed in before it has none
+  until they sign in again. Save on the Account page's Public Display Name answered that
+  with a second request the sites no longer serve and then said only that the name could
+  not be saved. It now reads once and says "Sign in again to save your name."
+- Test (`platform/assets/test/public_name.test.ts`): a signed-in person with no profile
+  is answered after one request with nothing written and the form ready. It passes on
+  the old pin too (the profile client never sent the second request), so what changed
+  for a person is the sentence, which no test asserts.
+- A site takes this design-system commit only once it has the shared profile change of
+  v250 (`rollouts/2026-11-14-public-name-saves.md`); before it, the removed second
+  request is what makes the profile.
