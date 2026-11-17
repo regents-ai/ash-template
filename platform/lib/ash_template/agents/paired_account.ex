@@ -32,7 +32,7 @@ defmodule AshTemplate.Agents.PairedAccount do
   The person's profile code: the ID of their shared Regent profile
   (`RegentIdentity.profile_id/2`), which a hello card names as its `person`. Nil
   until they have a profile, which their first sign-in with a wallet makes; the
-  pairing read then answers `not_paired_here`. A profile that can't be read
+  pairing read then answers `person_has_no_profile`. A profile that can't be read
   raises, so the SIWA service hears the site failed, never that the agent is not
   paired.
   """

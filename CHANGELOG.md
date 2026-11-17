@@ -12423,9 +12423,10 @@ For the template chief to release. No migration. No new package.
 - The SIWA service can give an agent a hello card naming this site: its signed note, good
   for a day, that the site said the agent is paired with a person here. Before it gives
   one, the service asks this site with `POST /api/agents/v1/pairing` and its own service
-  token alone. The elixir-utils pin moves from `f7b3a81` to `b9063e8`, which is
-  elixir-utils main `7b0e4a5` (lock files only since `f7b3a81`) plus hello cards
-  (`RegentAgents.HelloCard` and the pairing read in `RegentAgents.HTTP`).
+  token alone. The elixir-utils pin moves from `f7b3a81` to `d3237c5` (branch
+  `eu/hello-card-1117`), which is elixir-utils main `7b0e4a5` (lock files only since
+  `f7b3a81`) plus hello cards (`RegentAgents.HelloCard` and the pairing read in
+  `RegentAgents.HTTP`).
 - Settings. `platform/config/config.exs`:
   `person: {AshTemplate.Agents.PairedAccount, :person}` names the person by their profile
   code, the id of their shared Regent profile read with `RegentIdentity.profile_id/2`,
@@ -12435,10 +12436,11 @@ For the template chief to release. No migration. No new package.
   dev and test), which the service's token must name.
 - A paired person can have no profile: one is made at sign-in with a wallet (from v250),
   so a person who last signed in before v250, signed in only without a wallet, or paired
-  from another site and never signed in here has none. The pairing read then answers 404
-  `not_paired_here` until they sign in here with a wallet; nothing stands in for the
-  profile. A profile that can't be read raises, so the service hears the site failed,
-  never that the agent is not paired.
+  from another site and never signed in here has none. Until they sign in here with a
+  wallet, the pairing read answers their paired agent 409 `person_has_no_profile` and the
+  service gives no card; 404 `not_paired_here` is only for an agent with no pairing.
+  Nothing stands in for the profile. A profile that can't be read raises, so the service
+  hears the site failed, never that the agent is not paired.
 - The card. `AshTemplateWeb.Plugs.AgentWallet.accept/3` (the API and every signed agent
   call through it) and `AshTemplateWeb.Plugs.McpAgent.accept/3` (signed calls at `/mcp`)
   keep a card that passes for the request's own wallet as `conn.assigns.hello_card`, else
@@ -12455,14 +12457,14 @@ For the template chief to release. No migration. No new package.
   a page never greets or names anyone with the profile code.
 - Tests: `platform/test/ash_template_web/hello_card_test.exs`, through the real endpoint and
   router with an Ed25519 key made in the test and the service's published keys stood in
-  for: 200 with exactly `name`, `person` (the profile id) and `pairedAt`; 404 when unpaired
-  and when the person has no profile; 401 for no token, an unpublished key, another site's
+  for: 200 with exactly `name`, `person` (the profile id) and `pairedAt`; 404 when unpaired;
+  409 when the person has no profile; 401 for no token, an unpublished key, another site's
   address, another agent, a card sent as a token and a body naming another agent; a card
   kept on the API and at `/mcp` for the agent's own wallet, nil for another wallet's, an
   expired one or none, with the request answering 200 each time.
 - Checks: `mix format --check-formatted` and `mix compile --warnings-as-errors` exit 0;
-  `mix test` 367 passed (357 tests, 10 properties); `npm test` 376 passed;
-  `sh test/browser/walk.sh pages.spec.ts` 336 passed; `make check-style` and
+  `mix test` 368 passed (358 tests, 10 properties); `npm test` 376 passed;
+  `sh test/browser/walk.sh pages.spec.ts reading.spec.ts` 352 passed; `make check-style` and
   `make check-required-fixes` exit 0. Not proven: a card from the real SIWA service and
   its real pairing read (every check uses a stand-in); the production and dev `origin`
   values, run only in test; a busy service address meeting `/api`'s 120 a minute.

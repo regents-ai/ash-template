@@ -75,16 +75,19 @@ defmodule AshTemplateWeb.HelloCardTest do
       assert_visit_lines_kept()
     end
 
-    test "says an agent is not paired here when it has no pairing, or its person has no profile yet",
-         %{key: key, from: from} do
+    test "says an agent with no pairing is not paired here", %{key: key, from: from} do
       token = sign(key, @service, token_claims())
 
       assert {404, "not_paired_here"} = refusal(ask(token, %{"subject" => @subject}, from))
+      assert_visit_lines_kept()
+    end
 
+    test "says a paired agent's person has no profile yet", %{key: key, from: from} do
       # Paired by a person who has never signed in here, so has no profile yet.
       pair("did:privy:never-signed-in")
+      token = sign(key, @service, token_claims())
 
-      assert {404, "not_paired_here"} = refusal(ask(token, %{"subject" => @subject}, from))
+      assert {409, "person_has_no_profile"} = refusal(ask(token, %{"subject" => @subject}, from))
       assert_visit_lines_kept()
     end
 
