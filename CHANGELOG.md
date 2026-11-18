@@ -12883,3 +12883,25 @@ For the template chief to release. No migration. No new package.
   kept twelve more threads busy (load average 70 to 116); the phone Zoom in check 20 of
   20 under that load; `npm run test:browser` 782 passed, 7 skipped. Not proven: Safari,
   Firefox, real phones.
+
+## 2026-11-18 — Splats: Download GIF takes a press from the moment the scene has drawn
+
+- Why: with less motion, the site's rule that gives every element a 0.01 ms transition
+  (`platform/assets/css/app.css`) also delayed Download GIF's showing and hiding by one
+  frame, since its page does both with `visibility`. For that frame after the scene had
+  drawn, the button could not take the keyboard. The phone's keyboard GIF check focused
+  it in that frame, so Enter landed on the page and no GIF was made. For one frame after
+  the scene was let go, the button stayed pressable, and a press then did nothing.
+- What: Download GIF's box (`.splat-gif`, `platform/assets/css/components/splat_stage.css`)
+  has no transition, so it shows and hides at the same moment as its scene's box, on the
+  Splats page and the Scenes page. A press reads the scene when it is made
+  (`platform/assets/js/hooks/splat_gif.ts`) instead of doing nothing when there is none.
+- Tests: in `platform/test/browser/splats.spec.ts` the keyboard GIF check expects the button
+  busy right after Enter, and a new check moves the keyboard to Download GIF the same moment
+  the island says it has drawn, then presses Enter and gets the GIF. That new check failed
+  20 of 20 before this change and passes 20 of 20 after it.
+- Checks: `npm run typecheck` exits 0; `npm test` 499 passed; `walk.sh splats.spec.ts
+  scenes.spec.ts` passed three runs in a row (52 passed, 2 skipped each), the third while
+  eight extra loops kept the machine busy (load average 103 to 129); the keyboard GIF check
+  20 of 20 on the phone under that load; `npm run test:browser` 784 passed, 7 skipped.
+  Not proven: Safari, Firefox, real phones.

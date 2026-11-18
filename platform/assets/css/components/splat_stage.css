@@ -79,9 +79,12 @@
 /* Download GIF (`SplatStage.gif/1`): a box of no size of its own, so its page places
    the line saying it failed and the button, and shows it once its scene has drawn.
    Every word the button can say sits in one place, so it keeps the widest; the failed
-   line keeps its place unseen until a GIF fails. */
+   line keeps its place unseen until a GIF fails. It shows and hides in the same moment
+   as its scene's box says it has drawn or lets the scene go, with less motion too: the
+   site's less-motion rule (app.css) would otherwise hold its old visibility a frame. */
 .splat-gif {
   display: contents;
+  transition: none;
 }
 
 .splat-gif__failed {

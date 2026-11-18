@@ -23,7 +23,8 @@ import {expect, test} from "./support/test"
 // Download GIF: it shows at the end of the tabs' row once the scene has drawn, counts
 // up in place while it works, takes no second press, and saves the scene's GIF; a
 // failure says so beside it; choosing the other scene stops it; without WebGPU it is
-// not offered; and with less motion it still saves one, pressed from the keyboard.
+// not offered; and with less motion it still saves one, pressed from the keyboard, and
+// takes the keyboard in the same moment the scene says it has drawn.
 // A picture compared after a drag, a key, a zoom or a swipe is taken once two in a row
 // agree (steady), so a frame that lands late on a busy machine is waited for.
 test.use({launchOptions: {args: ["--enable-unsafe-webgpu", "--enable-gpu"]}})
@@ -600,10 +601,31 @@ test.describe("with less motion", () => {
     const download = page.waitForEvent("download", {timeout: WHOLE_GIF})
     await button.focus()
     await page.keyboard.press("Enter")
+    await expect(button).toHaveAttribute("aria-busy", "true")
     const gif = await download
     expect(gif.suggestedFilename()).toBe("regents-island.gif")
     expect(await opening(gif)).toEqual(GIF)
     await expect(button).toBeFocused()
+    expect(saved).toHaveLength(1)
+  })
+
+  test("Download GIF takes the keyboard from the moment the scene has drawn", async ({page}) => {
+    test.setTimeout(30_000 + WHOLE_GIF)
+    // Moves the keyboard to Download GIF in the same moment the island says it has drawn.
+    await page.addInitScript(() => {
+      const ready = new MutationObserver(() => {
+        if (document.getElementById("splats-island")?.dataset.splatsReady !== "true") return
+        ready.disconnect()
+        document.getElementById("splats-island-gif-button")!.focus()
+      })
+      ready.observe(document, {subtree: true, attributeFilter: ["data-splats-ready"]})
+    })
+    const {button, saved} = await openForGif(page, "island")
+    await expect(button).toBeFocused()
+    const download = page.waitForEvent("download", {timeout: WHOLE_GIF})
+    await page.keyboard.press("Enter")
+    await expect(button).toHaveAttribute("aria-busy", "true")
+    expect((await download).suggestedFilename()).toBe("regents-island.gif")
     expect(saved).toHaveLength(1)
   })
 

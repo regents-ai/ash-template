@@ -3,7 +3,8 @@
  * which names the box in `data-splats-box`). A press makes a GIF of the scene the box is
  * drawing (`splats/gif.ts`, loaded on the first press) and saves it as
  * `regents-<scene>.gif`, after the box's `data-splats-scene`. Its page shows it only
- * once the scene has drawn; a press before the box has a renderer does nothing.
+ * while the box holds a drawn scene, from its first frame until the box lets its
+ * renderer go, so every press finds the scene.
  *
  * While it works the button counts up in place, says so to a screen reader every
  * quarter, and a second press does nothing; a failure says so beside it. Choosing
@@ -40,17 +41,18 @@ export function createSplatGif(control: HTMLElement) {
   }
 
   const make = async () => {
-    const drawing = rendererOf(box)
-    if (making || !drawing) return
+    if (making) return
     const current = new AbortController()
     making = current
     done.textContent = "0%"
     show("making", "Making the GIF")
     try {
+      // Offered only while its box holds a drawn scene, so the renderer is there.
+      const {scene} = rendererOf(box)!
       const {makeGif} = await import("../splats/gif")
       let quarter = 0
       const bytes = await makeGif(
-        drawing.scene,
+        scene,
         share => {
           done.textContent = `${Math.floor(share * 100)}%`
           if (Math.floor(share * 4) > quarter && share < 1) {
