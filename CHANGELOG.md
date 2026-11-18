@@ -12738,3 +12738,53 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (748 walk tests passed, 7 skipped;
   375 Elixir; 386 script). Not proven: Safari (a trackpad pinch there is not handled and
   will probably zoom the whole page), Firefox, real phones.
+
+## 2026-11-18 — A press on a page still rejoining counts as no connection
+
+- When a page joins again with a form that has an `id` and `phx-change` (the wallet
+  example's number), LiveView 1.2.13 joins, sends the form back to the fresh server, and
+  draws the fresh page only once that is answered (`onJoin` runs `maybeRecoverForms`
+  before `applyJoinPatch`, and hooks hear `reconnected` after the draw). In that moment
+  the channel is joined but the page on screen is the old one, and a hook's push takes
+  its component number from the old page. A fresh server numbers its components in the
+  order it first draws them, so that number can belong to another component, or to none;
+  on another site such a push crashed the page.
+- `platform/assets/js/hooks/onchain_steps.ts` now sends nothing from its `disconnected`
+  until its `reconnected`: one flag, set in the first, cleared at the start of the
+  second, and checked where the hook pushes, which then reaches no one, as with no
+  connection. By Sean's decision (18 Nov: "the wallet just doesnt get it and the user can
+  retry"), a press in that moment counts as one with no connection: a press that must ask
+  for its steps sends nothing, the wallet is asked nothing, and the lost line shows; a
+  press from the steps the page holds still reaches the wallet at once, and its answer is
+  not reported (the unreported line, or the lost line for a refusal), as when a report's
+  push fails. The open wallet is not reported then either; `reconnected` reports it.
+  Nothing waits for the fresh page, nothing is kept to send later, and the button's mark
+  comes off when the press ends. The person presses again.
+- v283's press after a reconnect is unchanged once the page is back: it asks for its
+  steps naming the open wallet and reaches that wallet. A press in the rejoining moment
+  after the number changed, which v283 sent, now sends nothing and says so.
+- `skills/onchain-buttons/SKILL.md` has rule 11 for it, and
+  `skills/onchain-buttons/references/hook-pattern.md` a section "A stale page", with the
+  checks updated. `docs/feature-map.md`: the reconnect row, and the gaps, where a wallet
+  answer in that moment is no longer shown as not this page's step but is not passed on,
+  as offline. Comments in `platform/lib/ash_template_web/components/onchain_example.ex`,
+  `platform/test/ash_template_web/onchain_prepare_test.exs` and the hook no longer say a
+  page that has joined again can ask before it reports its wallet, or that a line put
+  back after a reconnect outlives the component's next draw.
+- Tests: `platform/assets/test/onchain_steps.test.ts` (3 new) presses on a stale page: one
+  that must ask pushes nothing, asks the wallet nothing and shows the lost line; one from
+  held steps reaches the wallet, pushes nothing and shows the unreported line; neither
+  leaves the button marked; pressed again after `reconnected`, the press asks once and
+  reaches the wallet once. With the old hook and an empty `disconnected` all 3 failed.
+  The existing rejoin test now runs `disconnected` before `reconnected`, as LiveView does.
+  `platform/test/browser/wallet_press_reconnect.spec.ts`: while LiveView sends the form
+  back, the press from held steps still reaches the wallet, and now shows the unreported
+  line with none of the buttons' events sent; the press after the number changed now asks
+  the wallet nothing, shows the lost line, sends none of the buttons' events, and pressed
+  again once the page is back reaches the wallet and is followed (before, that first
+  press reached the wallet). On the old hook both failed at both widths.
+- Checks: `npm test` 383 passed (25 files); `npm run typecheck` exit 0; `mix compile
+  --warnings-as-errors` exit 0; `mix format --check-formatted` on the two Elixir files
+  exit 0; `sh test/browser/walk.sh wallet_press_reconnect.spec.ts --repeat-each 3` 24
+  passed. Not run here: the full `make check`. Not proven: a real wallet over a real
+  dropped connection; Safari, Firefox, real phones.

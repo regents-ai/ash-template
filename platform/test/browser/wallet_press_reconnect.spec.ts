@@ -2,12 +2,16 @@ import type {Locator, Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {signedIn, watch} from "./support/person"
 
-// Every wallet press reaches the wallet while the page's live connection drops
-// and comes back: with the page offline, while LiveView is still sending the
-// form back to the server as the page joins again, and once it is back. A press
-// whose steps the server built is then read against them; the walk's chain is a
-// closed port, so its line stays "pending" (or "stalled" once the server stops
-// reading).
+// Wallet presses while the page's live connection drops and comes back. With the
+// page offline a press from the steps the page holds reaches the wallet. While
+// LiveView is still sending the form back to the server as the page joins again,
+// the page on screen is the old one and the wallet buttons send the server
+// nothing: a press from the steps the page holds still reaches the wallet, and
+// its answer is not passed on; a press that must ask for its steps sends nothing,
+// and the page says so. Once the page is back, a press reaches the wallet. A
+// press whose steps the server built is then read against them; the walk's chain
+// is a closed port, so its line stays "pending" (or "stalled" once the server
+// stops reading).
 test.use(signedIn)
 
 // The person's own wallet (support/sign_in.exs), on the wallet page's chain.
@@ -91,15 +95,17 @@ const rejoin = (page: Page) => page.evaluate(() => (window as unknown as Win).li
 
 // LiveView sends a page's forms back first when it joins again, and draws the page
 // and runs the hooks' `reconnected` only once the server has answered. This holds
-// that answer until `release`, as a slow network would.
+// that answer until `release`, as a slow network would, and keeps the names of the
+// hooks' events the page sends meanwhile.
 async function holdRecovery(page: Page) {
-  const hold = {armed: false, refs: new Set<string>(), held: [] as (() => void)[]}
+  const hold = {armed: false, refs: new Set<string>(), held: [] as (() => void)[], hooks: [] as string[]}
   await page.routeWebSocket(/\/live\/websocket/, socket => {
     const server = socket.connectToServer()
     socket.onMessage(message => {
       if (hold.armed && typeof message === "string") {
         const frame = JSON.parse(message)
         if (frame[3] === "event" && frame[4]?.type === "form") hold.refs.add(frame[1])
+        if (frame[3] === "event" && frame[4]?.type === "hook") hold.hooks.push(frame[4].event)
       }
       server.send(message)
     })
@@ -119,6 +125,7 @@ async function holdRecovery(page: Page) {
       hold.armed = true
     },
     holding: () => hold.held.length,
+    hooks: () => hold.hooks,
     release: () => {
       hold.armed = false
       for (const send of hold.held.splice(0)) send()
@@ -136,6 +143,10 @@ async function open(page: Page) {
 }
 
 const record = (page: Page) => page.locator("#onchain-example [data-onchain-step='record']")
+// The component's lines for a press the server never heard: nothing was sent, or
+// the wallet answered and the answer was not passed on.
+const lost = (page: Page) => page.locator("#onchain-example [data-onchain-lost]")
+const unreported = (page: Page) => page.locator("#onchain-example [data-onchain-unreported]")
 const press = (target: Locator, hasTouch: boolean) => (hasTouch ? target.tap() : target.click())
 const followed = (page: Page, hash: string) =>
   expect(page.locator(`#onchain-example li[data-state]:has([id="onchain-example-sent-${hash}"])`)).toHaveAttribute(
@@ -154,8 +165,14 @@ test("a press while the page is offline reaches the wallet", async ({page, hasTo
   await problems.expect()
 })
 
+// The wallet buttons' own events; none is sent while the page on screen is stale.
+const walletEvents = ["prepare_and_send", "step_sent", "step_signed", "step_failed", "onchain_active_wallet"]
+
 test.describe("a press while LiveView sends the form back", () => {
-  test("a press from the steps the page holds reaches the wallet", async ({page, hasTouch}) => {
+  test("a press from the steps the page holds reaches the wallet, and its answer is not passed on", async ({
+    page,
+    hasTouch,
+  }) => {
     const problems = watch(page)
     const recovery = await holdRecovery(page)
     await open(page)
@@ -166,13 +183,18 @@ test.describe("a press while LiveView sends the form back", () => {
     await expect.poll(() => recovery.holding()).toBeGreaterThan(0)
     await press(record(page), hasTouch)
     await expect.poll(() => asked(page)).toBe(1)
+    await expect(unreported(page)).toBeVisible()
+    expect(recovery.hooks().filter(event => walletEvents.includes(event))).toEqual([])
     recovery.release()
     await connected(page)
 
     await problems.expect()
   })
 
-  test("a press after the number changed reaches the wallet and is followed", async ({page, hasTouch}) => {
+  test("a press after the number changed sends nothing and says so; pressed again once the page is back it reaches the wallet and is followed", async ({
+    page,
+    hasTouch,
+  }) => {
     const problems = watch(page)
     const recovery = await holdRecovery(page)
     await open(page)
@@ -182,13 +204,17 @@ test.describe("a press while LiveView sends the form back", () => {
     recovery.arm()
     await rejoin(page)
     await expect.poll(() => recovery.holding()).toBeGreaterThan(0)
-    // The page holds the steps for 1 and shows 2, so the press asks the server for
-    // the steps for 2 while the server has not yet heard which wallet is open.
+    // The page holds the steps for 1 and shows 2, so the press must ask the server
+    // for the steps for 2, and the page on screen is still the old one.
     await press(record(page), hasTouch)
-    await expect.poll(() => asked(page)).toBe(1)
-    const hash = await sentHash(page)
+    await expect(lost(page)).toBeVisible()
+    expect(recovery.hooks().filter(event => walletEvents.includes(event))).toEqual([])
+    expect(await asked(page)).toBe(0)
     recovery.release()
     await connected(page)
+
+    await press(record(page), hasTouch)
+    const hash = await sentHash(page)
 
     await followed(page, hash)
     await problems.expect()

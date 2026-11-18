@@ -87,12 +87,20 @@ chain events recorded in the database, use `chain-events`; for a USDC payment's 
     "Mark present" and a ballot for every other Key). When it builds such a step, the
     server reads each item's state at the latest block, leaves out the ones certain to be
     refused, and the review says which were left out and why.
+11. **While the page on screen is stale after a rejoin, the hook sends nothing** (Sean,
+    18 Nov 2026: "the wallet just doesnt get it and the user can retry"). From the
+    hook's `disconnected` until its `reconnected`, LiveView may already be joined but
+    still shows the old page, and reads from it which component a push is for. A press
+    then counts as one with no connection: one that must ask for its steps sends nothing
+    and shows the lost line; one from held steps still reaches the wallet, and its
+    answer is not reported. Nothing waits and nothing is kept; the person presses again.
+    See [hook pattern](references/hook-pattern.md#a-stale-page).
 
 ## References
 
 | File | Covers |
 | --- | --- |
-| [hook-pattern.md](references/hook-pattern.md) | The template's reference files, the review, which wallet sends, a press, the server's check, outcomes and words, checks |
+| [hook-pattern.md](references/hook-pattern.md) | The template's reference files, the review, which wallet sends, a press, a stale page, the server's check, outcomes and words, checks |
 | [journeys.md](references/journeys.md) | Listing a page's wallet journeys: controls, the shared wallet situations, per-control cases, marks; known gaps in the pattern |
 | [sites-today.md](references/sites-today.md) | How each site does it now, where it differs from these rules, and which checkout to read |
 

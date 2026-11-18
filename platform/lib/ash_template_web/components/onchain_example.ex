@@ -52,9 +52,8 @@ defmodule AshTemplateWeb.OnchainExample do
     do: {:noreply, socket |> assign(amount: amount) |> sync()}
 
   # A press made before the review caught up with the form: the form and the
-  # open wallet are taken as the page's own, and the reply carries the review
-  # for them. A page that has just joined again can ask before it reports the
-  # wallet.
+  # wallet open at the press are taken as the page's own, and the reply carries
+  # the review for them, so the steps are for the wallet the press sends through.
   def handle_event(
         "prepare_and_send",
         %{"form" => %{"amount" => amount}, "step" => name} = params,

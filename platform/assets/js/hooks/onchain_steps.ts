@@ -32,17 +32,22 @@ export type Pressed = {transaction_hash: Hash} | {signature: Hex} | {reason: Fai
 
 type Push = (event: string, payload: unknown) => void
 
+type Pushed = Promise<PromiseSettledResult<{reply: unknown}>[]>
+
 type OnchainStepsHook = Hook & {
   el: HTMLElement
   js(): {ignoreAttributes(el: HTMLElement, attrs: string[]): void}
   handleEvent(event: string, callback: (payload: unknown) => void): void
-  pushEventTo(target: HTMLElement, event: string, payload?: unknown): Promise<PromiseSettledResult<{reply: unknown}>[]>
+  pushEventTo(target: HTMLElement, event: string, payload?: unknown): Pushed
   review?: Review
   clicked?: (event: Event) => void
   walletChanged?: () => void
   // How many presses this component has taken, and the line it is showing.
   pressed: number
   shown: Line
+  // From `disconnected` until `reconnected`: the page on screen is the one from
+  // before the connection dropped.
+  stale: boolean
 }
 
 // How many of a button's presses the wallet still has. The mark comes off when
@@ -62,6 +67,7 @@ export const OnchainSteps: Hook = {
     // should act for is told again when the connection is back (`reconnected`).
     this.pressed = 0
     this.shown = null
+    this.stale = false
     // A push can take half a minute to give up, so a line about one press is
     // shown only while no newer press has started: said late, "nothing was sent"
     // beside a newer press that went through would have a person send twice.
@@ -70,6 +76,15 @@ export const OnchainSteps: Hook = {
       this.shown = line
       note(this.el, line)
     }
+    // While the page is stale nothing is sent. A page that rejoins may already be
+    // joined while LiveView sends its forms back, and draws the fresh page only
+    // after that; until then it reads which server component a push is for from
+    // the old page, and a fresh server can give that number to another component,
+    // or to none. So a push then reaches no one, as with no connection, and a
+    // press counts as one with no connection: nothing waits, nothing is kept, and
+    // the person presses again.
+    const send = (event: string, payload: unknown): Pushed =>
+      this.stale ? Promise.resolve([]) : this.pushEventTo(this.el, event, payload)
     const push: Push = (event, payload) => {
       const during = this.pressed
       const unheard = () => {
@@ -79,7 +94,7 @@ export const OnchainSteps: Hook = {
         say(answered ? "unreported" : "lost", during)
         report({name: "press.unsent", where: step ?? event, outcome: "lost"})
       }
-      void this.pushEventTo(this.el, event, payload).then(([result]) => {
+      void send(event, payload).then(([result]) => {
         if (result?.status !== "fulfilled") unheard()
       }, unheard)
     }
@@ -118,11 +133,10 @@ export const OnchainSteps: Hook = {
         report({name: "press.unsent", where: name, outcome: "lost"})
       }
 
-      // The ask names the open wallet: a page that has just joined again can ask
-      // before the server has heard which wallet is open. The steps that come
-      // back go to that same wallet.
+      // The ask names the wallet open at the press, so the server builds the
+      // steps for that wallet, and the steps that come back go to it.
       if (wallet && asks) {
-        void this.pushEventTo(this.el, "prepare_and_send", {form, step: name, address: wallet.address})
+        void send("prepare_and_send", {form, step: name, address: wallet.address})
           .then(async ([result]) => {
             if (result?.status !== "fulfilled") return unheard()
             const reply = result.value.reply as {review?: Review; send?: string}
@@ -146,15 +160,21 @@ export const OnchainSteps: Hook = {
     window.dispatchEvent(new CustomEvent("ash:wallet-sync"))
   },
 
-  // A page that rejoins gets a fresh component on the server, which no longer
-  // knows the active wallet or the review this hook holds. The review is let go
-  // and the wallet told again, so the next press is sent from a review the
-  // server remembers.
+  // From here until `reconnected` the page is stale and the hook sends nothing.
+  disconnected(this: OnchainStepsHook) {
+    this.stale = true
+  },
+
+  // LiveView runs this once the rejoin has drawn the fresh page. The fresh
+  // component on the server no longer knows the active wallet or the review this
+  // hook holds. The review is let go and the wallet told again, so the next press
+  // is sent from a review the server remembers.
   //
   // The rejoin redraws the component, which hides its lines again; the one this
-  // hook was showing is put back, so "your wallet answered" outlives the very
-  // reconnect it is about. The next press clears it.
+  // hook was showing is put back. The component's next draw from the server
+  // hides it again, and so does the next press.
   reconnected(this: OnchainStepsHook) {
+    this.stale = false
     this.review = undefined
     note(this.el, this.shown)
     this.walletChanged?.()
