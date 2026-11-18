@@ -12600,3 +12600,13 @@ For the template chief to release. No migration. No new package.
   wallet_signed_out.spec.ts addresses.spec.ts pages.spec.ts` 348 passed; `make
   check-style` exit 0. Not proven: a real Privy wallet and a real dropped connection (the
   walk holds LiveView's replies and uses a stand-in wallet); Safari, Firefox, real phones.
+
+## 2026-11-18 — Released v283: a press just after a reconnect reaches the wallet
+
+- v283 on template.regents.sh carries the entry above (`d60a9b31`). No migration.
+- Rollback: v282 (`264e85da`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (730 walk tests passed, 6 skipped;
+  375 Elixir; 379 script). Not proven: a real wallet over a real dropped connection.
+- Still present by Sean's rule (never preserve pending transactions), pending his answer:
+  a wallet answer that arrives while the page is offline or reconnecting gets no result
+  line. A helper's keep-and-report-once fix is parked on `tpl/press-follow-1118`, unreleased.
