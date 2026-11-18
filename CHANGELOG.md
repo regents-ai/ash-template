@@ -12892,3 +12892,24 @@ For the template chief to release. No migration. No new package.
   typecheck` exit 0. Pictures of the Practice site form and a practice site's Summary
   at 1280 and 320: no page wider than the screen; on a phone the request wraps onto
   four lines. Not proven: a real agent client sending the request to a practice site.
+
+## 2026-11-18 — Privacy page: blanks for a new site's own facts
+
+- `platform/priv/legal/privacy.md` has six `[FILL IN: ...]` blanks, in the owner's approved
+  words, where a site made from regents-ai/ash-template writes its own facts: after the
+  version, after the first **Regents Labs, Inc.** (the company that runs the site), at the
+  end of section 3 B's first sentence (what people and agents write there), a new bullet
+  in 6 A after Privy (each service that receives what people write, such as the model
+  service that suggests a saved note's label from its title and text, without the
+  account or name), a new last bullet in 6 B's list of services the browser connects to,
+  with the list's "and" moved onto the line before it, and a last sentence in section
+  10's second paragraph (how long each kind of record is kept). Nothing else in the
+  policy changes.
+- `AGENTS.md`, "New site" item 4: a new site fills in every blank in `privacy.md` with
+  its own facts, beside the legal operator in `terms.md` and `privacy.md`.
+- `platform/priv/public/changelog.md`: one line under 18 November.
+- Checks: `/privacy` drawn from its Markdown by `AshTemplateWeb.PublicDocuments.html/1`
+  (a one-off run, not a test): all six blanks show as plain text and none is inside a
+  link. `sh test/browser/walk.sh siwa.spec.ts oauth.spec.ts reading.spec.ts` 33 passed,
+  `/privacy` among them at 1280 and 390: it opens inside the shell with every section
+  and still answers Markdown. Not proven: Safari, Firefox, real phones.

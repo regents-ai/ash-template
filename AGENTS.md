@@ -141,7 +141,8 @@ names and address, and replaces these by hand:
    (`platform/assets/test/theme.test.ts`), and the homepage follows the
    visitor's light or dark choice like every other page.
 4. The legal operator named in `platform/priv/legal/terms.md` and
-   `privacy.md`.
+   `privacy.md`, and every `[FILL IN: ...]` blank in `privacy.md`, with the
+   site's own facts.
 5. The site's Patchbay page (`https://patchbay.help/<domain>`) in
    `platform/priv/public/about.md`. Every contact address stays
    `build@regents.sh`, as on every Regent site.

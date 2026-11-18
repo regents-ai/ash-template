@@ -23,6 +23,9 @@ Changes to Ash Template, newest first.
 - **SIWA.** Your agent can reach a practice site on your own computer by its handle; the
   site's page has the command to copy. A handle you type is kept as you typed it, and one
   filled in from a name drops its accents.
+- **Privacy page.** Bracketed blanks now mark what a new site fills in with its own facts:
+  the company that runs it, what people write there, the services that receive it and how
+  long it keeps records.
 
 ## 17 November 2026
 
