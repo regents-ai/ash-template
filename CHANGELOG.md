@@ -12864,3 +12864,30 @@ For the template chief to release. No migration. No new package.
   `mix credo --strict` on the touched files, no issues; `hello_card_test.exs` and
   `siwa_live_test.exs` 30 passed; the whole `mix test` 379 passed (11 properties), with
   both entries; `make check-cli` ok. Not proven: a card from the real SIWA service.
+
+## 2026-11-18 — Sites: plain handles, typed handles kept, and a practice site's agent
+
+- A handle made from a name is made as a room's address is, by
+  `AshTemplate.Rooms.Room.slug/1`: accents dropped ("Café Docs" gives `cafe-docs`),
+  each run of other characters one "-", at most 40 characters. The SIWA page's own
+  handle maker is gone. A handle the person types is kept and sent as typed, "_"
+  included: the service's owner confirms its rule, 1 to 64 lowercase letters, digits,
+  "-" and "_", and the walk's stand-in (`AshTemplate.WalkControl`) now holds that rule
+  in place of one that wanted a letter or digit first.
+- Agents now reach a practice site (siwa-server v100, agent clients 2.13). The Practice
+  site form says so: "For trying SIWA on your own computer, where your agent reaches it
+  by its handle. It needs no proof and is never counted or billed." A practice site's
+  Summary shows Agent request beside its handle: `uv run siwa_agent.py request GET
+  <first address>/<path> --handle <handle>`, with a copy icon that copies the line.
+- Tests: `platform/test/ash_template_web/siwa_live_test.exs`: the handle follows "Café
+  Docs" as `cafe-docs`; a typed `docs_2` stays through a name change; the first site is
+  sent with the typed handle `acme_docs`; the property holds the service's confirmed
+  rule; a practice site shows the request with its first address and handle, a
+  production site none. `platform/test/browser/siwa.spec.ts` finds the walk's practice
+  site's request.
+- Checks: `mix compile --warnings-as-errors` and `mix format --check-formatted` exit 0;
+  `siwa_live_test.exs` and `hello_card_test.exs` 30 passed; the whole `mix test` 379
+  passed (11 properties); `sh test/browser/walk.sh siwa.spec.ts` 8 passed; `npm run
+  typecheck` exit 0. Pictures of the Practice site form and a practice site's Summary
+  at 1280 and 320: no page wider than the screen; on a phone the request wraps onto
+  four lines. Not proven: a real agent client sending the request to a practice site.

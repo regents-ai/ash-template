@@ -53,7 +53,7 @@ defmodule AshTemplate.WalkControl do
   @checkout_page "https://checkout.stripe.com/c/pay/cs_test_walk"
   @portal_page "https://billing.stripe.com/p/session/test_walk"
   @service_audiences ~w(agent-book agent-link)
-  @audience ~r/\A[a-z0-9][a-z0-9_-]{0,63}\z/
+  @audience ~r/\A[a-z0-9_-]{1,64}\z/
   @https ~r/\Ahttps:\/\/(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?\z/
   @local ~r/\Ahttp:\/\/localhost:[1-9][0-9]{0,4}\z/
   @off "the control API is not configured on this server"

@@ -7,8 +7,8 @@ import {ready, watch} from "./support/person"
 // SIWA, against the walk's own SIWA stand-in (AshTemplate.WalkControl): each width
 // has its own person who has never used it (sign_in.exs), names their company, sees
 // the handle follow the name and gives it their own, is refused a localhost address
-// on the New site form, turns it into a practice site and adds it, makes a key, sees it
-// once, revokes it through the confirm window, opens Settings, on Overview finds
+// on the New site form, turns it into a practice site and adds it, finds the command
+// its agent reaches the site with, makes a key, sees it once, revokes it through the confirm window, opens Settings, on Overview finds
 // billing not started and sets, is refused and removes a cap, then follows its link
 // to Billing, subscribes on Stripe, comes back to Manage and a first invoice, and
 // goes to Stripe and back again with Manage. Each width also has a person whose
@@ -90,6 +90,9 @@ test.describe("a new SIWA customer", () => {
     await expect(page).toHaveURL(/\/siwa\/sites\/[0-9a-f-]{36}$/)
     await expect(page.locator("#siwa-audience")).toHaveText(`walk-${info.project.name}`)
     await expect(page.locator("#siwa-practice")).toBeVisible()
+    await expect(page.locator("#siwa-agent-request")).toContainText(
+      `GET http://localhost:4000/<path> --handle walk-${info.project.name}`,
+    )
     await expect(page.locator("#siwa-proof")).toHaveCount(0)
 
     await press(page.locator("#siwa-make-key"))

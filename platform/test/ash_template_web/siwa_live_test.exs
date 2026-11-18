@@ -234,7 +234,7 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     assert Jason.decode!(sent) == %{"name" => "Acme"}
     assert has_element?(view, "#siwa-site-form")
 
-    site = %{name: "Docs", audience: "acme-docs", origins: "  https://acme.example  "}
+    site = %{name: "Docs", audience: "acme_docs", origins: "  https://acme.example  "}
 
     service(%{
       {"POST", @base <> "/sites"} =>
@@ -245,10 +245,11 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     render_async(view)
     assert_received {:asked, "POST", "/api/control/v1/sites", sent}
 
-    # The form makes a production site, its one address the site's one origin.
+    # The form makes a production site, its one address the site's one origin and
+    # its handle as typed.
     assert Jason.decode!(sent) == %{
              "name" => "Docs",
-             "audience" => "acme-docs",
+             "audience" => "acme_docs",
              "environment" => "production",
              "origins" => ["https://acme.example"]
            }
@@ -256,7 +257,7 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     assert has_element?(view, "#siwa-site-origins[aria-invalid='true']")
     assert has_element?(view, "#siwa-site-origins-errors p")
     assert has_element?(view, "#siwa-site-audience[aria-invalid='false']")
-    assert has_element?(view, "#siwa-site-audience[value='acme-docs']")
+    assert has_element?(view, "#siwa-site-audience[value='acme_docs']")
 
     service(Map.put(site_answers(), {"POST", @base <> "/sites"}, ok(201, "site_created", @site)))
     view |> form("#siwa-site-form", site: site) |> render_submit()
@@ -285,17 +286,18 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     service(no_sites())
     view = open(browser, "/siwa/sites")
 
-    typed(view, "Acme Docs!", "")
-    assert handle(view) == ["acme-docs"]
+    typed(view, "Café Docs!", "")
+    assert handle(view) == ["cafe-docs"]
 
-    typed(view, "  Acme -- Docs (2) ", "acme-docs")
-    assert handle(view) == ["acme-docs-2"]
+    typed(view, "  Café -- Docs (2) ", "cafe-docs")
+    assert handle(view) == ["cafe-docs-2"]
 
-    typed(view, "Acme -- Docs (2)", "docs")
-    assert handle(view) == ["docs"]
+    # A handle the person types is theirs as typed, "_" and all.
+    typed(view, "Café -- Docs (2)", "docs_2")
+    assert handle(view) == ["docs_2"]
 
-    typed(view, "Something else", "docs")
-    assert handle(view) == ["docs"]
+    typed(view, "Something else", "docs_2")
+    assert handle(view) == ["docs_2"]
   end
 
   property "a handle made from any name is one the service takes, or empty", %{browser: browser} do
@@ -308,8 +310,8 @@ defmodule AshTemplateWeb.SiwaLiveTest do
       typed(view, name, before)
       [made] = handle(view)
 
-      # The service's rule for an audience, as the walk's stand-in holds it.
-      assert made == "" or made =~ ~r/\A[a-z0-9][a-z0-9_-]{0,63}\z/
+      # The service's rule for an audience: 1 to 64 of a-z, 0-9, "-" and "_".
+      assert made == "" or made =~ ~r/\A[a-z0-9_-]{1,64}\z/
     end
   end
 
@@ -374,6 +376,12 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     refute has_element?(view, "#siwa-proof")
     refute has_element?(view, "#siwa-proof-warning")
 
+    # Its agent reaches it at its first address by its handle, a line to copy.
+    request = view |> element("#siwa-agent-request") |> render()
+    assert request =~ " GET #{hd(@site["origins"])}/"
+    assert request =~ "--handle #{@site["audience"]}<"
+    assert has_element?(view, "#siwa-agent-request-copy[data-copy-target='siwa-agent-request']")
+
     keys = "#{@base}/sites/#{@site["id"]}/keys"
     service(Map.put(site_answers(), {"POST", keys}, ok(201, "site_key_created", Map.put(@key, "key", secret))))
     view |> element("#siwa-make-key") |> render_click()
@@ -431,6 +439,7 @@ defmodule AshTemplateWeb.SiwaLiveTest do
 
     assert has_element?(view, "#siwa-proof[data-state='unverified']")
     refute has_element?(view, "#siwa-practice")
+    refute has_element?(view, "#siwa-agent-request")
     assert has_element?(view, "#siwa-proof-warning")
     assert view |> element("#siwa-proof-token") |> render() =~ proof["token"]
     assert has_element?(view, "#siwa-proof-token-copy")

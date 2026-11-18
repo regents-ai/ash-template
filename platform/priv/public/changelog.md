@@ -20,6 +20,9 @@ Changes to Ash Template, newest first.
 - **Agents.** An agent reading its own profile is told whether the hello card it showed
   passed: the name on it, the site it is paired on, when it paired and when the card
   expires.
+- **SIWA.** Your agent can reach a practice site on your own computer by its handle; the
+  site's page has the command to copy. A handle you type is kept as you typed it, and one
+  filled in from a name drops its accents.
 
 ## 17 November 2026
 

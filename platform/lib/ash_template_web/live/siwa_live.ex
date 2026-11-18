@@ -29,7 +29,8 @@ defmodule AshTemplateWeb.SiwaLive do
   the name in the `draft` event and follows it until the person changes the
   handle (`follow/2`). Its Practice site link turns the same form into one for a
   sandbox site, which the page calls a practice site: an http://localhost
-  address on the person's own computer.
+  address on the person's own computer, which their agent reaches by its handle.
+  A practice site's page shows that request as a command to copy.
 
   A production site takes agents only once the company has proven its origins
   are its own: its Proof section shows the site's token, which is public, and
@@ -60,6 +61,7 @@ defmodule AshTemplateWeb.SiwaLive do
 
   alias AshTemplate.Accounts.SessionAuthority
   alias AshTemplate.PublicIdentity
+  alias AshTemplate.Rooms.Room
   alias AshTemplate.SiwaControl
   alias AshTemplate.SiwaControl.{Refusal, Secret, Tokens}
   alias AshTemplateWeb.Live.Session
@@ -334,24 +336,15 @@ defmodule AshTemplateWeb.SiwaLive do
   end
 
   # The handle follows the name while it is still the one the name before made;
-  # once the person changes it, it is theirs.
+  # once the person changes it, it is theirs as typed.
   defp follow(site, before) do
     if site["audience"] == handle(before["name"]),
       do: Map.put(site, "audience", handle(site["name"])),
       else: site
   end
 
-  # A handle from a name: lowercase, each run of anything but letters and digits
-  # one "-", with none at either end, at most 64 characters.
-  defp handle(name) do
-    name
-    |> to_string()
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9]+/, "-")
-    |> String.trim("-")
-    |> String.slice(0, 64)
-    |> String.trim_trailing("-")
-  end
+  # A handle is made from a name as a room's address is.
+  defp handle(name), do: name |> to_string() |> Room.slug()
 
   # Dollars as the person typed them, with or without its sign and commas, in
   # whole cents. The service says whether it is enough.
@@ -1670,7 +1663,8 @@ defmodule AshTemplateWeb.SiwaLive do
       <p class="rg-muted">
         <%= cond do %>
           <% @practice -> %>
-            For trying SIWA on your own computer. It needs no proof and is never counted or billed.
+            For trying SIWA on your own computer, where your agent reaches it by its handle. It
+            needs no proof and is never counted or billed.
           <% @sites == [] -> %>
             Add your first site. Agents sign in to it with SIWA.
           <% true -> %>
@@ -1815,6 +1809,17 @@ defmodule AshTemplateWeb.SiwaLive do
           <dd class="siwa-inline">
             <code id="siwa-audience">{@site["audience"]}</code>
             <P.copy_icon id="siwa-audience-copy" text={@site["audience"]} label="Copy the handle" />
+          </dd>
+        </div>
+        <div :if={practice?(@site)}>
+          <dt>Agent request</dt>
+          <dd class="siwa-inline">
+            <code id="siwa-agent-request">{agent_request(@site)}</code>
+            <P.copy_icon
+              id="siwa-agent-request-copy"
+              target="siwa-agent-request"
+              label="Copy the command"
+            />
           </dd>
         </div>
         <div>
@@ -2147,6 +2152,11 @@ defmodule AshTemplateWeb.SiwaLive do
 
   # A sandbox site, which the page calls a practice site.
   defp practice?(site), do: site["environment"] == "sandbox"
+
+  # How the developer's agent sends a request to their practice site, at its first
+  # address, by its handle (siwa-server v100, agent clients 2.13).
+  defp agent_request(%{"origins" => [address | _], "audience" => handle}),
+    do: "uv run siwa_agent.py request GET #{address}/<path> --handle #{handle}"
 
   defp pending?(pending, kind), do: Enum.any?(pending, &(is_tuple(&1) and elem(&1, 0) == kind))
 
