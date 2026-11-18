@@ -2,6 +2,11 @@
 
 Changes to Ash Template, newest first.
 
+## 18 November 2026
+
+- **Wallet buttons.** If your wallet refuses a request outright, the page now says nothing
+  was sent.
+
 ## 17 November 2026
 
 - **Agents.** Signed agent requests share one allowance per person: 120 a minute for all

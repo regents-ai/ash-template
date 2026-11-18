@@ -12461,3 +12461,31 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
   366 Elixir; 376 script). Not proven: the allowance under real traffic; it is counted
   on each machine, as every allowance here is.
+
+## 2026-11-18 — A wallet that refuses outright
+
+- A wallet that refuses a send or signature without acting on it now reads as refused,
+  not as one that may have sent. `failure/3` in
+  `platform/assets/js/wallet_actions/send_step.ts` reports the new reason
+  `wallet_refused` for EIP-1193 4100 (unauthorized), 4200 (unsupported method), 4900
+  (disconnected) and 4901 (chain disconnected), and JSON-RPC -32601 (method not found)
+  and -32602 (invalid params). It goes by the code alone, after 4001 (`wallet_declined`)
+  and before the insufficient-funds words, for sends and signatures alike, and finds
+  each code as it finds 4001: on the error or down its `cause` chain, where viem keeps
+  the provider's error, up to eight deep. The note says "Your wallet refused this.
+  Nothing was sent." (`OnchainSteps.failure_note/4`).
+- The elixir-utils pin moves to `87239b5` (branch `eu/wallet-refused-1118`), whose
+  `RegentChain.Presses.failed/1` takes the reason. The visit log
+  (`AshTemplateWeb.VisitLog.Events`) and the wallet failure count
+  (`AshTemplateWeb.Telemetry`) know it. The hook pattern in `skills/onchain-buttons` has
+  its row, and now says the hook reports the open wallet again from `reconnected`.
+- Checks, against that library commit through `REGENT_ELIXIR_UTILS_PATH`: `mix format
+  --check-formatted`, `mix compile --warnings-as-errors` and `mix credo --strict` exit 0;
+  `mix test` 367 passed; `npm test` 377 passed and the typecheck exit 0; `sh
+  test/browser/walk.sh wallet_signed_out.spec.ts addresses.spec.ts pages.spec.ts` 340
+  passed; `make check-style` exit 0. The new script test fails without the change
+  (`send_unconfirmed` for a refusal), and the new
+  `platform/test/ash_template_web/wallet_refused_test.exs` fails when the visit log's
+  list leaves the reason out (`other`). Not proven: which wallet apps send these codes
+  and how Privy passes them on; no browser walk has a wallet refuse a press; Safari,
+  Firefox, real phones.

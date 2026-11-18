@@ -136,8 +136,11 @@ a wallet it does not link is ignored, never asked to be switched.
 - The page passes the component `linked={AccessContext.linked_wallets(@access_context)}`:
   the account's own `wallet_addresses`, lowercase and each once, or `nil` signed out.
   Never a hard-coded list and never a wallet the browser names.
-- The hook pushes `onchain_active_wallet` with the address (or `nil`) when it mounts and
-  on every `ash:wallet-state`.
+- The hook pushes `onchain_active_wallet` with the address (or `nil`) when it mounts, on
+  every `ash:wallet-state`, and again from `reconnected`: a page that rejoins gets a fresh
+  component on the server, which no longer knows the active wallet or the review, so the
+  hook lets its review go and reports the wallet again, and the next press is sent from a
+  review the server remembers.
 - `OnchainSteps.active_wallet/1` reads it; `OnchainSteps.signer(linked, active)` is the
   wallet that may act, or `nil` when signed out, when none is active, or when the account
   does not link it.
@@ -281,6 +284,7 @@ The hook sends only reason codes; the words live in `OnchainSteps.failure_note/4
 | `switch_declined` | The person said no to the network switch (4001) | "Press again to switch your wallet to Base. Nothing was sent." |
 | `network_mismatch` | The switch failed any other way | "Switch your wallet to Base, then press again. Nothing was sent." |
 | `wallet_declined` | The person said no (4001) | "Your wallet declined this. Nothing was sent." |
+| `wallet_refused` | The wallet refused the request without acting on it: by its code only, 4100, 4200, 4900, 4901, -32601 or -32602, however the wallet wraps it | "Your wallet refused this. Nothing was sent." |
 | `insufficient_funds` | The wallet refused for lack of fees | "Your wallet doesn't have enough on Base to pay the network fee. Nothing was sent." |
 | `send_unconfirmed` | The wallet failed after the send began | "Your wallet may have sent this. Check your wallet activity." |
 | `:pending` | Sent, no receipt yet | "Sent. Waiting for Base." |
@@ -309,8 +313,8 @@ further press still reaches the wallet.
 
 A `Review.signature/2` step asks for `eth_signTypedData_v4`, as the review's signer,
 after the same chain switch. The server verifies the signature against its own typed data and does
-the rest. A declined signature is `wallet_declined`. Agents sign in with SIWA
-(`elixir-utils/siwa`), which is not a button.
+the rest. A declined signature is `wallet_declined`, and a refused one `wallet_refused`.
+Agents sign in with SIWA (`elixir-utils/siwa`), which is not a button.
 
 ## Checks
 
@@ -323,7 +327,9 @@ the rest. A declined signature is `wallet_declined`. Agents sign in with SIWA
   account still gets the step; the switch is asked only off the step's chain and on
   every such press, and once it resolves the same press sends, even from a wallet that
   still names another chain; a declined or failed switch sends nothing, reports
-  `switch_declined` or `network_mismatch`, and the next press asks again.
+  `switch_declined` or `network_mismatch`, and the next press asks again; a wallet that
+  refuses a send or signature by one of the six codes, on the error or down its `cause`
+  chain, reports `wallet_refused`.
   `/showcase/wallet` then runs the same buttons with real Privy sign-in and a
   real wallet on Base Sepolia; a press there needs a little Base Sepolia test ETH.
 - Sites keep their own test policy. A site that keeps a Vitest suite proves with a

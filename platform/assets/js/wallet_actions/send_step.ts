@@ -26,6 +26,7 @@ export class NothingSent extends Error {
 export type Failure =
   | NothingSent["reason"]
   | "wallet_declined"
+  | "wallet_refused"
   | "insufficient_funds"
   | "send_unconfirmed"
   | "sign_unconfirmed"
@@ -86,14 +87,21 @@ export async function signStep(
   return signature as Hex
 }
 
+// The codes of a wallet that refused the request without acting on it, so
+// nothing was sent: EIP-1193's unauthorized (4100), unsupported method (4200),
+// disconnected (4900) and chain disconnected (4901), and JSON-RPC's method not
+// found (-32601) and invalid params (-32602).
+const refused = [4100, 4200, 4900, 4901, -32601, -32602]
+
 /**
  * Why a press ended without a hash or signature. After `sending`, the wallet may
  * have sent the transaction, or made the signature when the step was one
- * (`signature`).
+ * (`signature`), unless its error code says it declined or refused the request.
  */
 export function failure(sending: boolean, error: unknown, signature: boolean): Failure {
   if (!sending) return error instanceof NothingSent ? error.reason : "wallet_unavailable"
   if (hasCode(error, 4001)) return "wallet_declined"
+  if (refused.some(code => hasCode(error, code))) return "wallet_refused"
   // No EIP-1193 code names this; wallets and nodes all say it in these words.
   if (hasMessage(error, /insufficient funds/i)) return "insufficient_funds"
   return signature ? "sign_unconfirmed" : "send_unconfirmed"
