@@ -12798,3 +12798,47 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (748 walk tests passed, 7 skipped;
   375 Elixir; 389 script). Not proven: a real wallet over a real dropped connection;
   Safari, Firefox, real phones.
+
+## 2026-11-18 — Sites: a name, an address and a handle
+
+- Sean's choice: the New site form asks for a name and the site's real web address; the
+  handle is filled in from the name and can be changed before saving, with one line
+  saying what it is; practice sites move to a smaller Practice site press. Nothing in
+  the SIWA service changes: the page still sends `name`, `audience`, `environment` and
+  `origins`.
+- `/siwa/sites` (`AshTemplateWeb.SiwaLive`): New site asks for Name, Address and Handle,
+  in that order, and makes a production site with the one address, trimmed, as its only
+  origin. The handle is made from the name in the form's `draft` event (`handle/1`:
+  lowercase, each run of anything but a-z and 0-9 one "-", none at either end, at most
+  64) and follows it while it is still the handle the name before made (`follow/2`);
+  once the person types their own, it stays. Name now sends its changes after 200 ms
+  rather than when it loses focus, so the handle follows while the person types. The
+  Practice site press under the form turns it into Practice site, for an
+  http://localhost address, sent as `sandbox`, with one line: on your own computer, no
+  proof, never counted or billed. Live site turns it back; both keep what was typed and
+  clear the form's refusals. Cancel and an added site leave it a live site again.
+- Words on the page: Audience is Handle and Origins is Addresses everywhere (the list,
+  the site page, the archive line and its confirm window, the tips), and the overview's
+  and billing's sandbox lines speak of practice sites. The Environment column and row
+  are gone: a practice site shows a Practice status beside its name in the list and
+  beside Summary on its page. Proof stays. A refusal of `audience` shows under Handle,
+  of `origins` under Address, and of `environment` as the form's notice. The site
+  page's Addresses hint fits the site's kind.
+- No SIWA docs page exists in `platform/priv/public` or `docs`, so none changed.
+  `docs/feature-map.md` names the new checks.
+- Tests: `platform/test/ash_template_web/siwa_live_test.exs` sends the first site as a
+  production site with its one trimmed origin; new: the handle follows the name until
+  the person changes it; a property that any name makes a handle matching the
+  service's rule (as the walk's stand-in holds it) or none; Practice site sends a
+  sandbox site, shows a refused kind as the form's notice, and turns back; Practice
+  shows only for a practice site, in the list and on its page.
+  `platform/test/browser/siwa.spec.ts` sees the handle follow the name, is refused a
+  localhost address on the New site form, and adds it as a practice site.
+- Checks: `mix compile --warnings-as-errors` and `mix format --check-formatted` exit 0;
+  `mix credo --strict` on the touched files, no issues; `siwa_live_test.exs` 23 passed
+  (1 property); `sh test/browser/walk.sh siwa.spec.ts` 8 passed; `npm test` 380 passed;
+  `npm run typecheck` exit 0; `make check-style` exit 0.
+- Pictures at 1280, 390 and 320 of the New site and Practice site forms, the list and a
+  practice site's page: no page wider than the screen. Not proven: Safari, Firefox,
+  real phones; the real SIWA service's rule for a handle (the walk's stand-in holds
+  that it starts with a letter or digit).

@@ -14,6 +14,9 @@ Changes to Ash Template, newest first.
   it.
 - **Wallet buttons.** A wallet button pressed in the instant the page reconnects says so
   when nothing was sent; press again.
+- **SIWA.** A new site asks for its name, its web address and a handle. The handle is
+  filled in from the name, and you can change it before you add the site. To try SIWA on
+  your own computer, choose Practice site: it needs no proof and is never counted or billed.
 
 ## 17 November 2026
 

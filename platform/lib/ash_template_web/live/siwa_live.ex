@@ -24,6 +24,13 @@ defmodule AshTemplateWeb.SiwaLive do
   the person reloads. A billing route that says billing is off is what the account
   would say now, so the page shows billing off.
 
+  Sites' New site form asks for a name, one https address and a handle (the
+  service's `audience`), and makes a production site. The handle is made from
+  the name in the `draft` event and follows it until the person changes the
+  handle (`follow/2`). Its Practice site link turns the same form into one for a
+  sandbox site, which the page calls a practice site: an http://localhost
+  address on the person's own computer.
+
   A production site takes agents only once the company has proven its origins
   are its own: its Proof section shows the site's token, which is public, and
   the address of the file each origin publishes it in, and Check asks the
@@ -63,7 +70,7 @@ defmodule AshTemplateWeb.SiwaLive do
   @forms ~w(company site details cap)
   @fields %{
     "company" => ~w(name),
-    "site" => ~w(name audience environment origins),
+    "site" => ~w(name audience origins),
     "details" => ~w(name origins)
   }
 
@@ -84,12 +91,9 @@ defmodule AshTemplateWeb.SiwaLive do
   # An agent is a wallet on one of the chains SIWA signs agents in on.
   @subject ~r/\Aeip155:(1|8453):(0x[0-9a-f]{40})\z/
   @chains %{"1" => {"ethereum", "Ethereum"}, "8453" => {"base", "Base"}}
-  @labels %{
-    "name" => "Name",
-    "audience" => "Audience",
-    "environment" => "Environment",
-    "origins" => "Origins"
-  }
+  # The page's word for each field the service names in a refusal. The service
+  # gives its reasons for origins as for a list, so they read after "Addresses".
+  @labels %{"name" => "Name", "audience" => "Handle", "origins" => "Addresses"}
 
   # The site's own words for the refusals a person can meet here; any other is
   # shown in the service's words.
@@ -144,6 +148,7 @@ defmodule AshTemplateWeb.SiwaLive do
       again: MapSet.new(),
       busy: %{},
       adding: false,
+      practice: false,
       drafts: %{},
       errors: %{},
       notices: %{},
@@ -220,6 +225,9 @@ defmodule AshTemplateWeb.SiwaLive do
 
   def handle_event("retry", _params, socket), do: {:noreply, socket |> fresh() |> begin()}
 
+  def handle_event("draft", %{"site" => site}, socket),
+    do: {:noreply, update(socket, :drafts, &Map.put(&1, "site", follow(site, &1["site"])))}
+
   def handle_event("draft", params, socket),
     do: {:noreply, update(socket, :drafts, &Map.merge(&1, Map.take(params, @forms)))}
 
@@ -229,11 +237,13 @@ defmodule AshTemplateWeb.SiwaLive do
   def handle_event("update_company", %{"company" => params}, socket),
     do: {:noreply, submit(socket, "company", params, {:update_company, name(params)})}
 
+  # The form's one address is the site's one origin.
   def handle_event("create_site", %{"site" => params}, socket) do
     site =
       params
-      |> Map.take(~w(name audience environment))
-      |> Map.put("origins", origins(params["origins"]))
+      |> Map.take(~w(name audience))
+      |> Map.put("environment", if(socket.assigns.practice, do: "sandbox", else: "production"))
+      |> Map.put("origins", [params["origins"] |> to_string() |> String.trim()])
 
     {:noreply, submit(socket, "site", params, {:create_site, site})}
   end
@@ -258,10 +268,13 @@ defmodule AshTemplateWeb.SiwaLive do
 
   def handle_event("add_site", _params, socket), do: {:noreply, assign(socket, adding: true)}
 
+  def handle_event("practice_site", _params, socket), do: {:noreply, site_kind(socket, true)}
+  def handle_event("live_site", _params, socket), do: {:noreply, site_kind(socket, false)}
+
   def handle_event("cancel_site", _params, socket) do
     {:noreply,
      socket
-     |> assign(adding: false)
+     |> assign(adding: false, practice: false)
      |> update(:drafts, &Map.delete(&1, "site"))
      |> update(:errors, &Map.delete(&1, "site"))
      |> update(:notices, &Map.delete(&1, "site"))}
@@ -310,6 +323,35 @@ defmodule AshTemplateWeb.SiwaLive do
     do: {:noreply, run(socket, :more_invoices)}
 
   defp name(params), do: Map.take(params, ["name"])
+
+  # The New site form turns between a live site and a practice one, keeping what
+  # was typed; what the service said about the other kind no longer applies.
+  defp site_kind(socket, practice) do
+    socket
+    |> assign(practice: practice)
+    |> update(:errors, &Map.delete(&1, "site"))
+    |> update(:notices, &Map.delete(&1, "site"))
+  end
+
+  # The handle follows the name while it is still the one the name before made;
+  # once the person changes it, it is theirs.
+  defp follow(site, before) do
+    if site["audience"] == handle(before["name"]),
+      do: Map.put(site, "audience", handle(site["name"])),
+      else: site
+  end
+
+  # A handle from a name: lowercase, each run of anything but letters and digits
+  # one "-", with none at either end, at most 64 characters.
+  defp handle(name) do
+    name
+    |> to_string()
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "-")
+    |> String.trim("-")
+    |> String.slice(0, 64)
+    |> String.trim_trailing("-")
+  end
 
   # Dollars as the person typed them, with or without its sign and commas, in
   # whole cents. The service says whether it is enough.
@@ -697,7 +739,7 @@ defmodule AshTemplateWeb.SiwaLive do
 
   defp done(socket, {:create_site, _params}, site) do
     socket
-    |> assign(adding: false)
+    |> assign(adding: false, practice: false)
     |> update(:drafts, &Map.delete(&1, "site"))
     |> push_patch(to: ~p"/siwa/sites/#{site["id"]}")
   end
@@ -932,6 +974,7 @@ defmodule AshTemplateWeb.SiwaLive do
           <.sites
             sites={sites}
             adding={@adding}
+            practice={@practice}
             drafts={@drafts}
             errors={@errors}
             notices={@notices}
@@ -1010,10 +1053,10 @@ defmodule AshTemplateWeb.SiwaLive do
   defp tip(:siwa_billing), do: "Your company's plan and its invoices."
 
   defp tip(:siwa_site),
-    do: "This site's audience, origins, proof and keys, and how to check an agent."
+    do: "This site's handle, addresses, proof and keys, and how to check an agent."
 
   defp tip(_sites),
-    do: "The sites where agents sign in with SIWA. Each has its own audience, origins and keys."
+    do: "The sites where agents sign in with SIWA. Each has its own handle, addresses and keys."
 
   attr :myself, :any, required: true
 
@@ -1099,9 +1142,9 @@ defmodule AshTemplateWeb.SiwaLive do
         <P.status>Not started</P.status>
       </div>
       <p class="rg-muted">
-        Your sandbox sites work now, and their agents are never counted. Once billing starts, each
-        agent that signs in to one of your production sites counts once a period, and this page
-        shows the period, its agents and the fee so far.
+        Practice sites are never counted or billed. Once billing starts, each agent that signs in
+        to one of your production sites counts once a period, and this page shows the period, its
+        agents and the fee so far.
       </p>
       <div class="siwa-actions">
         <.link
@@ -1361,7 +1404,7 @@ defmodule AshTemplateWeb.SiwaLive do
         <% :subscribe -> %>
           <.price />
           <p class="rg-muted">
-            Production sites take no agents until you subscribe. Sandbox sites keep working.
+            Production sites take no agents until you subscribe. Practice sites are never billed.
           </p>
           <div class="siwa-actions">
             <P.button
@@ -1579,6 +1622,7 @@ defmodule AshTemplateWeb.SiwaLive do
 
   attr :sites, :list, required: true
   attr :adding, :boolean, required: true
+  attr :practice, :boolean, required: true, doc: "the New site form makes a practice site"
   attr :drafts, :map, required: true
   attr :errors, :map, required: true
   attr :notices, :map, required: true
@@ -1591,20 +1635,20 @@ defmodule AshTemplateWeb.SiwaLive do
       <ul id="siwa-sites" class="siwa-sites">
         <li class="siwa-sites__head" aria-hidden="true">
           <span>Name</span>
-          <span>Audience</span>
-          <span>Environment</span>
+          <span>Handle</span>
           <span>Proof</span>
         </li>
         <li :for={site <- @sites} id={"siwa-site-#{site["id"]}"}>
           <.link patch={~p"/siwa/sites/#{site["id"]}"} class="siwa-sites__row">
-            <span class="siwa-sites__name">{site["name"]}</span>
-            <span class="siwa-sites__cell">
-              <span class="siwa-sites__label">Audience</span>
-              <code>{site["audience"]}</code>
+            <span class="siwa-sites__site">
+              <span class="siwa-sites__name">{site["name"]}</span>
+              <P.status :if={practice?(site)} id={"siwa-site-#{site["id"]}-practice"}>
+                Practice
+              </P.status>
             </span>
             <span class="siwa-sites__cell">
-              <span class="siwa-sites__label">Environment</span>
-              <.environment site={site} />
+              <span class="siwa-sites__label">Handle</span>
+              <code>{site["audience"]}</code>
             </span>
             <span class="siwa-sites__cell">
               <span class="siwa-sites__label">Proof</span>
@@ -1617,24 +1661,49 @@ defmodule AshTemplateWeb.SiwaLive do
 
     <section
       :if={@adding or @sites == []}
+      id="siwa-new-site"
       class="account-panel"
       aria-labelledby="siwa-new-site-title"
+      data-kind={if @practice, do: "practice", else: "live"}
     >
-      <h2 id="siwa-new-site-title">New site</h2>
-      <p :if={@sites == []} class="rg-muted">Add your first site. Agents sign in to it with SIWA.</p>
+      <h2 id="siwa-new-site-title">{if @practice, do: "Practice site", else: "New site"}</h2>
+      <p class="rg-muted">
+        <%= cond do %>
+          <% @practice -> %>
+            For trying SIWA on your own computer. It needs no proof and is never counted or billed.
+          <% @sites == [] -> %>
+            Add your first site. Agents sign in to it with SIWA.
+          <% true -> %>
+            Agents sign in to it with SIWA.
+        <% end %>
+      </p>
       <.site_form
-        form={form(@drafts, "site", %{"environment" => "sandbox"})}
+        form={form(@drafts, "site", %{})}
+        practice={@practice}
         errors={@errors["site"]}
         notice={@notices["site"]}
         busy={pending?(@pending, :create_site)}
         cancel={@sites != []}
         myself={@myself}
       />
+      <p class="siwa-switch">
+        <P.button
+          id="siwa-site-kind"
+          type="button"
+          variant="quiet"
+          arrow={false}
+          phx-click={if @practice, do: "live_site", else: "practice_site"}
+          phx-target={@myself}
+        >
+          {if @practice, do: "Live site", else: "Practice site"}
+        </P.button>
+      </p>
     </section>
     """
   end
 
   attr :form, Phoenix.HTML.Form, required: true
+  attr :practice, :boolean, required: true
   attr :errors, :map, default: nil
   attr :notice, :any, default: nil
   attr :busy, :boolean, required: true
@@ -1657,7 +1726,7 @@ defmodule AshTemplateWeb.SiwaLive do
           name={@form[:name].name}
           value={@form[:name].value}
           autocomplete="off"
-          phx-debounce="blur"
+          phx-debounce="200"
           aria-invalid={field.aria_invalid}
           aria-describedby={field.described_by}
         />
@@ -1665,8 +1734,29 @@ defmodule AshTemplateWeb.SiwaLive do
       </P.field>
       <P.field
         :let={field}
+        id="siwa-site-origins"
+        label="Address"
+        errors={field_errors(@errors, "origins")}
+      >
+        <input
+          id={field.id}
+          name={@form[:origins].name}
+          value={@form[:origins].value}
+          inputmode="url"
+          autocomplete="url"
+          autocapitalize="none"
+          spellcheck="false"
+          phx-debounce="blur"
+          aria-invalid={field.aria_invalid}
+          aria-describedby={field.described_by}
+        />
+        <:hint :if={@practice}>Such as http://localhost:4000.</:hint>
+        <:hint :if={!@practice}>Such as https://example.com.</:hint>
+      </P.field>
+      <P.field
+        :let={field}
         id="siwa-site-audience"
-        label="Audience"
+        label="Handle"
         errors={field_errors(@errors, "audience")}
       >
         <input
@@ -1680,37 +1770,15 @@ defmodule AshTemplateWeb.SiwaLive do
           aria-invalid={field.aria_invalid}
           aria-describedby={field.described_by}
         />
-        <:hint>
-          The name agents sign in for: 1 to 64 lowercase letters, digits, - or _.
-          It can't change, and it stays taken if you archive the site.
-        </:hint>
+        <:hint>The site's short name. It can never change or be used again.</:hint>
       </P.field>
-      <P.field
-        :let={field}
-        id="siwa-site-environment"
-        label="Environment"
-        errors={field_errors(@errors, "environment")}
-      >
-        <select
-          id={field.id}
-          name={@form[:environment].name}
-          aria-invalid={field.aria_invalid}
-          aria-describedby={field.described_by}
-        >
-          <option value="sandbox" selected={@form[:environment].value == "sandbox"}>Sandbox</option>
-          <option value="production" selected={@form[:environment].value == "production"}>
-            Production
-          </option>
-        </select>
-        <:hint>Sandbox is for a site on your own computer. It can't change later.</:hint>
-      </P.field>
-      <.origins_field form={@form} id="siwa-site-origins" errors={@errors} />
       <div class="siwa-actions">
         <P.button id="siwa-site-submit" type="submit" disabled={@busy} phx-disable-with="Adding…">
           Add site
         </P.button>
         <P.button
           :if={@cancel}
+          id="siwa-site-cancel"
           type="button"
           variant="quiet"
           arrow={false}
@@ -1722,32 +1790,6 @@ defmodule AshTemplateWeb.SiwaLive do
       </div>
       <.notice id="siwa-site-notice" notice={@notice} />
     </.form>
-    """
-  end
-
-  attr :form, Phoenix.HTML.Form, required: true
-  attr :id, :string, required: true
-  attr :errors, :map, default: nil
-
-  defp origins_field(assigns) do
-    ~H"""
-    <P.field :let={field} id={@id} label="Origins" errors={field_errors(@errors, "origins")}>
-      <textarea
-        id={field.id}
-        name={@form[:origins].name}
-        rows="3"
-        autocapitalize="none"
-        spellcheck="false"
-        phx-debounce="blur"
-        aria-invalid={field.aria_invalid}
-        aria-describedby={field.described_by}
-      >{Phoenix.HTML.Form.normalize_value("textarea", @form[:origins].value)}</textarea>
-      <:hint>
-        The addresses your site runs at, one a line, up to 10. Sandbox: http://localhost and a
-        port, such as http://localhost:4000. Production: https:// and a host, such as
-        https://example.com.
-      </:hint>
-    </P.field>
     """
   end
 
@@ -1763,18 +1805,17 @@ defmodule AshTemplateWeb.SiwaLive do
   defp site(assigns) do
     ~H"""
     <section class="account-panel account-details" aria-labelledby="siwa-summary-title">
-      <h2 id="siwa-summary-title">Summary</h2>
+      <div class="siwa-head">
+        <h2 id="siwa-summary-title">Summary</h2>
+        <P.status :if={practice?(@site)} id="siwa-practice">Practice</P.status>
+      </div>
       <dl>
         <div>
-          <dt>Audience</dt>
+          <dt>Handle</dt>
           <dd class="siwa-inline">
             <code id="siwa-audience">{@site["audience"]}</code>
-            <P.copy_icon id="siwa-audience-copy" text={@site["audience"]} label="Copy the audience" />
+            <P.copy_icon id="siwa-audience-copy" text={@site["audience"]} label="Copy the handle" />
           </dd>
-        </div>
-        <div>
-          <dt>Environment</dt>
-          <dd><.environment site={@site} /></dd>
         </div>
         <div>
           <dt>Proof</dt>
@@ -1822,9 +1863,29 @@ defmodule AshTemplateWeb.SiwaLive do
             aria-describedby={field.described_by}
           />
         </P.field>
-        <.origins_field form={details} id="siwa-details-origins" errors={@errors["details"]} />
-        <P.notice :if={@site["environment"] == "production"} id="siwa-proof-warning" tone="warning">
-          Changing a production site's origins sets its proof back to Not proven.
+        <P.field
+          :let={field}
+          id="siwa-details-origins"
+          label="Addresses"
+          errors={field_errors(@errors["details"], "origins")}
+        >
+          <textarea
+            id={field.id}
+            name={details[:origins].name}
+            rows="3"
+            autocapitalize="none"
+            spellcheck="false"
+            phx-debounce="blur"
+            aria-invalid={field.aria_invalid}
+            aria-describedby={field.described_by}
+          >{Phoenix.HTML.Form.normalize_value("textarea", details[:origins].value)}</textarea>
+          <:hint :if={practice?(@site)}>
+            One a line, up to 10, each http://localhost and a port.
+          </:hint>
+          <:hint :if={!practice?(@site)}>One a line, up to 10, each starting with https://.</:hint>
+        </P.field>
+        <P.notice :if={!practice?(@site)} id="siwa-proof-warning" tone="warning">
+          Changing this site's addresses sets its proof back to Not proven.
         </P.notice>
         <div class="siwa-actions">
           <P.button
@@ -1919,7 +1980,7 @@ defmodule AshTemplateWeb.SiwaLive do
     <section class="account-panel" aria-labelledby="siwa-archive-title">
       <h2 id="siwa-archive-title">Archive</h2>
       <p class="rg-muted">
-        Archiving removes this site and stops its keys at once. Its audience, <code>{@site["audience"]}</code>, stays taken: no site can use it again.
+        Archiving removes this site and stops its keys at once. Its handle, <code>{@site["audience"]}</code>, stays taken: no site can use it again.
       </p>
       <div class="siwa-actions">
         <P.button
@@ -1930,7 +1991,7 @@ defmodule AshTemplateWeb.SiwaLive do
           disabled={pending?(@pending, :archive)}
           phx-click="archive"
           phx-target={@myself}
-          data-confirm={"Archive #{@site["name"]}? Its keys stop working at once, and its audience #{@site["audience"]} stays taken for good."}
+          data-confirm={"Archive #{@site["name"]}? Its keys stop working at once, and its handle #{@site["audience"]} stays taken for good."}
           data-confirm-action="Archive"
         >
           Archive site
@@ -1938,15 +1999,6 @@ defmodule AshTemplateWeb.SiwaLive do
       </div>
       <.notice id="siwa-archive-notice" notice={@notices["archive"]} />
     </section>
-    """
-  end
-
-  attr :site, :map, required: true
-
-  defp environment(assigns) do
-    ~H"""
-    <P.status :if={@site["environment"] == "production"} tone="info">Production</P.status>
-    <P.status :if={@site["environment"] != "production"}>Sandbox</P.status>
     """
   end
 
@@ -2092,6 +2144,9 @@ defmodule AshTemplateWeb.SiwaLive do
   defp form(drafts, name, saved), do: to_form(Map.get(drafts, name, saved), as: name)
 
   defp lines(site), do: Enum.join(site["origins"], "\n")
+
+  # A sandbox site, which the page calls a practice site.
+  defp practice?(site), do: site["environment"] == "sandbox"
 
   defp pending?(pending, kind), do: Enum.any?(pending, &(is_tuple(&1) and elem(&1, 0) == kind))
 
