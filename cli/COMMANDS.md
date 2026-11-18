@@ -48,7 +48,8 @@ Every signed command can also be refused with:
 - 503 `siwa_request_failed` or `agent_unavailable`: try again in a moment.
 
 Any command can be refused with 429 `too_many_requests` after 120 requests a minute from one
-address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-After`.
+address, a paired agent's signed command after 120 a minute for all the agents its person has
+paired, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-After`.
 
 ## health
 

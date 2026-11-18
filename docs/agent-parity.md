@@ -150,7 +150,9 @@ these rows have no agent surface and get none.
   client keeps the list it was first given (Keyfleet's fix, 14 Nov), but runs only
   its identity tools: each of the others answers `agent_not_paired` before anything
   is read, and its policy refuses it too. The per-account budget is
-  `/mcp`'s 120 a minute, spent before the identity is read; while the service
+  `/mcp`'s 120 a minute, spent before the identity is read, apart from the API's
+  allowance for signed agent requests (120 a minute per person), which no call to
+  `/mcp` spends; while the service
   can't give the identity's wallet, the call is refused (`identity_unavailable`,
   503) and the next call asks again. Each app a person connects has its own
   identity and pairs only with its own code. Protected (sign-in): waits for Sean's go. Owner: template

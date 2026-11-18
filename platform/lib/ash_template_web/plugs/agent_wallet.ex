@@ -11,6 +11,14 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   refusal answers
   `{"error": {"code", "message", "hint"}}`, with the service's own words when it
   refused.
+
+  Once the signature and the pairing are checked, an agent acting for its person
+  spends that person's budget: 120 requests a minute for all the agents paired
+  with them, after the endpoint's 120 for each address, answered past it as the
+  endpoint answers its own (`RegentAgentAccess.RateLimit`). An agent acting as
+  itself has no person, and keeps only its address's. The hosted MCP server checks
+  the same signature with hooks of its own (`AshTemplateWeb.Plugs.McpAgent`) and
+  never spends this budget, so an agent busy on one never uses up the other.
   """
 
   @behaviour Plug
@@ -20,9 +28,11 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   require Logger
 
+  alias AshTemplate.Accounts.RequestRateLimiter
   alias AshTemplate.Actors.{Agent, System}
   alias AshTemplate.Agents
   alias AshTemplate.Agents.ForPerson
+  alias RegentAgentAccess.RateLimit
   alias RegentHttp.UnexpectedFailure
 
   @hint "Sign in with regents auth login --site ash-template (how: https://template.regents.sh/agents.md), then send the request again."
@@ -56,11 +66,29 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
       {503, "The agent could not be signed in right now.", "Try again in a moment."}
   }
 
+  @budget RateLimit.init(
+            policy: "agent",
+            limit: 120,
+            window: 60,
+            admit: &RequestRateLimiter.admit/3,
+            key: &__MODULE__.person/1
+          )
+
   @impl Plug
   def init(opts), do: opts
 
   @impl Plug
-  def call(conn, _opts), do: Siwa.AgentAuthPlug.call(conn, siwa_options(__MODULE__))
+  def call(conn, _opts),
+    do: conn |> Siwa.AgentAuthPlug.call(siwa_options(__MODULE__)) |> spend()
+
+  # Only an agent acting for its person spends, and only once both are checked.
+  defp spend(%{halted: false, assigns: %{actor: %Agent{pairing: :active}}} = conn),
+    do: RateLimit.call(conn, @budget)
+
+  defp spend(conn), do: conn
+
+  @doc false
+  def person(conn), do: conn.assigns.actor.privy_user_id
 
   @doc """
   The shared plug's options, with `hooks` signing in and refusing: this module,
