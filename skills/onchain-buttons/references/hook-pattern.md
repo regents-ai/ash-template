@@ -141,6 +141,11 @@ a wallet it does not link is ignored, never asked to be switched.
   component on the server, which no longer knows the active wallet or the review, so the
   hook lets its review go and reports the wallet again, and the next press is sent from a
   review the server remembers.
+- LiveView sends a form with an `id` back to the fresh component before it runs
+  `reconnected`, and a press in that moment reaches the server before the wallet report
+  does. So `prepare_and_send` names the active wallet too, and the component takes it as
+  the wallet the page reported before it builds the review: the press still gets its
+  steps and reaches the wallet.
 - `OnchainSteps.active_wallet/1` reads it; `OnchainSteps.signer(linked, active)` is the
   wallet that may act, or `nil` when signed out, when none is active, or when the account
   does not link it.
@@ -185,9 +190,10 @@ The hook's own click listener runs every press on its own:
    It never opens Privy's connect step (founder decision "1 a").
 3. **No review yet, or the form differs from the review's `inputs`** (the person pressed
    before the first review arrived, or typed and pressed before the new one did), on a
-   component with `data-onchain-input` fields: it sends `prepare_and_send` with the form
-   and the step. The component takes the form as the page's own, builds the review and
-   replies `%{review: review, send: name}`, and the hook sends that. When the fresh build
+   component with `data-onchain-input` fields: it sends `prepare_and_send` with the form,
+   the step and the active wallet's `address`. The component takes the form and the
+   wallet as the page's own, builds the review and replies `%{review: review, send:
+   name}`, and the hook sends that. When the fresh build
    finds that step certain to fail (the same check that disables the button), the reply
    is empty instead: the press came while the page still showed another wallet or form,
    and the button now re-renders disabled with its reason. Keyfleet, 27 Oct: Mark present
@@ -332,6 +338,17 @@ Agents sign in with SIWA (`elixir-utils/siwa`), which is not a button.
   chain, reports `wallet_refused`.
   `/showcase/wallet` then runs the same buttons with real Privy sign-in and a
   real wallet on Base Sepolia; a press there needs a little Base Sepolia test ETH.
+- `assets/test/onchain_steps.test.ts` runs the hook's press: a press after the page
+  joins again, or with a number the held review was not built for, asks
+  `prepare_and_send` with the open wallet's address and sends the step that comes back
+  to that wallet. `test/ash_template_web/onchain_prepare_test.exs` proves the
+  component's half: a fresh component that has not heard the wallet builds the steps
+  for the address the press names when the account links it, and none otherwise.
+- `test/browser/wallet_press_reconnect.spec.ts` walks `/showcase/wallet` with a stand-in
+  wallet as the connection drops and comes back: a press with the page offline, a press
+  while LiveView is still sending the form back (from the held steps, and after the
+  number changed), and a press after the number changed once the page is back each
+  reach the wallet; the two that change the number are then read against their steps.
 - Sites keep their own test policy. A site that keeps a Vitest suite proves with a
   stand-in wallet that two presses in a row both reach `eth_sendTransaction`, that a
   decline reports `wallet_declined`, that a wallet on another account still gets the

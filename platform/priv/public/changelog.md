@@ -6,6 +6,8 @@ Changes to Ash Template, newest first.
 
 - **Wallet buttons.** If your wallet refuses a request outright, the page now says nothing
   was sent.
+- **Wallet buttons.** A wallet button pressed just after the page reconnects now opens your
+  wallet.
 
 ## 17 November 2026
 

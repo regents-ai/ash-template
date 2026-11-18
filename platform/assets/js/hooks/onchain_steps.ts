@@ -108,6 +108,7 @@ export const OnchainSteps: Hook = {
       const release = mark(button)
       const form = formInputs(this.el)
       const asks = Object.keys(form).length > 0 && (!this.review || !sameInputs(this.review.inputs, form))
+      const wallet = activeEthereumWallet()
       const during = (this.pressed += 1)
       say(null, during)
       // The server never heard the press, so it cannot say why; the page does, and
@@ -117,8 +118,10 @@ export const OnchainSteps: Hook = {
         report({name: "press.unsent", where: name, outcome: "lost"})
       }
 
-      if (activeEthereumWallet() && asks) {
-        void this.pushEventTo(this.el, "prepare_and_send", {form, step: name})
+      // The ask names the open wallet: a page that has just joined again can ask
+      // before the server has heard which wallet is open.
+      if (wallet && asks) {
+        void this.pushEventTo(this.el, "prepare_and_send", {form, step: name, address: wallet.address})
           .then(async ([result]) => {
             if (result?.status !== "fulfilled") return unheard()
             const reply = result.value.reply as {review?: Review; send?: string}

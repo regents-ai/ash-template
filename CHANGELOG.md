@@ -12561,3 +12561,42 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
   373 Elixir; 377 script). Not proven at release: a card from the real sign-in service and
   its real call to this site; the siwa-server chief pair-checks one card next.
+
+## 2026-11-18 — A wallet press just after a reconnect reaches the wallet
+
+- After a reconnect, LiveView sends a form with an `id` back to the fresh server
+  component before the hook's `reconnected` runs, so a press in that moment reached the
+  server before the hook said again which wallet is open. With the number changed, the
+  press asked `prepare_and_send` for its steps, the component had no wallet to build
+  them for, the reply was empty and nothing reached the wallet (Keyfleet's gap 3, second
+  half; a browser walk counted 0 sends). The hook now names the open wallet in that
+  request (`address`, the shape `onchain_active_wallet` already uses), and
+  `AshTemplateWeb.OnchainExample` takes it as the page's wallet (`take_active/2`, shared
+  with `onchain_active_wallet`) before it builds the steps. A wallet the account does not
+  link still gets none. Nothing holds back, defers or deduplicates a press; nothing is
+  kept or sent again; `reconnected` and the lost and unreported lines are unchanged.
+- A component with no `data-onchain-input` fields keeps today's behaviour: a press after
+  a reconnect and before the server's steps come back still sends nothing ("step
+  unknown"). Fixing it the same way means the hook asks `prepare_and_send` whenever it
+  holds no steps, for every component, so every site's component without a form would
+  need a `prepare_and_send` handler, or that press crashes its page. That is a change to
+  the contract every site follows, and this template has no component without a form to
+  prove it on; left for its own change.
+- Following these presses (gaps 1, 2, the first half of 3, and 4) stays as it is, by the
+  rule in `skills/regent-workflow` that a page keeps no pending transaction, until Sean
+  decides; `docs/feature-map.md` lists them under Gaps. The hook pattern in
+  `skills/onchain-buttons` says the press names the wallet.
+- Tests: `platform/test/browser/wallet_press_reconnect.spec.ts` (new) presses with the
+  page offline, while LiveView sends the form back (from the held steps, and after the
+  number changed), and after the number changed once the page is back, each reaching a
+  stand-in wallet, at both widths. Without the change, 2 failed (the number-changed press
+  while the form is sent back, asked 0 times at both widths) and 6 passed; with it, 8
+  passed three times in a row. `platform/assets/test/onchain_steps.test.ts` (new, 2)
+  fails without the hook change; `platform/test/ash_template_web/onchain_prepare_test.exs`
+  (new, 2) has 1 failing without the component change.
+- Checks: `mix format --check-formatted` and `mix compile --warnings-as-errors` exit 0;
+  `mix test` 375 passed (365 tests, 10 properties); `npm test` 379 passed (25 files) and
+  `npm run typecheck` exit 0; `sh test/browser/walk.sh wallet_press_reconnect.spec.ts
+  wallet_signed_out.spec.ts addresses.spec.ts pages.spec.ts` 348 passed; `make
+  check-style` exit 0. Not proven: a real Privy wallet and a real dropped connection (the
+  walk holds LiveView's replies and uses a stand-in wallet); Safari, Firefox, real phones.
