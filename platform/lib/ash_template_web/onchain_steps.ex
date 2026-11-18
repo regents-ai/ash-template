@@ -13,6 +13,11 @@ defmodule AshTemplateWeb.OnchainSteps do
 
   The only wallet that may act is Privy's active wallet when it is one of the
   signed-in account's own (`signer/2`).
+
+  A page that joins again meets a fresh component, which builds its review again
+  only once the page reports the wallet. A step sent from a review this
+  component has not built yet waits for it (`sent/2`), and is read once the same
+  review is built again for the same wallet, chain and form.
   """
 
   use Phoenix.Component
@@ -23,11 +28,13 @@ defmodule AshTemplateWeb.OnchainSteps do
   alias RegentChain.{Outcome, Presses}
 
   @recheck_ms 250
+  @unmatched_limit 8
   @address ~r/\A0x[0-9a-fA-F]{40}\z/
   @no_wallet "Your account has no wallet yet. Sign in again to get one."
 
   @doc "The assigns a wallet-button component starts with."
-  def init(socket), do: assign(socket, presses: Presses.new(), review: nil, press_note: nil)
+  def init(socket),
+    do: assign(socket, presses: Presses.new(), review: nil, press_note: nil, unmatched: [])
 
   @doc """
   The wallet that may act: Privy's `active` wallet when the signed-in account
@@ -60,27 +67,40 @@ defmodule AshTemplateWeb.OnchainSteps do
   @doc """
   Puts `review` (or none) on the page when it is not the one already there. A
   review is fixed once built, so a new signer, chain or figure is a new review,
-  and the page drops the old one as soon as this arrives.
+  and the page drops the old one as soon as this arrives. Steps sent from it
+  before it was built here are read from now on.
   """
   def put_review(%{assigns: %{review: nil}} = socket, nil), do: socket
   def put_review(%{assigns: %{review: %{id: id}}} = socket, %{id: id}), do: socket
 
-  def put_review(socket, review) do
-    presses =
-      if review,
-        do: Presses.remember(socket.assigns.presses, review),
-        else: socket.assigns.presses
-
+  def put_review(socket, nil) do
     socket
-    |> assign(review: review, presses: presses)
-    |> push_event("onchain-steps:review", %{component_id: socket.assigns.id, review: review})
+    |> assign(review: nil)
+    |> push_event("onchain-steps:review", %{component_id: socket.assigns.id, review: nil})
   end
 
-  @doc "The wallet sent a step; it is read from now on against the review it was sent from."
+  def put_review(socket, review) do
+    socket
+    |> assign(review: review, presses: Presses.remember(socket.assigns.presses, review))
+    |> push_event("onchain-steps:review", %{component_id: socket.assigns.id, review: review})
+    |> take_up(review.id)
+  end
+
+  @doc """
+  The wallet sent a step; it is read from now on against the review it was sent
+  from. A review this component has not built shows as one it cannot follow, and
+  is read once `put_review/2` builds it.
+  """
   def sent(socket, params) do
     case Presses.sent(socket.assigns.presses, params) do
-      {:ok, entry, presses} -> socket |> assign(presses: presses, press_note: nil) |> check(entry)
-      :error -> socket
+      {:ok, %{review: nil} = entry, presses} ->
+        socket |> assign(presses: presses, press_note: nil) |> hold(entry.hash, params)
+
+      {:ok, entry, presses} ->
+        socket |> assign(presses: presses, press_note: nil) |> check(entry)
+
+      :error ->
+        socket
     end
   end
 
@@ -206,6 +226,29 @@ defmodule AshTemplateWeb.OnchainSteps do
   defp words(_not_this_step, _chain_name),
     do:
       "This transaction is not the one this page prepared, so it can't be followed here. Check it in your wallet activity."
+
+  # The newest few reports naming a review not built here, by hash.
+  defp hold(socket, hash, params) do
+    unmatched = [{hash, params} | List.keydelete(socket.assigns.unmatched, hash, 0)]
+    assign(socket, unmatched: Enum.take(unmatched, @unmatched_limit))
+  end
+
+  # Each report waiting for the review `id` is taken again now that it is built
+  # here, and read against it. `Presses.sent/2` keeps a hash's first entry, so
+  # the entry that could not be followed is let go first.
+  defp take_up(socket, id) do
+    {due, unmatched} =
+      Enum.split_with(socket.assigns.unmatched, fn {_hash, params} ->
+        params["review_id"] == id
+      end)
+
+    Enum.reduce(due, assign(socket, unmatched: unmatched), fn {hash, params}, socket ->
+      presses = socket.assigns.presses
+      presses = %{presses | sent: Enum.reject(presses.sent, &(&1.hash == hash))}
+      {:ok, entry, presses} = Presses.sent(presses, params)
+      socket |> assign(presses: presses) |> check(entry)
+    end)
+  end
 
   defp check(socket, %{step: nil}), do: socket
 

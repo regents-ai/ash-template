@@ -12561,3 +12561,44 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
   373 Elixir; 377 script). Not proven at release: a card from the real sign-in service and
   its real call to this site; the siwa-server chief pair-checks one card next.
+
+## 2026-11-18 — Following a wallet press across reconnects
+
+- Keyfleet found four ways a wallet press was not followed when the page's connection
+  dropped. A browser walk on `/showcase/wallet`
+  (`platform/test/browser/wallet_press_follow.spec.ts`, stand-in wallet, both widths)
+  found three of them here before this change: a hash or a decline the wallet returned
+  while the page was offline was never told to the server; a hash returned, or a press
+  made from the steps the page held, while LiveView was still sending the form back
+  showed "not the one this page prepared"; and a press after the number changed in that
+  moment never reached the wallet. A hash returned just as the page was drawn again was
+  already followed.
+- The hook (`platform/assets/js/hooks/onchain_steps.ts`, `answers()`) keeps a report the
+  page could not send in memory and sends it once more from `reconnected`, after the
+  wallet report, or at once when a push still on its way as the page joined again
+  fails. Unheard twice, or kept when the hook is destroyed, it is let go and reported as
+  `press.unsent`. No timer, no polling, nothing in browser storage.
+- `AshTemplateWeb.OnchainSteps.sent/2` keeps a report naming a review the component has
+  not built (the newest eight), and `put_review/2` reads it against the review once the
+  same id is built again: same component, signer, chain, steps and form. It is never
+  read against another review, and `RegentChain.Outcome` still checks network, sender,
+  contract, calldata and amount.
+- `prepare_and_send` carries the active wallet's address, and the reference component
+  takes it as the wallet the page reported, so a press made before the page re-reports
+  the wallet gets its steps and reaches the wallet.
+- Not changed: a wallet prompt left open across a live navigation away and back is not
+  followed (the walk marks it as failing; `docs/feature-map.md`, Gaps). Where an answer
+  would be kept across a live navigation is a product decision.
+- Docs: `skills/onchain-buttons/references/hook-pattern.md` ("What the wallet answered",
+  the server's check, the press, Checks), `docs/feature-map.md`, the public changelog.
+- Checks: `mix format --check-formatted`, `mix compile --warnings-as-errors` and `mix
+  credo --strict` on the changed files exit 0; `mix test` 376 passed; `npm test` 385
+  passed and the typecheck exit 0; `sh test/browser/walk.sh wallet_press_follow.spec.ts
+  wallet_signed_out.spec.ts addresses.spec.ts pages.spec.ts` 356 passed; the new walk
+  alone three times in a row, 16 passed each; `make check-style` exit 0. Without the
+  three code changes the new walk fails 12 of its 16 (the four that pass are the two
+  already followed and the two marked as failing), and the new
+  `platform/test/ash_template_web/onchain_follow_test.exs` fails all three. Not proven:
+  real wallet apps and Privy across a real network drop; a signature returned while
+  LiveView is still sending the form back (the server drops it, as before); Safari,
+  Firefox, real phones.

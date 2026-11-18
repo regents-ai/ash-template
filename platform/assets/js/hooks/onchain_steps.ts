@@ -32,6 +32,12 @@ export type Pressed = {transaction_hash: Hash} | {signature: Hex} | {reason: Fai
 
 type Push = (event: string, payload: unknown) => void
 
+/** One report of what the wallet answered, and the press it came during. */
+export type Answer = {event: string; payload: unknown; during: number}
+
+/** Where a report ended: kept for the rejoin, heard on it, or not heard at all. */
+export type Settled = "kept" | "delivered" | "lost"
+
 type OnchainStepsHook = Hook & {
   el: HTMLElement
   js(): {ignoreAttributes(el: HTMLElement, attrs: string[]): void}
@@ -40,6 +46,7 @@ type OnchainStepsHook = Hook & {
   review?: Review
   clicked?: (event: Event) => void
   walletChanged?: () => void
+  answers?: Answers
   // How many presses this component has taken, and the line it is showing.
   pressed: number
   shown: Line
@@ -57,9 +64,10 @@ const presses = new WeakMap<HTMLElement, number>()
 export const OnchainSteps: Hook = {
   mounted(this: OnchainStepsHook) {
     // What the wallet answered must reach the server, which reads the step from
-    // then on. When the page has no connection it cannot, so the page says so
-    // itself and reports it; nothing is kept or sent again. The wallet the server
-    // should act for is told again when the connection is back (`reconnected`).
+    // then on. When the page has no connection it cannot yet: the page says so
+    // itself and keeps the answer, in memory only, until the connection is back
+    // (`reconnected`), when the server first hears the wallet again and then the
+    // answer. Unheard then too, it is let go, and the page says so and reports it.
     this.pressed = 0
     this.shown = null
     // A push can take half a minute to give up, so a line about one press is
@@ -70,19 +78,18 @@ export const OnchainSteps: Hook = {
       this.shown = line
       note(this.el, line)
     }
-    const push: Push = (event, payload) => {
-      const during = this.pressed
-      const unheard = () => {
-        if (event === "onchain_active_wallet") return
+    this.answers = answers(
+      async ({event, payload}) => (await this.pushEventTo(this.el, event, payload))[0]?.status === "fulfilled",
+      ({event, payload, during}, settled) => {
+        if (settled === "delivered") return say(null, during)
         const {step, reason} = payload as {step?: string; reason?: string}
         const answered = event !== "step_failed" || reason === "send_unconfirmed" || reason === "sign_unconfirmed"
         say(answered ? "unreported" : "lost", during)
-        report({name: "press.unsent", where: step ?? event, outcome: "lost"})
-      }
-      void this.pushEventTo(this.el, event, payload).then(([result]) => {
-        if (result?.status !== "fulfilled") unheard()
-      }, unheard)
-    }
+        if (settled === "lost") report({name: "press.unsent", where: step ?? event, outcome: "lost"})
+      },
+    )
+    const {pass} = this.answers
+    const push: Push = (event, payload) => pass({event, payload, during: this.pressed})
 
     // Every hook on the page hears this event; keep only this component's review.
     // No review means no eligible wallet: a press then sends nothing.
@@ -108,6 +115,7 @@ export const OnchainSteps: Hook = {
       const release = mark(button)
       const form = formInputs(this.el)
       const asks = Object.keys(form).length > 0 && (!this.review || !sameInputs(this.review.inputs, form))
+      const wallet = activeEthereumWallet()
       const during = (this.pressed += 1)
       say(null, during)
       // The server never heard the press, so it cannot say why; the page does, and
@@ -117,8 +125,10 @@ export const OnchainSteps: Hook = {
         report({name: "press.unsent", where: name, outcome: "lost"})
       }
 
-      if (activeEthereumWallet() && asks) {
-        void this.pushEventTo(this.el, "prepare_and_send", {form, step: name})
+      // The ask names the wallet too: a page that has just joined again may ask
+      // before the server has heard which wallet is open.
+      if (wallet && asks) {
+        void this.pushEventTo(this.el, "prepare_and_send", {form, step: name, address: wallet.address})
           .then(async ([result]) => {
             if (result?.status !== "fulfilled") return unheard()
             const reply = result.value.reply as {review?: Review; send?: string}
@@ -134,8 +144,10 @@ export const OnchainSteps: Hook = {
     this.el.addEventListener("click", this.clicked)
 
     // The server decides which wallet may act; it hears every change of the
-    // wallet Privy has active and pushes a new review, or none.
-    this.walletChanged = () => push("onchain_active_wallet", {address: activeEthereumWallet()?.address ?? null})
+    // wallet Privy has active and pushes a new review, or none. A report the
+    // page could not send is not kept: `reconnected` sends the wallet open then.
+    this.walletChanged = () =>
+      void this.pushEventTo(this.el, "onchain_active_wallet", {address: activeEthereumWallet()?.address ?? null})
     window.addEventListener("ash:wallet-state", this.walletChanged)
 
     this.walletChanged()
@@ -144,22 +156,74 @@ export const OnchainSteps: Hook = {
 
   // A page that rejoins gets a fresh component on the server, which no longer
   // knows the active wallet or the review this hook holds. The review is let go
-  // and the wallet told again, so the next press is sent from a review the
-  // server remembers.
+  // and the wallet told again, and only then the wallet's answers the server has
+  // not heard, so the server rebuilds the steps they were sent from first.
   //
   // The rejoin redraws the component, which hides its lines again; the one this
   // hook was showing is put back, so "your wallet answered" outlives the very
-  // reconnect it is about. The next press clears it.
+  // reconnect it is about. The next press clears it, and so does the server
+  // hearing the answer.
   reconnected(this: OnchainStepsHook) {
     this.review = undefined
     note(this.el, this.shown)
     this.walletChanged?.()
+    this.answers?.rejoined()
   },
 
+  // A page left behind cannot pass its answers on: each one kept is reported.
   destroyed(this: OnchainStepsHook) {
     if (this.clicked) this.el.removeEventListener("click", this.clicked)
     if (this.walletChanged) window.removeEventListener("ash:wallet-state", this.walletChanged)
+    this.answers?.gone()
   },
+}
+
+type Answers = {pass(answer: Answer): void; rejoined(): void; gone(): void}
+
+/**
+ * The wallet's answers on their way to the server. `send` pushes one and says
+ * whether the server heard it. One the page cannot send is kept until the page
+ * joins again (`rejoined`) and then sent once more; one that was still on its way
+ * when the page joined again is sent once more straight away. Unheard a second
+ * time, or kept when the page is `gone`, it is lost. `settled` hears where each
+ * one that was not heard the first time ended.
+ */
+export function answers(
+  send: (answer: Answer) => Promise<boolean>,
+  settled: (answer: Answer, end: Settled) => void,
+): Answers {
+  let joins = 0
+  let gone = false
+  const kept: Answer[] = []
+  const pass = (answer: Answer, again: boolean) => {
+    const at = joins
+    void send(answer)
+      .catch(() => false)
+      .then(heard => {
+        if (heard) {
+          if (again) settled(answer, "delivered")
+        } else if (again || gone) {
+          settled(answer, "lost")
+        } else if (at !== joins) {
+          pass(answer, true)
+        } else {
+          kept.push(answer)
+          settled(answer, "kept")
+        }
+      })
+  }
+
+  return {
+    pass: answer => pass(answer, false),
+    rejoined: () => {
+      joins += 1
+      for (const answer of kept.splice(0)) pass(answer, true)
+    },
+    gone: () => {
+      gone = true
+      for (const answer of kept.splice(0)) settled(answer, "lost")
+    },
+  }
 }
 
 /**

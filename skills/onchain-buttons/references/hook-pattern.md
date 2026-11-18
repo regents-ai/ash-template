@@ -62,9 +62,16 @@ Register `OnchainSteps` in the `hooks` passed to `LiveSocket`. The hook element 
 - Every field the review depends on carries `data-onchain-input="name"`, matching the
   review's `inputs`. A group of radio buttons sharing one name reports the chosen value;
   a checkbox reports "true" or "false".
-- The component holds one hidden line marked `data-onchain-lost` with its own words
-  ("This page lost its connection, so nothing was sent. Press again once it's back.").
-  The hook shows it when a press could not reach the server; the next render hides it.
+- The component holds two hidden lines with its own words: `data-onchain-lost` ("This
+  page lost its connection, so nothing was sent. Press again once it's back.") and
+  `data-onchain-unreported` ("Your wallet answered, but this page had lost its
+  connection. Check your wallet activity."). The hook shows the first when a press, or
+  a wallet's answer that nothing was sent, could not reach the server, and the second
+  when a hash or signature could not. The next render hides them, and so does the server
+  hearing the answer once the page is back (see "What the wallet answered").
+- The component's form has a DOM `id`, so LiveView sends the form back to the fresh
+  component when the page joins again and the review is rebuilt for the number on
+  screen.
 - The hook marks a button `data-awaiting-wallet="true"` while the wallet has any of its
   presses, and only removes it when the last one is answered. Style it; never block with
   it.
@@ -139,8 +146,12 @@ a wallet it does not link is ignored, never asked to be switched.
 - The hook pushes `onchain_active_wallet` with the address (or `nil`) when it mounts, on
   every `ash:wallet-state`, and again from `reconnected`: a page that rejoins gets a fresh
   component on the server, which no longer knows the active wallet or the review, so the
-  hook lets its review go and reports the wallet again, and the next press is sent from a
-  review the server remembers.
+  hook lets its review go and reports the wallet again, then passes on the wallet's
+  answers it kept, and the next press is sent from a review the server remembers.
+- LiveView sends a form with an `id` back to the fresh component before it runs
+  `reconnected`, and a press in that moment reaches the server before the wallet does.
+  So `prepare_and_send` names the active wallet too, and the component takes it as the
+  wallet the page reported before it builds the review.
 - `OnchainSteps.active_wallet/1` reads it; `OnchainSteps.signer(linked, active)` is the
   wallet that may act, or `nil` when signed out, when none is active, or when the account
   does not link it.
@@ -185,9 +196,10 @@ The hook's own click listener runs every press on its own:
    It never opens Privy's connect step (founder decision "1 a").
 3. **No review yet, or the form differs from the review's `inputs`** (the person pressed
    before the first review arrived, or typed and pressed before the new one did), on a
-   component with `data-onchain-input` fields: it sends `prepare_and_send` with the form
-   and the step. The component takes the form as the page's own, builds the review and
-   replies `%{review: review, send: name}`, and the hook sends that. When the fresh build
+   component with `data-onchain-input` fields: it sends `prepare_and_send` with the form,
+   the step and the active wallet's `address`. The component takes the form and the
+   wallet as the page's own, builds the review and replies `%{review: review, send:
+   name}`, and the hook sends that. When the fresh build
    finds that step certain to fail (the same check that disables the button), the reply
    is empty instead: the press came while the page still showed another wallet or form,
    and the button now re-renders disabled with its reason. Keyfleet, 27 Oct: Mark present
@@ -249,6 +261,26 @@ The hook then reports:
 - `step_signed` `{review_id, step, signature}`
 - `step_failed` `{step, reason}`
 
+### What the wallet answered
+
+A wallet can answer while the page has no connection: the person confirms in the wallet
+app while the page reconnects. The hook (`answers()` in `onchain_steps.ts`) follows each
+report by the reply to its push (`pushEventTo`'s promise) and by LiveView's
+`reconnected` callback, with no timer and no polling:
+
+- A report the server hears is done.
+- A report the page cannot send is kept in the hook's memory, and the hook shows
+  `data-onchain-unreported` (a hash or a signature, or a send that may have gone) or
+  `data-onchain-lost` (nothing was sent).
+- `reconnected` reports the wallet first and then each kept report, once and in order,
+  so the fresh component has rebuilt the review before it hears the hash. A report
+  still on its way as the page joined again is sent once more as soon as its push
+  fails. Heard then, its line goes.
+- Unheard that second time too, or kept when the hook is destroyed (a live navigation
+  away), the report is let go: its line stays and the hook reports `press.unsent`.
+- Nothing is written to browser storage, and nothing outlives the hook: a reload or a
+  live navigation away and back follows no press made before it.
+
 ## The server's check
 
 `OnchainSteps` keeps the page's last 32 reviews and 8 sent steps in a
@@ -263,8 +295,12 @@ The hook then reports:
   as that review built it is `{:error, :not_this_step}`.
 - After 90 reads with no receipt the step is stalled; the page offers "Check again",
   which calls `OnchainSteps.check_again/2`.
-- A report for a review the page no longer holds is never checked against a later
-  review; it shows the "not this step" words.
+- A report naming a review this component has not built shows the "not this step"
+  words and waits, the newest eight by hash. When `put_review/2` builds a review with that
+  same id (the same component, signer, chain, steps and form, as after a rejoin once the
+  page reports the wallet and LiveView has sent the form back), the step is read against
+  it from then on, with every check above. It is never checked against any other
+  review.
 - `OnchainSteps.signed/2` returns the review's own typed data with the signature, for
   the component to verify and use.
 
@@ -332,6 +368,25 @@ Agents sign in with SIWA (`elixir-utils/siwa`), which is not a button.
   chain, reports `wallet_refused`.
   `/showcase/wallet` then runs the same buttons with real Privy sign-in and a
   real wallet on Base Sepolia; a press there needs a little Base Sepolia test ETH.
+- `assets/test/onchain_steps.test.ts` proves how the hook passes on the wallet's
+  answers: a report heard once is done; one the page could not send is kept and sent
+  once more when the page joins again, and lost if unheard then too, never sent a third
+  time; one on its way as the page joined again is sent once more at once; kept reports
+  go in the order the wallet gave them; a page left behind lets them go; and over every
+  run of five things the connection can do, a report is sent at most twice and ends at
+  most once.
+- `test/ash_template_web/onchain_follow_test.exs` proves the server half on a fresh
+  component, as after a rejoin: a hash reported before the wallet is read once the same
+  review is built again, never against another review; `prepare_and_send` before the
+  wallet report gets the steps for the wallet it names, and none for a wallet the
+  account does not link.
+- `test/browser/wallet_press_follow.spec.ts` walks `/showcase/wallet` with a stand-in
+  wallet through each of these: a hash, a press and a decline while the page is offline;
+  a hash returned just as the page is drawn again, and while LiveView is still sending
+  the form back; and a press in that moment, from the held steps and after the number
+  changed. Every press reaches the wallet, and each hash ends read against its step. A
+  wallet prompt left open across a live navigation away and back is marked as not
+  followed yet.
 - Sites keep their own test policy. A site that keeps a Vitest suite proves with a
   stand-in wallet that two presses in a row both reach `eth_sendTransaction`, that a
   decline reports `wallet_declined`, that a wallet on another account still gets the

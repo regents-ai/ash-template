@@ -6,6 +6,9 @@ Changes to Ash Template, newest first.
 
 - **Wallet buttons.** If your wallet refuses a request outright, the page now says nothing
   was sent.
+- **Wallet buttons.** A wallet answer that arrives while the page is reconnecting is now
+  shown, and the page follows the transaction once it is back. A press made in that
+  moment still goes to your wallet and is followed too.
 
 ## 17 November 2026
 

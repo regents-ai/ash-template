@@ -45,20 +45,22 @@ defmodule AshTemplateWeb.OnchainExample do
   end
 
   @impl true
-  def handle_event("onchain_active_wallet", params, socket) do
-    active = OnchainSteps.active_wallet(params)
-    socket = if active == socket.assigns.active, do: socket, else: assign(socket, press_note: nil)
-    {:noreply, socket |> assign(active: active) |> sync()}
-  end
+  def handle_event("onchain_active_wallet", params, socket),
+    do: {:noreply, socket |> take_active(params) |> sync()}
 
   def handle_event("change", %{"amount" => amount}, socket),
     do: {:noreply, socket |> assign(amount: amount) |> sync()}
 
-  # A press made before the review caught up with the form: the form is taken
-  # as the page's own, and the reply carries the review for it.
-  def handle_event("prepare_and_send", %{"form" => %{"amount" => amount}, "step" => name}, socket)
+  # A press made before the review caught up with the form: the form and the
+  # wallet open are taken as the page's own, and the reply carries the review
+  # for them. A page that has just joined again asks before it reports the wallet.
+  def handle_event(
+        "prepare_and_send",
+        %{"form" => %{"amount" => amount}, "step" => name} = params,
+        socket
+      )
       when is_binary(amount) do
-    socket = socket |> assign(amount: amount) |> sync()
+    socket = socket |> assign(amount: amount) |> take_active(params) |> sync()
 
     case socket.assigns.review do
       %{} = review when is_binary(name) -> {:reply, %{review: review, send: name}, socket}
@@ -126,6 +128,14 @@ defmodule AshTemplateWeb.OnchainExample do
       own: AccessContext.own_wallet(context)
     )
     |> sync()
+  end
+
+  # Privy's active wallet as the page reported it. Another wallet clears the note
+  # about the one open before.
+  defp take_active(socket, params) do
+    active = OnchainSteps.active_wallet(params)
+    socket = if active == socket.assigns.active, do: socket, else: assign(socket, press_note: nil)
+    assign(socket, active: active)
   end
 
   # The review follows the signer and the form. With no eligible signer there is
