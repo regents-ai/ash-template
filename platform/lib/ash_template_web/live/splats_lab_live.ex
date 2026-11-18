@@ -2,8 +2,12 @@ defmodule AshTemplateWeb.SplatsLabLive do
   @moduledoc """
   Splats: two small worlds in pixel art, a robot factory and a floating island, each a
   few hundred thousand 3D splats, turning once every thirty seconds while everything in
-  them plays an eight-second loop. The robot factory comes first; `?scene=island` shows
-  the floating island at night instead, and any other value shows the factory.
+  them plays an eight-second loop. A drag turns and tilts the scene, and a pinch, a
+  wheel with Ctrl or Cmd held, the keys + and - or the box's Zoom in and Zoom out
+  buttons bring it nearer, up to four times, at the pointer or the middle; Reset view,
+  0, a double-click or a double tap goes back to the opening view. The robot factory
+  comes first; `?scene=island` shows the floating island at night instead, and any
+  other value shows the factory.
 
   Each scene is one baked file, `priv/static/splats/<scene>.bin` (laid out in
   `assets/js/splats/studio/FORMAT.md`), served gzipped and digested like the other
@@ -14,6 +18,12 @@ defmodule AshTemplateWeb.SplatsLabLive do
   WebGPU and fades it in once its first frame has landed; until then, and without
   WebGPU, the still stays. Each scene's box has its own id, so switching ends one
   scene's drawing before the next begins.
+
+  The zoom buttons sit in a corner of the stage, inside the box, and show once the
+  scene has drawn. The hook finds them by `data-splats-zoom` (`in`, `out`, `home`) and
+  keeps their `aria-disabled` up to date; the server sends them as the opening view
+  has them, Zoom out and Reset view with nothing to do. The box is a labelled group,
+  not a picture, so the buttons inside it stay reachable to a screen reader.
 
   Download GIF, at the end of the tabs' row, saves one seamless loop of the scene
   showing as `regents-<scene>.gif`, drawn and encoded in the browser
@@ -65,13 +75,41 @@ defmodule AshTemplateWeb.SplatsLabLive do
       square: ~p"/images/animations/splats-island-square.png"
     }
 
+  @moving "Drag, or use the arrow keys, to turn and tilt it. Pinch, or press plus and minus, to look closer, and 0 to go back to the start."
+
   defp label("factory"),
     do:
-      "A solarpunk robot factory on a floating island at dusk: a workshop hall with a sawtooth roof of glass, plants and solar panels, a brick chimney, two wind turbines, a water wheel, robot arms over an assembly line and robots at work, with a brass engine underneath. Drag, or use the arrow keys, to turn and tilt it."
+      "A solarpunk robot factory on a floating island at dusk: a workshop hall with a sawtooth roof of glass, plants and solar panels, a brick chimney, two wind turbines, a water wheel, robot arms over an assembly line and robots at work, with a brass engine underneath. #{@moving}"
 
   defp label("island"),
     do:
-      "A floating island at night with a great tree, two pines, a cottage, a campfire and a pond whose stream falls off the edge, over glowing crystals. Drag, or use the arrow keys, to turn and tilt it."
+      "A floating island at night with a great tree, two pines, a cottage, a campfire and a pond whose stream falls off the edge, over glowing crystals. #{@moving}"
+
+  attr :scene, :string, required: true
+  attr :action, :string, required: true, values: ~w(in out home)
+  attr :label, :string, required: true
+  attr :icon, :string, required: true
+
+  attr :at_limit, :boolean,
+    default: false,
+    doc: "true when the opening view leaves it nothing to do"
+
+  defp zoom_button(assigns) do
+    ~H"""
+    <Regent.Primitives.button
+      id={"splats-#{@scene}-zoom-#{@action}"}
+      variant="secondary"
+      arrow={false}
+      class="splats-zoom__button"
+      data-splats-zoom={@action}
+      aria-label={@label}
+      aria-disabled={to_string(@at_limit)}
+      phx-mounted={JS.ignore_attributes(["aria-disabled"])}
+    >
+      <Regent.Icons.icon name={@icon} />
+    </Regent.Primitives.button>
+    """
+  end
 
   @impl true
   def render(assigns) do
@@ -84,6 +122,7 @@ defmodule AshTemplateWeb.SplatsLabLive do
         <h1>Splats</h1>
         <p class="motion-lab__lede">
           Two small worlds, turning slowly. Drag one to turn it, or to look from above or below.
+          Pinch, or use the buttons in its corner, to look closer.
         </p>
       </header>
       <div class="splats-lab__bar">
@@ -136,7 +175,7 @@ defmodule AshTemplateWeb.SplatsLabLive do
         id={"splats-#{@scene}"}
         class="splats-lab"
         tabindex="0"
-        role="img"
+        role="group"
         aria-label={label(@scene)}
         data-splats-scene={@scene}
         data-splats-file={scene_file(@scene)}
@@ -150,6 +189,13 @@ defmodule AshTemplateWeb.SplatsLabLive do
         </picture>
         <div id={"splats-#{@scene}-stage"} class="splats-lab__stage" phx-update="ignore">
           <canvas data-splats-canvas></canvas>
+        </div>
+        <%!-- The SplatIsland hook finds these by data-splats-zoom and keeps their
+        aria-disabled; they show once the scene has drawn (splats_lab.css). --%>
+        <div class="splats-zoom">
+          <.zoom_button scene={@scene} action="out" label="Zoom out" icon="minus" at_limit />
+          <.zoom_button scene={@scene} action="in" label="Zoom in" icon="plus" />
+          <.zoom_button scene={@scene} action="home" label="Reset view" icon="scan" at_limit />
         </div>
       </div>
     </main>

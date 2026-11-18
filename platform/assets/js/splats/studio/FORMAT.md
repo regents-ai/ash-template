@@ -398,8 +398,10 @@ keep a year-long cache under their digested names like every other static file.
 - The art-pixel size follows the stage's height in screen pixels (section 5.2): decide whether that means CSS pixels or device pixels.
   The reference pictures use a 1440 x 960 stage, so 3 screen pixels an art pixel. The page uses device pixels (up to three a CSS
   pixel), so a scene has about the same number of art pixels on any screen.
-- The page steps the camera back on a stage narrower than three by two, so the scene still fits across it: z = min(1, (w / h) / 1.5).
-  A phone's square stage is drawn at z = 2/3.
+- The page steps the camera back on a stage narrower than three by two, so the scene still fits across it, and brings it nearer when
+  the person zooms in: z = zoom x min(1, (w / h) / 1.5), with the person's zoom from 1 to 4. A phone's square stage opens at z = 2/3.
+  A zoom at a point of the stage moves T across the view, no further from camTarget than R (1 − 1 / zoom), so the point under it in
+  the plane through T square to the view stays put.
 - The page's painter (`../painter.ts`) does not sort every splat. Solid splats whose density never changes are drawn unsorted, their
   middles (w ≥ 0.62) fully opaque with a depth test and their crisp edges (0.38 < w < 0.62) blended over them; only the rest (soft
   splats, those without depth and those whose kind changes α: 3,063 on the island and 5,889 on the factory) are sorted far to near on

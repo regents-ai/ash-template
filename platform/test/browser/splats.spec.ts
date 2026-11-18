@@ -12,6 +12,14 @@ import {expect, test} from "./support/test"
 // other link the factory; that without WebGPU the still picture stays; and, with less
 // motion, that it holds still, that a drag across turns it and a drag up or down tilts
 // it, each stopping where let go, and that the arrow keys turn and tilt it.
+// Zoom: the turn stops while a zoom comes in and eases back after, the loop playing on
+// and the zoom staying; with less motion, Zoom in and Zoom out step at once up to the
+// nearest and back, each saying when it has nothing left to do, and a drag from a button
+// moves nothing; a wheel with Ctrl held zooms at the pointer, the point under it near a
+// corner staying under it, and a plain wheel is the page's; Reset view, 0 and a
+// double-click each bring back the opening picture; on a phone two fingers pinch at
+// their midpoint and a double tap goes back. The camera is read from what the page
+// hands the graphics card each frame (watchViews).
 // Download GIF: it shows at the end of the tabs' row once the scene has drawn, counts
 // up in place while it works, takes no second press, and saves the scene's GIF; a
 // failure says so beside it; choosing the other scene stops it; without WebGPU it is
@@ -36,15 +44,109 @@ const drawn = async (page: Page, scene: Scene) => {
   return box
 }
 
-// The scene alone, one pixel inside the box's edge. On a phone the box's outermost rows
-// of screen pixels blend its border with the picture, and on a busy machine the browser
-// can still be repainting them just after the picture has drawn, the scene unmoved.
+// The scene alone, one pixel inside the box's edge, without the zoom buttons over it. On
+// a phone the box's outermost rows of screen pixels blend its border with the picture,
+// and on a busy machine the browser can still be repainting them just after the picture
+// has drawn, the scene unmoved.
 const picture = async (page: Page, scene: Scene) => {
   const canvas = page.locator(`#splats-${scene} [data-splats-canvas]`)
   await canvas.scrollIntoViewIfNeeded()
   const {x, y, width, height} = (await canvas.boundingBox())!
-  return page.screenshot({clip: {x: x + 1, y: y + 1, width: width - 2, height: height - 2}})
+  return page.screenshot({clip: {x: x + 1, y: y + 1, width: width - 2, height: height - 2}, style: ".splats-zoom { visibility: hidden !important; }"})
 }
+
+/**
+ * The scene's picture once two in a row agree. The page hands a frame to the graphics card
+ * a moment before the screen shows it, and on a busy machine a picture taken as soon as
+ * the camera has moved can still be the frame before.
+ */
+const steady = async (page: Page, scene: Scene) => {
+  let last = await picture(page, scene)
+  await expect
+    .poll(async () => {
+      const next = await picture(page, scene)
+      const same = next.equals(last)
+      last = next
+      return same
+    })
+    .toBe(true)
+  return last
+}
+
+/**
+ * The canvas's height in device pixels; the whole CSS pixel on the page about that share
+ * of its width and height from its top left (a mouse event's place is in whole pixels);
+ * and the canvas pixel under a place on the page.
+ */
+const stage = async (page: Page, scene: Scene) => {
+  const canvas = page.locator(`#splats-${scene} [data-splats-canvas]`)
+  await canvas.scrollIntoViewIfNeeded()
+  const area = (await canvas.boundingBox())!
+  const [width, height] = (await canvas.evaluate((element: HTMLCanvasElement) => [element.width, element.height])) as [number, number]
+  return {
+    height,
+    at: (across: number, down: number) => ({x: Math.round(area.x + across * area.width), y: Math.round(area.y + down * area.height)}),
+    pixel: ({x, y}: {x: number; y: number}) => [((x - area.x) / area.width) * width, ((y - area.y) / area.height) * height] as const,
+  }
+}
+
+/** What the page's camera was in a frame it drew, read from the View the painter hands the graphics card (painter.ts), and when. */
+type Seen = {at: number; right: number[]; up: number[]; back: number[]; eye: number[]; distance: number; focal: number; columns: number; rows: number; loop: number}
+
+/**
+ * Notes each frame's View as the page writes it to the graphics card. Every frame's
+ * uniforms go in one write, each at a 256-byte step; the View is the one whose right
+ * axis is level and whose axes are unit length.
+ */
+const watchViews = (page: Page) =>
+  page.addInitScript(() => {
+    if (typeof GPUQueue === "undefined") return
+    const seen: Seen[] = []
+    Object.assign(window, {seenViews: seen})
+    const write = GPUQueue.prototype.writeBuffer
+    GPUQueue.prototype.writeBuffer = function (this: GPUQueue, ...args: Parameters<GPUQueue["writeBuffer"]>) {
+      const [buffer, , data, from = 0, size] = args
+      if (buffer.label === "vgpu.frame.uniforms" && data instanceof ArrayBuffer) {
+        const end = from + (size ?? data.byteLength - from)
+        for (let at = from; at + 96 <= end; at += 256) {
+          const f = new Float32Array(data, at, 24)
+          const unit = (k: number) => Math.abs(Math.hypot(f[k]!, f[k + 1]!, f[k + 2]!) - 1) < 1e-3
+          if (f[1] !== 0 || !unit(0) || !unit(4) || !unit(8) || !(f[16]! >= 1) || !Number.isInteger(f[16]) || !Number.isInteger(f[17])) continue
+          const axis = (k: number) => [f[k]!, f[k + 1]!, f[k + 2]!]
+          seen.push({at: performance.now(), right: axis(0), up: axis(4), back: axis(8), eye: axis(12), distance: f[15]!, focal: f[3]!, columns: f[16]!, rows: f[17]!, loop: f[20]!})
+          break
+        }
+      }
+      return write.apply(this, args)
+    }
+  })
+
+const views = (page: Page) => page.evaluate(() => (window as unknown as {seenViews: Seen[]}).seenViews)
+const yawOf = ({right}: Seen) => Math.atan2(-right[2]!, right[0]!)
+/** How far the scene turned from one view to the next, its near side to the right. */
+const turned = (from: Seen, to: Seen) => {
+  const change = yawOf(from) - yawOf(to)
+  return Math.atan2(Math.sin(change), Math.cos(change))
+}
+const dot = (a: number[], b: number[]) => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!
+/** Screen pixels to a side of an art pixel, on a canvas this many device pixels high. */
+const artPixel = (view: Seen, height: number) => Math.ceil(height / view.rows)
+/** The point of the plane through the target, square to the view, under a canvas pixel (FORMAT.md 5.2 undone). */
+const underPixel = (view: Seen, [x, y]: readonly [number, number], height: number) => {
+  const q = artPixel(view, height)
+  const across = ((x / q - view.columns / 2) * view.distance) / view.focal
+  const up = ((view.rows / 2 - y / q) * view.distance) / view.focal
+  return view.eye.map((v, k) => v - view.distance * view.back[k]! + across * view.right[k]! + up * view.up[k]!)
+}
+/** Where a point lands on the canvas, in device pixels from its top left (FORMAT.md 5.1 and 5.2). */
+const onCanvas = (view: Seen, point: number[], height: number) => {
+  const q = artPixel(view, height)
+  const offset = point.map((v, k) => v - view.eye[k]!)
+  const depth = -dot(view.back, offset)
+  return [(view.columns / 2 + (view.focal * dot(view.right, offset)) / depth) * q, (view.rows / 2 - (view.focal * dot(view.up, offset)) / depth) * q]
+}
+/** One full turn every thirty seconds (renderer.ts). */
+const CRUISE = (Math.PI * 2) / 30
 
 /** Where the picture, the tabs and Download GIF are on the page. */
 const places = (page: Page, scene: Scene) =>
@@ -188,6 +290,9 @@ test("without WebGPU, the still picture stays and Download GIF is not offered", 
   await expect(button).toBeHidden()
   await expect(page.getByRole("button", {name: "Download GIF"})).toHaveCount(0)
   expect(await button.evaluate((element: HTMLElement) => (element.focus(), document.activeElement === element))).toBe(false)
+  // Nor are the zoom buttons.
+  await expect(page.locator("#splats-factory button[data-splats-zoom]")).toHaveCount(3)
+  for (const zoom of await page.locator("#splats-factory button[data-splats-zoom]").all()) await expect(zoom).toBeHidden()
 })
 
 test("the factory comes first, draws in its box and turns by itself", async ({page}) => {
@@ -228,6 +333,47 @@ test("the switch changes the scene, keeps the box's size and leaves one scene dr
   expect(await size(await drawn(page, "factory"))).toEqual(factory)
   await expect(page.locator("[data-splats-canvas]")).toHaveCount(1)
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
+})
+
+test("the turn stops while zoom comes in and eases back a moment after, the loop playing on and the zoom staying where it is left", async ({page}) => {
+  test.setTimeout(30_000)
+  await watchViews(page)
+  await page.goto("/animations/splats")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  await drawn(page, "factory")
+  const {at} = await stage(page, "factory")
+  const now = () => page.evaluate(() => performance.now())
+  await page.waitForTimeout(600)
+  const between = (seen: Seen[], from: number, to: number) => seen.filter(view => view.at > from && view.at <= to)
+  const speed = (seen: Seen[]) => turned(seen[0]!, seen.at(-1)!) / ((seen.at(-1)!.at - seen[0]!.at) / 1000)
+
+  const middle = at(0.5, 0.5)
+  await page.mouse.move(middle.x, middle.y)
+  await page.keyboard.down("Control")
+  await page.mouse.wheel(0, -10)
+  const started = await now()
+  for (let step = 2; step <= 8; step++) {
+    await page.waitForTimeout(80)
+    await page.mouse.wheel(0, -10)
+  }
+  await page.keyboard.up("Control")
+  const stopped = await now()
+  await page.waitForTimeout(3_500)
+  const seen = await views(page)
+
+  // Before, it turns by itself.
+  const before = speed(between(seen, started - 600, started - 50))
+  expect(before).toBeGreaterThan(0.3 * CRUISE)
+  // From the first zoom to a little after the last, it holds its turn while the zoom comes nearer and the loop plays on.
+  const still = between(seen, started, stopped + 600)
+  expect(still.length).toBeGreaterThan(5)
+  for (const view of still) expect(turned(still[0]!, view)).toBe(0)
+  expect(still.at(-1)!.distance).toBeLessThan(still[0]!.distance)
+  expect(new Set(still.map(view => view.loop)).size).toBeGreaterThan(1)
+  // Then it turns again at about its old speed, the zoom where it was left.
+  const after = between(seen, stopped + 3_000, stopped + 3_500)
+  expect(speed(after)).toBeGreaterThan(0.6 * before)
+  expect(new Set([still.at(-1)!, ...after].map(view => view.distance))).toEqual(new Set([still.at(-1)!.distance]))
 })
 
 test("a link opens the island, and any other link opens the factory", async ({page}) => {
@@ -285,6 +431,167 @@ test.describe("with less motion", () => {
       }
     })
   }
+
+  test("Zoom in brings the scene nearer a step at a time up to the nearest, Zoom out takes it back, and each says when it has nothing left to do", async ({page}) => {
+    await watchViews(page)
+    await page.goto("/animations/splats")
+    await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+    const box = await drawn(page, "factory")
+    const [zoomOut, zoomIn, reset] = ["Zoom out", "Zoom in", "Reset view"].map(name => box.getByRole("button", {name}))
+    for (const button of [zoomOut, zoomIn, reset]) await expect(button!).toBeVisible()
+    const limits = () => Promise.all([zoomOut, zoomIn, reset].map(button => button!.getAttribute("aria-disabled")))
+    expect(await limits()).toEqual(["true", "false", "true"])
+    const opening = await steady(page, "factory")
+    const first = (await views(page)).at(-1)!
+    const zoom = async () => first.distance / (await views(page)).at(-1)!.distance
+
+    // A drag that starts on a button is the button's: the scene neither turns nor zooms.
+    const {x, y, width, height} = (await zoomIn!.boundingBox())!
+    await page.mouse.move(x + width / 2, y + height / 2)
+    await page.mouse.down()
+    for (let step = 1; step <= 6; step++) await page.mouse.move(x + width / 2 - step * 20, y + height / 2 - step * 10)
+    await page.mouse.up()
+    await page.waitForTimeout(150)
+    expect((await picture(page, "factory")).equals(opening)).toBe(true)
+
+    // Each press lands at once, held still, one step nearer, the turn as it was.
+    let last = opening
+    for (let step = 1; step <= 4; step++) {
+      await zoomIn!.click()
+      await expect.poll(zoom).toBeCloseTo(Math.SQRT2 ** step, 4)
+      const nearer = await steady(page, "factory")
+      expect(nearer.equals(last)).toBe(false)
+      last = nearer
+    }
+    expect(turned(first, (await views(page)).at(-1)!)).toBe(0)
+    expect(await limits()).toEqual(["false", "true", "false"])
+    await zoomIn!.click({force: true})
+    await page.waitForTimeout(150)
+    expect(await zoom()).toBeCloseTo(4, 4)
+    expect((await picture(page, "factory")).equals(last)).toBe(true)
+
+    for (let step = 3; step >= 0; step--) {
+      await zoomOut!.click()
+      await expect.poll(zoom).toBeCloseTo(Math.SQRT2 ** step, 4)
+    }
+    expect(await limits()).toEqual(["true", "false", "true"])
+    expect((await steady(page, "factory")).equals(opening)).toBe(true)
+
+    // The keys step the same way.
+    await box.focus()
+    for (const [key, near] of [["+", Math.SQRT2], ["=", 2], ["-", Math.SQRT2]] as const) {
+      await page.keyboard.press(key)
+      await expect.poll(zoom).toBeCloseTo(near, 4)
+    }
+  })
+
+  test("a wheel with Ctrl held zooms at the pointer: the point under it near a corner stays under it, and a plain wheel is the page's", async ({page}) => {
+    await watchViews(page)
+    await page.goto("/animations/splats")
+    await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+    await drawn(page, "factory")
+    const {height, at, pixel: under} = await stage(page, "factory")
+    // How far each wheel turned (a phone's screen scales it), and whether it reached the page with its own scroll or zoom still to come.
+    await page.evaluate(() => {
+      const wheels: {pixels: number; kept: boolean}[] = []
+      Object.assign(window, {wheels})
+      window.addEventListener("wheel", event => wheels.push({pixels: event.deltaY, kept: !event.defaultPrevented}), {passive: true})
+    })
+    const wheels = () => page.evaluate(() => (window as unknown as {wheels: {pixels: number; kept: boolean}[]}).wheels)
+    // A wheel with Ctrl held zooms e times nearer for every 100 pixels it turns up (splat_island.ts).
+    const wheeled = async () => Math.min(4, Math.exp(-(await wheels()).reduce((sum, {pixels}) => sum + pixels, 0) / 100))
+    const pointer = at(0.2, 0.25)
+    const pixel = under(pointer)
+    const opening = (await views(page)).at(-1)!
+    const anchor = underPixel(opening, pixel, height)
+    await page.mouse.move(pointer.x, pointer.y)
+
+    await page.keyboard.down("Control")
+    for (let step = 1; step <= 8; step++) {
+      await page.mouse.wheel(0, -35)
+      const near = await wheeled()
+      await expect.poll(async () => opening.distance / (await views(page)).at(-1)!.distance).toBeCloseTo(near, 4)
+      const view = (await views(page)).at(-1)!
+      const [x, y] = onCanvas(view, anchor, height)
+      expect(Math.abs(x! - pixel[0])).toBeLessThan(artPixel(view, height))
+      expect(Math.abs(y! - pixel[1])).toBeLessThan(artPixel(view, height))
+    }
+    await page.keyboard.up("Control")
+
+    const zoomed = (await views(page)).at(-1)!
+    expect(opening.distance / zoomed.distance).toBeGreaterThan(2)
+    await page.mouse.wheel(0, 40)
+    await page.waitForTimeout(150)
+    expect((await views(page)).at(-1)!.distance).toBe(zoomed.distance)
+    expect((await wheels()).map(({kept}) => kept)).toEqual([...Array(8).fill(false), true])
+  })
+
+  test("Reset view, 0 and a double-click each go back to the opening picture from any zoom and tilt", async ({page}) => {
+    await page.goto("/animations/splats")
+    await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+    const box = await drawn(page, "factory")
+    const [zoomOut, reset] = ["Zoom out", "Reset view"].map(name => box.getByRole("button", {name}))
+    const opening = await steady(page, "factory")
+    const {at} = await stage(page, "factory")
+    const homes = [() => reset!.click(), () => page.keyboard.press("0"), () => page.mouse.dblclick(at(0.5, 0.5).x, at(0.5, 0.5).y)]
+    for (const home of homes) {
+      const pointer = at(0.3, 0.6)
+      await page.mouse.move(pointer.x, pointer.y)
+      await page.keyboard.down("Control")
+      await page.mouse.wheel(0, -35)
+      await page.mouse.wheel(0, -35)
+      await page.keyboard.up("Control")
+      await box.focus()
+      await page.keyboard.press("ArrowUp")
+      await expect(reset!).toHaveAttribute("aria-disabled", "false")
+      await expect.poll(async () => (await picture(page, "factory")).equals(opening)).toBe(false)
+
+      await home()
+      await expect.poll(async () => (await picture(page, "factory")).equals(opening)).toBe(true)
+      await expect(reset!).toHaveAttribute("aria-disabled", "true")
+      await expect(zoomOut!).toHaveAttribute("aria-disabled", "true")
+    }
+  })
+
+  test("on a touch screen two fingers pinch the scene nearer at their midpoint, the page staying put, and a double tap goes back", async ({page, isMobile}) => {
+    test.skip(!isMobile, "Touch is the phone's.")
+    await watchViews(page)
+    await page.goto("/animations/splats")
+    await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+    const box = await drawn(page, "factory")
+    const opening = await steady(page, "factory")
+    const {height, at, pixel: under} = await stage(page, "factory")
+    const first = (await views(page)).at(-1)!
+    const middle = at(0.4, 0.4)
+    const pixel = under(middle)
+    const anchor = underPixel(first, pixel, height)
+    const touch = await page.context().newCDPSession(page)
+    const fingers = (gap: number) => [
+      {x: middle.x - gap, y: middle.y - gap, id: 1},
+      {x: middle.x + gap, y: middle.y + gap, id: 2},
+    ]
+
+    await touch.send("Input.dispatchTouchEvent", {type: "touchStart", touchPoints: fingers(15)})
+    for (let gap = 18; gap <= 30; gap += 3) await touch.send("Input.dispatchTouchEvent", {type: "touchMove", touchPoints: fingers(gap)})
+    await touch.send("Input.dispatchTouchEvent", {type: "touchEnd", touchPoints: []})
+    await expect.poll(async () => first.distance / (await views(page)).at(-1)!.distance).toBeCloseTo(2, 2)
+    const view = (await views(page)).at(-1)!
+    const [x, y] = onCanvas(view, anchor, height)
+    expect(Math.abs(x! - pixel[0])).toBeLessThan(artPixel(view, height))
+    expect(Math.abs(y! - pixel[1])).toBeLessThan(artPixel(view, height))
+    expect(turned(first, view)).toBe(0)
+    expect(await page.evaluate(() => [window.scrollY, window.visualViewport!.scale])).toEqual([0, 1])
+    await expect(box.getByRole("button", {name: "Zoom out"})).toHaveAttribute("aria-disabled", "false")
+
+    const centre = at(0.5, 0.5)
+    for (let tap = 0; tap < 2; tap++) {
+      await touch.send("Input.dispatchTouchEvent", {type: "touchStart", touchPoints: [centre]})
+      await touch.send("Input.dispatchTouchEvent", {type: "touchEnd", touchPoints: []})
+      await page.waitForTimeout(60)
+    }
+    await expect.poll(async () => (await picture(page, "factory")).equals(opening)).toBe(true)
+    await expect(box.getByRole("button", {name: "Zoom out"})).toHaveAttribute("aria-disabled", "true")
+  })
 
   test("Download GIF still saves the island's GIF, pressed from the keyboard", async ({page}) => {
     test.setTimeout(30_000 + WHOLE_GIF)

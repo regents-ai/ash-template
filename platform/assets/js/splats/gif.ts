@@ -83,13 +83,19 @@ export async function makeGif(scene: Scene, progress: (share: number) => void, s
     signal.throwIfAborted()
     const {header} = scene
     const painter = createPainter(gpu, scene)
-    const grid = painter.resize(...STAGE)
+    // The scene's own framing, whatever the page is zoomed to.
+    const grid = painter.resize(...STAGE, 1)
     await painter.compile()
     const gif = createGif(scene.blocks.palette, grid.columns, grid.rows, SCALE)
     for (let i = 0; i < FRAMES; i++) {
       signal.throwIfAborted()
       // The page's cruise: the near side drifts right as the yaw falls.
-      const moment = {yaw: header.camYaw - (i / FRAMES) * 2 * Math.PI, pitch: header.camPitch, seconds: (i * header.loop) / FRAMES}
+      const moment = {
+        yaw: header.camYaw - (i / FRAMES) * 2 * Math.PI,
+        pitch: header.camPitch,
+        target: header.camTarget,
+        seconds: (i * header.loop) / FRAMES,
+      }
       frame(gpu, f => painter.encode(f, moment))
       gif.add(await painter.picture.color.read({mipLevel: 0, region: "all"}))
       progress((i + 1) / FRAMES)

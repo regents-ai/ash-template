@@ -139,6 +139,25 @@
   opacity: 1;
 }
 
+/* Zoom out, Zoom in and Reset view, small in the stage's bottom right corner, unseen
+   until the scene has drawn, like Download GIF. Each button's own look is after this
+   layer. */
+.splats-zoom {
+  position: absolute;
+  inset-block-end: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.splats-lab[data-splats-ready="true"] .splats-zoom {
+  visibility: visible;
+  opacity: 1;
+}
+
 @media (max-width: 36rem) {
   .splats-lab {
     aspect-ratio: 1;
@@ -147,8 +166,28 @@
 
 @media (prefers-reduced-motion: reduce) {
   .splats-lab__stage,
+  .splats-zoom,
   .splats-gif__button {
     transition: none;
   }
 }
+}
+
+/* The shared button is unlayered and pads its label for words. A zoom button holds an
+   icon alone: a small square, a finger's width on a touch screen, with the icon in the
+   middle, so its size and padding are set here, equally unlayered. It sits on the
+   scene's sky, which is the same in both themes, so it keeps one look too. */
+.rg-button.splats-zoom__button {
+  --rg-local-fill: var(--palette-charcoal);
+  --rg-local-ink: var(--palette-platinum);
+  inline-size: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0;
+}
+
+@media (pointer: coarse) {
+  .rg-button.splats-zoom__button {
+    inline-size: 2.75rem;
+    min-height: 2.75rem;
+  }
 }

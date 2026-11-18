@@ -31,10 +31,10 @@ for (const name of ["factory", "island"]) {
   const file = readFileSync(join(priv, `splats/${name}.bin`))
   const scene = decodeScene(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength))
   const painter = createPainter(gpu, scene)
-  const moment = {yaw: scene.header.camYaw, pitch: scene.header.camPitch, seconds: 0}
+  const moment = {yaw: scene.header.camYaw, pitch: scene.header.camPitch, target: scene.header.camTarget, seconds: 0}
 
   for (const [shape, [width, height]] of SHAPES) {
-    const {columns, rows} = painter.resize(width, height)
+    const {columns, rows} = painter.resize(width, height, 1)
     await painter.compile()
     frame(gpu, current => painter.encode(current, moment))
     const pixels = await painter.picture.color.read({mipLevel: 0, region: "all"})

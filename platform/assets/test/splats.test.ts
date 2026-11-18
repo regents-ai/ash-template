@@ -4,12 +4,13 @@
 // frame; every kind of motion comes back to where it started at the end of the loop, and
 // the moving parts with it; the splats drawn far to near are the ones that must be, and
 // come out farthest first from any side; the art-pixel grid and the camera frame the
-// scene as the reference pictures do; and a GIF's frames read back in the palette's own
+// scene as the reference pictures do, and, zoomed in, as FORMAT.md 5.1 and 5.2 say for
+// the person's zoom times the stage's fit; and a GIF's frames read back in the palette's own
 // colours, one loop of the scene long.
 import {readFileSync} from "node:fs"
 import {createRequire} from "node:module"
 import {describe, expect, it} from "vitest"
-import {gridFor, TILT_LIMIT, viewFrom} from "../js/splats/camera"
+import {gridFor, TILT_LIMIT, viewFrom, ZOOM_LIMIT} from "../js/splats/camera"
 import {createGif, DELAY, FRAMES} from "../js/splats/gif"
 import {centreAt, FALL, FLICKER, frameAt, motionOf, moved, PULSE, RISE, SWAY, type Vec3} from "../js/splats/motion"
 import {createOrder} from "../js/splats/order"
@@ -83,7 +84,7 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
 
   it("brings every moving splat back to how it started when the loop comes round", () => {
     // An art pixel's width at the camera's target, on the reference pictures' grid.
-    const pixel = header.camDist / gridFor(header, 1440, 960).focal
+    const pixel = header.camDist / gridFor(header, 1440, 960, 1).focal
     let seam = 0
     let swaySeam = 0
     for (let n = 0; n < header.moving; n++) {
@@ -137,7 +138,7 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
       ["above", 1.1, TILT_LIMIT, 2.5],
       ["below", -2.4, -TILT_LIMIT, header.loop - 0.01],
     ])("comes out farthest first seen from %s, ties in file order", (_, yaw, pitch, seconds) => {
-      const {back} = viewFrom(header, yaw, pitch, 1)
+      const {back} = viewFrom(header, yaw, pitch, 1, header.camTarget)
       const ids = Array.from(order.farToNear(back, seconds))
       const depth = (n: number) => {
         const [x, y, z] = centreAt(scene, n, seconds)
@@ -150,13 +151,13 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
 
   describe("framed", () => {
     it("on the reference pictures' grid on a wide stage, and on a square one for phones", () => {
-      expect(gridFor(header, 1440, 960)).toMatchObject({zoom: 1, scale: 3, columns: 480, rows: 320})
-      expect(gridFor(header, 1080, 1080)).toMatchObject({scale: 3, columns: 360, rows: 360})
+      expect(gridFor(header, 1440, 960, 1)).toMatchObject({zoom: 1, scale: 3, columns: 480, rows: 320})
+      expect(gridFor(header, 1080, 1080, 1)).toMatchObject({scale: 3, columns: 360, rows: 360})
     })
 
     for (const [width, height] of [[2172, 1446], [972, 972], [716, 716], [641, 427], [100, 60]] as const) {
       it(`covers a ${width} by ${height} stage in whole art pixels, the scene still fitting across it`, () => {
-        const grid = gridFor(header, width, height)
+        const grid = gridFor(header, width, height, 1)
         expect(Number.isInteger(grid.scale)).toBe(true)
         expect(grid.columns * grid.scale - width).toBeGreaterThanOrEqual(0)
         expect(grid.columns * grid.scale - width).toBeLessThan(grid.scale)
@@ -169,13 +170,52 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
     it("looks at the target from the scene's distance with level, upright, square axes at any tilt", () => {
       const dot = (a: readonly number[], b: readonly number[]) => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!
       for (const pitch of [-TILT_LIMIT, 0, header.camPitch, TILT_LIMIT]) {
-        const view = viewFrom(header, 0.7, pitch, 0.8)
+        const view = viewFrom(header, 0.7, pitch, 0.8, header.camTarget)
         const offset = view.eye.map((v, k) => v - header.camTarget[k]!)
         expect(Math.hypot(...offset)).toBeCloseTo(header.camDist / 0.8)
         expect(view.right[1]).toBe(0)
         expect(view.up[1]).toBeGreaterThan(0)
         for (const [a, b] of [[view.right, view.up], [view.up, view.back], [view.back, view.right]] as const) expect(dot(a, b)).toBeCloseTo(0)
         for (const axis of [view.right, view.up, view.back]) expect(dot(axis, axis)).toBeCloseTo(1)
+      }
+    })
+
+    // FORMAT.md 5.2's grid for a stage this big at the camera's zoom s.
+    const formatGrid = (width: number, height: number, s: number) => {
+      const span = 2 * Math.tan(header.fov / 2)
+      const rho = header.detail * s ** (s > 1 ? 1 / 2 : 1 / 4)
+      const q = Math.min(18, Math.max(1, Math.floor(height / (span * rho * (header.camDist / s)) + 0.5)))
+      const rows = Math.ceil(height / q)
+      return {zoom: s, scale: q, columns: Math.ceil(width / q), rows, focal: rows / span}
+    }
+    const stages = [[1440, 960], [1080, 1080], [2172, 1446], [716, 716], [641, 427]] as const
+
+    it("at zoom 1, is the scene's own framing: the stage's fit alone, as the page had it before it zoomed", () => {
+      for (const [width, height] of stages) expect(gridFor(header, width, height, 1)).toEqual(formatGrid(width, height, Math.min(1, width / height / 1.5)))
+    })
+
+    it("zoomed in, takes the person's zoom times the stage's fit as s, its art pixels growing with it", () => {
+      for (const [width, height] of stages)
+        for (const zoom of [Math.SQRT2, 2, 3, ZOOM_LIMIT]) expect(gridFor(header, width, height, zoom)).toEqual(formatGrid(width, height, zoom * Math.min(1, width / height / 1.5)))
+      // The reference pictures' stage four times nearer: 7 screen pixels an art pixel, not 3.
+      expect(gridFor(header, 1440, 960, ZOOM_LIMIT)).toMatchObject({zoom: 4, scale: 7, columns: 206, rows: 138})
+      // A phone's square stage at the nearest zoom: s is 4 times its fit of 2/3.
+      expect(gridFor(header, 1080, 1080, ZOOM_LIMIT)).toMatchObject({scale: 6, columns: 180, rows: 180})
+      expect(gridFor(header, 1080, 1080, ZOOM_LIMIT).zoom).toBeCloseTo(8 / 3, 12)
+    })
+
+    it("zoomed in, looks at the target it is given from the scene's distance over s, its axes those of the yaw and pitch alone", () => {
+      const [x, y, z] = header.camTarget
+      const target = [x + 1.5, y - 0.5, z + 2] as const
+      const [yaw, pitch] = [0.7, header.camPitch]
+      const resting = viewFrom(header, yaw, pitch, 1, header.camTarget)
+      for (const s of [Math.SQRT2, 8 / 3, ZOOM_LIMIT]) {
+        const view = viewFrom(header, yaw, pitch, s, target)
+        const d = header.camDist / s
+        const eye = [x + 1.5 + d * Math.cos(pitch) * Math.sin(yaw), y - 0.5 + d * Math.sin(pitch), z + 2 + d * Math.cos(pitch) * Math.cos(yaw)]
+        eye.forEach((v, k) => expect(view.eye[k]).toBeCloseTo(v, 12))
+        expect(view.distance).toBeCloseTo(d, 12)
+        expect([view.right, view.up, view.back]).toEqual([resting.right, resting.up, resting.back])
       }
     })
   })

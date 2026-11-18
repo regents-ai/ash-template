@@ -32,13 +32,13 @@
 import {prepareShader} from "@vgpu/wgsl/prepare"
 import {draw, effect, storage, target, type Frame, type Gpu, type Target} from "vgpu"
 
-import {gridFor, viewFrom, type Grid, type View} from "./camera.ts"
+import {gridFor, viewFrom, type Grid, type Vec3, type View} from "./camera.ts"
 import {frameAt} from "./motion.ts"
 import {createOrder} from "./order.ts"
 import {GLASS, NO_DEPTH, NO_FOG, type Scene} from "./scene.ts"
 
-/** A moment to draw: the camera's yaw and pitch, and seconds into the loop. */
-export type Moment = {readonly yaw: number; readonly pitch: number; readonly seconds: number}
+/** A moment to draw: the camera's yaw and pitch, the point it looks at, and seconds into the loop. */
+export type Moment = {readonly yaw: number; readonly pitch: number; readonly target: Vec3; readonly seconds: number}
 
 const float = (x: number) => `${x}f`
 const frac = (x: number) => x - Math.floor(x)
@@ -517,8 +517,12 @@ struct Present {
 `
 
 export type Painter = {
-  /** Fits the grid to a stage of this many screen pixels. */
-  resize(width: number, height: number): Grid
+  /**
+   * Fits the grid to a stage of this many screen pixels, zoomed in this far by the person
+   * (1 is the scene's own framing). The layers and the picture are made again only when
+   * the grid changes size.
+   */
+  resize(width: number, height: number, zoom: number): Grid
   /** Encodes one moment into the picture, and onto `stage`, scaled up, when given. */
   encode(f: Frame, moment: Moment, stage?: Target): void
   /** The art-pixel picture: each pixel one of the palette's colours. */
@@ -529,7 +533,7 @@ export type Painter = {
 
 export function createPainter(gpu: Gpu, scene: Scene): Painter {
   const {header} = scene
-  let grid = gridFor(header, 3, 2)
+  let grid = gridFor(header, 3, 2, 1)
   const layers = target(gpu, {
     size: [grid.columns, grid.rows],
     colors: [{format: "rgba16float"}, {format: "rg16float"}, {format: "r8unorm"}],
@@ -549,18 +553,18 @@ export function createPainter(gpu: Gpu, scene: Scene): Painter {
   const extent =
     Math.sqrt(3) * [...header.clothMin, ...header.clothMax, ...scene.blocks.chunkBounds].reduce((most, v) => Math.max(most, Math.abs(v)), 0)
 
-  const viewOf = ({right, up, back, eye, distance}: View, seconds: number) => {
+  const viewOf = ({right, up, back, eye, distance}: View, target: Vec3, seconds: number) => {
     const limit = 1.3 / (2 * grid.focal)
     return {
       right: [...right, grid.focal],
       up: [...up, Math.max(0.4, 0.15 * distance)],
-      back: [...back, 1 / (2 * (distance + Math.hypot(...header.camTarget) + extent))],
+      back: [...back, 1 / (2 * (distance + Math.hypot(...target) + extent))],
       eye: [...eye, distance],
       grid: [grid.columns, grid.rows, limit * grid.columns, limit * grid.rows],
       clock: [seconds / header.loop, frameAt(header, seconds), 0, 0],
     }
   }
-  const first = viewOf(viewFrom(header, header.camYaw, header.camPitch, grid.zoom), 0)
+  const first = viewOf(viewFrom(header, header.camYaw, header.camPitch, grid.zoom, header.camTarget), header.camTarget, 0)
   const shader = prepareShader(sceneWgsl(scene) + SPLATS_WGSL, "splats.wgsl")
   const splats = {shader, geometry: {topology: "triangle-strip"}, vertices: 4, label: "splats.splats"} as const
   const solid = draw(gpu, {
@@ -595,16 +599,20 @@ export function createPainter(gpu: Gpu, scene: Scene): Painter {
 
   return {
     picture,
-    resize(width, height) {
-      grid = gridFor(header, width, height)
-      layers.resize([grid.columns, grid.rows])
-      picture.resize([grid.columns, grid.rows])
-      bind()
+    resize(width, height, zoom) {
+      const next = gridFor(header, width, height, zoom)
+      const same = next.columns === grid.columns && next.rows === grid.rows && next.scale === grid.scale
+      grid = next
+      if (!same) {
+        layers.resize([grid.columns, grid.rows])
+        picture.resize([grid.columns, grid.rows])
+        bind()
+      }
       return grid
     },
-    encode(f, {yaw, pitch, seconds}, stage) {
-      const camera = viewFrom(header, yaw, pitch, grid.zoom)
-      const view = viewOf(camera, seconds)
+    encode(f, {yaw, pitch, target, seconds}, stage) {
+      const camera = viewFrom(header, yaw, pitch, grid.zoom, target)
+      const view = viewOf(camera, target, seconds)
       const ids = order.farToNear(camera.back, seconds)
       sortedIds.write(ids)
       solid.set({view})

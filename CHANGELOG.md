@@ -12690,3 +12690,43 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (739 walk tests passed, 6 skipped;
   375 Elixir; 380 script). Not proven: a real Privy wallet switched while the steps are
   on their way; Safari, Firefox, real phones.
+
+## 2026-11-18 — Zoom on the Splats scenes
+
+- The Splats scenes (`/animations/splats`) now come closer: a pinch, a wheel with Ctrl
+  or Cmd held, the keys + (or =) and -, or Zoom in and Zoom out in the stage's corner,
+  from the scene's own framing up to four times as near (`ZOOM_LIMIT` in
+  `platform/assets/js/splats/camera.ts`). Reset view, 0, a double-click or a double tap
+  goes back to the opening view. A pinch or a wheel zooms at the pointer, the point
+  under it staying put, by moving the camera's target across the view, never further
+  off the scene's own than its radius times (1 - 1/zoom). A plain wheel still scrolls
+  the page. While zoom keeps coming the slow turn stops, and 0.8 s after the last it
+  eases back in; the loop plays on and the zoom stays where it was left. With less
+  motion every zoom lands at once.
+- The renderer (`platform/assets/js/splats/renderer.ts`) gains `zoomAt(by, across,
+  down)`, `zoom(action: ZoomAction)` with `ZoomAction = "in" | "out" | "home"`, and
+  `limits()`. `painter.resize(width, height, zoom)`, `gridFor(header, width, height,
+  zoom)` and `viewFrom(header, yaw, pitch, zoom, target)` take the zoom and the target,
+  and a painter `Moment` names its `target`. At zoom 1 nothing changes: the stills draw
+  again byte for byte, and the GIF is made at zoom 1. The buttons
+  (`button[data-splats-zoom]` in `platform/lib/ash_template_web/live/splats_lab_live.ex`,
+  styled in `platform/assets/css/pages/splats_lab.css`) show once the scene has drawn
+  and carry `aria-disabled="true"` when they have nothing left to do; a press or a drag
+  on one never turns the scene. FORMAT.md section 10 gives the zoom's z and target.
+- Why four: both scenes still read as pixel art there; one step nearer, the eye is in
+  among the bushes and the picture is a wall of leaves.
+- Tests: `platform/assets/test/splats.test.ts` (3 new) checks the grid and the view
+  above zoom 1 against FORMAT.md 5.1 and 5.2, and that zoom 1 is the scene's own
+  framing. `platform/test/browser/splats.spec.ts` (5 new) reads the camera the page
+  hands the graphics card: the turn stops while a zoom comes in and turns again after;
+  Zoom in and Zoom out step to each end and back to the opening picture; a Ctrl wheel
+  near a corner keeps the point under the pointer within an art pixel; Reset view, 0
+  and a double-click bring back the opening picture; on a phone a two-finger pinch
+  zooms at its midpoint without scrolling or zooming the page, and a double tap goes
+  back.
+- Checks: `npm run typecheck` exit 0; `npm test` 386 passed; `sh test/browser/walk.sh
+  splats.spec.ts` 34 passed, 2 skipped (touch checks for phones only, on the desktop
+  run), three runs in a row; `mix format --check-formatted`, `mix compile
+  --warnings-as-errors` and the style check exit 0. Not proven: a trackpad pinch in
+  Safari (which sends its own gesture events, not a wheel with Ctrl held), Firefox, real
+  phones.
