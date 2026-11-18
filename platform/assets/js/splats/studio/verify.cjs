@@ -10,7 +10,7 @@ const kit = require('./kit.cjs');
 const F = require('./format.cjs');
 const decode = require('./decode.cjs');
 
-const SCENES = ['island', 'factory'];
+const SCENES = ['island', 'factory', 'campfire', 'battle', 'circus', 'fishing', 'meteor'];
 const FILES = path.join(__dirname, '../../../../priv/static/splats');
 const CANVAS = { w: 1440, h: 960 };
 const MOMENTS = [0, 2.5, 5.5]; // seconds into the loop

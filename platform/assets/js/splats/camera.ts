@@ -22,8 +22,8 @@ export const TILT_LIMIT = (86 * Math.PI) / 180
 
 /**
  * The nearest the person may zoom: the eye a quarter of the scene's own distance from
- * the target. Both scenes still read as pixel art there; one step nearer (√2), the eye
- * is in among the bushes and the picture is a wall of leaves.
+ * the target. Every scene still reads as pixel art there; one step nearer (√2), the eye
+ * is in among the island's bushes and the picture is a wall of leaves.
  */
 export const ZOOM_LIMIT = 4
 

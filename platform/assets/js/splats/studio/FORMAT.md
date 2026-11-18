@@ -1,6 +1,7 @@
 # Baked splat scenes
 
-Each scene the page shows is one file in `platform/priv/static/splats/`, named for the scene: `island.bin` and `factory.bin`. A file
+Each scene the page shows is one file in `platform/priv/static/splats/`, named for the scene: `factory.bin`, `island.bin`,
+`campfire.bin`, `battle.bin`, `circus.bin`, `fishing.bin` and `meteor.bin`. A file
 holds every splat of the scene at rest, the tables its splats point into, how the scene moves over one loop, and the camera and look it
 is drawn with. This note says what every number is and how to draw a picture from them. `decode.cjs` is a working reader in plain
 JavaScript; `verify.cjs` shows it draws what the toolkit drew (see the end of this note).
@@ -283,29 +284,30 @@ Reads outside the grid take the nearest pixel inside it. For the art pixel (x, y
 
 ## 6. What a file costs
 
-| | Island | Factory |
-| --- | --- | --- |
-| Splats | 294,707 | 399,656 |
-| Moving by kind | 107,407 | 45,950 |
-| Styles, motions, parts | 73, 187, 2 | 117, 164, 28 |
-| Cloth dabs | 0 | 540 |
-| Raw | 5.79 MB (5.52 MiB) | 8.91 MB (8.49 MiB) |
-| Gzipped (level 9) | 3.19 MB | 4.19 MB |
-| On the wire from the page, gzipped by `mix phx.digest` | 3.19 MB | 4.17 MB |
+| | Island | Factory | Campfire | Battle | Circus | Fishing | Meteor |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Splats | 294,707 | 399,656 | 316,693 | 369,873 | 306,731 | 289,589 | 333,030 |
+| Moving by kind | 107,407 | 45,950 | 36,913 | 26,518 | 13,492 | 6,215 | 13,437 |
+| Styles, motions, parts | 73, 187, 2 | 117, 164, 28 | 61, 80, 25 | 37, 5, 23 | 161, 7, 34 | 68, 56, 11 | 55, 61, 24 |
+| Cloth dabs | 0 | 540 | 0 | 0 | 0 | 0 | 0 |
+| Raw | 5.79 MB (5.52 MiB) | 8.91 MB (8.49 MiB) | 6.17 MB (5.88 MiB) | 7.06 MB (6.74 MiB) | 6.00 MB (5.72 MiB) | 5.39 MB (5.14 MiB) | 6.36 MB (6.06 MiB) |
+| Gzipped (level 9) | 3.19 MB | 4.19 MB | 2.44 MB | 2.49 MB | 2.29 MB | 1.80 MB | 2.60 MB |
+| On the wire from the page, gzipped by `mix phx.digest` | 3.19 MB | 4.17 MB | 2.42 MB | 2.47 MB | 2.30 MB | 1.81 MB | 2.59 MB |
 
 A splat costs 18 bytes at rest (6 centre, 4 turn, 6 size, 1 colour, 1 style) and a moving one 4 more. The factory's moving parts cost
 0.32 MB and its flag 1.17 MB (9 bytes a dab a frame, 240 frames).
 
 ## 7. How near the stored numbers are
 
-Measured by `bake.cjs` over every splat (an art pixel is 1 / detail = 0.052 world units at the scene's own distance):
+Measured by `bake.cjs` over every splat of every scene (an art pixel is 1 / detail world units at the scene's own distance: 0.052,
+or 0.045 on Battle):
 
 | Field | Stored as | Largest error |
 | --- | --- | --- |
-| Centre | 16 bits within its run's box | 7.0e-4 world units on any one axis (0.014 art pixel), in the sparse sky; 6e-6 to 9e-6 on average. A turned part turns the same error, so on the world's axes it can read a little more (7.7e-4 at most in the proof) |
+| Centre | 16 bits within its run's box | 7.0e-4 world units on any one axis (0.014 art pixel); 4e-6 to 1e-5 on average. A turned part turns the same error, so on the world's axes it can read a little more (8.2e-4 at most in the proof) |
 | Size | 16-bit logarithm | 0.005% |
-| Turn of the axes | three 10-bit parts | 0.16 degrees |
-| Whole covariance | (both of the above) | 0.28% (0.08% on average) |
+| Turn of the axes | three 10-bit parts | 0.17 degrees |
+| Whole covariance | (both of the above) | 0.30% (0.08% on average) |
 | Density, kind, flags, part | style table, 32-bit float | exact |
 | Colour | palette place | exact |
 | Speed, range, extra | whole cycles, 32-bit floats | exact |
@@ -336,6 +338,18 @@ That is 0.06% to 0.16% of a picture: a blob a hair bigger or turned a fraction o
 line between two palette colours. On the front views at τ = 0, most differing pixels have no differing neighbour (208 of 243 on the
 island, 125 of 165 on the factory), and most swap one shade for a near one; a bigger jump, such as a single outline dot that comes or
 goes, is 6 of the island's 243 and 17 of the factory's 165.
+
+The five later scenes, each from four quarter turns from its own starting turn and pitch and from above and below, at the same three
+moments; Fishing's camera stands nearer, so its stage is 360 x 240 art pixels of 4 (86,400 a view). The row check finds nothing
+that differs on any of them either.
+
+| Scene | Fewest differing in a view | Most |
+| --- | --- | --- |
+| Campfire | 69 (0.04%) | 190 (0.12%) |
+| Battle | 36 (0.02%) | 241 (0.16%) |
+| Circus | 49 (0.03%) | 283 (0.18%) |
+| Fishing | 17 (0.02%) | 57 (0.07%) |
+| Meteor | 117 (0.08%) | 298 (0.19%) |
 
 What each stored field adds, measured one at a time on the island's front and back views together (307,200 art pixels):
 

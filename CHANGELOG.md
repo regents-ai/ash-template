@@ -12798,3 +12798,61 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (748 walk tests passed, 7 skipped;
   375 Elixir; 389 script). Not proven: a real wallet over a real dropped connection;
   Safari, Firefox, real phones.
+
+## 2026-11-18 — Five more Splats scenes
+
+- Sean (18 Nov): "there are 5 more splats that need to be on the route". `/animations/splats`
+  now has seven tabs, in this order: Factory (still the default), Island, Campfire, Battle,
+  Circus, Fishing and Meteor; `?scene=<id>` opens one, and any other value the factory.
+  Each box's label is one plain sentence about the scene and the usual line on moving it.
+- The five scene sources, `platform/assets/js/splats/studio/{campfire,battle,circus,fishing,meteor}.cjs`,
+  are the handoff's `scene-1` to `scene-5` copied unchanged; `bake.cjs` and `verify.cjs`
+  name all seven. The repo's own baker made `platform/priv/static/splats/<id>.bin` byte for
+  byte as handed over, and baked the factory and the island again unchanged. `verify.cjs`
+  finds no density, colour, kind or motion number that differs on any of the five, and the
+  toolkit's renderer differs between a decoded file and the live scene on 17 to 298 art
+  pixels a view (FORMAT.md section 8 has each scene). `stills.mjs` drew the ten new stills
+  and the factory's and island's four again byte for byte.
+- Fishing's camera stands nearer, so its art pixels are coarser: its stills are 360 by 240
+  and 270 square, and `platform/assets/js/splats/gif.ts` now scales each GIF by the grid's
+  own scale, so every scene's GIF is 864 by 576 (the factory's and island's as before).
+- `platform/lib/ash_template_web/live/splats_lab_live.ex`: `@scenes` holds each scene's id,
+  tab name, still sizes and label, and every path, file, still and label comes from it; the
+  per-scene clauses are gone. The page still downloads only the scene showing.
+- `platform/assets/css/pages/splats_lab.css`: the tabs keep the row and its rule, with
+  Download GIF over the empty end of it; at 48rem and narrower Download GIF is at the end of
+  a line of its own under the tabs, which wrap as the shared tabs do (two lines at 390, three
+  at 320). The line that says a GIF failed now sits under the row at its end at every width.
+- Added: 30.98 MB of scene files (6.17, 7.06, 6.00, 5.39 and 6.36 MB; 11.59 MB gzipped as
+  served), 0.45 MB of stills and 0.24 MB of scene sources. A visitor downloads one scene,
+  1.81 to 2.59 MB gzipped.
+- Tests: `platform/assets/test/splats.test.ts` checks every scene from one table (counts,
+  colours, the decoder's reading, the loop, the order, the grids at their own sizes, the
+  GIF's size); Meteor's sways come back within 0.6 art pixel and its falling meteor, out of
+  the picture at the top left when the loop comes round, takes a step there 0.4% longer than
+  any other, so those two bounds are its own. `platform/test/browser/splats.spec.ts`: every
+  tab switches the scene, keeps the box's size, leaves one canvas, downloads only that
+  scene's file, keeps the chosen tab in sight and Download GIF at the row's end, with no
+  sideways scroll; links open each scene; every scene shows only its own palette, holds
+  still with less motion, and saves its own 864 by 576 GIF from the keyboard.
+- The spec's pictures of a scene now hide the zoom buttons with no transition. With less
+  motion every element keeps a 0.01 ms transition, and one from visible holds an element
+  visible until it ends, a frame away, so the buttons' icons were in some pictures and not
+  in others. With the box lower on a phone the icons also came out in one of two slightly
+  different ways from one picture to the next, and the first walk, on a busy machine,
+  failed nine still-picture checks, eight on the phone; with the buttons hidden all three
+  walks passed.
+- Docs: `docs/feature-map.md` (the splats row), the page description in
+  `platform/lib/ash_template_web/public_documents.ex`, `platform/test/browser/pages.json`,
+  the studio's `README.md` and `FORMAT.md` (file names, costs, error bounds and proof for
+  all seven), and a comment in `platform/assets/js/splats/camera.ts`. Public changelog:
+  "**Splats.** Five more worlds: Campfire, Battle, Circus, Fishing and Meteor."
+- Checks: `mix compile --warnings-as-errors` exit 0; `mix format --check-formatted` exit 0;
+  `mix credo --strict` on the two Elixir files, no issues; the page-description, feature-map
+  and route tests 31 passed; the whole `mix test` on a scratch database 375 passed; `npm
+  test` 499 passed (25 files); `npm run typecheck` exit 0; `make -C .. check-style` exit 0
+  (ripgrep 15.1.0); `sh test/browser/walk.sh splats.spec.ts` three times, 64 passed and 2
+  skipped (touch, desktop) each. Every scene looked at in headless Chromium at 1280, 390
+  and 320, and at the nearest zoom. Not run here: the full `make check`. Not proven:
+  Safari, Firefox, real phones; the toolkit's commit (the `INK_STUDIO` folder is not a git
+  checkout, though the factory and island bake byte for byte as before).

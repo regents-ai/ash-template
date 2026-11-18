@@ -11,7 +11,7 @@ import {readFileSync} from "node:fs"
 import {createRequire} from "node:module"
 import {describe, expect, it} from "vitest"
 import {gridFor, TILT_LIMIT, viewFrom, ZOOM_LIMIT} from "../js/splats/camera"
-import {createGif, DELAY, FRAMES} from "../js/splats/gif"
+import {createGif, DELAY, FRAMES, STAGE} from "../js/splats/gif"
 import {centreAt, FALL, FLICKER, frameAt, motionOf, moved, PULSE, RISE, SWAY, type Vec3} from "../js/splats/motion"
 import {createOrder} from "../js/splats/order"
 import {BLOCK_NAMES, decodeScene, NO_DEPTH, restCentre} from "../js/splats/scene"
@@ -19,14 +19,28 @@ import {BLOCK_NAMES, decodeScene, NO_DEPTH, restCentre} from "../js/splats/scene
 const studio = createRequire(import.meta.url)("../js/splats/studio/decode.cjs")
 const fileOf = (name: string) => new URL(`../../priv/static/splats/${name}.bin`, import.meta.url)
 
+// What most scenes share. The grids ([screen pixels an art pixel, columns, rows]) are the
+// reference pictures': a 1440 by 960 stage, a phone's 1080 square, and each of those four
+// times nearer; fishing's camera stands nearer, so its art pixels are bigger. When the
+// loop comes round, a swaying splat is back within `swaySeam` of an art pixel, and a
+// moving part within `partSeam` times the most it moves between two frames. The meteor
+// scene's sways come back within 0.6 of an art pixel, and its meteor, out of the picture
+// at the top left as the loop comes round, takes a step there 0.4% longer than any other.
+const USUAL = {wide: [3, 480, 320], square: [3, 360, 360], nearest: [7, 206, 138], squareNearest: [6, 180, 180], swaySeam: 0.5, partSeam: 1}
 const scenes = [
-  {name: "island", splats: 294_707},
-  {name: "factory", splats: 399_656},
-].map(({name, splats}) => {
+  {name: "island", splats: 294_707, ...USUAL},
+  {name: "factory", splats: 399_656, ...USUAL},
+  {name: "campfire", splats: 316_693, ...USUAL},
+  {name: "battle", splats: 369_873, ...USUAL, nearest: [6, 240, 160]},
+  {name: "circus", splats: 306_731, ...USUAL},
+  {name: "fishing", splats: 289_589, ...USUAL, wide: [4, 360, 240], square: [4, 270, 270], nearest: [8, 180, 120], squareNearest: [8, 135, 135]},
+  {name: "meteor", splats: 333_030, ...USUAL, swaySeam: 0.6, partSeam: 1.004},
+].map(({name, ...expected}) => {
   const file = readFileSync(fileOf(name))
   const scene = decodeScene(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength))
-  return {name, splats, scene, theirs: studio.open(fileOf(name))}
+  return {name, ...expected, scene, theirs: studio.open(fileOf(name))}
 })
+const gridOf = ([scale, columns, rows]: number[]) => ({scale, columns, rows})
 
 /** The largest gap between two lists of numbers. */
 const furthest = (a: ArrayLike<number>, b: ArrayLike<number>) => {
@@ -35,7 +49,7 @@ const furthest = (a: ArrayLike<number>, b: ArrayLike<number>) => {
   return most
 }
 
-describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
+describe.each(scenes)("the $name", ({splats, wide, square, nearest, squareNearest, swaySeam: swayBound, partSeam, scene, theirs}) => {
   const {header, blocks} = scene
 
   it("holds the splats and the 48 colours the page says it does", () => {
@@ -99,10 +113,10 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
       else seam = Math.max(seam, dy!)
     }
     expect(seam).toBeLessThan(1e-9)
-    expect(swaySeam).toBeLessThan(pixel / 2)
+    expect(swaySeam).toBeLessThan(pixel * swayBound)
   })
 
-  it("brings every moving part back from its last frame no further than it moves between any two frames", () => {
+  it("brings every moving part back from its last frame about as far as it moves between any two frames", () => {
     const track = blocks.track
     const step = (part: number, from: number, to: number) => {
       const a = (from * header.parts + part) * 12
@@ -112,7 +126,7 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
     for (let part = 0; part < header.parts; part++) {
       let largest = 0
       for (let f = 1; f < header.frames; f++) largest = Math.max(largest, step(part, f - 1, f))
-      expect(step(part, header.frames - 1, 0), `part ${part}`).toBeLessThanOrEqual(largest + 1e-6)
+      expect(step(part, header.frames - 1, 0), `part ${part}`).toBeLessThanOrEqual(largest * partSeam + 1e-6)
     }
   })
 
@@ -151,8 +165,8 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
 
   describe("framed", () => {
     it("on the reference pictures' grid on a wide stage, and on a square one for phones", () => {
-      expect(gridFor(header, 1440, 960, 1)).toMatchObject({zoom: 1, scale: 3, columns: 480, rows: 320})
-      expect(gridFor(header, 1080, 1080, 1)).toMatchObject({scale: 3, columns: 360, rows: 360})
+      expect(gridFor(header, 1440, 960, 1)).toMatchObject({zoom: 1, ...gridOf(wide)})
+      expect(gridFor(header, 1080, 1080, 1)).toMatchObject(gridOf(square))
     })
 
     for (const [width, height] of [[2172, 1446], [972, 972], [716, 716], [641, 427], [100, 60]] as const) {
@@ -197,10 +211,10 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
     it("zoomed in, takes the person's zoom times the stage's fit as s, its art pixels growing with it", () => {
       for (const [width, height] of stages)
         for (const zoom of [Math.SQRT2, 2, 3, ZOOM_LIMIT]) expect(gridFor(header, width, height, zoom)).toEqual(formatGrid(width, height, zoom * Math.min(1, width / height / 1.5)))
-      // The reference pictures' stage four times nearer: 7 screen pixels an art pixel, not 3.
-      expect(gridFor(header, 1440, 960, ZOOM_LIMIT)).toMatchObject({zoom: 4, scale: 7, columns: 206, rows: 138})
+      // The reference pictures' stage four times nearer: bigger art pixels (7 screen pixels, not 3, for most scenes).
+      expect(gridFor(header, 1440, 960, ZOOM_LIMIT)).toMatchObject({zoom: 4, ...gridOf(nearest)})
       // A phone's square stage at the nearest zoom: s is 4 times its fit of 2/3.
-      expect(gridFor(header, 1080, 1080, ZOOM_LIMIT)).toMatchObject({scale: 6, columns: 180, rows: 180})
+      expect(gridFor(header, 1080, 1080, ZOOM_LIMIT)).toMatchObject(gridOf(squareNearest))
       expect(gridFor(header, 1080, 1080, ZOOM_LIMIT).zoom).toBeCloseTo(8 / 3, 12)
     })
 
@@ -220,8 +234,10 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
     })
   })
 
-  it("makes a GIF one loop long", () => {
+  it("makes a GIF one loop long, the whole stage in whole squares of art pixels", () => {
     expect((FRAMES * DELAY) / 100).toBe(header.loop)
+    const {columns, rows, scale} = gridFor(header, ...STAGE, 1)
+    expect([columns * scale, rows * scale]).toEqual(STAGE)
   })
 })
 

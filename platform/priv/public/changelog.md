@@ -4,6 +4,7 @@ Changes to Ash Template, newest first.
 
 ## 18 November 2026
 
+- **Splats.** Five more worlds: Campfire, Battle, Circus, Fishing and Meteor.
 - **Wallet buttons.** If your wallet refuses a request outright, the page now says nothing
   was sent.
 - **Wallet buttons.** A wallet button pressed just after the page reconnects now opens your

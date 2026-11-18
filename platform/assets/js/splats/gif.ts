@@ -22,9 +22,12 @@ import type {Scene} from "./scene.ts"
 /** The loop: this many frames, each shown this many hundredths of a second (as a GIF counts time). */
 export const FRAMES = 160
 export const DELAY = 5
-/** The stage each frame is drawn for, three wide by two high (art pixels of two screen pixels: 432 by 288), and the whole number those are scaled up by. */
+/**
+ * The stage each frame is drawn for, three wide by two high, and the GIF's size: each art
+ * pixel is scaled up to the square of screen pixels it is on that stage (two for most
+ * scenes, 432 by 288 art pixels; three for one whose camera stands nearer).
+ */
 export const STAGE = [864, 576] as const
-export const SCALE = 2
 
 /**
  * A GIF that loops for ever, in `palette` (0xRRGGBB), of frames `columns` by `rows`
@@ -86,7 +89,7 @@ export async function makeGif(scene: Scene, progress: (share: number) => void, s
     // The scene's own framing, whatever the page is zoomed to.
     const grid = painter.resize(...STAGE, 1)
     await painter.compile()
-    const gif = createGif(scene.blocks.palette, grid.columns, grid.rows, SCALE)
+    const gif = createGif(scene.blocks.palette, grid.columns, grid.rows, grid.scale)
     for (let i = 0; i < FRAMES; i++) {
       signal.throwIfAborted()
       // The page's cruise: the near side drifts right as the yaw falls.

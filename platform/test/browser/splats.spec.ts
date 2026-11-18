@@ -3,15 +3,17 @@ import {type Download, type Locator, type Page} from "@playwright/test"
 import {decodeScene} from "../../assets/js/splats/scene"
 import {expect, test} from "./support/test"
 
-// The splats lab (/animations/splats): two small worlds in pixel art, the robot factory
-// first and the island second, each drawn with the GPU over a still picture of itself.
-// These checks open it with the GPU on and ask that the factory comes first and draws
-// and turns by itself; that each scene shows nothing but its own palette's colours;
-// that the switch changes the scene without changing the box's size, on a wide screen
-// and on a phone, and leaves one scene drawing; that a link opens the island and any
-// other link the factory; that without WebGPU the still picture stays; and, with less
-// motion, that it holds still, that a drag across turns it and a drag up or down tilts
-// it, each stopping where let go, and that the arrow keys turn and tilt it.
+// The splats lab (/animations/splats): seven small worlds in pixel art, the robot
+// factory first, each drawn with the GPU over a still picture of itself. These checks
+// open it with the GPU on and ask that the factory comes first and draws and turns by
+// itself; that each scene shows nothing but its own palette's colours; that every tab
+// fits the row with Download GIF at its end and the page never scrolls sideways; that
+// the switch changes the scene without changing the box's size, on a wide screen and on
+// a phone, leaves one scene drawing and downloads only that scene's file; that a link
+// opens its scene and any other link the factory; that without WebGPU the still picture
+// stays; and, with less motion, that each scene holds still, that a drag across turns it
+// and a drag up or down tilts it, each stopping where let go, and that the arrow keys
+// turn and tilt it.
 // Zoom: the turn stops while a zoom comes in and eases back after, the loop playing on
 // and the zoom staying; with less motion, Zoom in and Zoom out step at once up to the
 // nearest and back, each saying when it has nothing left to do, and a drag from a button
@@ -22,13 +24,25 @@ import {expect, test} from "./support/test"
 // hands the graphics card each frame (watchViews).
 // Download GIF: it shows at the end of the tabs' row once the scene has drawn, counts
 // up in place while it works, takes no second press, and saves the scene's GIF; a
-// failure says so beside it; choosing the other scene stops it; without WebGPU it is
-// not offered; and with less motion it still saves one, pressed from the keyboard.
+// failure says so under it; choosing another scene stops it; without WebGPU it is
+// not offered; and with less motion every scene still saves its own, pressed from the
+// keyboard.
 test.use({launchOptions: {args: ["--enable-unsafe-webgpu", "--enable-gpu"]}})
 
-type Scene = "factory" | "island"
+/** Every scene, in the tabs' order, with its tab's name. */
+const SCENES = [
+  ["factory", "Factory"],
+  ["island", "Island"],
+  ["campfire", "Campfire"],
+  ["battle", "Battle"],
+  ["circus", "Circus"],
+  ["fishing", "Fishing"],
+  ["meteor", "Meteor"],
+] as const
+type Scene = (typeof SCENES)[number][0]
+const pathOf = (scene: Scene) => (scene === "factory" ? "/animations/splats" : `/animations/splats?scene=${scene}`)
 
-/** Longer than either scene's GIF takes to make here (about two seconds), with room for a busy machine. */
+/** Longer than any scene's GIF takes to make here (about two seconds), with room for a busy machine. */
 const WHOLE_GIF = 15_000
 
 const size = (box: Locator) =>
@@ -47,12 +61,18 @@ const drawn = async (page: Page, scene: Scene) => {
 // The scene alone, one pixel inside the box's edge, without the zoom buttons over it. On
 // a phone the box's outermost rows of screen pixels blend its border with the picture,
 // and on a busy machine the browser can still be repainting them just after the picture
-// has drawn, the scene unmoved.
+// has drawn, the scene unmoved. The buttons are hidden with no transition: with less
+// motion every element keeps a transition of a hundredth of a millisecond, and a
+// transition from visible holds an element visible until it ends, which is a frame
+// away, so a picture taken at once could still hold the icons, or not.
 const picture = async (page: Page, scene: Scene) => {
   const canvas = page.locator(`#splats-${scene} [data-splats-canvas]`)
   await canvas.scrollIntoViewIfNeeded()
   const {x, y, width, height} = (await canvas.boundingBox())!
-  return page.screenshot({clip: {x: x + 1, y: y + 1, width: width - 2, height: height - 2}, style: ".splats-zoom { visibility: hidden !important; }"})
+  return page.screenshot({
+    clip: {x: x + 1, y: y + 1, width: width - 2, height: height - 2},
+    style: ".splats-zoom, .splats-zoom * { visibility: hidden !important; transition: none !important; }",
+  })
 }
 
 /**
@@ -159,9 +179,21 @@ const places = (page: Page, scene: Scene) =>
     scene,
   )
 
+/** Download GIF ends where the tabs' row ends: past the last tab on a wide screen, on a line of its own under the tabs on a phone. */
+const expectGifAtRowEnd = async (page: Page, scene: Scene, isMobile: boolean) => {
+  const [row, last, gif] = await Promise.all(
+    [page.locator(".splats-lab__bar .flair-tabs"), page.locator(".splats-lab__bar .flair-tabs a").last(), page.locator(`#splats-${scene}-gif-button`)].map(
+      async each => (await each.boundingBox())!,
+    ),
+  )
+  expect(gif!.x + gif!.width).toBeCloseTo(row!.x + row!.width, 0)
+  if (isMobile) expect(gif!.y).toBeGreaterThanOrEqual(row!.y + row!.height)
+  else expect(gif!.x).toBeGreaterThan(last!.x + last!.width)
+}
+
 /** Opens a scene and waits for it to draw; returns its Download GIF and every file the page saves from then on. */
 const openForGif = async (page: Page, scene: Scene) => {
-  await page.goto(scene === "factory" ? "/animations/splats" : `/animations/splats?scene=${scene}`)
+  await page.goto(pathOf(scene))
   await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
   await drawn(page, scene)
   const saved: Download[] = []
@@ -174,7 +206,7 @@ const opening = async (download: Download) => {
   const bytes = await readFile((await download.path())!)
   return {signature: bytes.subarray(0, 6).toString(), width: bytes.readUInt16LE(6), height: bytes.readUInt16LE(8)}
 }
-/** Every GIF: 432 by 288 art pixels, each two pixels square. */
+/** Every GIF: the 864 by 576 stage, each art pixel the square of pixels it is there. */
 const GIF = {signature: "GIF89a", width: 864, height: 576}
 
 /** The scene's colours, as its baked file lists them. */
@@ -208,10 +240,8 @@ test("Download GIF shows at the end of the tabs' row, counts up in place, takes 
   const {button, saved} = await openForGif(page, "factory")
   await expect(button).toBeVisible()
   await expect(button).toHaveAccessibleName("Download GIF")
-  const lastTab = (await page.locator(".flair-tabs a").last().boundingBox())!
-  const own = (await button.boundingBox())!
-  expect(own.x).toBeGreaterThanOrEqual(lastTab.x + lastTab.width)
-  if (isMobile) expect(own.height).toBeGreaterThanOrEqual(44)
+  await expectGifAtRowEnd(page, "factory", isMobile)
+  if (isMobile) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44)
   const idle = await places(page, "factory")
   // Counts the GPU devices asked for from here on: each GIF asks for its own.
   await page.evaluate(() => {
@@ -242,7 +272,7 @@ test("Download GIF shows at the end of the tabs' row, counts up in place, takes 
   expect(await page.evaluate(() => (window as unknown as {devicesAsked: number}).devicesAsked)).toBe(1)
 })
 
-test("a GIF that cannot be made says so beside the button, which is ready to try again", async ({page}) => {
+test("a GIF that cannot be made says so under the button, which is ready to try again", async ({page}) => {
   const {button, saved} = await openForGif(page, "factory")
   const failed = page.locator("#splats-factory-gif .splats-gif__failed")
   await expect(failed).toBeHidden()
@@ -261,7 +291,7 @@ test("a GIF that cannot be made says so beside the button, which is ready to try
   expect(saved).toEqual([])
 })
 
-test("choosing the other scene while a GIF is being made goes there at once and stops the GIF", async ({page}) => {
+test("choosing another scene while a GIF is being made goes there at once and stops the GIF", async ({page}) => {
   test.setTimeout(30_000 + WHOLE_GIF)
   const {button, saved} = await openForGif(page, "factory")
   await button.click()
@@ -308,31 +338,45 @@ test("the factory comes first, draws in its box and turns by itself", async ({pa
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
 })
 
-for (const scene of ["factory", "island"] as const) {
+for (const [scene] of SCENES) {
   test(`the ${scene} shows nothing but its own palette's colours`, async ({page}) => {
-    await page.goto(scene === "factory" ? "/animations/splats" : `/animations/splats?scene=${scene}`)
+    await page.goto(pathOf(scene))
     await drawn(page, scene)
     expect(await strangers(page, await picture(page, scene), await paletteOf(scene))).toBe(0)
   })
 }
 
-test("the switch changes the scene, keeps the box's size and leaves one scene drawing", async ({page}) => {
+test("every tab switches the scene, keeps the box's size, leaves one scene drawing and downloads only that scene", async ({page, isMobile}) => {
+  test.setTimeout(60_000)
+  // The scene files the page asks for, in order.
+  const files: string[] = []
+  page.on("request", request => {
+    const file = /\/splats\/([a-z]+)[^/]*\.bin/.exec(new URL(request.url()).pathname)
+    if (file) files.push(file[1]!)
+  })
   await page.goto("/animations/splats")
   await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
   const factory = await size(await drawn(page, "factory"))
+  expect(files).toEqual(["factory"])
+  const tabs = page.locator(".splats-lab__bar .flair-tabs")
+  await expect(tabs.getByRole("link")).toHaveText(SCENES.map(([, name]) => name))
 
-  await page.getByRole("link", {name: "Island"}).click()
-  await expect(page).toHaveURL(/\?scene=island$/)
-  const island = await drawn(page, "island")
-  expect(await size(island)).toEqual(factory)
-  await expect(page.locator("[data-splats-canvas]")).toHaveCount(1)
-  await expect(page.getByRole("link", {name: "Island"})).toHaveAttribute("aria-current", "page")
-
-  await page.getByRole("link", {name: "Factory"}).click()
-  await expect(page).toHaveURL(/\/animations\/splats$/)
-  expect(await size(await drawn(page, "factory"))).toEqual(factory)
-  await expect(page.locator("[data-splats-canvas]")).toHaveCount(1)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
+  for (const [scene, name] of [...SCENES.slice(1), SCENES[0]]) {
+    const asked = files.length
+    const tab = page.getByRole("link", {name, exact: true})
+    await tab.click()
+    await expect(page).toHaveURL(scene === "factory" ? /\/animations\/splats$/ : new RegExp(`\\?scene=${scene}$`))
+    expect(await size(await drawn(page, scene))).toEqual(factory)
+    await expect(page.locator("[data-splats-canvas]")).toHaveCount(1)
+    await expect(tab).toHaveAttribute("aria-current", "page")
+    expect(files.slice(asked)).toEqual([scene])
+    // The chosen tab is in sight in its row, Download GIF is at the row's end, and the page never scrolls sideways.
+    const [row, chosen] = await Promise.all([tabs, tab].map(async each => (await each.boundingBox())!))
+    expect(chosen!.x).toBeGreaterThanOrEqual(row!.x - 0.5)
+    expect(chosen!.x + chosen!.width).toBeLessThanOrEqual(row!.x + row!.width + 0.5)
+    await expectGifAtRowEnd(page, scene, isMobile)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
+  }
 })
 
 test("the turn stops while zoom comes in and eases back a moment after, the loop playing on and the zoom staying where it is left", async ({page}) => {
@@ -376,20 +420,22 @@ test("the turn stops while zoom comes in and eases back a moment after, the loop
   expect(new Set([still.at(-1)!, ...after].map(view => view.distance))).toEqual(new Set([still.at(-1)!.distance]))
 })
 
-test("a link opens the island, and any other link opens the factory", async ({page}) => {
-  await page.goto("/animations/splats?scene=island")
-  await expect(page.locator("#splats-island")).toBeAttached()
-  for (const link of ["?scene=volcano", "?scene[]=island", "?scene[island]=1", "?scene="]) {
+test("a link opens its scene, and any other link opens the factory", async ({page}) => {
+  for (const [scene, name] of SCENES) {
+    await page.goto(`/animations/splats?scene=${scene}`)
+    await expect(page.locator(".splats-lab")).toHaveAttribute("id", `splats-${scene}`)
+    await expect(page.getByRole("link", {name, exact: true})).toHaveAttribute("aria-current", "page")
+  }
+  for (const link of ["?scene=volcano", "?scene[]=island", "?scene[island]=1", "?scene=", "?scene=Meteor"]) {
     await page.goto(`/animations/splats${link}`)
-    await expect(page.locator("#splats-factory")).toBeAttached()
-    await expect(page.locator("#splats-island")).toHaveCount(0)
+    await expect(page.locator(".splats-lab")).toHaveAttribute("id", "splats-factory")
   }
 })
 
 test.describe("with less motion", () => {
   test.use({reducedMotion: "reduce"})
 
-  for (const scene of ["factory", "island"] as const) {
+  for (const [scene] of SCENES) {
     test(`the ${scene} holds still, turns and tilts under a drag and stops, and turns and tilts with the arrow keys`, async ({page}) => {
       await page.goto(`/animations/splats?scene=${scene}`)
       await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
@@ -593,18 +639,20 @@ test.describe("with less motion", () => {
     await expect(box.getByRole("button", {name: "Zoom out"})).toHaveAttribute("aria-disabled", "true")
   })
 
-  test("Download GIF still saves the island's GIF, pressed from the keyboard", async ({page}) => {
-    test.setTimeout(30_000 + WHOLE_GIF)
-    const {button, saved} = await openForGif(page, "island")
-    const download = page.waitForEvent("download", {timeout: WHOLE_GIF})
-    await button.focus()
-    await page.keyboard.press("Enter")
-    const gif = await download
-    expect(gif.suggestedFilename()).toBe("regents-island.gif")
-    expect(await opening(gif)).toEqual(GIF)
-    await expect(button).toBeFocused()
-    expect(saved).toHaveLength(1)
-  })
+  for (const [scene] of SCENES.slice(1)) {
+    test(`Download GIF still saves the ${scene}'s GIF, pressed from the keyboard`, async ({page}) => {
+      test.setTimeout(30_000 + WHOLE_GIF)
+      const {button, saved} = await openForGif(page, scene)
+      const download = page.waitForEvent("download", {timeout: WHOLE_GIF})
+      await button.focus()
+      await page.keyboard.press("Enter")
+      const gif = await download
+      expect(gif.suggestedFilename()).toBe(`regents-${scene}.gif`)
+      expect(await opening(gif)).toEqual(GIF)
+      await expect(button).toBeFocused()
+      expect(saved).toHaveLength(1)
+    })
+  }
 
   test("on a touch screen a sideways swipe turns the scene, and an up or down swipe scrolls the page", async ({page, isMobile}) => {
     test.skip(!isMobile, "Touch is the phone's.")

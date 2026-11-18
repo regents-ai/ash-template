@@ -3,8 +3,8 @@
  * the still picture the server sends, drawing the scene the box names
  * (`data-splats-scene`, its baked file `data-splats-file`) in 3D splats once WebGPU is
  * there (`splats/renderer.ts`, loaded only when the box is on screen; the still shows
- * while the file downloads). Each scene is its own box, so choosing the other one ends
- * this island, and its GPU device, before the next begins.
+ * while the file downloads). Each scene is its own box, so choosing another ends this
+ * island, and its GPU device, before the next begins.
  *
  * A mouse or pen dragged across the box turns the scene under it, and dragged up or
  * down tilts the view over it or under it. On a touch screen a sideways swipe turns
@@ -26,7 +26,7 @@
  * a GIF of the scene (`splats/gif.ts`, loaded on the first press) and saves it as
  * `regents-<scene>.gif`. While it works the button counts up in place, says so to a
  * screen reader every quarter, and a second press does nothing; a failure says so
- * beside it. Choosing the other scene or leaving the page stops it and frees what it held.
+ * beside it. Choosing another scene or leaving the page stops it and frees what it held.
  */
 import {createCanvasIsland} from "../canvas_island"
 import type {SplatRenderer, ZoomAction} from "../splats/renderer"

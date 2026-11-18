@@ -1,5 +1,5 @@
-/* Bakes the island and the factory into the page's own scene files, priv/static/splats/<scene>.bin, and prints what each part of a
-   file costs and how far a stored number can be from the toolkit's.
+/* Bakes the scenes into the page's own scene files, priv/static/splats/<scene>.bin, and prints what each part of a file costs and
+   how far a stored number can be from the toolkit's.
 
      INK_STUDIO=<toolkit checkout> node assets/js/splats/studio/bake.cjs [scene ...]        (from platform/)
 
@@ -10,7 +10,7 @@ const zlib = require('node:zlib');
 const kit = require('./kit.cjs');
 const F = require('./format.cjs');
 
-const SCENES = ['island', 'factory'];
+const SCENES = ['island', 'factory', 'campfire', 'battle', 'circus', 'fishing', 'meteor'];
 const OUT = path.join(__dirname, '../../../../priv/static/splats');
 // the loop starts after fifteen of its own lengths, by when the factory's cloth flag has settled into a steady swing
 const WARM_LOOPS = 15;

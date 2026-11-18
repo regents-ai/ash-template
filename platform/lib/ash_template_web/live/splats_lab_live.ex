@@ -1,23 +1,24 @@
 defmodule AshTemplateWeb.SplatsLabLive do
   @moduledoc """
-  Splats: two small worlds in pixel art, a robot factory and a floating island, each a
-  few hundred thousand 3D splats, turning once every thirty seconds while everything in
-  them plays an eight-second loop. A drag turns and tilts the scene, and a pinch, a
-  wheel with Ctrl or Cmd held, the keys + and - or the box's Zoom in and Zoom out
-  buttons bring it nearer, up to four times, at the pointer or the middle; Reset view,
-  0, a double-click or a double tap goes back to the opening view. The robot factory
-  comes first; `?scene=island` shows the floating island at night instead, and any
-  other value shows the factory.
+  Splats: seven small worlds in pixel art, each a few hundred thousand 3D splats,
+  turning once every thirty seconds while everything in them plays an eight-second
+  loop. A drag turns and tilts the scene, and a pinch, a wheel with Ctrl or Cmd held,
+  the keys + and - or the box's Zoom in and Zoom out buttons bring it nearer, up to four
+  times, at the pointer or the middle; Reset view, 0, a double-click or a double tap goes
+  back to the opening view. The robot factory comes first; `?scene=<id>` shows another
+  of `@scenes` instead (`island`, `campfire`, `battle`, `circus`, `fishing`, `meteor`),
+  and any other value shows the factory.
 
-  Each scene is one baked file, `priv/static/splats/<scene>.bin` (laid out in
-  `assets/js/splats/studio/FORMAT.md`), served gzipped and digested like the other
-  static files. The box always holds the scene's still picture for its shape
-  (`priv/static/images/animations/splats-<scene>-wide.png`, or `-square.png` on a phone,
-  both drawn from the same files by `npm run stills:splats`). Over it the `SplatIsland`
+  Each scene is one baked file, `priv/static/splats/<id>.bin` (laid out in
+  `assets/js/splats/studio/FORMAT.md`, baked from `studio/<id>.cjs`), served gzipped and
+  digested like the other static files. The box always holds the scene's still picture
+  for its shape (`priv/static/images/animations/splats-<id>-wide.png`, or `-square.png`
+  on a phone, both drawn from the same files by `npm run stills:splats`, one pixel an art
+  pixel, so `wide` and `square` in `@scenes` are their sizes). Over it the `SplatIsland`
   hook downloads the file the box names (`data-splats-file`), draws the scene with
   WebGPU and fades it in once its first frame has landed; until then, and without
   WebGPU, the still stays. Each scene's box has its own id, so switching ends one
-  scene's drawing before the next begins.
+  scene's drawing before the next begins, and only the scene showing is downloaded.
 
   The zoom buttons sit in a corner of the stage, inside the box, and show once the
   scene has drawn. The hook finds them by `data-splats-zoom` (`in`, `out`, `home`) and
@@ -37,9 +38,68 @@ defmodule AshTemplateWeb.SplatsLabLive do
 
   alias AshTemplateWeb.PublicDocuments
 
+  @moving "Drag, or use the arrow keys, to turn and tilt it. Pinch, or press plus and minus, to look closer, and 0 to go back to the start."
+
+  # In tab order, the first the default. `wide` and `square` are the stills' sizes: the
+  # art-pixel grid of a 1440 by 960 stage and of a 1080 square one, which is coarser for
+  # a scene whose camera stands nearer (fishing).
   @scenes [
-    %{id: "factory", name: "Factory"},
-    %{id: "island", name: "Island"}
+    %{
+      id: "factory",
+      name: "Factory",
+      wide: {480, 320},
+      square: 360,
+      label:
+        "A solarpunk robot factory on a floating island at dusk: a workshop hall with a sawtooth roof of glass, plants and solar panels, a brick chimney, two wind turbines, a water wheel, robot arms over an assembly line and robots at work, with a brass engine underneath."
+    },
+    %{
+      id: "island",
+      name: "Island",
+      wide: {480, 320},
+      square: 360,
+      label:
+        "A floating island at night with a great tree, two pines, a cottage, a campfire and a pond whose stream falls off the edge, over glowing crystals."
+    },
+    %{
+      id: "campfire",
+      name: "Campfire",
+      wide: {480, 320},
+      square: 360,
+      label:
+        "A robot factory on a snowy floating rock at blue hour, where a robot owl tells a story round a campfire to a frog and two robots, beside a lava pool that falls off the edge."
+    },
+    %{
+      id: "battle",
+      name: "Battle",
+      wide: {480, 320},
+      square: 360,
+      label:
+        "A green crater on a giant twenty-sided die at golden hour, where a crowned toad throws a spark at a spider in front of a castle keep."
+    },
+    %{
+      id: "circus",
+      name: "Circus",
+      wide: {480, 320},
+      square: 360,
+      label:
+        "A drive-in cinema inside a snow globe at midnight, with a jet-pack flyer dodging a swarm of missiles on curling smoke trails round the glass."
+    },
+    %{
+      id: "fishing",
+      name: "Fishing",
+      wide: {360, 240},
+      square: 270,
+      label:
+        "A glass greenhouse dome on a black slab in golden smog, where a dragon in a wizard hat fishes in a hot spring beside a standing monolith."
+    },
+    %{
+      id: "meteor",
+      name: "Meteor",
+      wide: {480, 320},
+      square: 360,
+      label:
+        "A coral reef on a floating rock under a starry noon sky, where a chrome neighbour on a disco floor bats a falling meteor back into the sky."
+    }
   ]
 
   @impl true
@@ -50,40 +110,18 @@ defmodule AshTemplateWeb.SplatsLabLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    scene = scene(params["scene"])
-    {:noreply, assign(socket, scene: scene, stills: stills(scene))}
+    {:noreply,
+     assign(socket, scene: Enum.find(@scenes, hd(@scenes), &(&1.id == params["scene"])))}
   end
 
-  defp scene("island"), do: "island"
-  defp scene(_other), do: "factory"
+  defp scene_path(%{id: "factory"}), do: ~p"/animations/splats"
+  defp scene_path(%{id: id}), do: ~p"/animations/splats?#{[scene: id]}"
 
-  defp scene_path("factory"), do: ~p"/animations/splats"
-  defp scene_path(scene), do: ~p"/animations/splats?#{[scene: scene]}"
+  defp scene_file(%{id: id}), do: ~p"/splats/#{id <> ".bin"}"
 
-  defp scene_file("factory"), do: ~p"/splats/factory.bin"
-  defp scene_file("island"), do: ~p"/splats/island.bin"
+  defp still(%{id: id}, shape), do: ~p"/images/animations/#{"splats-#{id}-#{shape}.png"}"
 
-  defp stills("factory"),
-    do: %{
-      wide: ~p"/images/animations/splats-factory-wide.png",
-      square: ~p"/images/animations/splats-factory-square.png"
-    }
-
-  defp stills("island"),
-    do: %{
-      wide: ~p"/images/animations/splats-island-wide.png",
-      square: ~p"/images/animations/splats-island-square.png"
-    }
-
-  @moving "Drag, or use the arrow keys, to turn and tilt it. Pinch, or press plus and minus, to look closer, and 0 to go back to the start."
-
-  defp label("factory"),
-    do:
-      "A solarpunk robot factory on a floating island at dusk: a workshop hall with a sawtooth roof of glass, plants and solar panels, a brick chimney, two wind turbines, a water wheel, robot arms over an assembly line and robots at work, with a brass engine underneath. #{@moving}"
-
-  defp label("island"),
-    do:
-      "A floating island at night with a great tree, two pines, a cottage, a campfire and a pond whose stream falls off the edge, over glowing crystals. #{@moving}"
+  defp label(%{label: label}), do: "#{label} #{@moving}"
 
   attr :scene, :string, required: true
   attr :action, :string, required: true, values: ~w(in out home)
@@ -121,7 +159,7 @@ defmodule AshTemplateWeb.SplatsLabLive do
         </p>
         <h1>Splats</h1>
         <p class="motion-lab__lede">
-          Two small worlds, turning slowly. Drag one to turn it, or to look from above or below.
+          Seven small worlds, turning slowly. Drag one to turn it, or to look from above or below.
           Pinch, or use the buttons in its corner, to look closer.
         </p>
       </header>
@@ -129,8 +167,8 @@ defmodule AshTemplateWeb.SplatsLabLive do
         <nav class="flair-tabs" aria-label="Scenes">
           <.link
             :for={scene <- @scenes}
-            patch={scene_path(scene.id)}
-            aria-current={scene.id == @scene && "page"}
+            patch={scene_path(scene)}
+            aria-current={scene == @scene && "page"}
           >
             {scene.name}
           </.link>
@@ -138,13 +176,13 @@ defmodule AshTemplateWeb.SplatsLabLive do
         <%!-- The SplatIsland hook finds this by the box's id and keeps its state
         (data-gif) and words; it shows once the scene has drawn (splats_lab.css). --%>
         <div
-          id={"splats-#{@scene}-gif"}
+          id={"splats-#{@scene.id}-gif"}
           class="splats-gif"
           phx-mounted={JS.ignore_attributes(["data-gif"])}
         >
           <p class="splats-gif__failed">Could not make the GIF. Try again.</p>
           <Regent.Primitives.button
-            id={"splats-#{@scene}-gif-button"}
+            id={"splats-#{@scene.id}-gif-button"}
             variant="secondary"
             arrow={false}
             class="splats-gif__button"
@@ -155,7 +193,7 @@ defmodule AshTemplateWeb.SplatsLabLive do
               <span class="splats-gif__making">
                 Making
                 <Regent.Primitives.figure
-                  id={"splats-#{@scene}-gif-done"}
+                  id={"splats-#{@scene.id}-gif-done"}
                   value="0%"
                   width={4}
                   phx-update="ignore"
@@ -164,7 +202,7 @@ defmodule AshTemplateWeb.SplatsLabLive do
             </span>
           </Regent.Primitives.button>
           <span
-            id={"splats-#{@scene}-gif-status"}
+            id={"splats-#{@scene.id}-gif-status"}
             class="visually-hidden"
             role="status"
             phx-update="ignore"
@@ -172,30 +210,41 @@ defmodule AshTemplateWeb.SplatsLabLive do
         </div>
       </div>
       <div
-        id={"splats-#{@scene}"}
+        id={"splats-#{@scene.id}"}
         class="splats-lab"
         tabindex="0"
         role="group"
         aria-label={label(@scene)}
-        data-splats-scene={@scene}
+        data-splats-scene={@scene.id}
         data-splats-file={scene_file(@scene)}
         phx-hook="SplatIsland"
         phx-mounted={JS.ignore_attributes(["data-splats-ready"])}
       >
         <%!-- The same width as the CSS that turns the box square (splats_lab.css). --%>
         <picture>
-          <source media="(max-width: 36rem)" srcset={@stills.square} width="360" height="360" />
-          <img class="splats-lab__still" src={@stills.wide} width="480" height="320" alt="" />
+          <source
+            media="(max-width: 36rem)"
+            srcset={still(@scene, "square")}
+            width={@scene.square}
+            height={@scene.square}
+          />
+          <img
+            class="splats-lab__still"
+            src={still(@scene, "wide")}
+            width={elem(@scene.wide, 0)}
+            height={elem(@scene.wide, 1)}
+            alt=""
+          />
         </picture>
-        <div id={"splats-#{@scene}-stage"} class="splats-lab__stage" phx-update="ignore">
+        <div id={"splats-#{@scene.id}-stage"} class="splats-lab__stage" phx-update="ignore">
           <canvas data-splats-canvas></canvas>
         </div>
         <%!-- The SplatIsland hook finds these by data-splats-zoom and keeps their
         aria-disabled; they show once the scene has drawn (splats_lab.css). --%>
         <div class="splats-zoom">
-          <.zoom_button scene={@scene} action="out" label="Zoom out" icon="minus" at_limit />
-          <.zoom_button scene={@scene} action="in" label="Zoom in" icon="plus" />
-          <.zoom_button scene={@scene} action="home" label="Reset view" icon="scan" at_limit />
+          <.zoom_button scene={@scene.id} action="out" label="Zoom out" icon="minus" at_limit />
+          <.zoom_button scene={@scene.id} action="in" label="Zoom in" icon="plus" />
+          <.zoom_button scene={@scene.id} action="home" label="Reset view" icon="scan" at_limit />
         </div>
       </div>
     </main>

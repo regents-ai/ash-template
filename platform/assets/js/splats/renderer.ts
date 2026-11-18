@@ -1,6 +1,6 @@
 /**
- * The splats page's picture (`AshTemplateWeb.SplatsLabLive`): one baked scene, the robot
- * factory or the floating island (`priv/static/splats/<scene>.bin`, scene.ts), painted
+ * The splats page's picture (`AshTemplateWeb.SplatsLabLive`): one baked scene of the
+ * seven (`priv/static/splats/<scene>.bin`, scene.ts), painted
  * by painter.ts on one canvas through WebGPU, turning once every thirty seconds while
  * everything in it plays its eight-second loop.
  *
