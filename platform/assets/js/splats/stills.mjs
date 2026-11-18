@@ -27,7 +27,7 @@ const gpu = await init()
 const browser = await chromium.launch()
 const page = await browser.newPage()
 
-for (const name of ["factory", "island"]) {
+for (const name of ["factory", "island", "campfire-stories", "trainer-battle", "missile-circus", "fishing", "meteor-strike"]) {
   const file = readFileSync(join(priv, `splats/${name}.bin`))
   const scene = decodeScene(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength))
   const painter = createPainter(gpu, scene)

@@ -19,13 +19,20 @@ import {BLOCK_NAMES, decodeScene, NO_DEPTH, restCentre} from "../js/splats/scene
 const studio = createRequire(import.meta.url)("../js/splats/studio/decode.cjs")
 const fileOf = (name: string) => new URL(`../../priv/static/splats/${name}.bin`, import.meta.url)
 
+// Each scene's splats, and how many screen pixels wide its art pixel is on the reference pictures' 1440 by 960
+// stage and on a phone's 1080 by 1080 one, at zoom 1 and at the nearest zoom.
 const scenes = [
-  {name: "island", splats: 294_707},
-  {name: "factory", splats: 399_656},
-].map(({name, splats}) => {
+  {name: "island", splats: 294_707, art: {wide: 3, square: 3, wideNearest: 7, squareNearest: 6}},
+  {name: "factory", splats: 399_656, art: {wide: 3, square: 3, wideNearest: 7, squareNearest: 6}},
+  {name: "campfire-stories", splats: 316_693, art: {wide: 3, square: 3, wideNearest: 7, squareNearest: 6}},
+  {name: "trainer-battle", splats: 369_873, art: {wide: 3, square: 3, wideNearest: 6, squareNearest: 6}},
+  {name: "missile-circus", splats: 306_731, art: {wide: 3, square: 3, wideNearest: 7, squareNearest: 6}},
+  {name: "fishing", splats: 289_589, art: {wide: 4, square: 4, wideNearest: 8, squareNearest: 8}},
+  {name: "meteor-strike", splats: 333_030, art: {wide: 3, square: 3, wideNearest: 7, squareNearest: 6}},
+].map(({name, splats, art}) => {
   const file = readFileSync(fileOf(name))
   const scene = decodeScene(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength))
-  return {name, splats, scene, theirs: studio.open(fileOf(name))}
+  return {name, splats, art, scene, theirs: studio.open(fileOf(name))}
 })
 
 /** The largest gap between two lists of numbers. */
@@ -35,7 +42,7 @@ const furthest = (a: ArrayLike<number>, b: ArrayLike<number>) => {
   return most
 }
 
-describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
+describe.each(scenes)("the $name", ({splats, art, scene, theirs}) => {
   const {header, blocks} = scene
 
   it("holds the splats and the 48 colours the page says it does", () => {
@@ -151,8 +158,8 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
 
   describe("framed", () => {
     it("on the reference pictures' grid on a wide stage, and on a square one for phones", () => {
-      expect(gridFor(header, 1440, 960, 1)).toMatchObject({zoom: 1, scale: 3, columns: 480, rows: 320})
-      expect(gridFor(header, 1080, 1080, 1)).toMatchObject({scale: 3, columns: 360, rows: 360})
+      expect(gridFor(header, 1440, 960, 1)).toMatchObject({zoom: 1, scale: art.wide, columns: 1440 / art.wide, rows: 960 / art.wide})
+      expect(gridFor(header, 1080, 1080, 1)).toMatchObject({scale: art.square, columns: 1080 / art.square, rows: 1080 / art.square})
     })
 
     for (const [width, height] of [[2172, 1446], [972, 972], [716, 716], [641, 427], [100, 60]] as const) {
@@ -197,10 +204,10 @@ describe.each(scenes)("the $name", ({splats, scene, theirs}) => {
     it("zoomed in, takes the person's zoom times the stage's fit as s, its art pixels growing with it", () => {
       for (const [width, height] of stages)
         for (const zoom of [Math.SQRT2, 2, 3, ZOOM_LIMIT]) expect(gridFor(header, width, height, zoom)).toEqual(formatGrid(width, height, zoom * Math.min(1, width / height / 1.5)))
-      // The reference pictures' stage four times nearer: 7 screen pixels an art pixel, not 3.
-      expect(gridFor(header, 1440, 960, ZOOM_LIMIT)).toMatchObject({zoom: 4, scale: 7, columns: 206, rows: 138})
+      // The reference pictures' stage four times nearer: for the island, 7 screen pixels an art pixel, not 3.
+      expect(gridFor(header, 1440, 960, ZOOM_LIMIT)).toMatchObject({zoom: 4, scale: art.wideNearest, columns: Math.ceil(1440 / art.wideNearest), rows: Math.ceil(960 / art.wideNearest)})
       // A phone's square stage at the nearest zoom: s is 4 times its fit of 2/3.
-      expect(gridFor(header, 1080, 1080, ZOOM_LIMIT)).toMatchObject({scale: 6, columns: 180, rows: 180})
+      expect(gridFor(header, 1080, 1080, ZOOM_LIMIT)).toMatchObject({scale: art.squareNearest, columns: Math.ceil(1080 / art.squareNearest), rows: Math.ceil(1080 / art.squareNearest)})
       expect(gridFor(header, 1080, 1080, ZOOM_LIMIT).zoom).toBeCloseTo(8 / 3, 12)
     })
 

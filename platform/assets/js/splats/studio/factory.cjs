@@ -97,8 +97,7 @@ module.exports = kit => {
         hash = (i, j, k) => {
           const v = Math.sin(i * 127.1 + j * 311.7 + k * 74.7) * 43758.5453;
           return v - Math.floor(v);
-        },
-        pickT = (ramp, t) => ramp[clamp(Math.floor(t * ramp.length), 0, ramp.length - 1)];
+        };
 
       // ---------------- where things stand
       const HALL = { x: 0, z: -1.5, hx: 2.3, hz: 1.15, top: 1.45 },
@@ -152,13 +151,13 @@ module.exports = kit => {
                 fu = u - col,
                 fv = z / 0.27 - row;
               if (fu < 0.08 || fv < 0.1) return 16;
-              return pickT(STONE, t + 0.35 * (hash(col, row, 7) - 0.5));
+              return S.pick(STONE, t + 0.35 * (hash(col, row, 7) - 0.5));
             }
             // a ring of bare earth worn by the walking robot, cracked as it dries
             const rd = ringD(x, z);
             if (rd < 0.22 + 0.04 * B.n3(x * 3, z * 3, 1.3)) {
               if (mud.crack(x, z) > 0.5) return 12;
-              return pickT(SOIL, t + 0.2);
+              return S.pick(SOIL, t + 0.2);
             }
             return undefined;
           }
@@ -178,9 +177,9 @@ module.exports = kit => {
         tex: (x, y, z, ny, t) => {
           const bd = isle ? isle.bed(y) : { i: 0, hard: 0.5 },
             kind = B.n3(bd.i * 1.9 + 0.4, 4.2, 2.3);
-          if (B.n3(x * 7.5, y * 7.5, z * 7.5) > 0.9) return pickT(PATINA, t);
-          if (kind > 0.58) return pickT(SANDSTONE, t);
-          if (kind < 0.36) return pickT(RUST, t);
+          if (B.n3(x * 7.5, y * 7.5, z * 7.5) > 0.9) return S.pick(PATINA, t);
+          if (kind > 0.58) return S.pick(SANDSTONE, t);
+          if (kind < 0.36) return S.pick(RUST, t);
           return undefined;
         }
       };
@@ -324,7 +323,7 @@ module.exports = kit => {
               fv = v - Math.floor(v);
             if (Math.abs(z - czH) > hz - 0.02) return 23;
             if (fu < 0.08 || fv < 0.1) return 43;
-            return pickT([41, 41, 42, 42], t);
+            return S.pick([41, 41, 42, 42], t);
           }
         }
       };
@@ -504,7 +503,7 @@ module.exports = kit => {
       const turbine = (p, h, len, F, tag) => {
         const y = gy(p[0], p[1]) - 0.08;
         S.lathe([p[0], y - 0.15, p[1]], 0.3, [0.34, 0.3], { r: STONE }, { res: 0.04 });
-        S.lathe([p[0], y, p[1]], h, t => 0.15 - 0.07 * t, { r: CREAM, s: CREAM_SUN, tex: (x, yy, z, ny, t) => (yy > y + h - 0.35 || Math.abs(yy - y - h * 0.45) < 0.08 ? pickT(PAINT_SUN, t) : undefined) }, { res: 0.035 });
+        S.lathe([p[0], y, p[1]], h, t => 0.15 - 0.07 * t, { r: CREAM, s: CREAM_SUN, tex: (x, yy, z, ny, t) => (yy > y + h - 0.35 || Math.abs(yy - y - h * 0.45) < 0.08 ? S.pick(PAINT_SUN, t) : undefined) }, { res: 0.035 });
         S.box([p[0], y + 0.25, p[1]], [0.07, 0.15, 0.13], { r: [16, 17, 32] }, { res: 0.025, ax: yawF(Math.atan2(F[0], F[2])) });
         const top = [p[0], y + h + 0.06, p[1]],
           Fr = frameY(F);
@@ -513,7 +512,7 @@ module.exports = kit => {
           side = B.norm(cross(F, [0, 1, 0]));
         moving.push(() => {
         S.lathe(mad(H, F, -0.05), 0.2, t => 0.085 * Math.sqrt(1 - t * t) + 0.01, PAINTM, { res: 0.022, ax: Fr, tag, whole: true });
-        const bladeMat = { r: CREAM, s: CREAM_SUN, tex: (x, yy, z, ny, t) => (Math.hypot(x - H[0], yy - H[1], z - H[2]) > len * 0.78 ? pickT(PAINT_SUN, t) : undefined) };
+        const bladeMat = { r: CREAM, s: CREAM_SUN, tex: (x, yy, z, ny, t) => (Math.hypot(x - H[0], yy - H[1], z - H[2]) > len * 0.78 ? S.pick(PAINT_SUN, t) : undefined) };
         for (let k = 0; k < 3; k++) {
           const a = (k / 3) * TAU + 0.3,
             d = add([0, Math.cos(a), 0], [side[0] * Math.sin(a), 0, side[2] * Math.sin(a)]);
@@ -612,7 +611,7 @@ module.exports = kit => {
                 const fa = (a + 9) / 0.13 - Math.floor((a + 9) / 0.13),
                   fb = (b + 9) / 0.13 - Math.floor((b + 9) / 0.13);
                 if (fa < 0.1 || fb < 0.1) return 43;
-                return pickT([41, 41, 42, 42, 43], t);
+                return S.pick([41, 41, 42, 42, 43], t);
               }
             },
             { res: 0.035 }
@@ -825,7 +824,7 @@ module.exports = kit => {
       for (let k = 0; k < 4; k++) {
         const a = (k / 4) * TAU,
           d = [Math.cos(a), 0, Math.sin(a)];
-        K.sweep(S, [mad(PROP, d, 0.08), mad(add(PROP, [0, -0.03, 0]), d, 0.8), mad(add(PROP, [0, -0.06, 0]), d, 1.5)], { w: t => 0.16 * (1 - 0.55 * t) + 0.025, h: 0.02, shape: 'flat', twist: 0.12 }, { r: CREAM, s: CREAM_SUN, tex: (x, y, z, ny, t) => (Math.hypot(x, z) > 1.22 ? pickT(PAINT, t + 0.3) : undefined) }, { up: [0, 1, 0], res: 0.035, tag: 'prop', whole: true });
+        K.sweep(S, [mad(PROP, d, 0.08), mad(add(PROP, [0, -0.03, 0]), d, 0.8), mad(add(PROP, [0, -0.06, 0]), d, 1.5)], { w: t => 0.16 * (1 - 0.55 * t) + 0.025, h: 0.02, shape: 'flat', twist: 0.12 }, { r: CREAM, s: CREAM_SUN, tex: (x, y, z, ny, t) => (Math.hypot(x, z) > 1.22 ? S.pick(PAINT, t + 0.3) : undefined) }, { up: [0, 1, 0], res: 0.035, tag: 'prop', whole: true });
       }
       });
       // pipes running down the rock to the engine

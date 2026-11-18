@@ -1,6 +1,7 @@
 # Baked splat scenes
 
-Each scene the page shows is one file in `platform/priv/static/splats/`, named for the scene: `island.bin` and `factory.bin`. A file
+Each scene the page shows is one file in `platform/priv/static/splats/`, named for the scene: `island.bin`, `factory.bin`,
+`campfire-stories.bin`, `trainer-battle.bin`, `missile-circus.bin`, `fishing.bin` and `meteor-strike.bin`. A file
 holds every splat of the scene at rest, the tables its splats point into, how the scene moves over one loop, and the camera and look it
 is drawn with. This note says what every number is and how to draw a picture from them. `decode.cjs` is a working reader in plain
 JavaScript; `verify.cjs` shows it draws what the toolkit drew (see the end of this note).
@@ -138,8 +139,8 @@ Every motion therefore comes round exactly once a loop (but see the sway in sect
 ## 3. The loop
 
 The motion clock is t = clockStart + τ, with τ the time into the loop, 0 ≤ τ < L. The clock starts at 120 rather than 0 because the
-sway's second term (section 4) makes 3.9 cycles a loop, not a whole number, so its starting point is part of the scene: use t, not τ, in
-the motion maths. A 32-bit float holds t to about one hundred-thousandth of a second, which is plenty.
+sway's second term (section 4) need not make a whole number of cycles a loop (3.9 for c = 3), so its starting point is part of the
+scene: use t, not τ, in the motion maths. A 32-bit float holds t to about one hundred-thousandth of a second, which is plenty.
 
 Frame f of the loop is the moment τ = f / 30: the part matrices and the cloth are stored for those moments (section 8 shows how near
 the toolkit they come). Between them a painter may hold the frame before or blend the two frames either side; the motions of section 4
@@ -195,10 +196,13 @@ it is u²(3 − 2u). frac(x) = x − floor(x).
 | 7 | pulse | α ← α (0.82 + 0.18 sin(ωt + φ)) |
 | 11 | sway | x ← x + r sin(ωt + 1.3y + 0.9z + φ); y ← y + 0.6 r sin(1.3ωt + 1.1x + φ), with x, y, z the values before the sway |
 
-Kinds 8 to 10 and 12 to 15 are not used. The sway's second term turns 1.3 times as fast as its first, so over one loop it makes 3.9
-cycles where the first makes 3: where the loop wraps, a swaying leaf's height jumps by at most 0.6 r × 2 sin(0.1π) ≈ 0.37 r. Every
-sway in these scenes has c = 3 and r from 0.012 to 0.045, so the jump is at most 0.017 world units, about a third of an art pixel at
-the scene's own distance (0.0074 for the r = 0.02 sways). The toolkit's own loops have the same small seam.
+Kinds 8 to 10 and 12 to 15 are not used. The sway's second term turns 1.3 times as fast as its first, so over one loop it makes 1.3 c
+cycles where the first makes c. For c = 3 that is 3.9: where the loop wraps, a swaying leaf's height jumps by at most
+0.6 r × 2 sin(0.1π) ≈ 0.37 r. The sways of the island, the factory, campfire-stories, trainer-battle and missile-circus have c = 3 and r
+from 0.012 to 0.045, so the jump is at most 0.017 world units, about a third of an art pixel at the scene's own distance (0.0074 for
+the r = 0.02 sways). Those of meteor-strike have c = 3 and r from 0.015 to 0.06, so the jump is at most 0.022 world units, 0.49 of its
+art pixel. Those of fishing have c = 10, so the second term makes 13 whole cycles and closes exactly. The toolkit's own loops have the
+same seam.
 
 Whether a splat is solid is decided after its kind has changed α: a falling drop of density 3 at 60% stays solid.
 
@@ -298,14 +302,15 @@ A splat costs 18 bytes at rest (6 centre, 4 turn, 6 size, 1 colour, 1 style) and
 
 ## 7. How near the stored numbers are
 
-Measured by `bake.cjs` over every splat (an art pixel is 1 / detail = 0.052 world units at the scene's own distance):
+Measured by `bake.cjs` over every splat of every scene (an art pixel is 1 / detail world units at the scene's own distance: 0.052 at
+the detail of 19.4, 0.045 at trainer-battle's 22):
 
 | Field | Stored as | Largest error |
 | --- | --- | --- |
-| Centre | 16 bits within its run's box | 7.0e-4 world units on any one axis (0.014 art pixel), in the sparse sky; 6e-6 to 9e-6 on average. A turned part turns the same error, so on the world's axes it can read a little more (7.7e-4 at most in the proof) |
+| Centre | 16 bits within its run's box | 7.0e-4 world units on any one axis (0.014 art pixel), in the sparse sky; 4e-6 to 1e-5 on average. A turned part turns the same error, so on the world's axes it can read a little more (8.2e-4 at most in the proof) |
 | Size | 16-bit logarithm | 0.005% |
-| Turn of the axes | three 10-bit parts | 0.16 degrees |
-| Whole covariance | (both of the above) | 0.28% (0.08% on average) |
+| Turn of the axes | three 10-bit parts | 0.17 degrees |
+| Whole covariance | (both of the above) | 0.30% (0.08% on average) |
 | Density, kind, flags, part | style table, 32-bit float | exact |
 | Colour | palette place | exact |
 | Speed, range, extra | whole cycles, 32-bit floats | exact |
@@ -318,10 +323,11 @@ Measured by `bake.cjs` over every splat (an art pixel is 1 / detail = 0.052 worl
 ## 8. The proof
 
 `verify.cjs` builds each scene with the toolkit, reads its file back with `decode.cjs`, and has the toolkit's own renderer draw both on a
-1440 x 960 stage (480 x 320 art pixels of 3), from four quarter turns at the starting pitch and from straight above and below (pitch
-±1.45), at τ = 0, 2.5 and 5.5 seconds. Its row check finds no density, colour, kind, flag, speed, range or extra that differs.
+1440 x 960 stage (480 x 320 art pixels of 3; 360 x 240 of 4 for fishing, whose camera is nearer), from four quarter turns at the
+starting pitch and from straight above and below (pitch ±1.45), at τ = 0, 2.5 and 5.5 seconds. Its row check finds no density, colour, kind, flag, speed, range or extra that differs.
 
-Art pixels that differ, of 153,600 a view (yaw in degrees; above and below at the starting yaw):
+Art pixels that differ on the island and the factory, of 153,600 a view (yaw in degrees; above and below at the starting yaw; the
+README gives every scene's range):
 
 | Scene | τ | 25.8 | 115.8 | 205.8 | 295.8 | Above | Below |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -358,8 +364,9 @@ the factory (not tried).
 The live flag is walked to each moment one frame at a time, as the bake walked it: the cloth remembers every step it took, so a
 different walk leaves it a hair elsewhere and the comparison would no longer be like with like.
 
-The pictures the toolkit drew are kept in `/Users/sean/Documents/regent/handoffs/ink-studio-2026-11-16/reference/`, with
-`reference.json` listing each one's camera, art-pixel size, grid, loop time, clock and count, for checking the page's own painter.
+The pictures the toolkit drew of the island and the factory are kept in
+`/Users/sean/Documents/regent/handoffs/ink-studio-2026-11-16/reference/`, with `reference.json` listing each one's camera, art-pixel
+size, grid, loop time, clock and count, for checking the page's own painter.
 
 ## 9. Proposed, not done
 
@@ -396,8 +403,8 @@ keep a year-long cache under their digested names like every other static file.
 - A flickering splat (kind 1, 9 on the island and 45 on the factory) snaps its centre to the middle of its art pixel.
 - The part matrices (0.32 MB) and the flag's frames (1.17 MB) can go to the graphics card once and be picked by frame number.
 - The art-pixel size follows the stage's height in screen pixels (section 5.2): decide whether that means CSS pixels or device pixels.
-  The reference pictures use a 1440 x 960 stage, so 3 screen pixels an art pixel. The page uses device pixels (up to three a CSS
-  pixel), so a scene has about the same number of art pixels on any screen.
+  The reference pictures use a 1440 x 960 stage, so 3 screen pixels an art pixel (4 for fishing). The page uses device pixels (up to
+  three a CSS pixel), so a scene has about the same number of art pixels on any screen.
 - The page steps the camera back on a stage narrower than three by two, so the scene still fits across it, and brings it nearer when
   the person zooms in: z = zoom x min(1, (w / h) / 1.5), with the person's zoom from 1 to 4. A phone's square stage opens at z = 2/3.
   A zoom at a point of the stage moves T across the view, no further from camTarget than R (1 − 1 / zoom), so the point under it in

@@ -1,4 +1,5 @@
-/* The floating island both scenes stand on, and the few things both scenes need around it.
+/* The floating island that the island, the factory, campfire-stories and meteor-strike stand on, and the few things the scenes share
+   around it.
    It only calls the toolkit's public API (the K, B and S it is handed); none of the toolkit's own code is copied here. */
 const TAU = Math.PI * 2;
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
