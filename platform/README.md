@@ -370,7 +370,10 @@ that puts another proxy in front of Fly must change this first. Each address has
 requests a minute for `/healthz` and the API, 10 pairing tries, 600 page and
 document loads (`lib/ash_template_web/endpoint.ex` says why), and 40 open live pages
 on each machine (`AshTemplateWeb.Live.OpenPages`): the live socket's connect never
-reaches the endpoint's plugs, and behind Fly its peer is the proxy.
+reaches the endpoint's plugs, and behind Fly its peer is the proxy. The agents
+paired with one person also share 120 signed API requests a minute, keyed by the
+person (`AshTemplateWeb.Plugs.AgentWallet`), apart from the hosted MCP server's
+budgets.
 
 Prometheus metrics are served only by `AshTemplateWeb.Metrics` on port 9091
 (`/metrics`), which `fly.toml` and `fly.staging.toml` declare under

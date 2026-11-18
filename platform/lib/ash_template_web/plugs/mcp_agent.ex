@@ -30,7 +30,8 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   - An agent's own signature (`Siwa.AgentAuthPlug.signed_request?/1`) is checked
     as on the API (`AshTemplateWeb.Plugs.AgentWallet`, unchanged), and the agent
-    is the actor.
+    is the actor. Only the check is shared: the API's budget for the agent's
+    person is never spent here.
   - A connected app's token (`Authorization: Bearer`) must be one this site gave
     for its `/mcp` address with the identity permission, as `RegentOAuth`
     checks it, and spends its account's budget. While the app's own identity

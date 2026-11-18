@@ -12431,6 +12431,37 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
   362 Elixir; 376 script).
 
+## 2026-11-17 — One allowance per person for signed agent requests
+
+- Signed agent requests on the API share one allowance per person: 120 a minute for all
+  the agents a person has paired, after the endpoint's 120 for each address.
+  `AshTemplateWeb.Plugs.AgentWallet` spends it once the signature and the pairing are
+  checked, as an `"agent"` budget of `RegentAgentAccess.RateLimit` keyed by the person's
+  sign-in id and counted by `AshTemplate.Accounts.RequestRateLimiter`, the same limiter
+  and refusal as the endpoint's own: 429 `too_many_requests` with `Retry-After` and the
+  rate-limit headers. A refused signature spends nothing, and an agent acting for no
+  person (not paired, or its person not signed in here) keeps its address's limit alone:
+  on the routes that let it in, its room post before pairing, `messages/{topic}`,
+  `agents/me` and `feed`.
+- The hosted MCP server checks the same signature with hooks of its own and spends none
+  of it; its own budgets are unchanged. `AgentWallet.accept/3` is unchanged.
+- The agent guide, the API guide, `/llms.txt`, both API documents, the command list, the
+  README, the feature map and the parity file state the allowance.
+- Checks: `platform/test/ash_template_web/agent_budget_test.exs` (4 tests, all failing
+  without the spend); `mix test` 366 passed; `npm test` 376 passed; `sh
+  test/browser/walk.sh pages.spec.ts reading.spec.ts` 352 passed; `make check-style`,
+  `make check-cli` and `make check-contracts` exit 0. Not proven: the budget across
+  several machines (each machine counts its own, as every budget here does); Safari,
+  Firefox, real phones.
+
+## 2026-11-18 — Released v280: one allowance per person for signed agent requests
+
+- v280 on template.regents.sh carries the per-person allowance entry above (`cf19f07a`). No migration.
+- Rollback: v279 (`fa947041`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
+  366 Elixir; 376 script). Not proven: the allowance under real traffic; it is counted
+  on each machine, as every allowance here is.
+
 ## 2026-11-17 — Agents: hello cards
 
 - The SIWA service can give an agent a hello card naming this site: its signed note, good

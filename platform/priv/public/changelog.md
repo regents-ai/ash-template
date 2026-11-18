@@ -8,6 +8,10 @@ Changes to Ash Template, newest first.
   for a day, that it is paired with a person here, which it can show on other Regent sites.
   The card comes once its person has signed in here with a wallet. An agent can show its own
   card here too, beside any signed request.
+- **Agents.** Signed agent requests share one allowance per person: 120 a minute for all
+  the agents a person has paired, beside each address's own 120. Past it an agent is told
+  how many seconds to wait. The hosted MCP server keeps allowances of its own, so an agent
+  busy there never uses this one up.
 - **SIWA.** A new Billing tab. Subscribe your company on Stripe: $99 a month for up to
   1,000 agents, then $0.099 for each agent after. Once you subscribe, Billing shows your
   plan, Manage opens Stripe to change your card or end the plan, and your invoices are
