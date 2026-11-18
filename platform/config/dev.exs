@@ -70,7 +70,8 @@ config :ash_template, AshTemplateWeb.Endpoint,
     if(walk?,
       do: [],
       else: [
-        esbuild: {Esbuild, :install_and_run, [:ash_template, ~w(--sourcemap=inline --watch)]}
+        esbuild: {Esbuild, :install_and_run, [:ash_template, ~w(--sourcemap=inline --watch)]},
+        scene_page: {Esbuild, :install_and_run, [:scene_page, ~w(--sourcemap=inline --watch)]}
       ]
     ),
   live_reload:

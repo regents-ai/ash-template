@@ -12798,3 +12798,45 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (748 walk tests passed, 7 skipped;
   375 Elixir; 389 script). Not proven: a real wallet over a real dropped connection;
   Safari, Firefox, real phones.
+
+## 2026-11-18 — Scenes: five numbered worlds, each with its own page and trait file
+
+- What: a Scenes page (`/animations/scenes`, `platform/lib/ash_template_web/live/scenes_lab_live.ex`,
+  `platform/assets/css/pages/scenes_lab.css`) shows campfire-stories, trainer-battle,
+  missile-circus, fishing and meteor-strike as Scene 1 to 5, each with its live stage, five
+  tags (World, Ground, Resident, Landmark, Hour), a Traits table with its rarity score,
+  Download GIF, and Full view and Metadata links. Linked from the Motion lab index and the
+  Splats page. The trait data is one module, `platform/lib/ash_template_web/scenes.ex`.
+- The stage is one component, `platform/lib/ash_template_web/components/splat_stage.ex`
+  (`stage/1` and `gif/1`, styled in `platform/assets/css/components/splat_stage.css`),
+  used by the Splats page, the Scenes page and each scene's own page.
+- Download GIF is its own hook, `platform/assets/js/hooks/splat_gif.ts`. It finds its box
+  by `data-splats-box` and asks `rendererOf(box)` (`platform/assets/js/hooks/splat_island.ts`)
+  for what draws there at press time; the island no longer knows about GIFs.
+- Each scene's own page, `/scenes/<n>` (`SceneController`, `SceneHTML`), is a plain
+  controller page with no LiveView, socket or session, built from its own bundle
+  (`platform/assets/js/scene_page.ts`, esbuild profile `scene_page`, in `assets.build` and
+  `assets.deploy`). Its script, stylesheet and scene file are named by full address. It
+  asks for no site typeface, so nothing it loads needs a cross-origin answer but the scene.
+- Each trait file, `/scenes/<n>/metadata.json`, gives name, description, image (the square
+  still), animation_url (the scene's page), external_url (the Scenes page) and the 31
+  attributes in order.
+- Headers: `/scenes/<n>` carries `ContentSecurityPolicy.scene()`, the strict baseline with
+  `frame-ancestors *`, and no `x-frame-options`. `/scenes/<n>/metadata.json` adds
+  `access-control-allow-origin: *` and keeps the reading policy. `/splats/*.bin` is served
+  by its own `Plug.Static` with the usual static headers plus
+  `access-control-allow-origin: *`. Every other route is unchanged.
+- Tests: `platform/test/ash_template_web/scenes_test.exs` (6) and
+  `platform/test/browser/scenes.spec.ts` (8 per width), including the scene inside a
+  `sandbox="allow-scripts"` frame on another origin; `pages.json` walks the new pages.
+- The walk (`platform/playwright.config.ts`): `splats.spec.ts` and `scenes.spec.ts` run in
+  their own projects, `desktop-gpu` and `phone-gpu`, one test at a time each, beside the
+  other checks on the usual workers; `desktop` and `phone` no longer run them.
+- Checks: `mix format --check-formatted`, `mix compile --warnings-as-errors`, `mix credo
+  --strict`, sobelow, xref (51), route handoff, the style check and `npm run typecheck`
+  exit 0; `npm test` 496 passed; `mix test` 381 passed; `npm run test:browser` 782
+  passed, 7 skipped; `walk.sh pages.spec.ts -g scenes` 18 passed. Not proven: the Splats
+  page's less-motion checks that a scene stops after a drag (`splats.spec.ts` lines 400
+  and 420) fail now and then on a busy machine, one test at a time too, and the commit
+  before this work (68af8433) fails the same check under the same load; Safari, Firefox,
+  real phones.

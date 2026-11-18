@@ -77,12 +77,15 @@
     {"route": "/animations/cells", "purpose": "See a meter of square cells twinkle, count and let a part go.", "check": "#cells-lab-meter"},
     {"route": "/animations/icons", "purpose": "See fifty-six small diagrams, each one a word, move on their own loops.", "check": "#icons-sheet"},
     {"route": "/animations/splats", "purpose": "Watch a pixel robot factory and a pixel island turn, turn and tilt them by dragging, and look closer.", "check": "#splats-factory"},
+    {"route": "/animations/scenes", "purpose": "Watch five numbered worlds turn, turn and tilt them, look closer and read every trait each was dealt.", "check": "#scene-1"},
+    {"route": "/scenes/:number", "paths": ["/scenes/1", "/scenes/2", "/scenes/3", "/scenes/4", "/scenes/5"], "purpose": "See one scene alone, filling its frame, here or in another site's.", "check": "#scene-1", "spec": "scenes.spec.ts"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}
   ],
   "documents": [
     {"route": "/healthz", "purpose": "Tell the host the site is up.", "type": "text/plain"},
     {"route": "/openapi.json", "purpose": "Describe the site's API.", "type": "application/json"},
+    {"route": "/scenes/:number/metadata.json", "paths": ["/scenes/1/metadata.json", "/scenes/2/metadata.json", "/scenes/3/metadata.json", "/scenes/4/metadata.json", "/scenes/5/metadata.json"], "purpose": "Give each scene's title, line, pictures and traits to any site.", "type": "application/json"},
     {"route": "/api-contract.openapiv3.yaml", "purpose": "Give the CLI everything the site serves.", "type": "application/yaml"},
     {"route": "/sitemap.xml", "purpose": "List the pages for search engines.", "type": "application/xml"},
     {"route": "/robots.txt", "purpose": "Tell crawlers what they may read.", "type": "text/plain"},

@@ -284,6 +284,15 @@ config :esbuild,
       ~w(js/app.ts js/privy_bridge.tsx --bundle --splitting --format=esm --target=es2022 --outdir=../priv/static/assets/js --chunk-names=chunks/[name]-[hash] --asset-names=chunks/[name]-[hash] --external:/fonts/* --external:/images/* --alias:@=. --loader:.woff2=file --loader:.woff=file --loader:.ttf=file),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => [Mix.Project.deps_path(), Mix.Project.build_path()]}
+  ],
+  # A scene's own page (AshTemplateWeb.SceneHTML) runs inside other sites' frames,
+  # sandboxed ones too, where a module script would need this site's leave: so it is
+  # one classic script with its stylesheet, built on its own.
+  scene_page: [
+    args:
+      ~w(js/scene_page.ts --bundle --format=iife --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => [Mix.Project.deps_path(), Mix.Project.build_path()]}
   ]
 
 config :logger, :default_formatter,

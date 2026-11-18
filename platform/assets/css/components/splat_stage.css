@@ -1,0 +1,140 @@
+@layer regents-product {
+/* A turning splat scene (`AshTemplateWeb.Components.SplatStage`), wherever it is shown:
+   the Splats page, the Scenes page and each scene's own page. The box keeps its shape
+   from the first paint: three wide by two high, unless its page says otherwise. It
+   always holds the scene's still picture, framed just as the live picture is; the
+   turning scene (the `SplatIsland` hook) fades in over it once it has drawn, and
+   without WebGPU the still stays. The sky is the same in both themes. */
+.splat-stage {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  background: var(--palette-charcoal);
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.splat-stage:active {
+  cursor: grabbing;
+}
+
+.splat-stage:focus-visible {
+  outline: var(--rg-ring-width) solid var(--color-focus);
+  outline-offset: var(--rg-ring-offset);
+}
+
+.splat-stage__still,
+.splat-stage__live,
+.splat-stage__live canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* Every picture pixel stays a crisp square, cropped from the middle on a narrow box. */
+.splat-stage__still,
+.splat-stage__live canvas {
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+/* The box itself takes the pointer, so a drag turns the scene and the browser never
+   picks the still up to carry it off. */
+.splat-stage__still,
+.splat-stage__live {
+  pointer-events: none;
+}
+
+.splat-stage__live {
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.splat-stage[data-splats-ready="true"] .splat-stage__live {
+  opacity: 1;
+}
+
+/* Zoom out, Zoom in and Reset view, small in the stage's bottom right corner, unseen
+   until the scene has drawn. Each button's own look is after this layer. */
+.splat-zoom {
+  position: absolute;
+  inset-block-end: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.splat-stage[data-splats-ready="true"] .splat-zoom {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Download GIF (`SplatStage.gif/1`): a box of no size of its own, so its page places
+   the line saying it failed and the button, and shows it once its scene has drawn.
+   Every word the button can say sits in one place, so it keeps the widest; the failed
+   line keeps its place unseen until a GIF fails. */
+.splat-gif {
+  display: contents;
+}
+
+.splat-gif__failed {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: var(--type-caption-size);
+}
+
+.splat-gif:not([data-gif="failed"]) .splat-gif__failed {
+  visibility: hidden;
+}
+
+.splat-gif__button {
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.splat-gif__words {
+  display: inline-grid;
+}
+
+.splat-gif__words > * {
+  grid-area: 1 / 1;
+}
+
+.splat-gif:not([data-gif="making"]) .splat-gif__making,
+.splat-gif[data-gif="making"] .splat-gif__idle {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splat-stage__live,
+  .splat-zoom,
+  .splat-gif__button {
+    transition: none;
+  }
+}
+}
+
+/* The shared button is unlayered and pads its label for words. A zoom button holds an
+   icon alone: a small square, a finger's width on a touch screen, with the icon in the
+   middle, so its size and padding are set here, equally unlayered. It sits on the
+   scene's sky, which is the same in both themes, so it keeps one look too. */
+.rg-button.splat-zoom__button {
+  --rg-local-fill: var(--palette-charcoal);
+  --rg-local-ink: var(--palette-platinum);
+  inline-size: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0;
+}
+
+@media (pointer: coarse) {
+  .rg-button.splat-zoom__button {
+    inline-size: 2.75rem;
+    min-height: 2.75rem;
+  }
+}

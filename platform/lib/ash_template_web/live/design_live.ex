@@ -39,7 +39,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/particles" => "Grains that take any shape",
     "/animations/cells" => "A meter of twinkling cells",
     "/animations/icons" => "Small diagrams on slow loops",
-    "/animations/splats" => "Pixel worlds you can turn"
+    "/animations/splats" => "Pixel worlds you can turn",
+    "/animations/scenes" => "Five worlds and their traits"
   }
 
   def page(assigns) do

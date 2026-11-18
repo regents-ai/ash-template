@@ -172,6 +172,30 @@ defmodule AshTemplateWeb.Router do
     plug Showcase, :motion_lab
   end
 
+  # A scene's own page, which any site may show in a frame, even a sandboxed one: no
+  # session, no forms token, no live connection and nothing about the visitor, under the
+  # one policy that lets any site frame it (AshTemplateWeb.SceneController).
+  # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
+  # sobelow_skip ["Config.CSP"]
+  pipeline :scene_page do
+    plug :accepts, ["html"]
+    plug AshTemplateWeb.Plugs.LaunchGate
+
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => ContentSecurityPolicy.scene()
+    }
+  end
+
+  # A scene's trait file, which any site may read.
+  pipeline :scene_traits do
+    plug :accepts, ["json"]
+    plug AshTemplateWeb.Plugs.LaunchGate
+    plug :open_to_every_origin
+  end
+
+  defp open_to_every_origin(conn, _opts),
+    do: put_resp_header(conn, "access-control-allow-origin", "*")
+
   # The showcase pages are HTML; only the catalog also answers JSON. Each pipeline
   # negotiates its formats first, so a refusal carries no page headers, and sends
   # the headers of a page that can start sign-in.
@@ -498,6 +522,19 @@ defmodule AshTemplateWeb.Router do
       live "/animations/cells", CellsLabLive, :index
       live "/animations/icons", IconsLabLive, :index
       live "/animations/splats", SplatsLabLive, :index
+      live "/animations/scenes", ScenesLabLive, :index
     end
+  end
+
+  # Each of the Scenes page's scenes on a page of its own, and its trait file
+  # (AshTemplateWeb.Scenes), where the motion lab is.
+  scope "/scenes", AshTemplateWeb do
+    pipe_through [:motion_lab, :scene_page]
+    get "/:number", SceneController, :show
+  end
+
+  scope "/scenes", AshTemplateWeb do
+    pipe_through [:motion_lab, :scene_traits]
+    get "/:number/metadata.json", SceneController, :metadata
   end
 end

@@ -1,0 +1,42 @@
+/* A scene's own page (`AshTemplateWeb.SceneHTML`, built with `js/scene_page.ts`): the
+   shared stage alone, filling whatever frame it is put in, on the scene's own sky (the
+   colour the viewer clears to, `--scene-sky` on the page). A frame of another shape
+   than three by two shows more of the scene than the still holds: narrower, the viewer
+   steps back so the scene fits across; wider, it shows more sky at the sides. So the
+   still is laid where the live scene will draw it, across the width or the height,
+   whichever fits, and the sky fills the rest. */
+@layer regents-base, regents-product;
+
+@import "../vendor/regent_ui/design_system_tokens.css";
+@import "../vendor/regent_ui/primitives.css";
+@import "./components/splat_stage.css";
+
+/* The page sets no words, so it asks for none of the site's typefaces: in another
+   site's sandboxed frame the page has no origin, and the site's fonts answer only its
+   own pages. */
+:root {
+  --font-family-serif: serif;
+  --font-family-mono: monospace;
+}
+
+html,
+body {
+  block-size: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--scene-sky);
+}
+
+.splat-stage.scene-page {
+  aspect-ratio: auto;
+  block-size: 100%;
+  background: var(--scene-sky);
+}
+
+.scene-page .splat-stage__still {
+  object-fit: contain;
+}
+
+.scene-page:focus-visible {
+  outline-offset: calc(-1 * var(--rg-ring-width));
+}

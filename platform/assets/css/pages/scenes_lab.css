@@ -1,0 +1,259 @@
+@layer regents-product {
+/* The Scenes page (`/animations/scenes`, `AshTemplateWeb.ScenesLabLive`): the five
+   scenes on cards, one column on a phone and two on a wide screen. Each card's stage
+   is the shared one (`components/splat_stage.css`), three wide by two high at every
+   width. Every box keeps its size in every state: Download GIF and the zoom buttons
+   keep their places unseen until the scene has drawn, the line a failed GIF leaves
+   keeps its own, and opening Traits only grows its own card. */
+.motion-lab--scenes {
+  width: 100%;
+  align-content: start;
+}
+
+.scenes-lab {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 56rem) {
+  .scenes-lab {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* The card's edge, which the body, the traits and the links share: narrower on a phone. */
+.scenes-lab__card {
+  --scenes-lab-inset: var(--space-4);
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+@media (max-width: 36rem) {
+  .scenes-lab__card {
+    --scenes-lab-inset: var(--space-2);
+  }
+}
+
+.scenes-lab__card .splat-stage {
+  border-block-end: 1px solid var(--color-border);
+}
+
+/* Under the stage: the title and Download GIF, then the number and kind with the
+   line a failed GIF leaves at the row's far end, then the tags, the traits and the
+   links. */
+.scenes-lab__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--scenes-lab-inset) var(--scenes-lab-inset) 0;
+}
+
+.scenes-lab__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "title gif" "meta failed";
+  align-items: center;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+}
+
+.scenes-lab__head h2 {
+  grid-area: title;
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+}
+
+.scenes-lab__meta {
+  grid-area: meta;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-fg-muted);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  white-space: nowrap;
+}
+
+.scenes-lab__kind {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border);
+  color: var(--color-fg);
+}
+
+.scenes-lab__gif {
+  visibility: hidden;
+}
+
+.scenes-lab__card:has(.splat-stage[data-splats-ready="true"]) .scenes-lab__gif {
+  visibility: visible;
+}
+
+.scenes-lab__gif .splat-gif__button {
+  grid-area: gif;
+  justify-self: end;
+  opacity: 0;
+}
+
+.scenes-lab__card:has(.splat-stage[data-splats-ready="true"]) .splat-gif__button {
+  opacity: 1;
+}
+
+.scenes-lab__gif .splat-gif__failed {
+  grid-area: failed;
+  justify-self: end;
+  text-align: end;
+}
+
+/* Five of the scene's traits. */
+.scenes-lab__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scenes-lab__tags li {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  background: var(--color-bg);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.scenes-lab__tags span {
+  color: var(--color-fg-muted);
+}
+
+/* Every trait, folded away, across the card's full width. */
+.scenes-lab__traits {
+  margin-inline: calc(-1 * var(--scenes-lab-inset));
+  border-block: 1px solid var(--color-border);
+}
+
+.scenes-lab__traits summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--scenes-lab-inset);
+  font-size: var(--type-label-size);
+  list-style: none;
+  cursor: pointer;
+}
+
+.scenes-lab__traits summary::-webkit-details-marker {
+  display: none;
+}
+
+.scenes-lab__traits summary:focus-visible {
+  outline: var(--rg-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--rg-ring-width));
+}
+
+.scenes-lab__traits summary .rg-icon {
+  inline-size: 1rem;
+  block-size: 1rem;
+  color: var(--color-fg-muted);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.scenes-lab__traits[open] summary .rg-icon {
+  transform: rotate(180deg);
+}
+
+.scenes-lab__rarity {
+  margin-inline-start: auto;
+  color: var(--color-fg-muted);
+  font-size: var(--type-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.scenes-lab__rarity b {
+  color: var(--color-fg);
+  font-weight: inherit;
+}
+
+.scenes-lab__table {
+  overflow-x: auto;
+}
+
+.scenes-lab__table:focus-visible {
+  outline: var(--rg-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--rg-ring-width));
+}
+
+.scenes-lab__traits table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.scenes-lab__traits th,
+.scenes-lab__traits td {
+  padding: var(--space-1);
+  border-block-start: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+/* On a phone the columns sit closer, so the four fit across the card. */
+@media (max-width: 36rem) {
+  .scenes-lab__traits :is(th, td) {
+    padding-inline: var(--space-1) 0;
+  }
+}
+
+/* A tier and a share each stay on one line. */
+.scenes-lab__traits :is(th, td):nth-child(n + 3) {
+  white-space: nowrap;
+}
+
+.scenes-lab__traits th {
+  color: var(--color-fg-muted);
+  font-weight: 400;
+}
+
+.scenes-lab__traits :is(th, td):first-child {
+  padding-inline-start: var(--scenes-lab-inset);
+  color: var(--color-fg-muted);
+}
+
+.scenes-lab__traits :is(th, td):last-child {
+  padding-inline-end: var(--scenes-lab-inset);
+  text-align: end;
+}
+
+/* The scene's own page and its trait file, each in a new tab. */
+.scenes-lab__links {
+  display: flex;
+  gap: var(--space-4);
+  padding-block-end: var(--space-3);
+  font-size: var(--type-label-size);
+}
+
+.scenes-lab__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-fg);
+}
+
+.scenes-lab__links .rg-icon {
+  inline-size: 1rem;
+  block-size: 1rem;
+  color: var(--color-fg-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scenes-lab__traits summary .rg-icon {
+    transition: none;
+  }
+}
+}

@@ -6,7 +6,8 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   Privy's sign-in loads, the list every Regent site shares
   (`RegentPrivy.ContentSecurityPolicy.sign_in/0`); Privy's sign-in window writes its
   own style elements, so only that profile allows them. `showcase/0` is `sign_in/0`
-  for the showcase catalog, which frames its own preview page. `errors/1` is the
+  for the showcase catalog, which frames its own preview page. `scene/0` is the
+  baseline for a scene's own page, which any site may frame. `errors/1` is the
   baseline plus one request's nonce, for the saved-errors page. A site that loads
   anything else adds each origin to the one directive and the one profile that
   needs it; the only wildcard is Privy's own `*.rpc.privy.systems`, in the shared list.
@@ -48,6 +49,13 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
     |> List.keyreplace("frame-ancestors", 0, {"frame-ancestors", ["'self'"]})
     |> render()
   end
+
+  @doc """
+  The baseline for a scene's own page (`AshTemplateWeb.SceneController`), which any
+  site may show in a frame. Everything it loads still comes from this site.
+  """
+  def scene,
+    do: @baseline |> List.keyreplace("frame-ancestors", 0, {"frame-ancestors", ["*"]}) |> render()
 
   @doc """
   The baseline plus the one style element and one script element the saved-errors

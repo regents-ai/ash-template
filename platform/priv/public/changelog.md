@@ -4,6 +4,10 @@ Changes to Ash Template, newest first.
 
 ## 18 November 2026
 
+- **Motion lab.** A new page, Scenes: five small numbered worlds in pixel art, each caught
+  in one moment, from a campfire story to a meteor batted away. Each turns, tilts and
+  zooms like the Splats worlds, and lists every trait it was dealt. Full view opens a
+  scene on its own page, which any site can show in a frame.
 - **Wallet buttons.** If your wallet refuses a request outright, the page now says nothing
   was sent.
 - **Wallet buttons.** A wallet button pressed just after the page reconnects now opens your

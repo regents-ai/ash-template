@@ -92,7 +92,8 @@ defmodule AshTemplateWeb.RouteCatalog do
         %{route_id: :particles_lab, label: "Particles", path: "/animations/particles"},
         %{route_id: :cells_lab, label: "Cells", path: "/animations/cells"},
         %{route_id: :icons_lab, label: "Icons", path: "/animations/icons"},
-        %{route_id: :splats_lab, label: "Splats", path: "/animations/splats"}
+        %{route_id: :splats_lab, label: "Splats", path: "/animations/splats"},
+        %{route_id: :scenes_lab, label: "Scenes", path: "/animations/scenes"}
       ]
     },
     siwa: Map.put(@help, :id, :siwa),

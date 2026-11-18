@@ -93,6 +93,15 @@ defmodule AshTemplateWeb.Endpoint do
     cache_control_for_etags: "public, max-age=31536000, immutable",
     headers: @static_headers
 
+  # The baked scenes: a scene's own page (AshTemplateWeb.SceneController) fetches its
+  # file from inside other sites' frames, and in a sandboxed one its origin is no
+  # site's, so these files, and only these, may be read from any origin.
+  plug Plug.Static,
+    at: "/splats",
+    from: {:ash_template, "priv/static/splats"},
+    gzip: not code_reloading?,
+    headers: Map.put(@static_headers, "access-control-allow-origin", "*")
+
   plug Plug.Static,
     at: "/",
     from: :ash_template,

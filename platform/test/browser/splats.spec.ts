@@ -52,7 +52,7 @@ const picture = async (page: Page, scene: Scene) => {
   const canvas = page.locator(`#splats-${scene} [data-splats-canvas]`)
   await canvas.scrollIntoViewIfNeeded()
   const {x, y, width, height} = (await canvas.boundingBox())!
-  return page.screenshot({clip: {x: x + 1, y: y + 1, width: width - 2, height: height - 2}, style: ".splats-zoom { visibility: hidden !important; }"})
+  return page.screenshot({clip: {x: x + 1, y: y + 1, width: width - 2, height: height - 2}, style: ".splat-zoom { visibility: hidden !important; }"})
 }
 
 /**
@@ -244,7 +244,7 @@ test("Download GIF shows at the end of the tabs' row, counts up in place, takes 
 
 test("a GIF that cannot be made says so beside the button, which is ready to try again", async ({page}) => {
   const {button, saved} = await openForGif(page, "factory")
-  const failed = page.locator("#splats-factory-gif .splats-gif__failed")
+  const failed = page.locator("#splats-factory-gif .splat-gif__failed")
   await expect(failed).toBeHidden()
   const idle = await places(page, "factory")
   // The scene on the page keeps its device; the GIF's own is refused.
@@ -281,7 +281,7 @@ test("without WebGPU, the still picture stays and Download GIF is not offered", 
   await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "gpu", {get: () => undefined}))
   await page.goto("/animations/splats")
   await expect(page.locator("#splats-factory")).toHaveAttribute("data-splats-ready", "false")
-  const still = page.locator("#splats-factory .splats-lab__still")
+  const still = page.locator("#splats-factory .splat-stage__still")
   await expect(still).toBeVisible()
   // The wide picture on a wide screen, the square one on a phone, each one art pixel a pixel.
   await expect.poll(() => still.evaluate((image: HTMLImageElement) => [image.complete, image.naturalWidth])).toEqual([true, isMobile ? 360 : 480])

@@ -1,10 +1,11 @@
 /**
- * The splats page's picture (`AshTemplateWeb.SplatsLabLive`): one canvas island over
- * the still picture the server sends, drawing the scene the box names
- * (`data-splats-scene`, its baked file `data-splats-file`) in 3D splats once WebGPU is
- * there (`splats/renderer.ts`, loaded only when the box is on screen; the still shows
- * while the file downloads). Each scene is its own box, so choosing the other one ends
- * this island, and its GPU device, before the next begins.
+ * A splat scene's box (`AshTemplateWeb.Components.SplatStage.stage/1`, on the Splats
+ * page, the Scenes page and each scene's own page): one canvas island over the still
+ * picture the server sends, drawing the scene baked in the file the box names
+ * (`data-splats-file`) in 3D splats once WebGPU is there (`splats/renderer.ts`, loaded
+ * only when the box is on screen; the still shows while the file downloads). Each scene
+ * is its own box, so choosing another one ends this island, and its GPU device, before
+ * the next begins.
  *
  * A mouse or pen dragged across the box turns the scene under it, and dragged up or
  * down tilts the view over it or under it. On a touch screen a sideways swipe turns
@@ -22,11 +23,7 @@
  * With less motion asked for, by the device or by a Less motion switch round the
  * page, it holds still unless moved. Without WebGPU the still picture stays.
  *
- * Download GIF (the box's id with `-gif` after it, shown once the scene has drawn) makes
- * a GIF of the scene (`splats/gif.ts`, loaded on the first press) and saves it as
- * `regents-<scene>.gif`. While it works the button counts up in place, says so to a
- * screen reader every quarter, and a second press does nothing; a failure says so
- * beside it. Choosing the other scene or leaving the page stops it and frees what it held.
+ * `rendererOf(box)` hands what draws a box to a page's Download GIF (`splat_gif.ts`).
  */
 import {createCanvasIsland} from "../canvas_island"
 import type {SplatRenderer, ZoomAction} from "../splats/renderer"
@@ -40,76 +37,15 @@ const WHEEL_PIXELS = 100
 const WHEEL_MOST = 35
 const ZOOM_ACTIONS: readonly ZoomAction[] = ["in", "out", "home"]
 const ZOOM_KEYS: Readonly<Record<string, ZoomAction>> = {"+": "in", "=": "in", "-": "out", "0": "home"}
-/** How long a saved GIF's address is kept for the browser to finish taking it (milliseconds). */
-const SAVE_WINDOW = 60_000
 
-const save = (bytes: Uint8Array<ArrayBuffer>, name: string) => {
-  const link = document.createElement("a")
-  link.href = URL.createObjectURL(new Blob([bytes], {type: "image/gif"}))
-  link.download = name
-  link.click()
-  setTimeout(() => URL.revokeObjectURL(link.href), SAVE_WINDOW)
-}
+/** Each mounted box's renderer, while it has one. */
+const drawing = new WeakMap<HTMLElement, () => SplatRenderer | undefined>()
 
-/** The Download GIF control beside the tabs, for the scene this island draws. */
-function gifControl(root: HTMLElement, scene: string, renderer: () => SplatRenderer | undefined) {
-  const control = document.getElementById(`${root.id}-gif`)!
-  const button = control.querySelector<HTMLButtonElement>("button")!
-  const done = control.querySelector<HTMLElement>("[data-count]")!
-  const status = control.querySelector<HTMLElement>("[role=status]")!
-  let making: AbortController | undefined
-
-  const show = (state: "making" | "failed" | undefined, said: string) => {
-    if (state) control.dataset.gif = state
-    else delete control.dataset.gif
-    button.setAttribute("aria-disabled", String(state === "making"))
-    button.setAttribute("aria-busy", String(state === "making"))
-    status.textContent = said
-  }
-
-  const make = async () => {
-    const drawing = renderer()
-    if (making || !drawing) return
-    const current = new AbortController()
-    making = current
-    done.textContent = "0%"
-    show("making", "Making the GIF")
-    try {
-      const {makeGif} = await import("../splats/gif")
-      let quarter = 0
-      const bytes = await makeGif(
-        drawing.scene,
-        share => {
-          done.textContent = `${Math.floor(share * 100)}%`
-          if (Math.floor(share * 4) > quarter && share < 1) {
-            quarter = Math.floor(share * 4)
-            status.textContent = `${quarter * 25}%`
-          }
-        },
-        current.signal,
-      )
-      save(bytes, `regents-${scene}.gif`)
-      show(undefined, "Done")
-    } catch (error) {
-      if (current.signal.aborted) return
-      console.warn("The GIF could not be made.", error)
-      show("failed", "Could not make the GIF. Try again.")
-    } finally {
-      making = undefined
-    }
-  }
-
-  const events = new AbortController()
-  button.addEventListener("click", () => void make(), {signal: events.signal})
-  return () => {
-    events.abort()
-    making?.abort()
-  }
-}
+/** The renderer drawing in a box, once its scene has drawn; undefined before then, or with no island there. */
+export const rendererOf = (root: HTMLElement) => drawing.get(root)?.()
 
 export function createSplatIsland(root: HTMLElement) {
-  // The server names the scene and the file it is baked into.
-  const scene = root.dataset.splatsScene!
+  // The server names the file the scene is baked into.
   const file = root.dataset.splatsFile!
   let calm = still(root)
   // Holds the island still or lets it turn, once it is drawing.
@@ -278,10 +214,10 @@ export function createSplatIsland(root: HTMLElement) {
         island.renderer()!.hold(calm)
         refresh()
       })
-      const releaseGif = gifControl(root, scene, island.renderer)
+      drawing.set(root, island.renderer)
       return () => {
         events.abort()
-        releaseGif()
+        drawing.delete(root)
         held = undefined
         pinch = undefined
         hold = () => {}
