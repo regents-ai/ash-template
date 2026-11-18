@@ -1,4 +1,6 @@
 import {createHash, randomBytes} from "node:crypto"
+import {createServer, type RequestListener, type Server} from "node:http"
+import type {AddressInfo} from "node:net"
 import type {APIRequestContext, Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {bareAddresses} from "./support/addresses"
@@ -10,25 +12,32 @@ import {signedIn, watch} from "./support/person"
 // the host it returns to, and the person allows or cancels; Connected apps lists
 // each app with the day it connected and Disconnect. Each fits the screen, shows every address with its copy icon and lets
 // a keyboard scroll every box that scrolls, at every width the walk runs. The app
-// has a long name and a long return address, as a real one may; Chromium keeps a
-// .localhost name on this machine, so the return goes nowhere else.
+// has a long name and a long return address, as a real one may; the walk answers
+// that address itself, so the return goes nowhere else.
 const callback = "https://agent-callbacks.research-assistant-for-long-organisation-names.localhost/api/mcp/auth_callback"
 
-async function register(request: APIRequestContext, name: string) {
+async function register(request: APIRequestContext, name: string, redirect = callback) {
   const response = await request.post("/oauth/register", {
-    data: {client_name: name, redirect_uris: [callback]},
+    data: {client_name: name, redirect_uris: [redirect]},
     headers: {accept: "application/json"},
   })
   expect(response.status()).toBe(201)
   return (await response.json()).client_id as string
 }
 
+// A server on this machine for one of an app's own addresses.
+async function serve(listener: RequestListener): Promise<{server: Server; origin: string}> {
+  const server = createServer(listener)
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve))
+  return {server, origin: `http://127.0.0.1:${(server.address() as AddressInfo).port}`}
+}
+
 // The address an app sends the person to, asking for every permission the site has.
-async function consent(request: APIRequestContext, clientId: string, verifier: string) {
+async function consent(request: APIRequestContext, clientId: string, verifier: string, redirect = callback) {
   const {resource, scopes_supported: scopes} = await (await request.get("/.well-known/oauth-protected-resource")).json()
   const query = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: callback,
+    redirect_uri: redirect,
     response_type: "code",
     scope: scopes.join(" "),
     state: "walk",
@@ -71,10 +80,11 @@ test.describe("signed in", () => {
     await fits(page, problems)
 
     // Allow returns the person to the app with a code, which the app trades for its
-    // tokens.
-    const returned = page.waitForRequest(request => request.url().startsWith(`${callback}?`))
+    // tokens. The browser follows the page Allow answers to the app's callback.
+    await page.route(url => url.href.startsWith(`${callback}?`), route => route.fulfill({contentType: "text/plain", body: "Returned"}))
     await page.getByRole("button", {name: "Allow"}).click()
-    const code = new URL((await returned).url()).searchParams.get("code")!
+    await page.waitForURL(url => url.href.startsWith(`${callback}?`))
+    const code = new URL(page.url()).searchParams.get("code")!
     const {resource} = await (await page.request.get("/.well-known/oauth-protected-resource")).json()
     const token = await page.request.post("/oauth/token", {
       form: {grant_type: "authorization_code", client_id: clientId, code, redirect_uri: callback, code_verifier: verifier, resource},
@@ -91,5 +101,39 @@ test.describe("signed in", () => {
     await app.getByRole("button", {name: "Disconnect"}).click()
     await expect(page).toHaveURL(/\/oauth\/connections$/)
     await expect(page.getByRole("listitem").filter({hasText: name})).toHaveCount(0)
+  })
+
+  // Seen live on 18 Nov 2026: an app's callback sent the browser on to another host,
+  // and Chromium stopped that redirect after Allow's form, so Allow did nothing. The
+  // app's two hosts here are two servers on this machine.
+  test("Allow reaches an app whose callback sends the browser on to another host", async ({page}, testInfo) => {
+    const landing = await serve((_request, response) => {
+      response.writeHead(200, {"content-type": "text/plain"}).end("Landed")
+    })
+    const app = await serve((request, response) => {
+      const {search} = new URL(request.url!, "http://app.localhost")
+      response.writeHead(302, {location: `${landing.origin}/landed${search}`}).end()
+    })
+
+    try {
+      const redirect = `${app.origin}/callback`
+      const verifier = randomBytes(32).toString("base64url")
+      const clientId = await register(page.request, `Forwarding App (${testInfo.project.name})`, redirect)
+      await page.route(url => [app.origin, landing.origin].includes(url.origin), route => route.continue())
+
+      await page.goto(await consent(page.request, clientId, verifier, redirect))
+      await page.getByRole("button", {name: "Allow"}).click()
+      await page.waitForURL(url => url.origin === landing.origin)
+
+      const code = new URL(page.url()).searchParams.get("code")!
+      const {resource} = await (await page.request.get("/.well-known/oauth-protected-resource")).json()
+      const token = await page.request.post("/oauth/token", {
+        form: {grant_type: "authorization_code", client_id: clientId, code, redirect_uri: redirect, code_verifier: verifier, resource},
+      })
+      expect(token.status()).toBe(200)
+    } finally {
+      app.server.close()
+      landing.server.close()
+    }
   })
 })

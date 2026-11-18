@@ -55,6 +55,15 @@ the full address) and a link to Connected apps. Connected apps
 day it connected (`17 Nov 2026`) and Disconnect, which revokes at once without a
 second step.
 
+Allow and Cancel answer 200 with a short Returning page, never a redirect: its
+`meta` refresh and its Continue link take the browser to the app's callback with
+the code or the refusal. Chromium checks every host a form's redirects pass
+through against the page's `form-action`, and an app's callback may send the
+browser on to a host nobody knows in advance, so the browser goes on from that
+page by itself, outside the form. The site's own `form-action 'self'` stands for
+every page, consent included. Opening consent still redirects a refusal with a
+303, and Disconnect still returns to `/oauth/connections` with a 303.
+
 ## The Claude connector: one switch
 
 `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED=true` turns on everything at once, read at
@@ -297,3 +306,13 @@ checks, not real Privy/ChatGPT acceptance. Adopters must begin a fresh connectio
 from their client, then verify consent, token exchange, event subscription,
 callback challenge, genuine delivery and unsubscribe separately. This correction
 adds no migration, grant, queue or event producer. Money tests and Points stay off.
+
+## Consent return — 18 November
+
+The callback origin the consent page added to `form-action` (15 October, above)
+is gone. Live, an app's callback sent the browser on to a third host, which no
+policy can name in advance, and Allow did nothing. Allow and Cancel now answer the
+Returning page described under the Connect page. `claude_connector_test.exs`
+reads the code from that page, and `platform/test/browser/oauth.spec.ts` presses
+Allow in Chromium for an app whose callback, a second server on this machine,
+redirects to a third, and arrives there with the code.

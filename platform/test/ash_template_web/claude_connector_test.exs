@@ -1011,7 +1011,8 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   end
 
   # A person's consent at /oauth/authorize for `client_id` and their Allow: the
-  # consent page and the code the app's callback receives.
+  # consent page and the code the app's callback receives. Allow answers a page
+  # whose refresh and Continue link take the browser to the callback.
   defp allow!(browser, client_id, callback) do
     page =
       conn(:get, "/oauth/authorize?" <> authorize_query(client_id, callback))
@@ -1038,10 +1039,16 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       |> put_req_header("accept", "text/html")
       |> @endpoint.call([])
 
-    assert approved.status == 303
-    [location] = get_resp_header(approved, "location")
-    assert String.starts_with?(location, callback <> "?")
-    {page, URI.decode_query(URI.parse(location).query)["code"]}
+    assert approved.status == 200
+    assert get_resp_header(approved, "location") == []
+    returning = LazyHTML.from_document(approved.resp_body)
+
+    ["0;url=" <> address] =
+      returning |> LazyHTML.query("meta[http-equiv='refresh']") |> LazyHTML.attribute("content")
+
+    assert address in (returning |> LazyHTML.query("a") |> LazyHTML.attribute("href"))
+    assert String.starts_with?(address, callback <> "?")
+    {page, URI.decode_query(URI.parse(address).query)["code"]}
   end
 
   # What an app that signs its requests sends to authenticate: an assertion by

@@ -28,6 +28,8 @@ Changes to Ash Template, newest first.
   long it keeps records.
 - **SIWA.** On the Practice site form, the link back now says Production site, as the
   rest of the page does. Each site's Setup has a Guide link to SIWA's guide for websites.
+- **Connected apps.** Allow now takes you back to the app even when the app sends you on
+  to another address from there; before, Allow could do nothing.
 
 ## 17 November 2026
 

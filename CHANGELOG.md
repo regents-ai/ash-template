@@ -12939,3 +12939,41 @@ For the template chief to release. No migration. No new package.
   test/browser/walk.sh siwa.spec.ts oauth.spec.ts reading.spec.ts` 33 passed, the 8 of
   `siwa.spec.ts` among them; `npm run typecheck` exit 0. Not proven: Safari, Firefox,
   real phones; the guide's page itself (the walk opens no outside address).
+
+## 2026-11-18 — Sign-in library: Allow and Cancel return through a page
+
+- `@elixir_utils_ref` in `platform/mix.exs` moves from `1c80443a` to `0a9467f9`; only
+  elixir-utils' `oauth` folder differs between them (4c2b60e, 7459004 and 425b25c, 3b0e6f0
+  and 0a9467f). `mix deps.get` moves the 15 packages that ref pins in `platform/mix.lock`
+  and no Hex package.
+- What changes here, all in `regent_oauth`: Allow and Cancel on the Connect page answer
+  200 with a short Returning page whose `meta` refresh and Continue link (the same
+  address, HTML-escaped) take the browser to the app's callback, in place of a 303 with
+  `location`. The consent page no longer adds the callback's origin to its `form-action`:
+  the site's own `form-action 'self'` (`AshTemplateWeb.ContentSecurityPolicy`) stands,
+  unchanged. Reason, seen live on 18 Nov: Chromium checks every host a form's redirects
+  pass through against `form-action`, and an app's callback that sent the browser on to
+  another host made Allow do nothing. Opening consent still redirects a refusal with a
+  303, and Disconnect still returns to `/oauth/connections` with a 303. A failure inside
+  consent or the protocol is now logged as one error line with the endpoint, the
+  exception's module and four code locations, never a value; its answer is unchanged.
+- The same pin brings the provider's version 4 tables; this site's migration for it is
+  the next entry.
+- `docs/oauth-reference.md`: the Connect page section says how Allow and Cancel return,
+  and a dated section, "Consent return — 18 November", says it replaces 15 October's
+  form-action allowance. `docs/feature-map.md`: the Connect page row.
+- Tests: `platform/test/ash_template_web/claude_connector_test.exs`: Allow answers 200
+  with no `location`; the code is read from the page's refresh, which its Continue link
+  matches, with the page's entities decoded, and still exchanges for tokens.
+  `platform/test/browser/oauth.spec.ts`: the browser follows the Returning page to the
+  long callback, which the walk answers itself; new, an app whose callback is a second
+  server on this machine that redirects to a third: Allow pressed in Chromium arrives at
+  the third with the code, which exchanges. On the old pin (`sh test/browser/walk.sh
+  oauth.spec.ts --project desktop`, this commit's migration set aside) the new case
+  failed as it did live: after Allow the page stayed on the Connect page.
+- Checks: `mix format --check-formatted` and `mix compile --warnings-as-errors` exit 0;
+  `mix usage_rules.sync --check` exit 0; `claude_connector_test.exs` with
+  `siwa_live_test.exs` 57 passed (1 property); `sh test/browser/walk.sh siwa.spec.ts
+  oauth.spec.ts reading.spec.ts` 33 passed, the 9 of `oauth.spec.ts` at 1280, 390 and
+  320 among them; `npm run typecheck` exit 0. Not proven: a real app's callback (Claude,
+  ChatGPT) after this change; Safari, Firefox, real phones.
