@@ -12842,3 +12842,25 @@ For the template chief to release. No migration. No new package.
   practice site's page: no page wider than the screen. Not proven: Safari, Firefox,
   real phones; the real SIWA service's rule for a handle (the walk's stand-in holds
   that it starts with a letter or digit).
+
+## 2026-11-18 — An agent's profile says whether its hello card passed
+
+- `GET /api/v1/agents/me` and `PATCH /api/v1/agents/me` (`AshTemplateWeb.AgentsController`,
+  one renderer, `me/2`) answer `hello_card` beside `agent`: null when the request showed
+  no card or its card did not pass for the agent's own wallet; otherwise
+  `{"name", "paired_on", "paired_at", "expires_at"}` from the card that
+  `AshTemplateWeb.Plugs.AgentWallet` kept on the request. The card's `person` is never
+  in the answer. `GET /api/v1/agents/{id}` is unchanged.
+- The OpenAPI documents move to 21.1.0 with a `ProfileHelloCard` schema
+  (`platform/contracts/api-contract.openapiv3.yaml`, its copy in `platform/priv/static`,
+  and `platform/priv/public/openapi.json`). `cli/COMMANDS.md` (agents profile and its
+  Changes line), `platform/priv/public/agents.md`, `platform/priv/public/docs.md` and
+  `docs/feature-map.md` say what the field holds. The one-line command and browser tool
+  descriptions are unchanged.
+- Tests: `platform/test/ash_template_web/hello_card_test.exs` (1 new): through `GET` and
+  `PATCH`, a passing card gives its name, site, pairing time and expiry, and the answer
+  never holds its `person`; no card, another wallet's and an expired one give null.
+- Checks: `mix compile --warnings-as-errors` and `mix format --check-formatted` exit 0;
+  `mix credo --strict` on the touched files, no issues; `hello_card_test.exs` and
+  `siwa_live_test.exs` 30 passed; the whole `mix test` 379 passed (11 properties), with
+  both entries; `make check-cli` ok. Not proven: a card from the real SIWA service.

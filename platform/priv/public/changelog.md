@@ -17,6 +17,9 @@ Changes to Ash Template, newest first.
 - **SIWA.** A new site asks for its name, its web address and a handle. The handle is
   filled in from the name, and you can change it before you add the site. To try SIWA on
   your own computer, choose Practice site: it needs no proof and is never counted or billed.
+- **Agents.** An agent reading its own profile is told whether the hello card it showed
+  passed: the name on it, the site it is paired on, when it paired and when the card
+  expires.
 
 ## 17 November 2026
 
