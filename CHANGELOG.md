@@ -12489,3 +12489,15 @@ For the template chief to release. No migration. No new package.
   list leaves the reason out (`other`). Not proven: which wallet apps send these codes
   and how Privy passes them on; no browser walk has a wallet refuse a press; Safari,
   Firefox, real phones.
+
+## 2026-11-18 — Released v281: a wallet's outright refusal says nothing was sent
+
+- v281 on template.regents.sh carries the wallet refusal entry above (`a1ef4fa9`), on
+  elixir-utils `87239b5`. No migration.
+- Rollback: v280 (`cf19f07a`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
+  367 Elixir; 377 script). The first run failed one unrelated walk test
+  (`motion.spec.ts:180`, phone) with the Mac's load near 50; alone it passed three times
+  out of three, and the second full run was clean.
+- Not proven: which wallet apps send these codes and how Privy passes them on; no walk has
+  a wallet refuse a press.
