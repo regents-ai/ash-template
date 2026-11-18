@@ -12730,3 +12730,11 @@ For the template chief to release. No migration. No new package.
   --warnings-as-errors` and the style check exit 0. Not proven: a trackpad pinch in
   Safari (which sends its own gesture events, not a wheel with Ctrl held), Firefox, real
   phones.
+
+## 2026-11-18 — Released v286: zoom on the Splats scenes
+
+- v286 on template.regents.sh carries the entry above (`defd8418`). No migration.
+- Rollback: v285 (`ef4074c4`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (748 walk tests passed, 7 skipped;
+  375 Elixir; 386 script). Not proven: Safari (a trackpad pinch there is not handled and
+  will probably zoom the whole page), Firefox, real phones.
