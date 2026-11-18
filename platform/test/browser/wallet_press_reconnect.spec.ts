@@ -1,6 +1,6 @@
 import type {Locator, Page} from "@playwright/test"
 import {expect, test} from "./support/test"
-import {watch} from "./support/person"
+import {signedIn, watch} from "./support/person"
 
 // Every wallet press reaches the wallet while the page's live connection drops
 // and comes back: with the page offline, while LiveView is still sending the
@@ -8,12 +8,10 @@ import {watch} from "./support/person"
 // whose steps the server built is then read against them; the walk's chain is a
 // closed port, so its line stays "pending" (or "stalled" once the server stops
 // reading).
-// The walk's friend presses: the walk's person's long name does not fit the
-// wallet page's header yet, and a page wider than a phone's screen moves under a tap.
-test.use({storageState: "test/browser/.auth/friend.json"})
+test.use(signedIn)
 
-// The friend's own wallet (support/sign_in.exs), on the wallet page's chain.
-const wallet = `0x${"a".repeat(40)}`
+// The person's own wallet (support/sign_in.exs), on the wallet page's chain.
+const wallet = `0x${"b".repeat(40)}`
 const chainId = 84_532
 
 type StandIn = {asked: number; sent: string[]}
@@ -128,7 +126,7 @@ async function holdRecovery(page: Page) {
   }
 }
 
-// The wallet page, signed in, with the stand-in wallet open on the friend's own
+// The wallet page, signed in, with the stand-in wallet open on the person's own
 // wallet and the steps the server built for it held by the page.
 async function open(page: Page) {
   await page.goto("/showcase/wallet")

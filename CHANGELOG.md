@@ -12610,3 +12610,38 @@ For the template chief to release. No migration. No new package.
 - Still present by Sean's rule (never preserve pending transactions), pending his answer:
   a wallet answer that arrives while the page is offline or reconnecting gets no result
   line. A helper's keep-and-report-once fix is parked on `tpl/press-follow-1118`, unreleased.
+
+## 2026-11-18 — A long name fits the workshop pages' header
+
+- Signed in with a long name, `/showcase/wallet` and `/showcase/privy` were wider than the
+  screen: 27px at 1280 wide, 805px at 390 and 875px at 320 for the walk's person (80
+  letters, no spaces), so on a phone the page moved under a tap. On both pages the
+  person's picture also sat above the name, whatever its length.
+- Cause: the account control's own styles in `platform/assets/css/components/shell.css`,
+  not the design-system package and not the workshop's header rules. Where Sign out
+  stands beside the name (`Shell.account_control/1` with `menu={false}`, only these two
+  pages), the picture and the name sit straight in a `span.account-chip`, which has had
+  no row of its own since `d3ab6385` (20 Oct) moved the row onto the button's label. The
+  name was then an inline box that its 16rem limit and ellipsis never reach. The chip
+  that is not a button now lays them out in a row as the label does: the name ends in an
+  ellipsis at 16rem, and narrower on a phone, where the control already gives way. The
+  shell header's chip (a button) is unchanged, and so is `platform/priv/showcase.css`.
+  `/showcase/payments`, `/funds` and `/discussion` share the header but hold no account
+  control.
+- Tests: `platform/test/browser/pages.spec.ts` walks the pages marked `account_control`
+  in `platform/test/browser/pages.json` signed in as the walk's person, at 1280, 390 and
+  320, and fails on any sideways scroll: without the change 6 failed (27, 805 and 875px,
+  both pages), with it 6 passed. `platform/test/browser/wallet_press_reconnect.spec.ts`
+  presses as the walk's person and its own wallet again, not the friend it used to avoid
+  this fault. `docs/feature-map.md` names the workshop pages in the long-name row.
+- Pictures at 1440 and 390, before and after, as the person, the friend and signed out:
+  signed out, and on `/showcase/payments`, 0 pixels changed; with the friend's short name
+  only the header changed, the picture now beside the name. Not changed: the showcase
+  index (`/showcase`) is still wider than the screen signed in with a long name (678px at
+  1280, 856px at 390), from the "Signed in as" line in its Privy card, which is not the
+  account control and not in this walk.
+- Checks: `mix format --check-formatted` and `mix compile --warnings-as-errors` exit 0;
+  `npm run typecheck` exit 0; `sh test/browser/walk.sh pages.spec.ts
+  wallet_press_reconnect.spec.ts wallet_signed_out.spec.ts account_menu.spec.ts` 372
+  passed, 2 skipped (account menu checks for phones only, on the desktop run); `make
+  check-style` exit 0. Not proven: Safari, Firefox, real phones.

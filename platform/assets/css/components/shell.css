@@ -283,13 +283,15 @@
   align-items: center;
 }
 
-/* Signed in, the account's picture and name sit in the same cut-corner frame
-   as Sign in. */
+/* Signed in, the account's picture and name sit in one row: in the same
+   cut-corner frame as Sign in, or, where Sign out stands beside them (the
+   workshop pages), in the chip itself. */
 .account-chip {
   min-width: 0;
 }
 
-.account-chip .rg-button__label {
+.account-chip .rg-button__label,
+.account-chip:not(.rg-button) {
   display: flex;
   align-items: center;
   gap: var(--space-1);
