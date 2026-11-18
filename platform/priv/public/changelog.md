@@ -12,6 +12,8 @@ Changes to Ash Template, newest first.
   sign-in examples it ends in "…" beside your picture, and on the main page it wraps.
 - **Wallet buttons.** A wallet button sends from the wallet that was open when you pressed
   it.
+- **Wallet buttons.** A wallet button pressed in the instant the page reconnects says so
+  when nothing was sent; press again.
 
 ## 17 November 2026
 

@@ -137,15 +137,14 @@ a wallet it does not link is ignored, never asked to be switched.
   the account's own `wallet_addresses`, lowercase and each once, or `nil` signed out.
   Never a hard-coded list and never a wallet the browser names.
 - The hook pushes `onchain_active_wallet` with the address (or `nil`) when it mounts, on
-  every `ash:wallet-state`, and again from `reconnected`: a page that rejoins gets a fresh
+  every `ash:wallet-state` (except while the page is [stale](#a-stale-page)), and again
+  from `reconnected`: a page that rejoins gets a fresh
   component on the server, which no longer knows the active wallet or the review, so the
   hook lets its review go and reports the wallet again, and the next press is sent from a
   review the server remembers.
-- LiveView sends a form with an `id` back to the fresh component before it runs
-  `reconnected`, and a press in that moment reaches the server before the wallet report
-  does. So `prepare_and_send` names the active wallet too, and the component takes it as
-  the wallet the page reported before it builds the review: the press still gets its
-  steps and reaches the wallet.
+- `prepare_and_send` names the wallet open at the press too, and the component takes it
+  as the wallet the page reported before it builds the review, so the steps that come
+  back are built for the wallet the press sends them through.
 - `OnchainSteps.active_wallet/1` reads it; `OnchainSteps.signer(linked, active)` is the
   wallet that may act, or `nil` when signed out, when none is active, or when the account
   does not link it.
@@ -199,7 +198,8 @@ The hook's own click listener runs every press on its own:
    and the button now re-renders disabled with its reason. Keyfleet, 27 Oct: Mark present
    opened a Privy wallet holding no Keys because this reply skipped the check
    An empty reply is `step_unknown`; no reply
-   at all (a lost connection) shows the `data-onchain-lost` line.
+   at all (a lost connection, or a [stale page](#a-stale-page)) shows the
+   `data-onchain-lost` line.
 4. **Otherwise** it sends the step from the review it holds through Privy's active
    wallet. The page never compares that wallet's account with the review's signer: the
    wallet gets the step, `from` the signer, and decides (founder decision, 17 Nov 2026).
@@ -254,6 +254,35 @@ The hook then reports:
 - `step_sent` `{review_id, step, transaction_hash}`
 - `step_signed` `{review_id, step, signature}`
 - `step_failed` `{step, reason}`
+
+A report that cannot reach the server shows the `data-onchain-unreported` line when the
+wallet answered (a hash, a signature, or one that may have gone), and the
+`data-onchain-lost` line otherwise; nothing is kept or sent again.
+
+### A stale page
+
+Sean, 18 Nov 2026: "the wallet just doesnt get it and the user can retry". When a page
+rejoins with a form that has an `id` and `phx-change`, LiveView joins, sends the form
+back to the fresh component, and draws the fresh page only once that is answered; it
+runs each hook's `reconnected` after that draw. In between the channel is joined but the
+page on screen is the old one, and LiveView reads from it which component a push is
+for. A fresh server numbers its components in the order it first draws them, so that
+number can belong to another component, or to none (on another site such a push
+crashed the page).
+
+So from its `disconnected` until its `reconnected` the hook sends nothing: one flag,
+set in the first and cleared at the start of the second, checked where it pushes. A
+push then reaches no one, as with no connection:
+
+- a press that must ask for its steps sends nothing, the wallet is asked nothing, and
+  the `data-onchain-lost` line shows;
+- a press from held steps still reaches the wallet at once, and its answer is not
+  reported (the `data-onchain-unreported` line, or `data-onchain-lost` for a refusal);
+- the active wallet is not reported; `reconnected` reports it again.
+
+Nothing waits for the fresh page and nothing is kept to send later; the person presses
+again, and once the page is back that press reaches the wallet. The button's mark comes
+off as soon as the press ends, as for any press.
 
 ## The server's check
 
@@ -341,14 +370,21 @@ Agents sign in with SIWA (`elixir-utils/siwa`), which is not a button.
 - `assets/test/onchain_steps.test.ts` runs the hook's press: a press after the page
   joins again, or with a number the held review was not built for, asks
   `prepare_and_send` with the open wallet's address and sends the step that comes back
-  to that wallet. `test/ash_template_web/onchain_prepare_test.exs` proves the
-  component's half: a fresh component that has not heard the wallet builds the steps
-  for the address the press names when the account links it, and none otherwise.
+  to that wallet. On a stale page the hook pushes nothing: a press that must ask
+  reaches nothing and shows the lost line, a press from held steps reaches the wallet
+  and shows the unreported line, neither leaves the button marked, and pressed again
+  after `reconnected` the press asks and reaches the wallet once.
+  `test/ash_template_web/onchain_prepare_test.exs` proves the component's half: a fresh
+  component that has not heard the wallet builds the steps for the address the press
+  names when the account links it, and none otherwise.
 - `test/browser/wallet_press_reconnect.spec.ts` walks `/showcase/wallet` with a stand-in
-  wallet as the connection drops and comes back: a press with the page offline, a press
-  while LiveView is still sending the form back (from the held steps, and after the
-  number changed), and a press after the number changed once the page is back each
-  reach the wallet; the two that change the number are then read against their steps.
+  wallet as the connection drops and comes back. A press with the page offline reaches
+  the wallet. While LiveView is still sending the form back, the buttons send the server
+  none of their events: a press from the held steps reaches the wallet and shows the
+  unreported line, and a press after the number changed asks the wallet nothing and
+  shows the lost line, then pressed again once the page is back reaches the wallet. A
+  press after the number changed once the page is back reaches the wallet. The presses
+  that change the number are then read against their steps.
 - Sites keep their own test policy. A site that keeps a Vitest suite proves with a
   stand-in wallet that two presses in a row both reach `eth_sendTransaction`, that a
   decline reports `wallet_declined`, that a wallet on another account still gets the

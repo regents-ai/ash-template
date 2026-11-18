@@ -1,9 +1,8 @@
 defmodule AshTemplateWeb.OnchainPrepareTest do
   # Invariant: a press that asks the wallet-button component for its steps names
   # the open wallet, and the component builds the steps for that wallet when the
-  # signed-in account links it, even before the page has reported the wallet (a
-  # page that has just joined again meets a fresh component). A wallet the account
-  # does not link gets no steps.
+  # signed-in account links it, even before the page has reported the wallet. A
+  # wallet the account does not link gets no steps.
   use ExUnit.Case, async: false
 
   import Phoenix.ConnTest
@@ -43,8 +42,8 @@ defmodule AshTemplateWeb.OnchainPrepareTest do
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
   end
 
-  # A fresh component that has not heard the wallet, as on a page that has just
-  # joined again, asked for the steps to record `amount` from `address`.
+  # A fresh component that has not heard the wallet, asked for the steps to record
+  # `amount` from `address`.
   defp ask(address, amount) do
     {:ok, view, _html} =
       build_conn()
