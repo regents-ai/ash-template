@@ -12682,3 +12682,11 @@ For the template chief to release. No migration. No new package.
   --warnings-as-errors` exit 0. Not run here: the browser walk and the full `make check`.
   Not proven: a real Privy wallet switched while the steps are on their way; Safari,
   Firefox, real phones.
+
+## 2026-11-18 — Released v285: a press is sent from the wallet open when it was pressed
+
+- v285 on template.regents.sh carries the entry above (`ef4074c4`). No migration.
+- Rollback: v284 (`ff3b48e5`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (739 walk tests passed, 6 skipped;
+  375 Elixir; 380 script). Not proven: a real Privy wallet switched while the steps are
+  on their way; Safari, Firefox, real phones.
