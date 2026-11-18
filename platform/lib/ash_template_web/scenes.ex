@@ -6,12 +6,19 @@ defmodule AshTemplateWeb.Scenes do
   dealt. The Scenes page (`AshTemplateWeb.ScenesLabLive`), each scene's own page and
   its trait file (`AshTemplateWeb.SceneController`) all read them from here.
 
-  Each scene is baked into `priv/static/splats/<name>.bin`, with its stills
-  `priv/static/images/animations/splats-<name>-wide.png` (480 by 320) and
-  `-square.png` (360 by 360). Its sky is the colour its scene file clears to (the
-  palette entry the header names as the backdrop, `assets/js/splats/studio/FORMAT.md`),
-  read here as the module compiles, so a scene's own page sits on that sky round the
-  still whatever the shape of the frame it is shown in.
+  Each scene is baked into `priv/static/splats/<name>.bin`, and `npm run stills:splats`
+  draws its pictures from it into `priv/static/images/animations/`. The stages show its
+  stills, `splats-<name>-wide.png` and `-square.png`, one pixel to an art pixel: 480 by
+  320 and 360 by 360, or 360 by 240 and 270 by 270 for fishing, whose art pixels are
+  bigger. Other sites scale a small picture up smoothly, which blurs pixel art, so they
+  get the same two at their stage's own size, every art pixel a hard-edged square:
+  `-card.png` (1440 by 960), the link preview of the scene's own page, and `-item.png`
+  (1080 by 1080), the picture its trait file names.
+
+  Its sky is the colour its scene file clears to (the palette entry the header names
+  as the backdrop, `assets/js/splats/studio/FORMAT.md`), read here as the module
+  compiles, so a scene's own page sits on that sky round the still whatever the shape
+  of the frame it is shown in.
   """
 
   use AshTemplateWeb, :verified_routes
@@ -270,32 +277,33 @@ defmodule AshTemplateWeb.Scenes do
   @doc "A scene's baked file, on this site."
   def file(scene), do: Endpoint.static_path("/splats/#{scene.name}.bin")
 
-  @doc "A scene's still, `:wide` (480 by 320) or `:square` (360 by 360), on this site."
+  @doc "A scene's still for a stage, `:wide` or `:square`, on this site."
   def still(scene, shape), do: Endpoint.static_path(still_path(scene, shape))
 
   @doc """
-  A scene's still at its full public address. It names the file itself, not this
-  release's fingerprinted copy, so an address kept elsewhere still works after the
-  next release.
+  A scene's picture at its full public address: a still, `:wide` or `:square`, or one
+  at its stage's own size, `:card` (1440 by 960) or `:item` (1080 by 1080). It names
+  the file itself, not this release's fingerprinted copy, so an address kept elsewhere
+  still works after the next release.
   """
   def still_url(scene, shape), do: PublicDocuments.url(still_path(scene, shape))
 
-  defp still_path(scene, shape) when shape in [:wide, :square],
+  defp still_path(scene, shape) when shape in [:wide, :square, :card, :item],
     do: "/images/animations/splats-#{scene.name}-#{shape}.png"
 
   @doc "A scene's own page: the scene alone, at its full public address."
   def page_url(scene), do: PublicDocuments.url(~p"/scenes/#{scene.number}")
 
   @doc """
-  A scene's trait file: its title and line, its square still, its own page, the
-  Scenes page, and every trait as a `trait_type` and `value`, in the data's order.
-  Every address is the site's full public one.
+  A scene's trait file: its title and line, its item picture (1080 by 1080), its own
+  page, the Scenes page, and every trait as a `trait_type` and `value`, in the data's
+  order. Every address is the site's full public one.
   """
   def metadata(scene) do
     %{
       name: scene.title,
       description: scene.description,
-      image: still_url(scene, :square),
+      image: still_url(scene, :item),
       animation_url: page_url(scene),
       external_url: PublicDocuments.url(~p"/animations/scenes"),
       attributes: for(t <- scene.traits, do: %{trait_type: t.category, value: t.trait})

@@ -26,11 +26,11 @@ defmodule AshTemplateWeb.Components.SplatStage do
   attr :scene, :string, required: true, doc: "the scene's name, which a saved GIF is named after"
   attr :label, :string, required: true, doc: "what the scene shows, in a sentence or two"
   attr :file, :string, required: true, doc: "the scene's baked file"
-  attr :still, :string, required: true, doc: "the wide still, 480 by 320"
+  attr :still, :string, required: true, doc: "the wide still, one pixel to an art pixel"
 
   attr :square, :string,
     default: nil,
-    doc: "the square still, 360 by 360, for a box that turns square under 36rem"
+    doc: "the square still, one pixel to an art pixel, for a box that turns square under 36rem"
 
   attr :class, :any, default: nil
 

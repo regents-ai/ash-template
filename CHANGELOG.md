@@ -12840,3 +12840,25 @@ For the template chief to release. No migration. No new package.
   and 420) fail now and then on a busy machine, one test at a time too, and the commit
   before this work (68af8433) fails the same check under the same load; Safari, Firefox,
   real phones.
+
+## 2026-11-18 — Scenes: full-size pictures for other sites
+
+- What: a marketplace or a link preview scales a small picture up smoothly, which blurs
+  pixel art. So each of the five numbered scenes now has its two stills also at their
+  stage's own size, every art pixel a hard-edged square (3 by 3 pixels, 4 by 4 for
+  fishing): `platform/priv/static/images/animations/splats-<scene>-item.png`, 1080 by
+  1080, and `splats-<scene>-card.png`, 1440 by 960.
+- The trait file's `image` is the item picture (it was the 360 by 360 square still), and
+  a scene's own page's link preview is the card picture, stated as 1440 by 960 (it was
+  the wide still, stated as 480 by 320, which fishing's 360 by 240 is not). The Scenes
+  page and the stages keep the small stills.
+- `npm run stills:splats` (`platform/assets/js/splats/stills.mjs`) draws them in the same
+  run, from the same pixels as the small stills, enlarged in Node with no smoothing; the
+  scenes that get them are its `NUMBERED` list. The small stills come out byte for byte
+  as before.
+- Tests: `platform/test/ash_template_web/scenes_test.exs` checks the new addresses and that
+  each of the ten pictures answers at its stated size.
+- Checks: `npm run stills:splats` exits 0 with only the ten new pictures new; every
+  pixel of each equals its small still's pixel under it, with no colour the small one
+  lacks; `mix format --check-formatted`, `mix compile --warnings-as-errors` and `npm run
+  typecheck` exit 0; `mix test test/ash_template_web/scenes_test.exs` 7 passed.

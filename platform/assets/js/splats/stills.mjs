@@ -6,6 +6,13 @@
 // the baked files the page draws (priv/static/splats/), painted by the page's own
 // painter as a 1440 by 960 stage and a 1080 by 1080 one would show them.
 //
+// The five numbered scenes (AshTemplateWeb.Scenes) are also shown off the site, where a
+// small picture is scaled up smoothly and blurs. So each also gets the same two pictures
+// at their stage's own size, every art pixel a hard-edged square of whole pixels, as the
+// stage shows it: splats-<scene>-card.png (1440 by 960, from the wide one), the link
+// preview of the scene's own page, and splats-<scene>-item.png (1080 by 1080, from the
+// square one), the picture its trait file names.
+//
 //   npm run stills:splats            (from platform/, after baking a scene again)
 //
 // vgpu draws the frames on this machine's GPU; a headless browser only packs the
@@ -21,36 +28,56 @@ import {decodeScene} from "./scene.ts"
 const {chromium} = createRequire(import.meta.url)("playwright")
 const here = dirname(fileURLToPath(import.meta.url))
 const priv = join(here, "../../../priv/static")
-const SHAPES = [["wide", [1440, 960]], ["square", [1080, 1080]]]
+/** Each shape: its stage in screen pixels, and the name of its full-size picture. */
+const SHAPES = [["wide", [1440, 960], "card"], ["square", [1080, 1080], "item"]]
+/** The numbered scenes, the ones that also get full-size pictures. */
+const NUMBERED = ["campfire-stories", "trainer-battle", "missile-circus", "fishing", "meteor-strike"]
+
+/** The art-pixel picture `scale` times as wide and high, each art pixel a square of `scale` by `scale`. */
+const enlarge = (art, columns, rows, scale) => {
+  const out = Buffer.alloc(columns * scale * rows * scale * 4)
+  for (let y = 0; y < rows * scale; y++)
+    for (let x = 0; x < columns * scale; x++) {
+      const from = (Math.floor(y / scale) * columns + Math.floor(x / scale)) * 4
+      art.copy(out, (y * columns * scale + x) * 4, from, from + 4)
+    }
+  return out
+}
 
 const gpu = await init()
 const browser = await chromium.launch()
 const page = await browser.newPage()
 
-for (const name of ["factory", "island", "campfire-stories", "trainer-battle", "missile-circus", "fishing", "meteor-strike"]) {
+/** Packs RGBA pixels as PNG and writes them to images/animations/. */
+const save = async (out, rgba, width, height) => {
+  const png = await page.evaluate(
+    async ([base64, width, height]) => {
+      const bytes = Uint8ClampedArray.from(atob(base64), character => character.charCodeAt(0))
+      const canvas = new OffscreenCanvas(width, height)
+      canvas.getContext("2d").putImageData(new ImageData(bytes, width, height), 0, 0)
+      const packed = new Uint8Array(await (await canvas.convertToBlob({type: "image/png"})).arrayBuffer())
+      return btoa(Array.from(packed, byte => String.fromCharCode(byte)).join(""))
+    },
+    [rgba.toString("base64"), width, height],
+  )
+  writeFileSync(join(priv, `images/animations/${out}`), Buffer.from(png, "base64"))
+  console.log(out, `${width} x ${height}`)
+}
+
+for (const name of ["factory", "island", ...NUMBERED]) {
   const file = readFileSync(join(priv, `splats/${name}.bin`))
   const scene = decodeScene(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength))
   const painter = createPainter(gpu, scene)
   const moment = {yaw: scene.header.camYaw, pitch: scene.header.camPitch, target: scene.header.camTarget, seconds: 0}
 
-  for (const [shape, [width, height]] of SHAPES) {
-    const {columns, rows} = painter.resize(width, height, 1)
+  for (const [shape, [width, height], full] of SHAPES) {
+    const {columns, rows, scale} = painter.resize(width, height, 1)
     await painter.compile()
     frame(gpu, current => painter.encode(current, moment))
     const pixels = await painter.picture.color.read({mipLevel: 0, region: "all"})
-    const png = await page.evaluate(
-      async ([base64, width, height]) => {
-        const bytes = Uint8ClampedArray.from(atob(base64), character => character.charCodeAt(0))
-        const canvas = new OffscreenCanvas(width, height)
-        canvas.getContext("2d").putImageData(new ImageData(bytes, width, height), 0, 0)
-        const packed = new Uint8Array(await (await canvas.convertToBlob({type: "image/png"})).arrayBuffer())
-        return btoa(Array.from(packed, byte => String.fromCharCode(byte)).join(""))
-      },
-      [Buffer.from(pixels.buffer, pixels.byteOffset, columns * rows * 4).toString("base64"), columns, rows],
-    )
-    const out = `splats-${name}-${shape}.png`
-    writeFileSync(join(priv, `images/animations/${out}`), Buffer.from(png, "base64"))
-    console.log(out, `${columns} x ${rows}`)
+    const art = Buffer.from(pixels.buffer, pixels.byteOffset, columns * rows * 4)
+    await save(`splats-${name}-${shape}.png`, art, columns, rows)
+    if (NUMBERED.includes(name)) await save(`splats-${name}-${full}.png`, enlarge(art, columns, rows, scale), columns * scale, rows * scale)
   }
 }
 

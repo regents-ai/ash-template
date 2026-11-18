@@ -4,7 +4,7 @@ defmodule AshTemplateWeb.SceneHTML do
   (`AshTemplateWeb.Components.SplatStage.stage/1`), filling the page on the scene's
   own sky, with its zoom buttons small in the corner once it has drawn. No header,
   footer, title or traits, and no Download GIF. The head carries the link preview: the
-  title, the line and the wide still as a large picture.
+  title, the line and the card picture (1440 by 960) as a large picture.
   """
 
   use AshTemplateWeb, :html
@@ -25,9 +25,9 @@ defmodule AshTemplateWeb.SceneHTML do
           description={@scene.description}
           canonical={Scenes.page_url(@scene)}
           site_name="Ash Template"
-          image={Scenes.still_url(@scene, :wide)}
-          image_width={480}
-          image_height={320}
+          image={Scenes.still_url(@scene, :card)}
+          image_width={1440}
+          image_height={960}
           image_alt={@scene.description}
           twitter_site="@regents_sh"
           structured_data={PublicDocuments.structured_data([])}

@@ -39,7 +39,7 @@ defmodule AshTemplateWeb.ScenesTest do
       assert metadata["description"] == scene.description
 
       assert metadata["image"] ==
-               "#{Endpoint.url()}/images/animations/splats-#{scene.name}-square.png"
+               "#{Endpoint.url()}/images/animations/splats-#{scene.name}-item.png"
 
       assert metadata["animation_url"] == "#{Endpoint.url()}/scenes/#{scene.number}"
       assert metadata["external_url"] == "#{Endpoint.url()}/animations/scenes"
@@ -49,9 +49,10 @@ defmodule AshTemplateWeb.ScenesTest do
 
       assert length(metadata["attributes"]) == 31
 
-      # Each address answers: the picture is the square still, the page the scene's own.
+      # Each address answers: the picture is the item picture, 1080 by 1080, the page the scene's own.
       assert %{status: 200} = image = request(path(metadata["image"]))
       assert get_resp_header(image, "content-type") == ["image/png"]
+      assert png_size(image.resp_body) == {1080, 1080}
       assert request(path(metadata["animation_url"])).status == 200
       assert request(path(metadata["external_url"])).status == 200
     end
@@ -97,9 +98,27 @@ defmodule AshTemplateWeb.ScenesTest do
 
     assert page |> LazyHTML.query(~s(meta[name="twitter:card"])) |> LazyHTML.attribute("content") ==
              ["summary_large_image"]
+  end
 
-    assert page |> LazyHTML.query(~s(meta[property="og:image"])) |> LazyHTML.attribute("content") ==
-             ["#{Endpoint.url()}/images/animations/splats-trainer-battle-wide.png"]
+  test "each scene's link preview is its card picture, as big as its page says" do
+    for scene <- Scenes.all() do
+      page =
+        "/scenes/#{scene.number}" |> request() |> Map.fetch!(:resp_body) |> LazyHTML.from_document()
+
+      meta = fn property ->
+        page |> LazyHTML.query(~s(meta[property="#{property}"])) |> LazyHTML.attribute("content")
+      end
+
+      assert meta.("og:image") == [
+               "#{Endpoint.url()}/images/animations/splats-#{scene.name}-card.png"
+             ]
+
+      assert {meta.("og:image:width"), meta.("og:image:height")} == {["1440"], ["960"]}
+
+      assert %{status: 200} = card = request(path(hd(meta.("og:image"))))
+      assert get_resp_header(card, "content-type") == ["image/png"]
+      assert png_size(card.resp_body) == {1440, 960}
+    end
   end
 
   test "only the scene files may be read from any origin" do
@@ -140,6 +159,10 @@ defmodule AshTemplateWeb.ScenesTest do
   defp request(path), do: :get |> conn(path) |> Endpoint.call(Endpoint.init([]))
 
   defp path(address), do: URI.parse(address).path
+
+  # A PNG's width and height, from its header.
+  defp png_size(<<137, "PNG\r\n", 26, "\n", _::32, "IHDR", width::32, height::32, _::binary>>),
+    do: {width, height}
 
   defp session_cookie, do: Application.fetch_env!(:ash_template, :session_options)[:key]
 end
