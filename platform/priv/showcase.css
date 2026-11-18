@@ -120,6 +120,9 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .sc-card { padding: var(--rg-panel-padding); height: 100%; }
 .sc-card > .rg-notice { margin-top: 12px; }
 .sc-card h3:not(:first-child) { margin-top: 24px; }
+/* The Privy card's signed-in line breaks a long name anywhere, as long values do
+   across the workshop, rather than widen the page. */
+[data-sc-privy-mode] p { overflow-wrap: anywhere; }
 .sc .rg-panel__heading h3 { margin: 0; }
 .sc :is(.rg-field, .rg-pill-select) { margin-top: 12px; }
 .sc form > .rg-button { margin-top: 8px; }

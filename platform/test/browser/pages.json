@@ -39,7 +39,7 @@
     {"route": "/siwa/billing", "purpose": "Subscribe your SIWA company, manage its plan on Stripe and see its invoices.", "check": "#siwa-company-form", "signed_in": true},
     {"route": "/siwa/settings", "purpose": "See and rename your SIWA company, its owner and where to get help.", "check": "#siwa-company-form", "signed_in": true},
     {"route": "/pair", "paths": ["/pair?to=%2Frooms%2Fgeneral"], "purpose": "Pair your agent and send it to one page once it is paired.", "check": "#pair-pairing-box", "signed_in": true},
-    {"route": "/showcase", "purpose": "See the shared components and palette.", "check": "#foundations"},
+    {"route": "/showcase", "purpose": "See the shared components and palette.", "check": "#foundations", "account_control": true},
     {"route": "/showcase/preview", "purpose": "Preview the page frame.", "check": "h1"},
     {"route": "/showcase/privy", "purpose": "See the sign-in states.", "check": "#privy-state-heading", "account_control": true},
     {"route": "/showcase/wallet", "purpose": "See the wallet buttons.", "check": "#wallet-account-heading", "account_control": true},

@@ -66,8 +66,8 @@ test.describe("signed in", () => {
     for (const path of paths(entry)) walk(entry, path, true)
 })
 
-// A workshop page that holds the account control, but not the site's frame, is walked
-// signed in too: the person's name, the longest the site takes, fits its header.
+// A workshop page that holds an account control, but not the site's frame, is walked
+// signed in too: the person's name, the longest the site takes, fits the screen.
 test.describe("signed in, workshop", () => {
   test.use(signedIn)
   for (const entry of pages.filter(entry => "account_control" in entry))

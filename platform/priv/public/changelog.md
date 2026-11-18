@@ -8,8 +8,8 @@ Changes to Ash Template, newest first.
   was sent.
 - **Wallet buttons.** A wallet button pressed just after the page reconnects now opens your
   wallet.
-- **Workshop.** On the wallet and sign-in examples, a long name now ends in "…" beside your
-  picture instead of running off the side of the screen.
+- **Workshop.** A long name no longer runs off the side of the screen: on the wallet and
+  sign-in examples it ends in "…" beside your picture, and on the main page it wraps.
 
 ## 17 November 2026
 
