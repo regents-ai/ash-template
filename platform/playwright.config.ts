@@ -26,13 +26,6 @@ import {defineConfig, devices} from "@playwright/test"
 const workers = Math.max(1, Math.min(5, Math.floor(availableParallelism() / 3)))
 const port = Number(process.env.ASH_TEMPLATE_WALK_PORT)
 const baseURL = `http://127.0.0.1:${port}`
-// The two specs that draw on the graphics card take pictures a set time after a drag or a
-// zoom, so they need each frame on time. Run beside each other on every worker, frames came
-// late and the Splats page's less-motion checks failed (18 Nov). So each width runs them one
-// test at a time, in a lane of its own beside the other checks.
-const gpu = ["splats.spec.ts", "scenes.spec.ts"]
-const desktop = {...devices["Desktop Chrome"], viewport: {width: 1280, height: 900}}
-const phone = {...devices["Pixel 7"], viewport: {width: 390, height: 844}}
 
 export default defineConfig({
   testDir: "./test/browser",
@@ -66,10 +59,8 @@ export default defineConfig({
     timeout: 600_000,
   },
   projects: [
-    {name: "desktop", testIgnore: gpu, use: desktop},
-    {name: "phone", testIgnore: gpu, use: phone},
-    {name: "desktop-gpu", testMatch: gpu, workers: 1, use: desktop},
-    {name: "phone-gpu", testMatch: gpu, workers: 1, use: phone},
+    {name: "desktop", use: {...devices["Desktop Chrome"], viewport: {width: 1280, height: 900}}},
+    {name: "phone", use: {...devices["Pixel 7"], viewport: {width: 390, height: 844}}},
     // The narrowest phones: every page opens and fits the screen at 320 wide.
     {name: "narrow", testMatch: ["pages.spec.ts", "oauth.spec.ts"], use: {...devices["Pixel 7"], viewport: {width: 320, height: 640}}},
   ],

@@ -12862,3 +12862,24 @@ For the template chief to release. No migration. No new package.
   pixel of each equals its small still's pixel under it, with no colour the small one
   lacks; `mix format --check-formatted`, `mix compile --warnings-as-errors` and `npm run
   typecheck` exit 0; `mix test test/ash_template_web/scenes_test.exs` 7 passed.
+
+## 2026-11-18 — Splats: picture checks wait for the picture, not a set time
+
+- What: in `platform/test/browser/splats.spec.ts`, a picture compared after a drag, a key,
+  a zoom or a swipe is now taken once two in a row agree (`steady`, bounded by the usual
+  wait for an expectation) instead of after a fixed 100 or 150 ms. Each check compares the
+  same pictures as before, with the same expectation.
+- The zoom buttons are now fully hidden from the scene's picture (`.splat-zoom, .splat-zoom
+  *`). Hiding their row alone left the buttons' icons in it, drawn one of two slightly
+  different ways after a press, so the phone's Zoom in check saw a change where the scene
+  had none (4 failures in 20 under load before, 20 of 20 passed after).
+- The walk (`platform/playwright.config.ts`) is back to its earlier shape: the
+  `desktop-gpu` and `phone-gpu` projects from the entry "Scenes: five numbered worlds" are
+  gone, and `desktop` and `phone` run `splats.spec.ts` and `scenes.spec.ts` again beside
+  the rest on the usual workers. `scenes.spec.ts` already waited for its pictures and is
+  unchanged.
+- Checks: `npm run typecheck` exits 0; `walk.sh scenes.spec.ts splats.spec.ts` passed four
+  runs in a row (50 passed, 2 skipped each), two with no extra load and two while a script
+  kept twelve more threads busy (load average 70 to 116); the phone Zoom in check 20 of
+  20 under that load; `npm run test:browser` 782 passed, 7 skipped. Not proven: Safari,
+  Firefox, real phones.

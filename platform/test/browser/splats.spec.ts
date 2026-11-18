@@ -24,6 +24,8 @@ import {expect, test} from "./support/test"
 // up in place while it works, takes no second press, and saves the scene's GIF; a
 // failure says so beside it; choosing the other scene stops it; without WebGPU it is
 // not offered; and with less motion it still saves one, pressed from the keyboard.
+// A picture compared after a drag, a key, a zoom or a swipe is taken once two in a row
+// agree (steady), so a frame that lands late on a busy machine is waited for.
 test.use({launchOptions: {args: ["--enable-unsafe-webgpu", "--enable-gpu"]}})
 
 type Scene = "factory" | "island"
@@ -47,12 +49,14 @@ const drawn = async (page: Page, scene: Scene) => {
 // The scene alone, one pixel inside the box's edge, without the zoom buttons over it. On
 // a phone the box's outermost rows of screen pixels blend its border with the picture,
 // and on a busy machine the browser can still be repainting them just after the picture
-// has drawn, the scene unmoved.
+// has drawn, the scene unmoved. Each part of the buttons is hidden, not just their row:
+// hiding the row alone left their icons in the picture, drawn one way or another after a
+// press, so a picture changed with no change in the scene.
 const picture = async (page: Page, scene: Scene) => {
   const canvas = page.locator(`#splats-${scene} [data-splats-canvas]`)
   await canvas.scrollIntoViewIfNeeded()
   const {x, y, width, height} = (await canvas.boundingBox())!
-  return page.screenshot({clip: {x: x + 1, y: y + 1, width: width - 2, height: height - 2}, style: ".splat-zoom { visibility: hidden !important; }"})
+  return page.screenshot({clip: {x: x + 1, y: y + 1, width: width - 2, height: height - 2}, style: ".splat-zoom, .splat-zoom * { visibility: hidden !important; }"})
 }
 
 /**
@@ -395,7 +399,8 @@ test.describe("with less motion", () => {
       await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
       const box = await drawn(page, scene)
 
-      const resting = await picture(page, scene)
+      // Once its first picture has landed, it stays the same.
+      const resting = await steady(page, scene)
       await page.waitForTimeout(400)
       expect((await picture(page, scene)).equals(resting)).toBe(true)
 
@@ -407,13 +412,11 @@ test.describe("with less motion", () => {
         await page.mouse.move(middle.x, middle.y)
         await page.mouse.down()
         for (let step = 1; step <= 4; step++) await page.mouse.move(middle.x + step * dx, middle.y + step * dy)
-        await page.waitForTimeout(100)
-        const halfway = await picture(page, scene)
+        const halfway = await steady(page, scene)
         expect(halfway.equals(last)).toBe(false)
         for (let step = 5; step <= 8; step++) await page.mouse.move(middle.x + step * dx, middle.y + step * dy)
         await page.mouse.up()
-        await page.waitForTimeout(100)
-        const moved = await picture(page, scene)
+        const moved = await steady(page, scene)
         // The drag stays the scene's to its end: the browser never takes the still to carry off.
         expect(moved.equals(halfway)).toBe(false)
         await page.waitForTimeout(400)
@@ -424,8 +427,7 @@ test.describe("with less motion", () => {
       await box.focus()
       for (const key of ["ArrowRight", "ArrowUp"]) {
         await page.keyboard.press(key)
-        await page.waitForTimeout(100)
-        const pressed = await picture(page, scene)
+        const pressed = await steady(page, scene)
         expect(pressed.equals(last)).toBe(false)
         last = pressed
       }
@@ -451,8 +453,7 @@ test.describe("with less motion", () => {
     await page.mouse.down()
     for (let step = 1; step <= 6; step++) await page.mouse.move(x + width / 2 - step * 20, y + height / 2 - step * 10)
     await page.mouse.up()
-    await page.waitForTimeout(150)
-    expect((await picture(page, "factory")).equals(opening)).toBe(true)
+    expect((await steady(page, "factory")).equals(opening)).toBe(true)
 
     // Each press lands at once, held still, one step nearer, the turn as it was.
     let last = opening
@@ -466,9 +467,9 @@ test.describe("with less motion", () => {
     expect(turned(first, (await views(page)).at(-1)!)).toBe(0)
     expect(await limits()).toEqual(["false", "true", "false"])
     await zoomIn!.click({force: true})
-    await page.waitForTimeout(150)
+    const held = await steady(page, "factory")
     expect(await zoom()).toBeCloseTo(4, 4)
-    expect((await picture(page, "factory")).equals(last)).toBe(true)
+    expect(held.equals(last)).toBe(true)
 
     for (let step = 3; step >= 0; step--) {
       await zoomOut!.click()
@@ -627,14 +628,14 @@ test.describe("with less motion", () => {
     }
 
     // Back at the top after the page has scrolled, the scene is as it was: not tilted.
-    const resting = await picture(page, "factory")
+    const resting = await steady(page, "factory")
     await swipe(0, -15)
     expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
     await page.evaluate(() => window.scrollTo(0, 0))
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
-    expect((await picture(page, "factory")).equals(resting)).toBe(true)
+    expect((await steady(page, "factory")).equals(resting)).toBe(true)
 
     await swipe(15, 0)
-    expect((await picture(page, "factory")).equals(resting)).toBe(false)
+    expect((await steady(page, "factory")).equals(resting)).toBe(false)
   })
 })
