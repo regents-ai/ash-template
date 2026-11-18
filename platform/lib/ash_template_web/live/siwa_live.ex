@@ -2156,7 +2156,7 @@ defmodule AshTemplateWeb.SiwaLive do
   # How the developer's agent sends a request to their practice site, at its first
   # address, by its handle (siwa-server v100, agent clients 2.13).
   defp agent_request(%{"origins" => [address | _], "audience" => handle}),
-    do: "uv run siwa_agent.py request GET #{address}/<path> --handle #{handle}"
+    do: "uv run siwa_agent.py request GET #{address}/ --handle #{handle}"
 
   defp pending?(pending, kind), do: Enum.any?(pending, &(is_tuple(&1) and elem(&1, 0) == kind))
 

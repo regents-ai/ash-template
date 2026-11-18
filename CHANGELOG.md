@@ -12878,7 +12878,8 @@ For the template chief to release. No migration. No new package.
   site form says so: "For trying SIWA on your own computer, where your agent reaches it
   by its handle. It needs no proof and is never counted or billed." A practice site's
   Summary shows Agent request beside its handle: `uv run siwa_agent.py request GET
-  <first address>/<path> --handle <handle>`, with a copy icon that copies the line.
+  <first address>/ --handle <handle>`, with a copy icon that copies the line. The line
+  ends at the address, so it runs as pasted; the person adds a path.
 - Tests: `platform/test/ash_template_web/siwa_live_test.exs`: the handle follows "Café
   Docs" as `cafe-docs`; a typed `docs_2` stays through a name change; the first site is
   sent with the typed handle `acme_docs`; the property holds the service's confirmed

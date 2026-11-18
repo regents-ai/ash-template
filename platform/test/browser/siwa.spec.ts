@@ -91,7 +91,7 @@ test.describe("a new SIWA customer", () => {
     await expect(page.locator("#siwa-audience")).toHaveText(`walk-${info.project.name}`)
     await expect(page.locator("#siwa-practice")).toBeVisible()
     await expect(page.locator("#siwa-agent-request")).toContainText(
-      `GET http://localhost:4000/<path> --handle walk-${info.project.name}`,
+      `GET http://localhost:4000/ --handle walk-${info.project.name}`,
     )
     await expect(page.locator("#siwa-proof")).toHaveCount(0)
 
