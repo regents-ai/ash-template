@@ -12653,3 +12653,11 @@ For the template chief to release. No migration. No new package.
   wallet_press_reconnect.spec.ts wallet_signed_out.spec.ts account_menu.spec.ts` 375
   passed, 2 skipped (account menu checks for phones only, on the desktop run); `make
   check-style` exit 0. Not proven: Safari, Firefox, real phones.
+
+## 2026-11-18 — Released v284: a long name fits the workshop pages
+
+- v284 on template.regents.sh carries the two workshop entries above (`2b3833c3`,
+  `ff3b48e5`). No migration.
+- Rollback: v283 (`d60a9b31`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (739 walk tests passed, 6 skipped;
+  375 Elixir; 379 script). Not proven: Safari, Firefox, real phones.
