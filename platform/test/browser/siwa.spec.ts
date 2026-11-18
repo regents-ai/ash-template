@@ -64,7 +64,7 @@ test.describe("a new SIWA customer", () => {
     const site = page.locator("#siwa-site-form")
     const panel = page.locator("#siwa-new-site")
     await expect(site).toBeVisible()
-    await expect(panel).toHaveAttribute("data-kind", "live")
+    await expect(panel).toHaveAttribute("data-kind", "production")
     await tidy(page)
 
     // The handle follows the name; the walk then gives it one of its own, unique to the width.
@@ -94,6 +94,12 @@ test.describe("a new SIWA customer", () => {
       `GET http://localhost:4000/ --handle walk-${info.project.name}`,
     )
     await expect(page.locator("#siwa-proof")).toHaveCount(0)
+
+    // Setup's Guide opens SIWA's guide for websites in a new tab.
+    const guide = page.locator("#siwa-setup-guide")
+    await expect(guide).toBeVisible()
+    await expect(guide).toHaveAttribute("href", "https://siwa.regents.sh/websites.md")
+    await expect(guide).toHaveAttribute("target", "_blank")
 
     await press(page.locator("#siwa-make-key"))
     await expect(page.locator("#siwa-key-value")).toHaveText(/^siwa_sk_test_[A-Za-z0-9_-]{43}$/)

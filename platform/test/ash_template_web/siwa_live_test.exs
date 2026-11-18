@@ -325,7 +325,7 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     refute has_element?(view, "#siwa-site-#{@production["id"]}-practice")
 
     view |> element("#siwa-add-site") |> render_click()
-    assert has_element?(view, "#siwa-new-site[data-kind='live']")
+    assert has_element?(view, "#siwa-new-site[data-kind='production']")
     typed(view, "Local docs", "")
 
     view |> element("#siwa-site-kind") |> render_click()
@@ -354,16 +354,16 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     refute has_element?(view, "#siwa-site-form [aria-invalid='true']")
 
     view |> element("#siwa-site-kind") |> render_click()
-    assert has_element?(view, "#siwa-new-site[data-kind='live']")
+    assert has_element?(view, "#siwa-new-site[data-kind='production']")
     refute has_element?(view, "#siwa-site-notice")
     assert handle(view) == ["local-docs"]
 
-    # Cancel closes the form; it opens again for a live site.
+    # Cancel closes the form; it opens again for a production site.
     view |> element("#siwa-site-kind") |> render_click()
     view |> element("#siwa-site-cancel") |> render_click()
     refute has_element?(view, "#siwa-new-site")
     view |> element("#siwa-add-site") |> render_click()
-    assert has_element?(view, "#siwa-new-site[data-kind='live']")
+    assert has_element?(view, "#siwa-new-site[data-kind='production']")
   end
 
   test "a new key goes to the browser once and nowhere into the page, and a revoked key stays listed",

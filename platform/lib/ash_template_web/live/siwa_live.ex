@@ -29,8 +29,10 @@ defmodule AshTemplateWeb.SiwaLive do
   the name in the `draft` event and follows it until the person changes the
   handle (`follow/2`). Its Practice site link turns the same form into one for a
   sandbox site, which the page calls a practice site: an http://localhost
-  address on the person's own computer, which their agent reaches by its handle.
-  A practice site's page shows that request as a command to copy.
+  address on the person's own computer, which their agent reaches by its handle;
+  its Production site link turns it back. A practice site's page shows that
+  request as a command to copy, and every site's Setup links to SIWA's guide for
+  websites.
 
   A production site takes agents only once the company has proven its origins
   are its own: its Proof section shows the site's token, which is public, and
@@ -271,7 +273,7 @@ defmodule AshTemplateWeb.SiwaLive do
   def handle_event("add_site", _params, socket), do: {:noreply, assign(socket, adding: true)}
 
   def handle_event("practice_site", _params, socket), do: {:noreply, site_kind(socket, true)}
-  def handle_event("live_site", _params, socket), do: {:noreply, site_kind(socket, false)}
+  def handle_event("production_site", _params, socket), do: {:noreply, site_kind(socket, false)}
 
   def handle_event("cancel_site", _params, socket) do
     {:noreply,
@@ -326,8 +328,8 @@ defmodule AshTemplateWeb.SiwaLive do
 
   defp name(params), do: Map.take(params, ["name"])
 
-  # The New site form turns between a live site and a practice one, keeping what
-  # was typed; what the service said about the other kind no longer applies.
+  # The New site form turns between a production site and a practice one, keeping
+  # what was typed; what the service said about the other kind no longer applies.
   defp site_kind(socket, practice) do
     socket
     |> assign(practice: practice)
@@ -1657,7 +1659,7 @@ defmodule AshTemplateWeb.SiwaLive do
       id="siwa-new-site"
       class="account-panel"
       aria-labelledby="siwa-new-site-title"
-      data-kind={if @practice, do: "practice", else: "live"}
+      data-kind={if @practice, do: "practice", else: "production"}
     >
       <h2 id="siwa-new-site-title">{if @practice, do: "Practice site", else: "New site"}</h2>
       <p class="rg-muted">
@@ -1686,10 +1688,10 @@ defmodule AshTemplateWeb.SiwaLive do
           type="button"
           variant="quiet"
           arrow={false}
-          phx-click={if @practice, do: "live_site", else: "practice_site"}
+          phx-click={if @practice, do: "production_site", else: "practice_site"}
           phx-target={@myself}
         >
-          {if @practice, do: "Live site", else: "Practice site"}
+          {if @practice, do: "Production site", else: "Practice site"}
         </P.button>
       </p>
     </section>
@@ -1979,6 +1981,15 @@ defmodule AshTemplateWeb.SiwaLive do
       <pre class="siwa-code" tabindex="0" aria-label="Setup example"><code id="siwa-setup-code">{example(@site)}</code></pre>
       <div class="siwa-actions">
         <P.copy_button id="siwa-setup-copy" target="siwa-setup-code">Copy example</P.copy_button>
+        <a
+          id="siwa-setup-guide"
+          class="siwa-link"
+          href="https://siwa.regents.sh/websites.md"
+          target="_blank"
+          rel="noopener"
+        >
+          Guide
+        </a>
       </div>
     </section>
 

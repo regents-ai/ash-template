@@ -32,9 +32,9 @@
   margin-block-start: var(--space-1);
 }
 
-/* The quiet press under the New site form that turns it between a live site and
-   a practice one: smaller and fainter than the form's own buttons. The button
-   takes its size from this line and its ink from --rg-local-ink. */
+/* The quiet press under the New site form that turns it between a production
+   site and a practice one: smaller and fainter than the form's own buttons. The
+   button takes its size from this line and its ink from --rg-local-ink. */
 .siwa-switch {
   margin: 0;
   font-size: var(--type-label-size);

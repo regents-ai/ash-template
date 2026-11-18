@@ -26,6 +26,8 @@ Changes to Ash Template, newest first.
 - **Privacy page.** Bracketed blanks now mark what a new site fills in with its own facts:
   the company that runs it, what people write there, the services that receive it and how
   long it keeps records.
+- **SIWA.** On the Practice site form, the link back now says Production site, as the
+  rest of the page does. Each site's Setup has a Guide link to SIWA's guide for websites.
 
 ## 17 November 2026
 

@@ -12913,3 +12913,29 @@ For the template chief to release. No migration. No new package.
   link. `sh test/browser/walk.sh siwa.spec.ts oauth.spec.ts reading.spec.ts` 33 passed,
   `/privacy` among them at 1280 and 390: it opens inside the shell with every section
   and still answers Markdown. Not proven: Safari, Firefox, real phones.
+
+## 2026-11-18 — Sites: Production site, and Setup's Guide
+
+- The quiet press under the Practice site form that turns it back now reads Production
+  site, the word the page already uses for it everywhere else (the Period and Billing
+  sections), in place of Live site. With it, the press's event is
+  `production_site` (was `live_site`) and the form's `data-kind` is `production` (was
+  `live`); the id `siwa-site-kind`, the Practice site press and the form's behaviour are
+  unchanged.
+- A site's Setup has a Guide link beside Copy example, to SIWA's guide for websites
+  (`https://siwa.regents.sh/websites.md`), opening in a new tab with `rel="noopener"`, in
+  the page's own `siwa-link` style. The content-security-policy
+  (`platform/lib/ash_template_web/content_security_policy.ex`) needs no change: it covers
+  what a page loads and where its forms send, not where a link goes.
+- `platform/lib/ash_template_web/live/siwa_live.ex`'s moduledoc and comment and the style
+  comment in `platform/assets/css/pages/siwa.css` say production site;
+  `docs/feature-map.md`'s New site form row and walk row follow.
+- Tests: `platform/test/ash_template_web/siwa_live_test.exs` and
+  `platform/test/browser/siwa.spec.ts` read the form's kind as `production`; the walk
+  finds Setup's Guide on the new practice site's page with the guide's address and a new
+  tab. No test read the old words.
+- Checks: `mix format --check-formatted` and `mix compile --warnings-as-errors` exit 0;
+  `siwa_live_test.exs` with `claude_connector_test.exs` 57 passed (1 property); `sh
+  test/browser/walk.sh siwa.spec.ts oauth.spec.ts reading.spec.ts` 33 passed, the 8 of
+  `siwa.spec.ts` among them; `npm run typecheck` exit 0. Not proven: Safari, Firefox,
+  real phones; the guide's page itself (the walk opens no outside address).
