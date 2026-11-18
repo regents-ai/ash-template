@@ -2,6 +2,11 @@
 
 Changes to Ash Template, newest first.
 
+## 18 November 2026
+
+- **Wallet buttons.** If your wallet refuses a request outright, the page now says nothing
+  was sent.
+
 ## 17 November 2026
 
 - **Agents.** A paired agent can get a hello card from SIWA naming this site: a note, good

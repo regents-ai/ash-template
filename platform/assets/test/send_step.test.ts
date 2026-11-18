@@ -171,3 +171,38 @@ it("names an unexplained end by the kind of step the wallet was asked for", () =
     expect(failure(false, new NothingSent("switch_declined"), kind)).toBe("switch_declined")
   }
 })
+
+// Invariant: a wallet that refused the request without acting on it says so by
+// its standard code alone, on the error or anywhere down its `cause` chain, and
+// the press reports that nothing was sent; a decline stays a decline, and an
+// unknown code stays an end the wallet may have sent or signed.
+it("names a wallet that refused outright by its code, however it wraps it", async () => {
+  const refusals = [4100, 4200, 4900, 4901, -32601, -32602]
+  const wrapped = (error: Error) => Object.assign(new Error("outer"), {cause: Object.assign(new Error("middle"), {cause: error})})
+
+  for (const kind of [false, true]) {
+    for (const code of refusals) {
+      expect(failure(true, walletError(code, "refused"), kind)).toBe("wallet_refused")
+      expect(failure(true, wrapped(walletError(code, "refused")), kind)).toBe("wallet_refused")
+    }
+    expect(failure(true, wrapped(walletError(4001, "rejected")), kind)).toBe("wallet_declined")
+    expect(failure(true, walletError(-32603, "Internal error"), kind)).toBe(kind ? "sign_unconfirmed" : "send_unconfirmed")
+  }
+
+  // The same through a press, for a send and for a signature.
+  for (const name of ["buy", "sign"]) {
+    for (const code of refusals) {
+      const wallet = walletOn(signer)
+      const method = name === "buy" ? "eth_sendTransaction" : "eth_signTypedData_v4"
+      const request = wallet.selected.provider.request
+      wallet.selected.provider.request = async (args: {method: string; params?: unknown[]}) => {
+        if (args.method === method) throw wrapped(walletError(code, "refused"))
+        return request(args)
+      }
+
+      const {pressed, reports} = await pressWith(wallet, name)
+      expect(pressed).toEqual({reason: "wallet_refused"})
+      expect(reports).toEqual([["step_failed", {step: name, reason: "wallet_refused"}]])
+    }
+  }
+})
