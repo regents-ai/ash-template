@@ -12552,3 +12552,12 @@ For the template chief to release. No migration. No new package.
   `make check-required-fixes` exit 0. Not proven: a card from the real SIWA service and
   its real pairing read (every check uses a stand-in); the production and dev `origin`
   values, run only in test; a busy service address meeting `/api`'s 120 a minute.
+
+## 2026-11-18 — Released v282: hello cards
+
+- v282 on template.regents.sh carries the hello cards entry above (`264e85da`), on
+  elixir-utils `1c80443a`, on Sean's "1. a" (18 Nov). No migration.
+- Rollback: v281 (`a1ef4fa9`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
+  373 Elixir; 377 script). Not proven at release: a card from the real sign-in service and
+  its real call to this site; the siwa-server chief pair-checks one card next.
