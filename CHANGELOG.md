@@ -12661,3 +12661,24 @@ For the template chief to release. No migration. No new package.
 - Rollback: v283 (`d60a9b31`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (739 walk tests passed, 6 skipped;
   375 Elixir; 379 script). Not proven: Safari, Firefox, real phones.
+
+## 2026-11-18 — A press is sent from the wallet open when it was pressed
+
+- A press that asks the server for its steps (`prepare_and_send`) names the wallet open
+  at the press, and the server builds the steps for it. When they came back, `press()`
+  in `platform/assets/js/hooks/onchain_steps.ts` read Privy's active wallet again, so a
+  wallet opened in that moment got the steps built for the one open at the press.
+  `press(review, name, wallet, push)` now takes the wallet, and the click handler passes
+  the one it read at the press, with or without the ask. With no wallet open at the
+  press it still reports `wallet_unavailable`. Nothing holds back, defers or
+  deduplicates a press, and the page still never compares the wallet's account with the
+  step's signer. The hook pattern in `skills/onchain-buttons` shows the new signature,
+  and `docs/feature-map.md` names the test in the row for every press reaching the wallet.
+- Tests: `platform/assets/test/onchain_steps.test.ts` (1 new) presses with wallet A open,
+  opens wallet B while the server builds the steps, and finds the step sent through A,
+  with B asked nothing: without the change it failed (A sent nothing), with it it passes.
+  `platform/assets/test/send_step.test.ts` hands `press` its wallet directly.
+- Checks: `npm test` 380 passed (25 files); `npm run typecheck` exit 0; `mix compile
+  --warnings-as-errors` exit 0. Not run here: the browser walk and the full `make check`.
+  Not proven: a real Privy wallet switched while the steps are on their way; Safari,
+  Firefox, real phones.

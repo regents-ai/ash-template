@@ -10,6 +10,8 @@ Changes to Ash Template, newest first.
   wallet.
 - **Workshop.** A long name no longer runs off the side of the screen: on the wallet and
   sign-in examples it ends in "…" beside your picture, and on the main page it wraps.
+- **Wallet buttons.** A wallet button sends from the wallet that was open when you pressed
+  it.
 
 ## 17 November 2026
 

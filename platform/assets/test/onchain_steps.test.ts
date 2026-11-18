@@ -133,3 +133,35 @@ it("asks for the number on screen with the open wallet when the held steps are f
   ])
   expect(sent[0]).toMatchObject({data: "0x00000002"})
 })
+
+// Invariant: the wallet open at the press is the one that acts for it. A press
+// that asks the server for its steps sends them through that wallet, even when
+// another wallet is open by the time they arrive.
+it("sends the steps it asked for through the wallet open at the press", async () => {
+  const sent = walletApp()
+  const asked: string[] = []
+  const other = {
+    address: `0x${"b".repeat(40)}`,
+    provider: {
+      request: async ({method}: {method: string}) => {
+        asked.push(method)
+        return null
+      },
+    },
+    switchChain: async () => undefined,
+  }
+  // The person opens another wallet while the server builds the steps.
+  const page = component("1", () => {
+    replaceActiveEthereumWallet(other)
+    return {review: reviewFor("1"), send: "record"}
+  })
+
+  page.press()
+
+  await vi.waitFor(() => expect(sent).toHaveLength(1))
+  expect(page.pushes.filter(([event]) => event === "prepare_and_send")).toEqual([
+    ["prepare_and_send", {form: {amount: "1"}, step: "record", address: account}],
+  ])
+  expect(sent[0]).toMatchObject({data: "0x00000001"})
+  expect(asked).toEqual([])
+})

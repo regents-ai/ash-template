@@ -2,7 +2,7 @@ import type {Address, Hash, Hex} from "viem"
 
 import type {Hook} from "../hook_composition"
 import {report} from "../visit_log"
-import {activeEthereumWallet} from "../wallet_actions/connected_wallet"
+import {activeEthereumWallet, type SelectedWallet} from "../wallet_actions/connected_wallet"
 import {
   failure,
   NothingSent,
@@ -119,19 +119,20 @@ export const OnchainSteps: Hook = {
       }
 
       // The ask names the open wallet: a page that has just joined again can ask
-      // before the server has heard which wallet is open.
+      // before the server has heard which wallet is open. The steps that come
+      // back go to that same wallet.
       if (wallet && asks) {
         void this.pushEventTo(this.el, "prepare_and_send", {form, step: name, address: wallet.address})
           .then(async ([result]) => {
             if (result?.status !== "fulfilled") return unheard()
             const reply = result.value.reply as {review?: Review; send?: string}
-            if (reply.review && reply.send) await press(reply.review, reply.send, push)
+            if (reply.review && reply.send) await press(reply.review, reply.send, wallet, push)
             else push("step_failed", {step: name, reason: "step_unknown"})
           })
           .catch(unheard)
           .finally(release)
       } else {
-        void press(this.review, name, push).finally(release)
+        void press(this.review, name, wallet, push).finally(release)
       }
     }
     this.el.addEventListener("click", this.clicked)
@@ -166,13 +167,20 @@ export const OnchainSteps: Hook = {
 }
 
 /**
- * Sends or signs the named step through Privy's active wallet, the only wallet
- * that acts. With no wallet active, the press sends nothing and the server's
- * note says why. Reports only what the wallet answered, against the review it
- * sent from: the hash or signature, or why nothing was sent, and returns the
- * same answer. The server decides what the hash did.
+ * Sends or signs the named step through `wallet`, the wallet that was open at
+ * the press (Privy's active wallet then, the only wallet that acts), even when
+ * another is open by the time the steps arrive. With no wallet open at the
+ * press, it sends nothing and the server's note says why. Reports only what the
+ * wallet answered, against the review it sent from: the hash or signature, or
+ * why nothing was sent, and returns the same answer. The server decides what
+ * the hash did.
  */
-export async function press(review: Review | undefined, name: string, push: Push): Promise<Pressed> {
+export async function press(
+  review: Review | undefined,
+  name: string,
+  wallet: SelectedWallet | null,
+  push: Push,
+): Promise<Pressed> {
   const step = review?.steps.find(candidate => candidate.step === name)
   let sending = false
   const started = () => {
@@ -180,7 +188,6 @@ export async function press(review: Review | undefined, name: string, push: Push
   }
 
   try {
-    const wallet = activeEthereumWallet()
     if (!wallet) throw new NothingSent("wallet_unavailable")
     if (!review || !step) throw new NothingSent("step_unknown")
 

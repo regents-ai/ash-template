@@ -209,8 +209,8 @@ The hook's own click listener runs every press on its own:
    payer); this is accepted, not guarded, and the server's check shows such a hash as
    not this page's step.
 
-`press(review, name, push)` returns what it reported (`{transaction_hash}`, `{signature}`
-or `{reason}`), so an agent tool can take the same path as a person's press.
+`press(review, name, wallet, push)` returns what it reported (`{transaction_hash}`,
+`{signature}` or `{reason}`), so an agent tool can take the same path as a person's press.
 
 Before any send or signature, `send_step.ts` reads `eth_chainId`. When the wallet is on
 another chain it calls the wallet's own `switchChain(chain_id)`, Privy's, carried beside
