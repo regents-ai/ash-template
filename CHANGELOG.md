@@ -12453,3 +12453,11 @@ For the template chief to release. No migration. No new package.
   `make check-cli` and `make check-contracts` exit 0. Not proven: the budget across
   several machines (each machine counts its own, as every budget here does); Safari,
   Firefox, real phones.
+
+## 2026-11-18 — Released v280: one allowance per person for signed agent requests
+
+- v280 on template.regents.sh carries the per-person allowance entry above (`cf19f07a`). No migration.
+- Rollback: v279 (`fa947041`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (722 walk tests passed, 6 skipped;
+  366 Elixir; 376 script). Not proven: the allowance under real traffic; it is counted
+  on each machine, as every allowance here is.
