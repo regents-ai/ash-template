@@ -12788,3 +12788,13 @@ For the template chief to release. No migration. No new package.
   exit 0; `sh test/browser/walk.sh wallet_press_reconnect.spec.ts --repeat-each 3` 24
   passed. Not run here: the full `make check`. Not proven: a real wallet over a real
   dropped connection; Safari, Firefox, real phones.
+
+## 2026-11-18 — Released v287: a press on a page still rejoining counts as no connection
+
+- v287 on template.regents.sh carries the entry above (`9f9e88d5`, merged as `c28145e6`),
+  on Sean's "3. b" of 18 Nov ("the wallet just doesnt get it and the user can retry").
+  No migration.
+- Rollback: v286 (`defd8418`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (748 walk tests passed, 7 skipped;
+  375 Elixir; 389 script). Not proven: a real wallet over a real dropped connection;
+  Safari, Firefox, real phones.
