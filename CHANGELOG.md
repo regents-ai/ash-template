@@ -13183,3 +13183,10 @@ For the template chief to release. No migration. No new package.
   60; alone on the same commit, three times each at every width, both passed (102 of
   102), and the unchanged full check then passed at load 33.
 - Not proven: Safari, Firefox, real phones.
+
+## 2026-11-19 — hono 4.13.19
+
+- `platform/package-lock.json` holds hono 4.13.19 (was 4.13.13). Nothing in the template
+  asks for it by name: it comes with Privy's wallet packages (`@privy-io/react-auth` →
+  x402 → wagmi → porto). `npm audit` now reports nothing, and all 818 locked packages
+  have verified registry signatures. No other line of the lock moved.
