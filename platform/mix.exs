@@ -56,13 +56,14 @@ defmodule AshTemplate.MixProject do
       # Reads whole pages in LiveView tests.
       {:lazy_html, "~> 0.1", only: :test},
       {:ash, "~> 3.37"},
-      # ash_postgres main with #910 until a Hex release carries it: upserts use the
-      # repo's prefix, which picks each site's schema on the shared database. It
-      # stands in for the Hex release that ash_money and ash_double_entry ask for.
+      # The v2.16.0 release includes #910: upserts use the repo's prefix, which
+      # picks each site's schema on the shared database. Keep the Git pin so the
+      # required-fixes check can verify the patch in its history; it stands in for
+      # the Hex release that ash_money and ash_double_entry ask for.
       # Before moving this pin, run test/ash_template/schema_prefix_test.exs.
       {:ash_postgres,
        git: "https://github.com/ash-project/ash_postgres.git",
-       ref: "55db7d449aad351d200c5f300fca2a83e0a8734c",
+       ref: "e36aa20a9f000f3f3bd89b0816fa9460156cb13c",
        override: true},
       {:ash_phoenix, "~> 2.3.26"},
       {:oban, "~> 2.24"},

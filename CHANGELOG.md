@@ -13083,3 +13083,22 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   386 Elixir; 499 script). Not proven: Allow from a real app's own portal on this site;
   the migration on a copy of the production rows; Safari, Firefox, real phones.
+
+## 2026-11-19 — Ash 3.37.7 and AshPostgres 2.16.0
+
+- Ash 3.37.2 → 3.37.7, Ash AI 1.5.1 → 1.5.6, Ash SQL 0.8.7 → 0.8.9, Spark 2.7.9 → 2.7.10 and
+  WebSock Adapter 0.7.0 → 0.7.2. Nothing else in `platform/mix.lock` moved: updating these
+  names also lifts finch, llm_db, nimble_pool, reactor and req_llm, which stay at their
+  locked versions here.
+- ash_postgres moves from `55db7d44` on main, the fix that makes upserts and merges use the
+  Repo's prefix (#910, which picks each site's schema on the shared database), to its 2.16.0
+  release commit `e36aa20a`, eleven commits later. It stays a Git pin, so `make
+  check-required-fixes` still finds #910 in its history.
+- Changes that reach what the template uses: a generic action's argument default now applies
+  only when the argument is left out (Ash 3.37.4); a bulk update's notifications are dropped
+  when its batch rolls back (3.37.7); Ash AI's update and destroy tools take a `read_action`,
+  a tool's own arguments get their own types, and decimals are written out in full (1.5.5).
+  WebSock Adapter hands Bandit the same upgrade it did before.
+- Checks: `mix format --check-formatted`, `mix usage_rules.sync --check` and `MIX_ENV=test mix
+  compile --warnings-as-errors` exit 0; `mix test` 382 passed (10 properties, 372 tests);
+  `make check-required-fixes` passes against ash-template main `bdfe540f`.
