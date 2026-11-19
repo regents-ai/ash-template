@@ -13357,3 +13357,33 @@ For the template chief to release. No migration. No new package.
 - Deleted every test and everything only they used; `make check` runs the style check,
   `mix precommit` (warnings as errors, format, Credo, Sobelow, xref, codegen, TypeScript
   typecheck), the required-fixes, command description, SIWA and contract checks.
+
+## 2026-11-19 — Several accounts may link the same X account
+
+- A sign-in links an X account to the account even when other accounts here hold it, and
+  takes nothing from them. A later sign-in refreshes this account's own row alone, and
+  unlinking X from one account leaves the others' links. GitHub and Farcaster stay one
+  account each: a subject another account holds is reported as before
+  (`x-ash-identity-error: already-connected`) and not linked.
+- The choice lives in one place, `@shared_providers` in
+  `AshTemplate.Accounts.LinkedIdentity`. Its `:unique_subject_per_provider` identity
+  covers every other provider (`where`, with `identity_wheres_to_sql`: a partial unique
+  index) and names the subject in its error, which `VerifiedSession` reports as held by
+  someone else: the database alone decides, with no read before or after the link.
+  `:unique_provider_per_account` still keeps each account to one row per provider, so
+  sign-ins of one account at once meet in its upsert and leave one row.
+- Points: `LinkedIdentity` `:first_link` (`Accounts.get_first_link`, in place of
+  `:by_provider_subject`) answers, of the accounts holding one social account, the link
+  made first. `AshTemplate.Points.LinkedSocial.verify/1` reads it, so a shared X account
+  earns once, for the account that linked it first and still holds it, and a later link
+  moves nothing earned or waiting. The key `provider:subject`, the `subject_key` evidence
+  and every Points setting, rule, rate and start time are unchanged.
+- Migration `20261119205415_shared_x_accounts`, in one transaction that waits at most 5
+  seconds for its lock: the subject index becomes the same index over every row but X's,
+  and a plain index on provider and subject serves the Points read. It holds
+  `ACCESS EXCLUSIVE` on `linked_identities` until commit; no row changes. Its `down`
+  brings the rule back for X and fails, changing nothing, while two accounts hold the
+  same X account.
+- Shared profiles (elixir-utils `RegentIdentity`) take the same rule for X in their own
+  change, which a later pin brings here. `docs/points-foundation.md` says which link a
+  shared X account earns for.
