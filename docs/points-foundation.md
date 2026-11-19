@@ -129,6 +129,9 @@ The template configures four adapters:
   `provider:subject`, recorded by `LinkedIdentity` `:upsert_verified` only for a subject new
   to the account; a sign-in with the same subject refreshes it through
   `:refresh_verified`). It earns at the link's `inserted_at`, when that subject was linked.
+  Several accounts may link the same X account; its check answers for the account that
+  linked it first and still holds it, so that X account still earns once and a later
+  link moves nothing. A GitHub or Farcaster account is linked to one account at a time.
 - A paired agent (`AshTemplate.Points.PairedAgent`, rule `agent.activated`, source
   `template`/`pairing`, recorded by the pairing through `RegentAgents.Signals`).
 - A note an agent writes for its person (`AshTemplate.Points.AgentNote`, rule
