@@ -1,4 +1,5 @@
 import type {Page, Request} from "@playwright/test"
+import {signedIn} from "./support/person"
 import {expect, test} from "./support/test"
 
 // The page's browser tools as an agent's browser host sees them. Chromium here has
@@ -116,4 +117,68 @@ test("the page sends exactly the request the signer signed, with its proof and n
   expect(refused).toMatchObject({ok: false, error: {code: "invalid_request"}})
   expect(await page.evaluate(() => (window as unknown as {signerAsked: unknown[]}).signerAsked.length)).toBe(1)
   expect(sent).toHaveLength(1)
+})
+
+// The feedback tool on every kind of page: the site's own, a signed-in one, a scene's
+// page and an error page, the last two with their own small script. A stand-in
+// window.regentsFeedback plays regents browser's host; the page hands it the post and
+// returns its answer, and without it the tool answers unsupported. Either way the page
+// asks no other host anything. A scene's page names its script at localhost, the site's
+// own address in development; the walk's person is signed in at 127.0.0.1.
+test.describe("the feedback tool", () => {
+  const feedback = {
+    title: "The scene page stays dark",
+    body_markdown: "I opened the page and waited; I expected the scene to draw and the page stayed dark.",
+    client_request_id: "0b7e2a54-61f4-4c1e-9b0e-3f2d8c6a1e77",
+    public: true,
+  }
+  const posted = {thread_id: "thr_walk", url: "https://patchbay.help/127.0.0.1/threads/thr_walk"}
+
+  async function check(page: Page, path: string, status: number, baseURL: string) {
+    await page.addInitScript(withPageTools)
+    await page.addInitScript(answer => {
+      const asked: unknown[] = []
+      Object.assign(window, {feedbackAsked: asked, regentsFeedback: async (input: unknown) => (asked.push(input), answer)})
+    }, posted)
+    expect((await page.goto(path))?.status()).toBe(status)
+    await expect(page.locator("html[data-webmcp-status='connected']")).toBeAttached()
+
+    const registered = await page.evaluate(() => {
+      const tool = (window as unknown as {pageTools: Map<string, {name: string; title: string}>}).pageTools.get("feedback")
+      return tool && {name: tool.name, title: tool.title}
+    })
+    expect(registered).toEqual({name: "feedback", title: "/feedback"})
+
+    const site = new URL(baseURL).host
+    const elsewhere: string[] = []
+    page.on("request", request => { if (new URL(request.url()).host !== site) elsewhere.push(request.url()) })
+
+    expect(await call(page, "feedback", feedback)).toEqual(posted)
+    expect(await page.evaluate(() => (window as unknown as {feedbackAsked: unknown[]}).feedbackAsked)).toEqual([feedback])
+
+    await page.evaluate(() => delete (window as unknown as {regentsFeedback?: unknown}).regentsFeedback)
+    const refused = await call(page, "feedback", feedback)
+    expect(refused).toMatchObject({error: {code: "unsupported"}})
+    expect(refused).not.toHaveProperty("thread_id")
+    expect(elsewhere).toEqual([])
+  }
+
+  for (const [name, path, status] of [
+    ["an ordinary page", "/", 200],
+    ["a scene's page", "/scenes/1", 200],
+    ["a page that does not exist", "/no-such-page", 404],
+  ] as const) {
+    test(`is offered on ${name}`, async ({page, baseURL}) => {
+      await check(page, path, status, baseURL!)
+    })
+  }
+
+  test.describe("signed in", () => {
+    test.use({...signedIn, baseURL: `http://127.0.0.1:${process.env.ASH_TEMPLATE_WALK_PORT}`})
+
+    test("is offered on a signed-in page", async ({page, baseURL}) => {
+      await check(page, "/notes", 200, baseURL!)
+      await expect(page.locator("#note-form")).toBeAttached()
+    })
+  })
 })
