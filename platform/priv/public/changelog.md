@@ -2,6 +2,14 @@
 
 Changes to Ash Template, newest first.
 
+## 19 November 2026
+
+- **Connected apps.** Allow now returns you to the app when the app sends your browser on
+  to a second address, as ChatGPT does.
+- **SIWA.** A site's Setup links to the guide for adding SIWA to a website.
+- **Privacy.** The Privacy page marks the places a site made from this template fills in
+  for itself.
+
 ## 18 November 2026
 
 - **Motion lab.** A new page, Scenes: five small numbered worlds in pixel art, each caught
