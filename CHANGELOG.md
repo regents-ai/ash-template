@@ -13398,3 +13398,16 @@ For the template chief to release. No migration. No new package.
   pin moves to `6d98a113`, whose shared change `regent_identity 20261119204035` is
   applied with `/app/bin/migrate-shared` before this release. `docs/points-foundation.md`
   says which link a shared X account earns for.
+
+## 2026-11-19 — Released v300: several accounts may link the same X account
+
+- v300 on template.regents.sh carries one commit (head `a350c33d`), the entry above.
+  elixir-utils `6d98a113`. Shared change `regent_identity 20261119204035` applied at
+  23:07:53Z with `/app/bin/migrate-shared` from this image; the template's own migration
+  `20261119205415_shared_x_accounts` ran in the release step. No row changed; no Points
+  setting changed.
+- Rollback: v299 (`37c86b5d`) image runs on the changed tables as they are. The two rules
+  themselves come back only with each migration's `down`, which fails, changing nothing,
+  once two accounts hold the same X account.
+- `make check` exit 0 by the chief on the exact commit, two independent reviews, and the
+  release image built and migrated against a throwaway database.
