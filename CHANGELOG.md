@@ -13253,3 +13253,37 @@ For the template chief to release. No migration. No new package.
 - Rollback: v294 (`6fabd5f4`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   387 Elixir; 499 script).
+
+## 2026-11-19 — Every page offers browser agents /feedback, a public post on Patchbay
+
+- Founder's request: every page offers a browser agent a WebMCP tool, `feedback`
+  (titled `/feedback`; a tool's name cannot hold a slash), that publishes a free, public
+  post about this site on patchbay.help. The page never reaches Patchbay and signs
+  nothing. It checks the input against the host's own limits (title 1 to 160 code
+  points, body at most 16384 UTF-8 bytes and possibly empty, key 1 to 128 UTF-8 bytes,
+  `public` exactly `true`) and hands exactly `{title, body_markdown,
+  client_request_id, public: true}` to `window.regentsFeedback`, which `regents browser`
+  gives the page; the host posts it and its answer comes back unchanged. Any other
+  browser answers `unsupported`, naming `regents browser`, the command line's Patchbay
+  commands and the site's page on Patchbay, and posts nothing. A host that throws
+  answers `unknown`, pointing at `regents patchbay requests get` and the same key.
+- The manifest entry is `feedback`, authentication `patchbay_feedback`, availability
+  `available`, scope `site`, with no route or operation; `AshTemplateWeb.Capabilities`
+  checks when it compiles that every tool is one of the site's operations or this kind.
+- Pages: every page in the site's frame (signed in or out), a scene's page and the error
+  pages, the last two through a small script of their own (`scene_page.ts`, and the new
+  5 KB `error_page.ts`) that reads the tool's entry from the page and never carries the
+  tool list. Not offered: the OAuth consent pages (drawn by the shared `regent_oauth`
+  library) and `/admin/errors` (ErrorTracker's own page). No content-security-policy
+  change. The walk's server now answers errors as a release does, so the walk sees the
+  real error pages.
+- Agent guide, `/docs`, `/llms.txt`, `docs/agent-parity.md`, `docs/feature-map.md` and
+  `skills/ash-webmcp` describe it.
+- Checks: `mix format --check-formatted` and `MIX_ENV=test mix compile
+  --warnings-as-errors` exit 0; the whole `mix test` 386 passed (11 properties);
+  `npm run typecheck` exit 0; `npx vitest run` 507 passed (8 new); `mix assets.build`
+  exit 0; `sh test/browser/walk.sh page_tools.spec.ts agent_tools.spec.ts
+  splats.spec.ts scenes.spec.ts` 70 passed, 2 skipped (touch-only on the desktop);
+  `make check-cli check-contracts check-style` exit 0. Not proven: a post through the
+  real `regents browser` host, which no released regents-cli has yet; native browser
+  WebMCP; Safari, Firefox, real phones.
