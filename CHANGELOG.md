@@ -13224,3 +13224,15 @@ For the template chief to release. No migration. No new package.
     page of pairings, not all of them. A site changes its own `existing/2` in the commit
     that moves its pin.
 - No migration; no Points setting, rule or start time changed.
+
+## 2026-11-19 — Released v294: shared libraries at b695c5a
+
+- v294 on template.regents.sh carries one commit (`6fabd5f4`), the entry above. No
+  migration; no Points setting, rule or start time changed.
+- Rollback: v293 (`6afa0ebe`) image; nothing to undo.
+- The library commit was checked on its own first: Points 44 tests, agents 48, each
+  with its format, compile and style checks.
+- Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
+  387 Elixir; 499 script).
+- Not proven: the start run against a live-sized pairing list; Safari, Firefox, real
+  phones.
