@@ -13207,3 +13207,20 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   387 Elixir; 499 script).
 - Not proven: Safari, Firefox, real phones.
+
+## 2026-11-19 — Shared libraries at b695c5a: three Points changes
+
+- elixir-utils `b695c5a0` (was `caba486c`), every library on the one commit. Three
+  changes, all Points:
+  - At the award, the source's yes counts only for the account saved at the first check.
+    A site's own sources already name the account in their facts, so nothing changes for
+    them; a test stand-in that answered `{:ok, %{}}` must now name the event's account
+    (`platform/test/support/other_site_source.ex` does).
+  - `RegentPoints.record_event/2` answers `disabled` for a rule that is off before it
+    looks at the reference.
+  - `RegentAgents.pairings_held_from_before/1` answers a lazy stream, 500 people a read,
+    where it answered `{:ok, list}`. `AshTemplate.Points.PairedAgent.existing/2` walks it
+    a page at a time and reads each page's accounts in one go, so the start run holds one
+    page of pairings, not all of them. A site changes its own `existing/2` in the commit
+    that moves its pin.
+- No migration; no Points setting, rule or start time changed.

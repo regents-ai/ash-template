@@ -13,6 +13,9 @@ defmodule AshTemplate.Points.PairedAgent do
   alias AshTemplate.Accounts
   alias AshTemplate.Actors.System
 
+  # How many people's accounts one read takes.
+  @page 500
+
   def verify(%{"source_event_key" => id}) do
     case RegentAgents.pairing_history(id) do
       {:ok, %{} = pairing} -> with_account(pairing)
@@ -20,9 +23,16 @@ defmodule AshTemplate.Points.PairedAgent do
     end
   end
 
+  # A lazy stream: the pairings come a page of people at a time, and each page's
+  # accounts are read in one go.
   def existing("agent.activated", starts_at) do
-    {:ok, pairings} = RegentAgents.pairings_held_from_before(starts_at)
+    starts_at
+    |> RegentAgents.pairings_held_from_before()
+    |> Stream.chunk_every(@page)
+    |> Stream.flat_map(&offers/1)
+  end
 
+  defp offers(pairings) do
     accounts =
       pairings
       |> Enum.map(& &1.privy_user_id)
