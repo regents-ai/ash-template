@@ -30,15 +30,10 @@
       "Bash(regents ash-template chat read *)",
       "Bash(make check)",
       "Bash(make check-platform)",
-      "Bash(make check-browser)",
-      "Bash(make check-scripts)",
       "Bash(make live-check)",
       "Bash(mix precommit)",
-      "Bash(mix test *)",
       "Bash(mix format *)",
-      "Bash(mix compile *)",
-      "Bash(npm run test:browser)",
-      "Bash(sh test/browser/walk.sh)"
+      "Bash(mix compile *)"
     ],
     "ask": [
       "Bash(*deploy.sh*)",

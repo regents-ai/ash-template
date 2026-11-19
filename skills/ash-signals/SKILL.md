@@ -48,7 +48,7 @@ emits one such signal for its value action and maps it to its name in
    where the Ash libraries move to 3.36 and the shared libraries start sending signals. Never pin
    ahead of the template on your own: a library commit that adds a shared table waits
    for that table to exist in the shared database. After moving the pin, force-compile
-   the shared libraries in both dev and test.
+   the shared libraries.
 2. **Compiler.** In `mix.exs`, set `compilers: [:ash_signals, :phoenix_live_view] ++ Mix.compilers()`.
    In `config/dev.exs`, give the endpoint
    `reloadable_compilers: [:ash_signals, :phoenix_live_view, :elixir, :app]`. With the
@@ -169,5 +169,3 @@ with the same name as one of the record's attributes is filled in without being 
 - Pages still hear about changes through `Ash.Notifier.PubSub`; a signal does not
   replace it. A person's on-chain action is never queued, deferred or deduplicated
   through a signal (`regent-workflow`).
-- Tests use `Ash.Signals.Test` (`assert_emits_signal/4`) where a rule depends on the
-  signal, as `regent-workflow` ("Every change proves itself") sets out.

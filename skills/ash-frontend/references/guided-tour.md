@@ -32,10 +32,6 @@ button plays it again. The template's homepage carries a demo (`@tour` in
   page's header.
 - `name` is what the browser remembers as seen (`ash-template:tour:<name>`). A new
   name plays the tour once more for everyone.
-- Every browser walk starts with each tour seen: add its key to `storageState` in
-  `platform/playwright.config.ts` and to the saved sign-ins in
-  `platform/test/browser/support/sign_in.exs`. The tour's own walk starts with nothing
-  kept, and proves a button under the dimming takes its press.
 
 ## What the tour never does
 

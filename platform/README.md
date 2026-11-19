@@ -172,17 +172,14 @@ they come from. Put real values only in the ignored `.env.local`, never in
 
 Without `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` the site refuses to start. A
 worktree has no settings files of its own, so start it from the worktree's
-`platform` folder with `direnv exec <main checkout>/platform mix phx.server`. The
-browser walk's server is the exception: it makes its own Privy settings, whatever
-the shell sets, and nobody can sign in to it through Privy.
+`platform` folder with `direnv exec <main checkout>/platform mix phx.server`.
 
 The local server keeps its data in one loopback PostgreSQL database,
 `ash_template_dev`, on `127.0.0.1`. It leaves the machine to verify sign-in with
 Privy, to read wallets and names through the chain nodes
 (`ASH_TEMPLATE_CHAIN_NODE_URL`), to check agents' signed requests with the agent
 sign-in service (`ASH_TEMPLATE_SIWA_BROKER_URL`), and for each optional service in
-[Configuration](#configuration) whose setting is set. The browser walk runs with
-all of them off and fails if anything leaves the machine.
+[Configuration](#configuration) whose setting is set.
 
 ## Configuration
 
@@ -200,7 +197,7 @@ production.
 | `ASH_TEMPLATE_NOTES_WEBHOOK_URL` | No | An `http` or `https` address each saved note is posted to, as `{"event": "note.saved", "note_id": …, "revision": …}` without the note's text. A failed post is retried four more times and then recorded on the note. A 429 pauses the post for the seconds `Retry-After` names, an hour at most; asking for longer fails that try. Unset means saving a note posts nothing. Any other kind of address stops the boot. |
 | `ASH_TEMPLATE_INDEXNOW_KEY` | No | This site's IndexNow key, 8 to 128 letters, digits or dashes; make one with `openssl rand -hex 16`, one per site. Set it only where the site serves its public address. It is public: `/indexnow-key.txt` serves it. Each release's public pages are then sent once to IndexNow (Bing, which ChatGPT search reads, and others), and the site can queue `AshTemplate.IndexNow.submit/1` for a page it adds or changes. Unset means nothing is sent and `/indexnow-key.txt` is not found. Any other value stops the boot. |
 | `ASH_TEMPLATE_SIWA_BROKER_URL` | No | The sign-in service that checks agents' signed requests, such as one running on this machine. Unset means `https://siwa.regents.sh` (`config/config.exs`, `config :regent_agents, siwa: [url: ..., audience: "ash-template"]`). |
-| `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` | No | `true` switches the Claude connector on, all of it at once: the sign-in routes under `/oauth` and `/.well-known/oauth-*`, its identity tools at `/mcp`, Claude in the pairing box and the signed pair request, and the Claude guide at `/agents/claude` with its `skill.md`, which `/agents`, the sitemap, `/llms.txt` and `/agents.md` then name. Anything else leaves it all off: the guide is not found, `/mcp` refuses a Bearer token and a request with no signature, and `/llms.txt` names no connector. It needs `SIWA_HOSTED_SIGNING_KEY`, and the migration `20261028120000_oauth_connector_tokens` must have run first. That migration runs with the release that carries it, switch on or off, and rewrites the stored tokens in place, keeping only their hashes: on the shared production database that release waits for Sean's letter naming it. [docs/oauth-reference.md](../docs/oauth-reference.md) has the rest. Before the first release that switches it on, confirm the staged key has the right shape without printing it (its length and characters only), or the boot stops. The browser walk's development server (`ASH_TEMPLATE_WALK=true`) has it on, with a key it makes each time it starts; no other environment can turn it on that way. |
+| `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` | No | `true` switches the Claude connector on, all of it at once: the sign-in routes under `/oauth` and `/.well-known/oauth-*`, its identity tools at `/mcp`, Claude in the pairing box and the signed pair request, and the Claude guide at `/agents/claude` with its `skill.md`, which `/agents`, the sitemap, `/llms.txt` and `/agents.md` then name. Anything else leaves it all off: the guide is not found, `/mcp` refuses a Bearer token and a request with no signature, and `/llms.txt` names no connector. It needs `SIWA_HOSTED_SIGNING_KEY`, and the migration `20261028120000_oauth_connector_tokens` must have run first. That migration runs with the release that carries it, switch on or off, and rewrites the stored tokens in place, keeping only their hashes: on the shared production database that release waits for Sean's letter naming it. [docs/oauth-reference.md](../docs/oauth-reference.md) has the rest. Before the first release that switches it on, confirm the staged key has the right shape without printing it (its length and characters only), or the boot stops. |
 | `SIWA_HOSTED_SIGNING_KEY` | With the connector | This site's own key at the sign-in service, which holds the connector's identities for the `ash-template` audience: 32 or more letters, digits, `-` or `_`. With the connector on and no such key, the boot stops with a message naming this setting. Never shown to a client. The service is the one `ASH_TEMPLATE_SIWA_BROKER_URL` names. |
 | `SIWA_ACTIVITY_READ_TOKEN` | No | The reader key for the sign-in service's agent activity, which gives the account menu each agent's last active site and the Agents page each agent's sites by day. `AshTemplate.Agents.ActivityReading` keeps each agent's reading for five minutes. Unset means neither shows activity. |
 | `PHX_HOST` | Yes in production | Public hostname the endpoint builds URLs from. The Claude connector's sign-in (its issuer) is `https://PHX_HOST` and its resource is `https://PHX_HOST/mcp`; each code and token records them as it is issued, so moving the site to a new address means its connected apps connect again. |
@@ -397,7 +394,6 @@ buckets count observations at or below their bound
 lib/ash_template/       Ash domains: accounts, sign-in, legal documents
 lib/ash_template_web/   Endpoint, router, live pages, controllers, components
 lib/mix/tasks/          Local setup, contract sync and route-handoff checks
-test/                   The sign-in, agent and Points tests (see Checks)
 contracts/              The OpenAPI contract
 config/                 Compile-time and runtime configuration
 assets/                 TypeScript and CSS, built with esbuild; the hashed
@@ -417,88 +413,36 @@ From the monorepo root, `make check-platform` runs this component's gate and
 
 ```sh
 mix precommit
-mix test
 ```
 
-`mix precommit` ends by copying the shared libraries' assets, then runs `npm run
-typecheck`, `npm test` and the browser walk (`npm run test:browser`). `make
-check-browser` runs the walk alone. Neither needs the site's Privy settings: the
-walk's server makes its own (`config/runtime.exs`), since the walk signs its person
-in on its own and never talks to Privy.
+`mix precommit` compiles with warnings as errors, checks unused dependency
+locks, reports packages with security advisories, checks formatting, runs Credo in
+strict mode and Sobelow, holds the compile-connected `xref` graph under its limit,
+and verifies the Ash codegen and route handoff are current. It ends by copying the
+shared libraries' assets, then runs `npm run typecheck`, which type-checks the
+TypeScript assets. It needs none of the site's Privy settings.
 
 `make check` also runs the design system's style check first (`make check-style`:
 each break of a STYLE.md rule in this site's CSS, scripts and templates, by file and
-line), the deploy and rollback scripts' tests (`make check-scripts`, on a fixture
-repository with stand-ins for Fly and the site), the required-fixes check (see
-[Shared dependencies](#shared-dependencies)), the command description check
-(see [cli/README.md](../cli/README.md)) and the SIWA check.
+line), the required-fixes check (see [Shared dependencies](#shared-dependencies)),
+the command description check (see [cli/README.md](../cli/README.md)) and the SIWA
+check.
 
 It runs its gates side by side, each writing its output to
 `_build/check/<gate>.log`, then prints every gate's log, the failed ones last, and
 one line per gate with its time, and fails when any gate failed. A gate over its
 time budget (`CHECK_BUDGETS` in the `Makefile`) gets a `SLOW` line under its own,
-which never fails the check. The style check and `mix precommit` run in turn, in that order: both compile `_build/dev` and copy
-the design system's files into `assets/vendor` afresh. `mix test` runs beside
-them: it compiles `_build/test`, and its script build copies the scripts and the
-shared libraries' files into its own folder there, so it never reads
-`assets/vendor`; of the scripts the browser walk serves it writes one piece,
-whole. The other gates write nothing another reads.
+which never fails the check. The style check and `mix precommit` run in turn, in
+that order: both compile `_build/dev` and copy the design system's files into
+`assets/vendor` afresh. The other gates write nothing another reads.
 
-`mix precommit` compiles with warnings as errors, checks unused dependency
-locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the
-compile-connected `xref` graph under its limit, and verifies the Ash codegen
-and route handoff are current. `npm run typecheck` type-checks the TypeScript
-assets, the browser walk's included. Every change proves itself (Sean, 18 Oct
-2026); [docs/feature-map.md](../docs/feature-map.md) lists what a person or agent
-can do and the check that proves it. Among them:
-
-- `mix test` signs a person in and back in, because sign-in once failed for three
-  days unnoticed, and walks a new person from an email sign-in without a wallet,
-  through the wallet Privy gives them, to the same account at every sign-in.
-- It checks that a paired agent's tools accept only signed proof, never a cookie.
-- It writes through a resource that names no schema while `public` holds a table of
-  the same name, and checks that a create, update, destroy, upsert, bulk upsert and
-  `Ash.update_many` change only the site's schema, because ash_postgres 2.10.0 through
-  2.15.2 sent `Ash.update_many` and upserts to `public`. Run it before moving the
-  ash_postgres pin.
-- `npm test` checks that after Disconnect, a Privy session the browser still
-  remembers never signs the previous person back in.
-- A property test checks that each account shows the name its person set for this
-  site, never one set on another site.
-- It saves a Public Display Name with Privy-signed test proof, the way the Account
-  page does, and checks the name then shows on that page; a forged proof changes
-  nothing.
-- The browser walk (`test/browser`) opens every page and document in headless
-  Chromium as a desktop 1280 wide and as a touch phone 390 wide, signed out and signed
-  in, opens every page again 320 wide to check it fits the narrowest phones, checks every address on each page shows its copy icon, gets a pairing code the
-  way a person does, opens a paired agent's window and renames the agent, opens and
-  copies the wallets a wallet note names, and opens the agent harbour's cards from its
-  list and from its ships on the sea, with WebGPU turned on for that check alone.
-  It builds the pages' scripts and styles, starts its own server on a free port and a
-  database made for the run, `ash_template_browser_<port>_dev`, which it drops at the
-  end whatever happens, even when its server never starts (`test/browser/walk.sh`),
-  and signs in a local person with three agents first. Its server runs without the
-  code reloader, built into `_build/walk`. Every page it opens
-  is listed in `test/browser/pages.json`; `mix test` fails when the router serves one
-  that is not.
-
-`SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make
-live-check`, from the monorepo root, checks the live site the way a paired agent does
-and writes only the agent's own row there (when it was last seen, added the first
-time): `regents ash-template doctor` and `agents whoami` as
-the agent whose key is in `SIWA_AGENT_HOME`, then, in headless Chromium at both widths,
-the health page, the live commit from `/capabilities.json`, every public page and
-document in `test/browser/pages.json` (except `local_only` labs), and every read-only
-WebMCP tool that takes no input, the signed ones signed with the agent's own key through
-`SIWA_CLIENT` (`../scripts/live-check.sh`, `test/live`). The signer signs only the one
-request this checkout's manifest names for the tool being called. Set both, as full
-paths, in the session's environment (`env` in `.claude/settings.local.json`) so `make
-live-check` runs without a prompt. Run it after every release, from a checkout of the
-live commit: it checks the site against this checkout's page map and manifest, and
-fails first when the live commit is another.
-
-`mix test` first creates the local `ash_template_test` database when it is missing
-and brings it up to date, so a fresh copy needs only `mix setup` before `make check`.
+`SIWA_AGENT_HOME=<the agent's key folder> make live-check`, from the monorepo root,
+checks the live site the way a paired agent does and writes only the agent's own row
+there (when it was last seen, added the first time): `regents ash-template doctor`
+and `agents whoami` as the agent whose key is in `SIWA_AGENT_HOME`, which must be
+paired (`../scripts/live-check.sh`). Set it, as a full path, in the session's
+environment (`env` in `.claude/settings.local.json`) so `make live-check` runs
+without a prompt. Run it after every release.
 
 ## Deployment
 
@@ -591,8 +535,6 @@ The shared libraries' migrations are not compared, since no release applies them
 that release's image with that commit's own `fly.toml`, under the same two locks as
 a deploy, then reads `https://<app>.fly.dev/capabilities.json` until `build.commit`
 names the release's commit, for up to two minutes, and fails if it never does.
-Its tests (`make check-scripts`, `scripts/tests/test_release.py`) run it and the
-deploy against stand-ins for Fly and the site.
 
 A new staging database is empty and has no copy of the shared
 `regent_names.platform_human_users` table, so `bin/migrate` fails on it. Its

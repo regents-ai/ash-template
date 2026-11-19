@@ -160,7 +160,7 @@ current founder request overrides older rollout notes. Re-read the working tree:
   Inspect the launcher/config: some dev configs do not honor PORT directly. Preserve
   configured auth and existing data; fixture servers are not real-provider acceptance.
 - Prioritize the running UI and founder review. Use focused compile/type/build checks
-  and actual visual/interaction checks; do not rebuild a broad test-maintenance backlog.
+  and actual visual/interaction checks.
   Recheck keyboard focus, mobile text wrapping, theme persistence and failure states.
   Scope temporary diagnostics separately from product code and genuine wallet canaries.
 - Keep transient completion status, runtime PIDs and unfinished implementation details

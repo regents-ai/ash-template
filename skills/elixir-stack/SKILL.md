@@ -112,8 +112,6 @@ Read [Oban recipes](references/oban.md) before adding or changing a job. The rul
   or other calls to another website. The classes never share a queue, so a slow
   service holds up only the jobs that wait on it. The queue `limit` bounds
   concurrency; [Oban recipes](references/oban.md#queues) says how to choose it.
-- Tests: `testing: :manual` in `config/test.exs`, `use Oban.Testing, repo: ...`, then
-  `perform_job/2` and `assert_enqueued/1`.
 - Oban never queues, retries, defers or deduplicates a person's on-chain action;
   every press reaches the wallet (regent-workflow). Server work after a confirmed
   chain event is ordinary Oban work.

@@ -42,14 +42,13 @@ keeps.
 | [cli/](cli/README.md) | `commands.json`, the description of every `regents ash-template` command: the pattern each site copies for its own commands, run by [regents-cli](https://github.com/regents-ai/regents-cli), which carries a pinned copy. | `make check-cli`, `make check-siwa-latest` |
 | [contracts/](contracts/README.md) | An optional Foundry workspace. Empty until the product needs contracts. | `make check-contracts` |
 | [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |
-| [skills/](skills/) | Every shared agent skill Regent writes, as regents-ai/ash-template keeps them; change them there. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing, WebMCP and signals skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, `chain-events` watching a chain and saving its events, and `payments` taking USDC payments through the shared Regents library. The web app serves all of them except `regent-workflow`, `regent-notion` and `checkpoint` as its [build skills](platform/README.md#showcase). | None |
+| [skills/](skills/) | Every shared agent skill Regent writes, as regents-ai/ash-template keeps them; change them there. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, WebMCP and signals skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, `chain-events` watching a chain and saving its events, and `payments` taking USDC payments through the shared Regents library. The web app serves all of them except `regent-workflow`, `regent-notion` and `checkpoint` as its [build skills](platform/README.md#showcase). | None |
 | [skills/third-party/](skills/third-party/README.md) | Other authors' Skills for local work (design, motion, interface review, debugging, Oban), unmodified copies under their own licences; not Regent's work, and never served. Its README lists each source, commit and licence, plus Skills worth installing yourself. | None |
 
 `make check` runs every component's check side by side, each writing its output to
 `platform/_build/check/<gate>.log`, and fails when any fails; the
 [platform README](platform/README.md#checks) explains the platform's and which run in
-turn. `make check-scripts` tests the deploy and rollback scripts on a fixture
-repository.
+turn.
 `make release` runs them on the committed tree, then builds and starts the release
 image; see [Release](platform/README.md#release).
 
@@ -82,7 +81,7 @@ how far each is behind the template's pin and the library's main. `make drift` r
 after comparing the sites' shared files. Both print one JSON document, which the daily
 jobs read; each script's opening comment describes its fields. `scripts/harvest.sh`
 lists the commits each site added to its main since the harvest ledger last read it,
-for the inbound job. `make check-scripts` tests all three on fixture repositories.
+for the inbound job.
 
 The two daily jobs are cloud agents that follow [automation/harvest.md](automation/harvest.md)
 (inbound: site work every site should have, as pull requests on this repository) and

@@ -13,7 +13,7 @@ its real entry point to the resource action.
 - **Explicit options replace scope-derived values**: `actor: nil` erases the scope's
   actor. Inspect wrapper defaults and keyword merges. In callbacks, pass on the
   supplied context through the installed API, never stale request state.
-- **Reads may filter or answer not-found.** Test non-disclosure under the policy's
+- **Reads may filter or answer not-found.** Check non-disclosure under the policy's
   actual contract; do not demand Forbidden everywhere.
 - **For writes, prove the refused operation changed nothing.**
 - **Every way in that reaches the database before sign-in has a per-address

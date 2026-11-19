@@ -20,8 +20,8 @@ Take the first row that fits.
 ## Cost
 
 What each set of imports adds to `app.js` (gzip). The kit already pays for `animate`, so a
-site pays only the difference for the parts it adds. Regents, Keyfleet and the template cap
-`app.js` at 175 KiB gzip (`assets/test/budgets.budget.ts`).
+site pays only the difference for the parts it adds. Keep `app.js` at or under 175 KiB
+gzip.
 
 | Imports | Gzip |
 | --- | --- |

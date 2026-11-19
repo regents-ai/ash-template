@@ -22,11 +22,7 @@ Read each sign-in once per answer, never twice in the same instant. The first re
 takes the account the request's own plug read, from the conn (`assign_new`), and the
 `handle_params` LiveView calls straight after the connected mount, for the address the
 page opened on, takes the mount's read: neither is a person acting, and a second read
-there would only repeat the first. Every navigation after that reads again. The
-template's `platform/test/ash_template_web/session_checks_test.exs` counts these reads
-and refuses a revoked sign-in at the next navigation and press on a connected shell
-page; LiveViewTest connects one once the conn's private `:live_view_connect_info` is a
-map, which hands the socket the conn's own session.
+there would only repeat the first. Every navigation after that reads again.
 
 A push or a result is held against `lapses_at` on the clock:
 
@@ -95,14 +91,6 @@ reference is ash-template `AshTemplateWeb.Live.Session.check_component_lease/2`.
 
 Check: `grep -rl ":live_component" lib` lists every component; each one with a
 `handle_event` or `handle_async` that reads or writes for a person needs steps 3 and 4.
-Verify with a scratch test, inside a sandbox that rolls back, that runs the hooks
-through `Phoenix.LiveView.Lifecycle` on a socket mounted by the session module, counting
-the repository's queries: an event while current (continue, with the account as it
-reads now), a push and a result while current (continue, no query), after a
-same-account refresh (unchanged), and on a socket mounted two seconds before the
-sign-in's lifetime ends, once those seconds have gone (halt, principal withdrawn,
-`signed_out_reason: :expired`; for a component, halted and the page told). Run it once
-against the old code to see it fail.
 
 ## Precondition: every machine receives the sign-out
 

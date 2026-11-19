@@ -10,15 +10,11 @@ pipeline while retaining its existing session, CSRF and authorization plugs.
 Keep intentional Markdown and JSON document routes working. Do not implement a
 Jason encoder for safe HTML or widen an authentication contract to align files.
 
-The canonical regression is
-`platform/test/ash_template_web/content_negotiation_test.exs`. It checks both
-ways of selecting JSON, browser HTML fallback, and the existing JSON session
-fetch. It runs under the normal `mix test` runner.
-
-Carry those invariants into each site's `content_negotiation_test.exs`, adapting
-the real routes and existing JSON/Markdown contracts. Preserve each site's
-security checks. In Autolaunch, also cover the explicit JSON session requests
-and X account-link requests whose JSON admission must survive the repair.
+The invariants: neither way of selecting JSON reaches an HTML LiveView, a browser
+still gets HTML, and the existing JSON session fetch still answers. Carry them into
+each site, adapting the real routes and existing JSON/Markdown contracts. Preserve
+each site's security checks. In Autolaunch, the explicit JSON session requests and
+X account-link requests keep their JSON admission.
 
 Template's `/auth/session` currently accepts the browser's wildcard request and
 returns JSON; explicit `Accept: application/json` is rejected. This incident

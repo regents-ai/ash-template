@@ -2,40 +2,14 @@ import Config
 
 require Logger
 
-# The browser walk (test/browser/walk.sh) runs its mix commands and its development
-# server with ASH_TEMPLATE_WALK set.
-walk? = config_env() == :dev and System.get_env("ASH_TEMPLATE_WALK") == "true"
-
-# Tests sign in to their own app id (config/test.exs) and the walk makes its own
-# Privy settings (below), whatever the shell sets.
-if config_env() != :test and not walk? do
-  config :ash_template, :privy,
-    app_id: System.get_env("PRIVY_APP_ID"),
-    verification_key: System.get_env("PRIVY_VERIFICATION_KEY")
-end
-
-# The walk never talks to Privy: its person is signed in before its server starts
-# (test/browser/support/sign_in.exs), and its browser's Privy is a stand-in
-# (test/browser/support/test.ts). Its settings are a fixed app id and a verification
-# key made as each command starts, whose private half is thrown away, so no Privy
-# sign-in can pass.
-if walk? do
-  {:ECPrivateKey, _version, _private_key, curve, public_key, _attributes} =
-    :public_key.generate_key({:namedCurve, :secp256r1})
-
-  key = :public_key.pem_entry_encode(:SubjectPublicKeyInfo, {{:ECPoint, public_key}, curve})
-
-  config :ash_template, :privy,
-    app_id: "browser-walk",
-    verification_key: :public_key.pem_encode([key])
-end
+config :ash_template, :privy,
+  app_id: System.get_env("PRIVY_APP_ID"),
+  verification_key: System.get_env("PRIVY_VERIFICATION_KEY")
 
 # Without its Privy settings a local server answers every page while nobody can
 # sign in, so it refuses to start. A worktree holds no settings files of its own.
-# Other mix tasks, such as migrations and code generation, run without them, and
-# the walk's server makes its own.
-if config_env() == :dev and not walk? and
-     Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint) do
+# Other mix tasks, such as migrations and code generation, run without them.
+if config_env() == :dev and Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint) do
   for name <- ~w(PRIVY_APP_ID PRIVY_VERIFICATION_KEY), System.get_env(name, "") == "" do
     raise """
     #{name} is not set, so nobody could sign in. Start the site with its settings loaded:
@@ -52,46 +26,32 @@ config :ash_template, :logger, [
   AshTemplateWeb.VisitLog.handler(%{type: :standard_io}, Logger.default_formatter())
 ]
 
-# The browser walk's server writes its visit lines in production's shape to a file,
-# which test/browser/visits.spec.ts reads to replay a visit.
-if walk? do
-  config :ash_template, :logger, [
-    AshTemplateWeb.VisitLog.handler(
-      %{file: String.to_charlist(Path.expand("../tmp/walk-lines.jsonl", __DIR__))},
-      LoggerJSON.Formatters.Basic.new(metadata: AshTemplateWeb.VisitLog.fields())
-    )
-  ]
-end
-
 # The server reads a chain through its own node when one is set, such as a
 # private node whose address carries a key, or a local copy of the chain for a
 # lab run; wallets never see it. The wallet chain's node is
-# ASH_TEMPLATE_CHAIN_NODE_URL; Points reads NFTs through the Base one. Tests
-# read no chain, whatever the shell sets.
-if config_env() != :test do
-  %{chain_id: wallet_chain_id} = Application.fetch_env!(:ash_template, :wallet_chain)
+# ASH_TEMPLATE_CHAIN_NODE_URL; Points reads NFTs through the Base one.
+%{chain_id: wallet_chain_id} = Application.fetch_env!(:ash_template, :wallet_chain)
 
-  node_overrides =
-    for {chain_id, setting} <- [
-          {wallet_chain_id, "ASH_TEMPLATE_CHAIN_NODE_URL"},
-          {8453, "ASH_TEMPLATE_BASE_NODE_URL"}
-        ],
-        node_url = System.get_env(setting),
-        into: %{} do
-      case URI.new(node_url) do
-        {:ok, %URI{scheme: scheme, host: host}}
-        when scheme in ["http", "https"] and host not in [nil, ""] ->
-          {chain_id, node_url}
+node_overrides =
+  for {chain_id, setting} <- [
+        {wallet_chain_id, "ASH_TEMPLATE_CHAIN_NODE_URL"},
+        {8453, "ASH_TEMPLATE_BASE_NODE_URL"}
+      ],
+      node_url = System.get_env(setting),
+      into: %{} do
+    case URI.new(node_url) do
+      {:ok, %URI{scheme: scheme, host: host}}
+      when scheme in ["http", "https"] and host not in [nil, ""] ->
+        {chain_id, node_url}
 
-        _invalid ->
-          raise "#{setting} must be an http or https address"
-      end
+      _invalid ->
+        raise "#{setting} must be an http or https address"
     end
+  end
 
-  config :ash_template,
-         :chain_nodes,
-         Map.merge(Application.fetch_env!(:ash_template, :chain_nodes), node_overrides)
-end
+config :ash_template,
+       :chain_nodes,
+       Map.merge(Application.fetch_env!(:ash_template, :chain_nodes), node_overrides)
 
 # The Privy accounts that run this site, comma separated (config/config.exs).
 if admins = System.get_env("REGENT_CREDITS_ADMINS") do
@@ -117,9 +77,7 @@ config :regent_payments, RegentPayments.Facilitator,
 
 # The Regents wallet on Base that paid actions are paid into. Until it is set,
 # an agent's pin answers that paid pins are not set up here.
-if config_env() != :test do
-  config :ash_template, :payments_wallet_address, System.get_env("PAYMENTS_WALLET_ADDRESS")
-end
+config :ash_template, :payments_wallet_address, System.get_env("PAYMENTS_WALLET_ADDRESS")
 
 # Agents' signed requests are checked by this sign-in service instead, such as one
 # running on this machine.
@@ -136,16 +94,8 @@ end
 # Anything but "true" leaves all of it off. Switch it on only after the
 # migrations have run. The connector's identities are held by the same sign-in
 # service, asked with this site's own key there.
-# The browser walk's server has it on, as production does, so the walk opens the
-# connector's pages; its key is made when the server starts and its sign-in service
-# is a closed port (config/dev.exs).
-claude_connector? =
-  walk? or System.get_env("ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED") == "true"
-
-hosted_signing_key =
-  if walk?,
-    do: Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false),
-    else: System.get_env("SIWA_HOSTED_SIGNING_KEY")
+claude_connector? = System.get_env("ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED") == "true"
+hosted_signing_key = System.get_env("SIWA_HOSTED_SIGNING_KEY")
 
 if claude_connector? and
      not (is_binary(hosted_signing_key) and
@@ -217,16 +167,14 @@ if indexnow_key = System.get_env("ASH_TEMPLATE_INDEXNOW_KEY") do
 end
 
 # Each sign-in reads the wallet's ENS name from Ethereum mainnet while this
-# endpoint is set (AshTemplate.Accounts.EnsIdentity). Tests never read it.
-if config_env() != :test do
-  if ethereum_read_rpc_url = System.get_env("ETHEREUM_READ_RPC_URL") do
-    case URI.new(ethereum_read_rpc_url) do
-      {:ok, %URI{scheme: "https", host: host}} when host not in [nil, ""] ->
-        config :ash_template, :ethereum_read_rpc_url, ethereum_read_rpc_url
+# endpoint is set (AshTemplate.Accounts.EnsIdentity).
+if ethereum_read_rpc_url = System.get_env("ETHEREUM_READ_RPC_URL") do
+  case URI.new(ethereum_read_rpc_url) do
+    {:ok, %URI{scheme: "https", host: host}} when host not in [nil, ""] ->
+      config :ash_template, :ethereum_read_rpc_url, ethereum_read_rpc_url
 
-      _invalid ->
-        raise "ETHEREUM_READ_RPC_URL must be an https address"
-    end
+    _invalid ->
+      raise "ETHEREUM_READ_RPC_URL must be an https address"
   end
 end
 
@@ -288,7 +236,7 @@ database_config =
 
 config :ash_template, AshTemplate.Repo, database_config
 
-# A developer's machine on the remote database (AshTemplate.DatabaseConfig.remote?/1)
+# A developer's machine on the remote database (AshTemplate.DatabaseConfig.remote?/0)
 # runs no job queue and no Oban plugin, so the serving machines alone run the site's
 # jobs, and its server starts only when it listens on this machine alone.
 if config_env() == :dev and AshTemplate.DatabaseConfig.remote?() do

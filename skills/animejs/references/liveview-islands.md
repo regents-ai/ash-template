@@ -34,7 +34,7 @@ How Anime.js runs inside a Phoenix LiveView hook in Regent's Ash apps. Everythin
   `npm`, commit the lockfile. Adding TypeScript islands to techtree or patchbay changes
   their pipeline; ask first.
 - Import named functions from `"animejs"`; the esbuild `--bundle` build tree-shakes them.
-  Regents, Keyfleet and the template cap `app.js` at 175 KiB gzip (`vitest.budgets.config.ts`).
+  Keep `app.js` at or under 175 KiB gzip.
 - Type the hook's `this` the house way (see `hooks/infinite_scroll.ts`): a local type with
   `el`, the LiveView methods you call, and your own fields. Combine behaviours on one element
   with `composeHooks` from `assets/js/hook_composition.ts`.
@@ -316,10 +316,8 @@ stream DOM id as `data-layout-id`.
 
 ## Checks
 
-- `npm run typecheck` and `npm test` from `platform/` (budget test included where present).
-- The browser walk's `test/browser/motion.spec.ts` checks motion that once went wrong: a
-  new list item and a new note end at rest, and a refusal shakes only the page's own alert.
-- LiveView tests do not run hooks. Check the route in a browser: the animation plays, a
+- `npm run typecheck` from `platform/`.
+- Check the route in a browser: the animation plays, a
   server patch afterwards leaves the right final state, the island's teardown leaves no
   stray styles, and reduced motion behaves.
 - If the browser preview is hidden, the page gets no animation frames and every Anime.js

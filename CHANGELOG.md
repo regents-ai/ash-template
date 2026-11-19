@@ -13351,3 +13351,9 @@ For the template chief to release. No migration. No new package.
 - Rollback: v297 (`8d59312e`) image; nothing to undo. An award already given stays.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   392 Elixir; 499 script).
+
+## 2026-11-19 — No tests
+
+- Deleted every test and everything only they used; `make check` runs the style check,
+  `mix precommit` (warnings as errors, format, Credo, Sobelow, xref, codegen, TypeScript
+  typecheck), the required-fixes, command description, SIWA and contract checks.

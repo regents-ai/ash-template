@@ -14,7 +14,7 @@ the URL. Do not claim a latest-release compatibility matrix from this pack's sna
 
 ## Search order
 
-1. Relevant existing implementation and tests, then applicable dependency usage rules.
+1. Relevant existing implementation, then applicable dependency usage rules.
 2. Installed module docs/source and the exact dependency's DSL reference.
 3. Official versioned HexDocs; changelog or source tag for a suspected behavior change.
 4. Community examples only as leads, checked against the sources above.
@@ -75,9 +75,8 @@ access, and usage_rules already links its own Elixir rules. The tool does not wr
 skills here. Keep the `ash-*` names reserved for this authored pack; if generated
 skills are ever wanted, give them distinct names such as `ash-upstream-rules`.
 
-When adding it to a site: the dependency is `only: :dev` where `mix precommit` runs in
-dev, as in the template, and `only: [:dev, :test]` where `preferred_envs` runs
-precommit in test, or the check cannot find the task. The first `mix usage_rules.sync`
+When adding it to a site: the dependency is `only: :dev`, as in the template, since
+`mix precommit` runs in dev. The first `mix usage_rules.sync`
 asks a yes/no question, so run it with `--yes`; `--check` asks nothing. Put the block in
 the `AGENTS.md` beside the site's `mix.exs` so its `deps/` links resolve.
 

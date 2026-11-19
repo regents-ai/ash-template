@@ -1,6 +1,6 @@
 # Shared package versions
 
-Ash-template owns the tested shared package baseline. Sites retain product-only
+Ash-template owns the checked shared package baseline. Sites retain product-only
 packages, but every package they share with the template must have the same
 locked version and source. Update the template first, verify it, then adopt that
 exact candidate in each site. A newer registry version alone is not proof that
@@ -46,5 +46,5 @@ while the template's Nebulex Distributed 3.0.0 accepts 6.x or 7.x. The explicit
 constraint keeps the shared baseline compatible with both, without an override.
 
 `mdex` 0.14.2 requires the accompanying shared `regent_blog` manifest upgrade.
-Publish the tested shared-library commit before the template or sites pinned to
+Publish the checked shared-library commit before the template or sites pinned to
 it. A site must not override the old blog constraint to force installation.

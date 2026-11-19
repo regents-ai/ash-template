@@ -27,6 +27,6 @@ the correct scope and data? Are form errors accessible and inputs preserved?
 Is there an N+1 loop? Does async work capture more state than it needs? Is a claimed
 optimization backed by representative measurements rather than added infrastructure?
 
-**Evidence:** Is there a regression or negative test? Were project gates actually run?
+**Evidence:** Were project gates actually run?
 Does a browser-only behavior have browser evidence? Are blocked checks clearly marked?
 Did the change leave unrelated work, credentials, and production state untouched?

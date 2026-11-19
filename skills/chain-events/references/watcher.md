@@ -1,8 +1,8 @@
 # The watcher
 
 The code here compiles against Ash 3.33, AshPostgres 2.13 and Phoenix LiveView 1.2.11.
-It was not run against a database; the readers it follows are the tested versions
-(SKILL.md names them). `MyApp` stands for the site's module prefix, and `Actors.System`
+It was not run against a database; the readers it follows are the versions running on
+the sites (SKILL.md names them). `MyApp` stands for the site's module prefix, and `Actors.System`
 (whose `role: :system` the policies check) is the template's own. The example watches
 ERC-20 `Transfer` logs.
 
@@ -19,15 +19,13 @@ ERC-20 `Transfer` logs.
 | `lib/my_app/chain/scanner.ex` | One pass: each stretch's read, its check against the saved rows, its commit |
 | `lib/my_app/chain/read_contract.ex` | The Oban job that runs passes |
 | `lib/my_app/chain/watch.ex` | The cron job that gives each contract its reading job, and brings it forward when asked |
-| `test/support/chain_stub_client.ex` | The chain a test describes |
 
 ## The client
 
 ```elixir
 defmodule MyApp.Chain.Client do
   @moduledoc """
-  The chain as the app reads it, always at `latest`: a JSON-RPC node in
-  production, a stand-in held by the test process in tests.
+  The chain as the app reads it, always at `latest`, from a JSON-RPC node.
   """
 
   @type head :: %{number: non_neg_integer(), hash: String.t(), timestamp: DateTime.t()}
@@ -650,32 +648,3 @@ end
   (`observed_at` within 420 seconds and `head_block - next_block` within ten minutes of
   blocks, 3,000 on Base, as Patchbay's `Patchbay.Offers.Cursor` has) and show plain
   words: "Catching up with the chain. Recent activity may take a moment to appear."
-
-## Tests
-
-- **Stub client** holding the chain in the test process (`Process.put`), as
-  `test/support/chain_stub_client.ex` in Keyfleet does: a head, raw logs with their
-  block hashes, and the requests it was asked, so a test can check the ranges asked for.
-- **A pass** against the stub: rows appear once; the same pass twice changes nothing; a
-  refused range is asked for in halves; a log from a transaction not saved yet, in the
-  blocks read again, is saved.
-- **A saved transaction that no longer matches**, once for each case: a log read again
-  with other values; a block whose hash changed, the log now read from the new block or
-  from another one; a log gone. In each the pass returns `:ok`, the saved rows are as
-  first saved, the cursor reaches the head, and the pass that reads the block for the
-  last time gives one warning naming the contract and the transaction. Passes before
-  and after it give none, and nothing of that transaction is saved again wherever the
-  chain puts it. Capture the log with `ExUnit.CaptureLog`; count the warnings and check
-  that each names the contract and the transaction, never the rest of its words.
-- **Nothing passed over**: a log that does not read as a `Transfer`, and one block the
-  node keeps refusing, each end the pass with `{:error, _}`, nothing of that stretch
-  saved and the cursor where it stood.
-- **The page**: a notice leads to one re-read showing the new row. Send the notice with
-  `Ash.Notifier.notify/1` or by running the pass in the test.
-- **At Base's pace**: a pass five blocks a second behind. A day missed (432,000 blocks)
-  is caught up in capped stretches, each search starting 300 blocks before the cursor
-  and none above the head (the stub records the ranges asked); rows from blocks sharing
-  one timestamp come back in chain order; a saved transaction changed anywhere in the
-  300 blocks read again is named once.
-- Capture expected warnings with `ExUnit.CaptureLog` so the output stays clean.
-- **Against a real chain**: anvil tests tagged `:external`, left out of the default run.

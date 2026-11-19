@@ -99,7 +99,7 @@ defmodule AshTemplateWeb.HeaderFooterLive do
           id={"#{@id}-products"}
           class="site-products"
           phx-hook="ProductsMenu"
-          phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
+          phx-mounted={JS.ignore_attributes(["open"])}
         >
           <summary class="site-header__link">
             Products <Regent.Icons.icon name="chevron-down" class="site-header__chevron" />

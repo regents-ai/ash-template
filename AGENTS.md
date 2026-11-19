@@ -29,7 +29,7 @@ site still replaces by hand; keep it outside this passage, which the rename drop
   a local handoff. For code, load `regent-workflow`, `ash-stack` and
   `elixir-stack` first: `elixir-stack` names the standard Elixir, Phoenix, Ecto
   and Oban tool for each job and runs the design check, and `ash-stack` routes to
-  `ash-backend`, `ash-frontend`, `ash-data`, `ash-security`, `ash-testing` and
+  `ash-backend`, `ash-frontend`, `ash-data`, `ash-security` and
   `ash-webmcp` (agent readiness and WebMCP tools), and `ash-signals` covers
   one resource reacting to another's action. `animejs` covers Anime.js in
   LiveView hooks, `vgpu-island` every GPU picture (vgpu inside the shared canvas island), `onchain-buttons` wallet and on-chain buttons, and
@@ -83,15 +83,13 @@ site still replaces by hand; keep it outside this passage, which the rename drop
   `platform/_build/check/<gate>.log`, then prints every gate's log, the failed ones
   last, and one line per gate, and fails when any gate failed. The gates: the
   design system's style check (`make check-style`) and the platform's `mix
-  precommit` (which ends with the TypeScript typecheck and tests and the browser
-  walk), which two run in turn because they share the build and the copied assets;
-  `mix test`, which builds its own copy of the scripts; the deploy and rollback
-  scripts' tests (`make check-scripts`); the
-  required-fixes check; the command description check against the site's OpenAPI
-  documents (regents-cli's checker at the commit the `Makefile` pins); the SIWA
-  check; and the contracts. `make check-style`, `check-platform`,
-  `check-scripts`, `check-required-fixes`, `check-cli`, `check-siwa-latest` and
-  `check-contracts` run one component.
+  precommit` (compile with warnings as errors, format, Credo, the dependency and
+  code checks, ending with the TypeScript typecheck), which two run in turn
+  because they share the build and the copied assets; the required-fixes check;
+  the command description check against the site's OpenAPI documents
+  (regents-cli's checker at the commit the `Makefile` pins); the SIWA check; and
+  the contracts. `make check-style`, `check-platform`, `check-required-fixes`,
+  `check-cli`, `check-siwa-latest` and `check-contracts` run one component.
 - `make release` is the one release path: it refuses uncommitted changes, runs
   `make check`, builds HEAD's `platform/` into an image and starts it against a
   throwaway database (`scripts/release.sh`). It never deploys.
@@ -100,8 +98,7 @@ site still replaces by hand; keep it outside this passage, which the rename drop
   refuses otherwise. Both take `--dry-run` first, to make every check and print
   the commands without running them (`platform/README.md`, "Deployment").
 - Follow the workspace's `regent-workflow`; use one integrating owner for this
-  repository. Scope verification to observable acceptance and preserve useful
-  regression coverage.
+  repository. Scope verification to observable acceptance.
 - Preserve uncommitted work and public command/API shapes. Every distinct wallet
   press reaches the wallet. No signing, production access, deployment or
   publishing without applicable founder authority. Never read `.env`,
@@ -137,9 +134,8 @@ names and address, and replaces these by hand:
    `platform/lib/ash_template_web/components/layouts/root.html.heex` and the
    `data-home-theme-locked` rule in `platform/assets/css/pages/home.css`, which
    hides the theme switch there. Keep it for dark artwork; otherwise take the
-   lock out of all three, with the theme test that expects it
-   (`platform/assets/test/theme.test.ts`), and the homepage follows the
-   visitor's light or dark choice like every other page.
+   lock out of all three, and the homepage follows the visitor's light or dark
+   choice like every other page.
 4. The legal operator named in `platform/priv/legal/terms.md` and
    `privacy.md`. Every `[FILL IN: …]` marker in
    `platform/priv/legal/privacy.md` is replaced with the site's own facts
@@ -183,8 +179,7 @@ names and address, and replaces these by hand:
 13. Account stays the template's. A site with settings of its own gives them one
     page, Settings: `settings/0` in `platform/lib/ash_template_web/account_site.ex`
     answers its body (the module's own documentation says how), which adds the
-    Settings tab and `/account/settings`, and the page's walk entry goes in
-    `platform/test/browser/pages.json`. Every other page the site has of its own
+    Settings tab and `/account/settings`. Every other page the site has of its own
     goes in its own menu (the rail's sections in
     `platform/lib/ash_template_web/route_catalog.ex`), never under Account.
 

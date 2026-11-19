@@ -1,7 +1,7 @@
 /**
  * How a baked scene moves over its loop (studio/FORMAT.md sections 2.5 to 4), worked on
  * the processor: where a splat is at a moment, for ordering the few splats that are
- * drawn far to near (order.ts), and for the tests. The painter's shader (painter.ts)
+ * drawn far to near (order.ts). The painter's shader (painter.ts)
  * works the same rules on the graphics card for every splat.
  */
 import {clothCentre, FRAME_RATE, restCentre, type Header, type Scene} from "./scene.ts"

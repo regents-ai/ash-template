@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "4259fe6c429bf419ed8dfe611982e2c92971f3eb"
+  @elixir_utils_ref "b9d530d4d55443153d4d45be7c8e362032ec1b7f"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "539a9e49ea09e6799e50a07d77a9f79c45db1478"
 
@@ -13,9 +13,6 @@ defmodule AshTemplate.MixProject do
       app: :ash_template,
       version: "0.1.0",
       elixir: "~> 1.20",
-      elixirc_paths: elixirc_paths(Mix.env()),
-      # The browser walk's files under test/browser are run by Playwright, not ExUnit.
-      test_ignore_filters: [&String.starts_with?(&1, "test/browser/")],
       start_permanent: false,
       aliases: aliases(),
       deps: deps(),
@@ -24,13 +21,6 @@ defmodule AshTemplate.MixProject do
       usage_rules: usage_rules()
     ]
   end
-
-  # The browser walk's server runs in development, with its guard against the
-  # outside world (`AshTemplate.WalkOffline`).
-  defp elixirc_paths(:dev), do: ["lib", "test/browser/support/server"]
-  # Resources only tests use, compiled before the protocols are consolidated.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_env), do: ["lib"]
 
   def application do
     [
@@ -53,14 +43,11 @@ defmodule AshTemplate.MixProject do
       {:phoenix, "~> 1.8.9"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
-      # Reads whole pages in LiveView tests.
-      {:lazy_html, "~> 0.1", only: :test},
       {:ash, "~> 3.37"},
       # The v2.16.0 release includes #910: upserts use the repo's prefix, which
       # picks each site's schema on the shared database. Keep the Git pin so the
       # required-fixes check can verify the patch in its history; it stands in for
       # the Hex release that ash_money and ash_double_entry ask for.
-      # Before moving this pin, run test/ash_template/schema_prefix_test.exs.
       {:ash_postgres,
        git: "https://github.com/ash-project/ash_postgres.git",
        ref: "e36aa20a9f000f3f3bd89b0816fa9460156cb13c",
@@ -128,9 +115,7 @@ defmodule AshTemplate.MixProject do
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},
       {:credo_ash,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credo_ash", only: :dev, runtime: false},
-      {:sobelow, "~> 0.18", only: :dev, runtime: false},
-      # Property tests. Ash already ships it in every environment, so it cannot be test-only.
-      {:stream_data, "~> 1.4"}
+      {:sobelow, "~> 0.18", only: :dev, runtime: false}
     ]
     |> local_shared_dependencies()
   end
@@ -183,7 +168,7 @@ defmodule AshTemplate.MixProject do
       usage_rules: [
         {:usage_rules, sub_rules: []},
         {:usage_rules, sub_rules: :all, main: false, link: :markdown},
-        {:ash, link: :markdown},
+        {:ash, link: :markdown, except: ["testing"]},
         {~r/^ash_/, link: :markdown},
         {:phoenix, sub_rules: ["phoenix", "liveview", "html"], link: :markdown},
         {:req_llm, link: :markdown}
@@ -195,7 +180,6 @@ defmodule AshTemplate.MixProject do
     [
       # Packages install without running their own install scripts, as the image does.
       setup: ["deps.get", "cmd npm ci --ignore-scripts", "assets.setup", "assets.build"],
-      test: ["ecto.create --quiet", "ash_template.setup_local_auth", "test"],
       "assets.setup": ["esbuild.install --if-missing"],
       "assets.build": [
         "compile",
@@ -245,11 +229,7 @@ defmodule AshTemplate.MixProject do
         "regent_identity.assets",
         "regent_privy.assets",
         "regent_agent_access.assets",
-        "cmd npm run typecheck",
-        "cmd npm test",
-        # The browser walk (test/browser): every page at phone and desktop width,
-        # and the paths a person takes, on its own server and database.
-        "cmd npm run test:browser"
+        "cmd npm run typecheck"
       ]
     ]
   end

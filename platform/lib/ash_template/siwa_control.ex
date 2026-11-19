@@ -210,7 +210,6 @@ defmodule AshTemplate.SiwaControl do
       receive_timeout: 10_000
     ]
     |> Req.new()
-    |> Req.merge(Application.get_env(:ash_template, :siwa_control_req, []))
     |> Req.request(options)
     |> answer()
   end

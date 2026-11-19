@@ -353,40 +353,10 @@ Agents sign in with SIWA (`elixir-utils/siwa`), which is not a button.
 
 ## Checks
 
-- The template has no test suite. Its proof is the workshop: run `anvil --port 58600`,
-  then `mix phx.server`, and open `/showcase/onchain`. The stand-in wallet has lab
-  accounts A and B (linked) and C (not linked), a network choice, a declined switch, a
-  failed switch, a decline and a slow mode; its switch stands in for Privy's. Run every
-  row of the table above there before changing the pattern.
-  `assets/test/send_step.test.ts` proves the press: a wallet answering for another
-  account still gets the step; the switch is asked only off the step's chain and on
-  every such press, and once it resolves the same press sends, even from a wallet that
-  still names another chain; a declined or failed switch sends nothing, reports
-  `switch_declined` or `network_mismatch`, and the next press asks again; a wallet that
-  refuses a send or signature by one of the six codes, on the error or down its `cause`
-  chain, reports `wallet_refused`.
-  `/showcase/wallet` then runs the same buttons with real Privy sign-in and a
-  real wallet on Base Sepolia; a press there needs a little Base Sepolia test ETH.
-- `assets/test/onchain_steps.test.ts` runs the hook's press: a press after the page
-  joins again, or with a number the held review was not built for, asks
-  `prepare_and_send` with the open wallet's address and sends the step that comes back
-  to that wallet. On a stale page the hook pushes nothing: a press that must ask
-  reaches nothing and shows the lost line, a press from held steps reaches the wallet
-  and shows the unreported line, neither leaves the button marked, and pressed again
-  after `reconnected` the press asks and reaches the wallet once.
-  `test/ash_template_web/onchain_prepare_test.exs` proves the component's half: a fresh
-  component that has not heard the wallet builds the steps for the address the press
-  names when the account links it, and none otherwise.
-- `test/browser/wallet_press_reconnect.spec.ts` walks `/showcase/wallet` with a stand-in
-  wallet as the connection drops and comes back. A press with the page offline reaches
-  the wallet. While LiveView is still sending the form back, the buttons send the server
-  none of their events: a press from the held steps reaches the wallet and shows the
-  unreported line, and a press after the number changed asks the wallet nothing and
-  shows the lost line, then pressed again once the page is back reaches the wallet. A
-  press after the number changed once the page is back reaches the wallet. The presses
-  that change the number are then read against their steps.
-- Sites keep their own test policy. A site that keeps a Vitest suite proves with a
-  stand-in wallet that two presses in a row both reach `eth_sendTransaction`, that a
-  decline reports `wallet_declined`, that a wallet on another account still gets the
-  step, and that a press on another chain asks the switch and sends once it resolves.
-- LiveView tests do not run hooks.
+- The proof is the workshop: run `anvil --port 58600`, then `mix phx.server`, and open
+  `/showcase/onchain`. The stand-in wallet has lab accounts A and B (linked) and C (not
+  linked), a network choice, a declined switch, a failed switch, a decline and a slow
+  mode; its switch stands in for Privy's. Run every row of the table above there before
+  changing the pattern. `/showcase/wallet` then runs the same buttons with real Privy
+  sign-in and a real wallet on Base Sepolia; a press there needs a little Base Sepolia
+  test ETH.

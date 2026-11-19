@@ -11,10 +11,10 @@ service is an Oban job, through AshOban when an Ash resource owns it. That need
 justifies adding Oban to a site that lacks it; never hand-build a queue, lease or
 polling loop instead. Recipes are in [elixir-stack](../../elixir-stack/references/oban.md).
 
-Inspect existing worker, trigger, queue, retry, scheduler, and test configuration.
+Inspect existing worker, trigger, queue, retry and scheduler configuration.
 Identify how actor and tenant are reconstructed at execution time. A queued user ID
 is not a permanent authorization grant. Decide whether the job runs under current
-user rights or a narrowly authorized service identity; test revocation semantics.
+user rights or a narrowly authorized service identity; check revocation semantics.
 
 When state and job enqueueing must be indivisible, verify they share the intended
 transaction/repository. Prove rollback does not enqueue phantom work. A retry can
@@ -59,7 +59,7 @@ Review logout, token expiry, reconnect, and membership revocation. Never log tok
 Expose an explicit supported action set and explicit public fields. Review includes,
 loads, pagination, filter/sort input, errors, relationship mutation, and query cost.
 The transport must resolve the same actor/tenant boundary as the UI. A new generated
-endpoint needs policy and serialization tests, not just a route that returns 200.
+endpoint needs its policy and serialization checked, not just a route that returns 200.
 Do not make all resource fields public to make a schema generation error disappear.
 
 ## Browser and agent tool adapters

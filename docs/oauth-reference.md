@@ -225,7 +225,7 @@ Authorization codes stay as Boruta keeps them.
 ## Rollout to the sites
 
 This is a shared change under the "Shared changes" rule (regent-workflow): built
-and tested in the template, released on its hosted demo with the switch on only after
+and checked in the template, released on its hosted demo with the switch on only after
 Sean's letter for the migration, then signed off by Sean as a numbered decision
 with the template link and the checks below, and only then handed to all five
 sites at once in one rollout file. Each site makes its own version (its own
@@ -238,7 +238,7 @@ taken. Patchbay keeps `hosted_pairing: [:chatgpt]` and its own refusal words.
 Before the switch is turned on anywhere, the site must have completed consent,
 callback, refresh, disconnect and host checks, and the `/mcp` checks: a first
 request with no token answered 401 `connection_required` with the
-`WWW-Authenticate` challenge (`claude_connector_test.exs`), initialize and
+`WWW-Authenticate` challenge, initialize and
 tools/list with a token, a revoked token refused and the per-account limit. One shared piece is still missing: design-system's `Regent.Account` has no
 picture for the `claude` harness (`@agent_pictures`, `Map.fetch!`), so a pairing
 box offering Claude, or any list showing a paired Claude, raises until

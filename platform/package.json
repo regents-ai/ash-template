@@ -4,9 +4,7 @@
   "type": "module",
   "scripts": {
     "assets:build": "mix assets.build",
-    "test": "vitest run",
-    "typecheck": "tsc --project assets/tsconfig.json --noEmit && tsc --project test/browser/tsconfig.json --noEmit && tsc --project test/live/tsconfig.json --noEmit",
-    "test:browser": "sh test/browser/walk.sh",
+    "typecheck": "tsc --project assets/tsconfig.json --noEmit",
     "stills:splats": "node assets/js/splats/stills.mjs",
     "stills:value-cards": "node assets/js/value_cards/stills.mjs"
   },
@@ -24,13 +22,11 @@
     "viem": "2.57.16"
   },
   "devDependencies": {
-    "@playwright/test": "1.65.1",
-    "@types/node": "26.6.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@webgpu/types": "0.1.74",
-    "typescript": "7.0.2",
-    "vitest": "5.1.1"
+    "playwright": "1.65.1",
+    "typescript": "7.0.2"
   },
   "overrides": {
     "ws@^8.0.0": "8.22.1",

@@ -11,5 +11,5 @@
     "noEmit": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["js/**/*.ts", "js/**/*.tsx", "test/**/*.ts"]
+  "include": ["js/**/*.ts", "js/**/*.tsx"]
 }

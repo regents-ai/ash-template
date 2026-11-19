@@ -92,23 +92,19 @@ export function press(event: MouseEvent) {
 // another window, a header menu or a breadcrumb's menu pops open and a dropdown's
 // list drops in, and leaves again when it closes. A page that redraws
 // an open one closes and reopens it within one moment, which reports it as
-// having been open all along, so it does not move again. Once it rests where it
-// opens, moved or not, it carries `data-settled`, so whatever measures it, such
-// as the browser walk, knows when.
+// having been open all along, so it does not move again.
 function toggle(event: Event) {
   if (!(event instanceof ToggleEvent) || !(event.target instanceof HTMLElement)) return
   const {target} = event
   const moves = lastInputByPointer() && !still(target)
   if (event.newState === "closed") {
-    target.removeAttribute("data-settled")
     if (moves) close(target)
     return
   }
   if (event.oldState !== "closed") return
 
-  Promise.resolve(moves ? open(target) : openStill(target)).then(() => {
-    if (target.matches("[open], :popover-open")) target.dataset.settled = ""
-  })
+  if (moves) open(target)
+  else openStill(target)
 }
 
 function open(target: HTMLElement) {
