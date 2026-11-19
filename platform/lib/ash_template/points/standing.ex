@@ -10,7 +10,7 @@ defmodule AshTemplate.Points.Standing do
     * `at_start`: before the start, the start rules this site counts
       (`RegentPoints.Rules.start_rules/0`) whose source here finds the account
       already has what earns them, through each source's `held/2` beside the
-      `existing/2` the start itself reads. Empty from the start on.
+      `existing/2` the start run reads. Empty from the start on.
   """
 
   use Ash.Resource,

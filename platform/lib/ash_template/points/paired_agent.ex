@@ -5,9 +5,9 @@ defmodule AshTemplate.Points.PairedAgent do
   pairing code.
 
   `existing/2` lists, for `RegentPoints.StartAwards`, each person's earliest
-  pairing made before the Points start that is still paired; `held/2`
-  answers, before the start, whether one account's person has a pairing still
-  paired now.
+  pairing made before the moment the run asks about, the time it runs, that is
+  still paired; `held/2` answers, before the start, whether one account's
+  person has a pairing still paired now.
   """
 
   alias AshTemplate.Accounts
@@ -25,8 +25,8 @@ defmodule AshTemplate.Points.PairedAgent do
 
   # A lazy stream: the pairings come a page of people at a time, and each page's
   # accounts are read in one go.
-  def existing("agent.activated", starts_at) do
-    starts_at
+  def existing("agent.activated", at) do
+    at
     |> RegentAgents.pairings_held_from_before()
     |> Stream.chunk_every(@page)
     |> Stream.flat_map(&offers/1)

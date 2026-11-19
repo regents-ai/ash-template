@@ -7,9 +7,10 @@ defmodule AshTemplate.Points.AccountActivated do
   to half a second after the sign-in it can be ahead of the clock; the check
   then runs again later rather than turning the award down.
 
-  `existing/2` lists the accounts made before the Points start, for
-  `RegentPoints.StartAwards`; `held/2` answers the same for one account
-  before the start, which every account that exists already has.
+  `existing/2` lists the accounts made before the moment
+  `RegentPoints.StartAwards` asks about, the time it runs; `held/2` answers,
+  before the start, whether one account has been made, which every account
+  that exists already has.
   """
 
   alias AshTemplate.Accounts
@@ -27,8 +28,8 @@ defmodule AshTemplate.Points.AccountActivated do
     end
   end
 
-  def existing("account.activated", starts_at) do
-    for account <- Accounts.accounts_created_before!(starts_at, actor: %System{}) do
+  def existing("account.activated", at) do
+    for account <- Accounts.accounts_created_before!(at, actor: %System{}) do
       {account.id,
        %{source_app: "regents", source_kind: "account", source_event_key: to_string(account.id)}}
     end
