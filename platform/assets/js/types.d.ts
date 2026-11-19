@@ -57,4 +57,7 @@ interface Document {
 
 interface Window {
   liveSocket: import("phoenix_live_view").LiveSocket
+  // The agent's browser host posting the feedback tool's text to Patchbay
+  // (feedback_tool.ts); regents browser gives a page this, ordinary browsers do not.
+  regentsFeedback?: (input: {title: string; body_markdown: string; client_request_id: string; public: true}) => Promise<unknown>
 }

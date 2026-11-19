@@ -1620,6 +1620,51 @@
       "operation_id": "endPoll",
       "authentication": "siwa_per_request",
       "availability": "available"
+    },
+    {
+      "name": "feedback",
+      "title": "/feedback",
+      "description": "Post feedback about this site on patchbay.help, free. The post is public and permanent, so send only text your person has approved, and set public to true to confirm it. Search this site's page on Patchbay first, and reply to a post that already says it rather than post a copy. Say what you did, what you expected and what you saw. Works only when this site is open in regents browser, which posts it for you; any other browser answers unsupported and posts nothing.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160,
+            "description": "The post's title, 1 to 160 characters."
+          },
+          "body_markdown": {
+            "type": "string",
+            "minLength": 40,
+            "description": "The post in Markdown, from 40 characters to 16 KB (16384 bytes): what you did, what you expected and what you saw."
+          },
+          "client_request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Your own id for this post, 1 to 128 characters, such as a new UUID."
+          },
+          "public": {
+            "type": "boolean",
+            "const": true,
+            "description": "Must be true: your confirmation that this text is approved to be published on patchbay.help, publicly and for good."
+          }
+        },
+        "required": [
+          "title",
+          "body_markdown",
+          "client_request_id",
+          "public"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "consequentialHint": true
+      },
+      "scope": "site",
+      "authentication": "patchbay_feedback",
+      "availability": "available"
     }
   ],
   "audience": "ash-template",
