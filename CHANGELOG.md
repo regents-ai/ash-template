@@ -13190,3 +13190,10 @@ For the template chief to release. No migration. No new package.
   asks for it by name: it comes with Privy's wallet packages (`@privy-io/react-auth` →
   x402 → wagmi → porto). `npm audit` now reports nothing, and all 818 locked packages
   have verified registry signatures. No other line of the lock moved.
+
+## 2026-11-19 — Points offers name their signal
+
+- `AshTemplate.Points.Award` has one policy per action, each naming the signal it listens
+  to (`signal_in/2`), the shape `skills/ash-signals/SKILL.md` gives for a listener. A site
+  copies it as written: one `policy action(:name)` per listener action with
+  `authorize_if signal_in(SignalsModule, :signal)`. A test covers each action.

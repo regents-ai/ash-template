@@ -97,10 +97,22 @@ defmodule AshTemplate.Points.Award do
   end
 
   policies do
-    # Reached only through the signals above, after the action that emitted
-    # them was allowed; each records as the system, never as the actor.
-    policy always() do
-      authorize_if always()
+    # Each runs only as the listener of its own signal, after the action that
+    # emitted it was allowed; each records as the system, never as the actor.
+    policy action(:account_registered) do
+      authorize_if signal_in(AshTemplate.Accounts.Signals, :account_registered)
+    end
+
+    policy action(:social_linked) do
+      authorize_if signal_in(AshTemplate.Accounts.Signals, :social_linked)
+    end
+
+    policy action(:agent_paired) do
+      authorize_if signal_in(RegentAgents.Signals, :agent_paired)
+    end
+
+    policy action(:agent_note) do
+      authorize_if signal_in(AshTemplate.Notes.Signals, :note_created)
     end
   end
 

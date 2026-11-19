@@ -77,6 +77,44 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
     end
   end
 
+  test "an award is offered only for the signal of what happened; nobody, the system included, asks for one directly" do
+    person = person()
+    paired = agent(person, "Agent")
+    key = Ecto.UUID.generate()
+    id = Ash.UUIDv7.generate()
+
+    signals = [
+      account_registered: %Accounts.Signals.AccountRegistered{
+        signal_id: id,
+        account_id: person.account.id
+      },
+      social_linked: %Accounts.Signals.SocialLinked{
+        signal_id: id,
+        provider: :github,
+        subject: key
+      },
+      agent_paired: %RegentAgents.Signals.AgentPaired{
+        signal_id: id,
+        paired_agent_id: key,
+        privy_user_id: person.did
+      },
+      agent_note: %Notes.Signals.NoteCreated{
+        signal_id: id,
+        note_id: key,
+        changed_by_agent_id: paired.id
+      }
+    ]
+
+    for {action, signal} <- signals, actor <- [paired, %System{}] do
+      assert {:error, %Ash.Error.Forbidden{}} =
+               AshTemplate.Points.Award
+               |> Ash.ActionInput.for_action(action, %{signal: signal}, actor: actor)
+               |> Ash.run_action()
+    end
+
+    assert [] = intake_jobs([key, "github:#{key}"])
+  end
+
   defp intake_jobs(note_ids) do
     Repo.all(
       from j in Oban.Job,
@@ -128,9 +166,7 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
     code =
       RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: person.did})
 
-    RegentAgents.pair_agent!(code.code, name, :codex,
-      actor: %RegentAgents.Agent{wallet: wallet}
-    )
+    RegentAgents.pair_agent!(code.code, name, :codex, actor: %RegentAgents.Agent{wallet: wallet})
 
     record = Agents.sign_in_agent!(wallet, actor: %System{})
     {:ok, pairing} = RegentAgents.Authority.resolve(Repo, wallet)
