@@ -13303,7 +13303,7 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   388 Elixir; 499 script).
 
-## 2026-11-19 — Sign-in refreshes a linked social account in one step
+## 2026-11-19 — Sign-in refreshes a linked social account in one step; lighter start-run reads
 
 - A sign-in whose social account is already linked to the account refreshes that link's
   name and check time in one statement that finds the row by provider, subject and
@@ -13319,5 +13319,10 @@ For the template chief to release. No migration. No new package.
   sign-in's change open on its own connection until this sign-in waits on it, then
   commits, for a replaced link and for a removed one, and covers a plain refresh and a
   subject another account holds.
+- The Points start run's two reads select only what their callers use: `HumanAccount`
+  `:created_before` the account id, and `LinkedIdentity` `:linked_before` the provider,
+  subject and account id, each through `prepare build(select: ...)` on the action.
+  `AshTemplate.Points.AccountActivated` and `LinkedSocial` are their only callers; what
+  the start run awards is unchanged.
 - No migration.
 - Full check: COUNTS.
