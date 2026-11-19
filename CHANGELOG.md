@@ -13140,3 +13140,18 @@ For the template chief to release. No migration. No new package.
   the floating `postgres:17`, which on a machine with an older copy meant an older 17),
   stops if the server answers another version, and prints the version in its summary.
 - Checks: the full check on the exact commit, recorded with the release below.
+
+## 2026-11-19 — Released v291: Node 26.13.1 and PostgreSQL 17.12
+
+- v291 on template.regents.sh carries three commits (`94896fc3`, `9c1c02a0`, `54a58195`):
+  the tool list and the image's Node stage at Node 26.13.1, the tool list at PostgreSQL
+  17.12, and a release smoke that runs on exactly the PostgreSQL the tool list names. No
+  migration. The site's own database server is not changed by this release.
+- Rollback: v290 (`f513e944`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit, on Node v26.13.1 (784 walk tests
+  passed, 7 skipped; 386 Elixir; 499 script). The suite's database was this Mac's running
+  server, PostgreSQL 17.7 (Homebrew). The release smoke built the image from `54a58195`
+  and ran its staging commands and the server against a throwaway PostgreSQL 17.12
+  (Debian 17.12-1.pgdg13+1): migrations none pending, health ok.
+- Not proven: the test suite on a 17.12 server; Safari, Firefox, real phones. Still to
+  come as its own release: the browser test tools.
