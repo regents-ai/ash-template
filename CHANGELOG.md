@@ -12920,3 +12920,14 @@ For the template chief to release. No migration. No new package.
   digits and hyphens). `platform/mix.exs` pins `{:idna, "~> 8.0", override: true}`
   because ethers 0.8.0 and jsv 0.27.0 still ask for idna 7; both call only what idna 8
   keeps. ENS names: emoji names are now kept, and an empty label is refused.
+
+## 2026-11-19 — Released v288: design's five Scenes, idna 8.0.0 and regents-cli 1.10.33
+
+- v288 on template.regents.sh carries the three entries above: design's Scenes
+  (`76a9193e`, on Sean's words to design of 18 Nov: "I want all 5 posted on template,
+  and all 5 should be in the opensea format."), regents-cli 1.10.33 (`2971341b`) and
+  idna 8.0.0 for advisory EEF-CVE-2026-117678 (`f61b8043`). No migration.
+- Rollback: v287 (`c28145e6`) image; nothing to undo. It brings idna 7.1.0 back.
+- Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
+  382 Elixir; 499 script). Not proven: the scene pages shown inside a real marketplace's
+  frame; Safari, Firefox, real phones.
