@@ -12944,3 +12944,16 @@ For the template chief to release. No migration. No new package.
 - Checks: `npm run typecheck` exits 0; `npx vitest run` 499 passed; `mix assets.build`
   exits 0; `walk.sh pages.spec.ts oauth.spec.ts` 369 passed. `npm audit` names the same one
   moderate finding (hono) before and after.
+
+## 2026-11-19 — Node 26.13.1 and PostgreSQL 17.12
+
+- `platform/.tool-versions` names Node 26.13.1 (was 26.13.0) and PostgreSQL 17.12 (was
+  17.7). Erlang and Elixir stay where they are.
+- The image's Node stage in `platform/Dockerfile` is `node:26.13.1-trixie-slim` at digest
+  `sha256:e6bedef2…20bc`, the tag's multi-platform list as Docker Hub serves it (amd64,
+  arm64, ppc64le and s390x); its amd64 image says `NODE_VERSION=26.13.1`.
+- Nothing else in the repository names either old version. `scripts/release.sh` starts its
+  throwaway database from `postgres:17`, which already follows the newest 17.
+- Checks: `mix format --check-formatted` exits 0. Not run here: the test suite, the browser
+  walk and an image build on Node 26.13.1, and anything on PostgreSQL 17.12, which this Mac
+  does not have yet.
