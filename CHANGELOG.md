@@ -13302,3 +13302,22 @@ For the template chief to release. No migration. No new package.
 - Rollback: v296 (`905a519c`) image; nothing to undo. An award already given stays.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   388 Elixir; 499 script).
+
+## 2026-11-19 — Sign-in refreshes a linked social account in one step
+
+- A sign-in whose social account is already linked to the account refreshes that link's
+  name and check time in one statement that finds the row by provider, subject and
+  account (`Accounts.refresh_linked_identity`, an atomic update with `get_by`). When no
+  row holds that subject for the account, the sign-in links it, as for a first link or a
+  replacement. A person signed in from two places at once always finishes signing in,
+  and each name stays on its own subject's row. `LinkedIdentity` gains a primary read,
+  system only, which the update finds its row through.
+- Unchanged: `social_linked` is recorded only for a subject new to the account, never
+  for a refresh; `inserted_at` stays when that subject was linked; a subject another
+  account holds is reported, not a failed sign-in. A new test,
+  `platform/test/ash_template/accounts/social_refresh_test.exs`, holds the other
+  sign-in's change open on its own connection until this sign-in waits on it, then
+  commits, for a replaced link and for a removed one, and covers a plain refresh and a
+  subject another account holds.
+- No migration.
+- Full check: COUNTS.

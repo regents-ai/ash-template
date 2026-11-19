@@ -1,6 +1,7 @@
 defmodule AshTemplate.Accounts.VerifiedSession do
   @moduledoc "Exchanges verified Privy evidence for the canonical human account."
 
+  alias Ash.Error.Query.NotFound
   alias AshTemplate.Accounts
   alias AshTemplate.Accounts.EnsIdentity
   alias AshTemplate.Actors.System
@@ -82,20 +83,31 @@ defmodule AshTemplate.Accounts.VerifiedSession do
     end)
   end
 
+  # The subject still linked to the account is refreshed where it stands; when no
+  # row holds it for the account, whatever another sign-in just did, it is linked.
   defp upsert_social(%{provider: provider, subject: subject} = social, account_id) do
+    case Accounts.refresh_linked_identity(provider, subject, account_id, verified(social),
+           actor: @actor
+         ) do
+      {:ok, _identity} -> :ok
+      {:error, %Ash.Error.Invalid{errors: [%NotFound{}]}} -> link_social(social, account_id)
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  # A first link for the provider, or one that replaces the account's earlier subject.
+  defp link_social(%{provider: provider, subject: subject} = social, account_id) do
     identity =
-      social
-      |> Map.take([:provider, :subject, :username, :display_name])
-      |> Map.merge(%{
-        verified_at: DateTime.utc_now(),
-        metadata: %{},
+      Map.merge(verified(social), %{
+        provider: provider,
+        subject: subject,
         human_account_id: account_id
       })
 
     with {:ok, current} <-
            Accounts.get_linked_identity_by_subject(provider, subject, actor: @actor),
          :ok <- subject_available(current, account_id),
-         {:ok, _identity} <- save_social(current, identity) do
+         {:ok, _identity} <- Accounts.upsert_linked_identity(identity, actor: @actor) do
       :ok
     else
       {:error, :already_linked} -> :conflict
@@ -103,15 +115,10 @@ defmodule AshTemplate.Accounts.VerifiedSession do
     end
   end
 
-  # A subject new to the account links it; the same subject again refreshes it.
-  defp save_social(nil, identity), do: Accounts.upsert_linked_identity(identity, actor: @actor)
-
-  defp save_social(current, identity) do
-    Accounts.refresh_linked_identity(
-      current,
-      Map.take(identity, [:username, :display_name, :verified_at, :metadata]),
-      actor: @actor
-    )
+  defp verified(social) do
+    social
+    |> Map.take([:username, :display_name])
+    |> Map.merge(%{verified_at: DateTime.utc_now(), metadata: %{}})
   end
 
   defp subject_available(nil, _account_id), do: :ok
