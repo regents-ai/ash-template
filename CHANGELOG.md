@@ -13271,3 +13271,11 @@ For the template chief to release. No migration. No new package.
 - No migration; no Points setting, rule or start time changed.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7
   skipped; 388 Elixir; 499 script).
+
+## 2026-11-19 — Released v296: the start run covers a late switch-on
+
+- v296 on template.regents.sh carries one commit (`905a519c`), the entry above.
+  elixir-utils `f555affb`; no migration; no Points setting changed.
+- Rollback: v295 (`91e79240`) image; nothing to undo. An award already given stays.
+- Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
+  388 Elixir; 499 script).
