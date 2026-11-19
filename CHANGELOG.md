@@ -12930,3 +12930,17 @@ For the template chief to release. No migration. No new package.
 - Checks: `mix format --check-formatted`, `mix usage_rules.sync --check` and `MIX_ENV=test mix
   compile --warnings-as-errors` exit 0; `mix test` 382 passed (10 properties, 372 tests);
   `make check-required-fixes` passes against ash-template main `bdfe540f`.
+
+## 2026-11-19 — Playwright 1.65.1 and Vitest 5.1.1
+
+- `platform/package.json` asks for Playwright 1.65.1 (was 1.64.1) and Vitest 5.1.1 (was
+  5.1.0). npm moved what they pull in with them: Vite 8.3.5 → 8.3.8, Rolldown 1.2.16 →
+  1.2.19 and its binaries, and a few small helpers, all from registry.npmjs.org.
+- Rolldown 1.2.19 also lists a WebAssembly binary with four helpers of its own (`@emnapi/*`,
+  `@napi-rs/wasm-runtime`, `@tybys/wasm-util`). All are optional and only for a wasm32
+  machine, so `npm ci` installs none of them on a Mac or in the image.
+- Playwright 1.65.1 uses Chromium build 1255; `npx playwright install chromium` fetches it
+  on a machine that only has the earlier build.
+- Checks: `npm run typecheck` exits 0; `npx vitest run` 499 passed; `mix assets.build`
+  exits 0; `walk.sh pages.spec.ts oauth.spec.ts` 369 passed. `npm audit` names the same one
+  moderate finding (hono) before and after.
