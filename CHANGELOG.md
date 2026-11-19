@@ -13245,3 +13245,11 @@ For the template chief to release. No migration. No new package.
   `document.modelContext` is there under that switch and absent under the older
   `WebMCPTesting` name; `chrome://flags/#enable-webmcp-testing` keeps its name and still
   works. Not proven: stable Google Chrome 159, Edge.
+
+## 2026-11-19 — Released v295: the WebMCP skill's start-up switch
+
+- v295 on template.regents.sh carries one commit (`91e79240`), the entry above. One
+  skill file; no code, no migration.
+- Rollback: v294 (`6fabd5f4`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
+  387 Elixir; 499 script).
