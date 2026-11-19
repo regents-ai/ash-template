@@ -180,6 +180,26 @@ signed routes that retain the agent and beneficiary; keep account-security actio
 owner-only. List every supported replacement in the manifest with `scope: "site"`.
 The human profile UI may continue using its authenticated owner session.
 
+### 7. A post the browser host makes
+
+A tool whose effect lands on another site is no operation of this one. ash-template's
+`feedback` tool (title `/feedback`, `authentication: "patchbay_feedback"`, `scope:
+"site"`, no `route` or `operation_id`) posts a free, public, permanent Patchbay thread
+about the site. `assets/js/feedback_tool.ts` checks the input against the host's own
+limits (title 1 to 160 code points, body at most 16384 UTF-8 bytes, key 1 to 128 UTF-8
+bytes, `public` exactly `true`), hands exactly `{title, body_markdown,
+client_request_id, public: true}` to `window.regentsFeedback`, which `regents browser`
+gives the page, and returns the host's answer unchanged. The page never fetches, signs
+or names the site in the post. With no host it answers `unsupported` and sends nothing;
+when the host throws it answers `unknown`, pointing at `regents patchbay requests get`
+and the same key. Its own codes are only those two and `invalid_input`.
+
+Every HTML page offers it: the site's script from the manifest, and a page with a small
+script of its own (a scene's page, the error pages) from the entry
+`AgentTools.feedback/1` writes into the page as JSON, so that script never carries the
+tool list. `AshTemplateWeb.Capabilities` refuses to compile a manifest tool that is
+neither one of the site's operations nor this kind.
+
 ## Checks
 
 1. Compile and typecheck. A fake `modelContext` proves the adapter, not the browser.
