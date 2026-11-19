@@ -86,7 +86,8 @@ docker run --detach --name "$run-db" --network "$run" \
   "docker.io/library/postgres:$postgres" >/dev/null
 wait_for "the database" docker exec "$run-db" pg_isready --quiet --host 127.0.0.1 --username smoke
 server_version="$(docker exec "$run-db" psql --username smoke --dbname ash_template_smoke --tuples-only --no-align --command 'SHOW server_version')"
-[[ $server_version == "$postgres"* ]] || fail "the throwaway database is PostgreSQL $server_version, not $postgres"
+# The answer is the version, then the build's own note, such as "17.12 (Debian 17.12-1.pgdg13+1)".
+[[ ${server_version%% *} == "$postgres" ]] || fail "the throwaway database is PostgreSQL $server_version, not $postgres"
 
 release_env=(
   --network "$run"
