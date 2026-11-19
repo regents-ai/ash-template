@@ -13135,6 +13135,8 @@ For the template chief to release. No migration. No new package.
 - The image's Node stage in `platform/Dockerfile` is `node:26.13.1-trixie-slim` at digest
   `sha256:e6bedef2…20bc`, the tag's multi-platform list as Docker Hub serves it (amd64,
   arm64, ppc64le and s390x); its amd64 image says `NODE_VERSION=26.13.1`.
-- Nothing else in the repository names either old version. `scripts/release.sh` starts its
-  throwaway database from `postgres:17`, which already follows the newest 17.
+- Nothing else in the repository names either old version. `scripts/release.sh` now starts
+  its throwaway database at the PostgreSQL version `platform/.tool-versions` names (it was
+  the floating `postgres:17`, which on a machine with an older copy meant an older 17),
+  stops if the server answers another version, and prints the version in its summary.
 - Checks: the full check on the exact commit, recorded with the release below.
