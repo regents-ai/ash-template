@@ -13411,3 +13411,14 @@ For the template chief to release. No migration. No new package.
   once two accounts hold the same X account.
 - `make check` exit 0 by the chief on the exact commit, two independent reviews, and the
   release image built and migrated against a throwaway database.
+
+## 2026-11-19 — Farcaster's scan line waits for Privy's window
+
+- Account → Connections: pressing Connect on Farcaster now says "Opening Farcaster…" and
+  shows "Scan the code with Farcaster to approve the connection." only once Privy's window
+  is open with the code. If Privy refuses, or the window has not opened ten seconds on, as
+  when Farcaster is switched off for the app in Privy, the row says "Farcaster couldn’t be
+  started. Try again."
+- The identity state the browser hands the page carries `stage`: `opened` for Privy's
+  Farcaster window, `ended` for every finished request, whose `error` is now also
+  `not-started`. The page hears it as `verified_connection_state`.

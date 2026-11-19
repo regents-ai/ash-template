@@ -131,8 +131,18 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
+  # Privy's window is showing the code for the Farcaster link the person asked for.
+  def handle_event(
+        "verified_connection_state",
+        %{"stage" => "opened", "provider" => "farcaster"},
+        socket
+      ) do
+    notice = %{tone: :info, message: "Scan the code with Farcaster to approve the connection."}
+    {:noreply, assign(socket, verified_connections_notice: notice)}
+  end
+
   # The outcome is judged against the connections read after the provider came back.
-  def handle_event("refresh_verified_connections", params, socket) do
+  def handle_event("verified_connection_state", %{"stage" => "ended"} = params, socket) do
     socket = read_verified_connections(socket)
     notice = connection_outcome(params, socket.assigns.verified_connections)
     {:noreply, assign(socket, verified_connections_notice: notice)}
@@ -910,9 +920,9 @@ defmodule AshTemplateWeb.ShellLive do
   defp identity_request(_action, _provider, _identities), do: :error
 
   # X and GitHub take the whole tab to their own approval page and bring it
-  # back; Farcaster asks for a scan here.
+  # back; Farcaster asks for a scan here, once Privy's window has opened.
   defp connection_started(%{action: :link, provider: :farcaster}),
-    do: "Scan the code with Farcaster to approve the connection."
+    do: "Opening Farcaster…"
 
   defp connection_started(%{action: :link, provider: provider}),
     do: "Taking you to #{Providers.label(provider)} to approve the connection."
@@ -922,6 +932,9 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp connection_outcome(%{"error" => "already-connected"}, _read),
     do: %{tone: :error, message: "That account is already connected to another account here."}
+
+  defp connection_outcome(%{"error" => "not-started", "provider" => "farcaster"}, _read),
+    do: %{tone: :error, message: "Farcaster couldn’t be started. Try again."}
 
   defp connection_outcome(%{"error" => error}, _read) when is_binary(error) and error != "",
     do: %{tone: :error, message: "That connection couldn’t be verified. Try again."}
