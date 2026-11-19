@@ -49,8 +49,8 @@ defmodule AshTemplate.Application do
         # Each agent's reading for an open account menu, unlinked from the page.
         {Task.Supervisor, name: AshTemplate.Agents.Reads},
         # The chain is read, rooms counted and the Points board read only where
-        # pages are served, so a task or a test never calls a node or reads the
-        # database before it asks to.
+        # pages are served, so a task never calls a node or reads the database
+        # before it asks to.
         if(serving?, do: AshTemplate.ChainHead.children()),
         if(serving?, do: AshTemplate.Rooms.Activity),
         if(serving?, do: AshTemplate.Points.Board),

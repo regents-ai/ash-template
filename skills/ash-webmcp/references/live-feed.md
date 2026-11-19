@@ -39,10 +39,9 @@ A kind is three clauses in `AshTemplate.Feed`, all reading what the agent may al
 3. **Missed.** Add a read to `missed/2` that returns that kind's events after `since`,
    sorted and limited like the others.
 
-Then: the kind in the `FeedEvent` schema of both OpenAPI documents, a sentence in
-`/agents.md` ("Live feed"), a feature-map row and a test in
-`platform/test/ash_template_web/agent_feed_test.exs` proving the agent hears it, and does
-not hear what it could not read.
+Then: the kind in the `FeedEvent` schema of both OpenAPI documents and a sentence in
+`/agents.md` ("Live feed"). Check that the agent hears it, and does not hear what it
+could not read.
 
 Hosted MCP and WebMCP never carry the feed: a tool call answers once, and an agent in a
 browser already sees the page change live.

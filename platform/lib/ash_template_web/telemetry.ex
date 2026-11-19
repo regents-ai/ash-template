@@ -152,7 +152,7 @@ defmodule AshTemplateWeb.Telemetry do
   # that cannot answer, a queue too busy to say whether it runs, Oban or the
   # repo restarting) is logged and skipped; the next tick measures again.
   # Only running queues are measured: a paused queue holds its jobs on purpose,
-  # and its age would only grow. Where no queue runs (tests), nothing is read.
+  # and its age would only grow. Where no queue runs, nothing is read.
   @doc false
   def oldest_unfinished_jobs do
     case for %{queue: queue, paused: false} <- Oban.check_all_queues(), do: queue do

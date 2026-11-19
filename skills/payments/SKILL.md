@@ -78,7 +78,7 @@ config :regent_payments, RegentPayments.Facilitator,
   wrote. The rows are the record of money that moved:
   `payment_intents` and `payment_receipts` are on the production protected-table lock
   (founder, 2026-09-29), so a migration or reset that deletes from, empties or drops them
-  fails, and only Sean lifts it. Tests use the Ecto sandbox or a fresh local database.
+  fails, and only Sean lifts it.
 - Payments are Base mainnet only (`RegentPayments.USDC`): real USDC, no test network.
   The template's `/showcase/payments` shows the payer's view with sample figures
   and Pay switched off.
@@ -141,8 +141,6 @@ the forward again.
 
 ## Checks
 
-- The library's own suite covers the payment path; a site tests its own offers'
-  `freeze/2` and `carry_out/4`.
 - A person pays a small real amount from a Privy wallet and from a browser-extension
   wallet before release. Say so in the report rather than claiming it.
 - `make check-required-fixes` passes with `regent_payments` pinned to a git commit.

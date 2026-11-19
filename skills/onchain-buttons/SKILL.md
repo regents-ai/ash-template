@@ -110,8 +110,6 @@ chain events recorded in the database, use `chain-events`; for a USDC payment's 
   [journeys.md](references/journeys.md) describes and mark every row.
 - Run the page's wallet situations on a lab chain the way the template's
   `/showcase/onchain` workshop does (see [hook pattern](references/hook-pattern.md#checks)).
-- Sites keep their own test policy; the template has no test suite. LiveView tests do not
-  run hooks.
 - A person checks real Privy and a browser-extension wallet on a lab chain before
   release; say so in the report rather than claiming it.
 - Motion on the button comes from the kit (`data-press-label`, see `animejs`).

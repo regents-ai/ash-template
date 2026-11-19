@@ -59,7 +59,7 @@ For each control that opens the wallet, list only the cases that change what hap
 
 | Mark | Meaning | Evidence |
 | --- | --- | --- |
-| Works | Seen working | The test, or the lab chain run, that showed it |
+| Works | Seen working | The lab chain run that showed it |
 | Not tried | The code reads right, not yet run | The file and line |
 | Gap | Wrong or missing | What happens instead |
 

@@ -31,9 +31,6 @@ and read the installed version's docs before relying on an option.
      pruner: [max_age: {7, :days}],
      lifeline: [rescue_after: {10, :minutes}]
 
-   # config/test.exs
-   config :my_app, Oban, testing: :manual
-
    # config/runtime.exs, when the site's schema is set at runtime (Patchbay)
    config :my_app, Oban, prefix: database_schema
    ```
@@ -299,19 +296,6 @@ that failed":
 Oban's job table holds the attempt count, retry time and running state. The
 subscription table holds only the cursor, its settings and whether it is active.
 There are no lease, attempt or next-attempt columns.
-
-## Testing
-
-```elixir
-use Oban.Testing, repo: MyApp.Repo, prefix: "mysite_app"
-
-assert_enqueued worker: MyApp.Workers.SendReceipt, args: %{order_id: order.id}
-assert :ok = perform_job(MyApp.Workers.SendReceipt, %{order_id: order.id})
-```
-
-For AshOban, `use AshOban.Test, repo: MyApp.Repo` and
-`AshOban.Test.schedule_and_run_triggers(MyResource, actor: actor)` run the
-scheduler and the jobs it queues.
 
 ## Seeing what happens
 

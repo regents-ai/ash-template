@@ -18,7 +18,7 @@ erl_crash.dump
 # Also ignore archive artifacts (built via "mix archive.build").
 *.ez
 
-# Temporary files, for example, from tests.
+# Temporary files.
 /tmp/
 
 # Ignore package tarball (built via "mix hex.build").
@@ -82,7 +82,3 @@ Thumbs.db
 /priv/static/images/regent-ui/
 
 /assets/vendor/regent_agent_access/
-
-# The browser walk's signed-in person and its failure traces.
-/test/browser/.auth/
-/test-results/

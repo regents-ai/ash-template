@@ -19,7 +19,7 @@
   ("Processes that may reread on their own") and the chain-events watcher.
 - Turn a string into an atom only through an explicit map of allowed values.
   `String.to_existing_atom/1` fails when the module that defines the atom has not
-  been loaded yet, which happens in development and tests.
+  been loaded yet, which happens in development.
 
 ## Phoenix
 

@@ -4,9 +4,9 @@
  * block starts on a multiple of four bytes, so the whole file goes to the graphics card
  * as one buffer of 32-bit words and the painter (painter.ts) reads each block from its
  * place in it; the views here are for the few things worked out on the processor (the
- * order of the splats drawn far to near, order.ts) and for the tests.
+ * order of the splats drawn far to near, order.ts).
  *
- * Shared by the page, the GIF, the stills script and the tests, so it imports nothing.
+ * Shared by the page, the GIF and the stills script, so it imports nothing.
  */
 
 /** The four bytes every scene file starts with. */

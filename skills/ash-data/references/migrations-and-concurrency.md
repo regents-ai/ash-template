@@ -163,8 +163,8 @@ first. Only Sean can lift the lock.
 
 The command guard on the founder's machines refuses the same thing before it reaches any
 database. A command that names `DELETE FROM`, `TRUNCATE` or `DROP TABLE` with a listed
-table is refused even against a local test database. Reset test data with the Ecto
-sandbox or a fresh database, never by emptying a listed table. Agents do not edit the
+table is refused even against a local database. Reset local data with a fresh
+database, never by emptying a listed table. Agents do not edit the
 guard's settings or ask it to allow a command.
 
 ## Connections to the shared production database
@@ -211,7 +211,7 @@ the workspace). This holds until the founder changes the database plan.
   one listening.
 - **Listening: one connection per machine.** The template opens one
   `Postgrex.Notifications` connection with the serving login, outside the pool
-  (`AshTemplate.DatabaseConfig.notifications_config!/2`), and `RegentAgents.Listener`
+  (`AshTemplate.DatabaseConfig.notifications_config!/1`), and `RegentAgents.Listener`
   and any listener of its own share it under one `:rest_for_one` supervisor
   (`AshTemplate.SharedChanges`). Never open a second listening connection, and never
   listen through the repository.
@@ -280,7 +280,7 @@ row changes once.
 
 Do not disable atomicity globally. A targeted non-atomic action needs a specific
 reason; some relationship workflows require one, while row-local arithmetic usually
-does not. Test the actual accepted outcome, not simply that no exception occurred.
+does not. Check the actual accepted outcome, not simply that no exception occurred.
 
 ## External side effects
 
@@ -290,13 +290,6 @@ before persisting completion. Existing transactional job/outbox infrastructure p
 idempotency can address these windows. Do not promise exactly-once delivery from a
 retry loop; design for duplicate/unknown outcomes and reconciliation.
 
-## Test database discipline
-
-Resolve test DB configuration without printing secrets. Never derive permission to
-reset from a database name alone. Migrate a disposable DB explicitly. Real concurrency
-may require independent connections/transactions and careful cleanup outside ordinary
-shared sandbox ownership; use the project's established race-test arrangement.
-
-Sources: [index](../../ash-stack/references/source-index.md), S13, S15, S30-S32,
+Sources: [index](../../ash-stack/references/source-index.md), S13, S15, S30, S31,
 S43, S46-S48. Deployment sequencing and idempotency requirements are pack design
 recommendations rather than automatic framework guarantees.

@@ -16,13 +16,10 @@ site with `git show origin/main:<path>`; local checkouts lag behind.
 - Keeping the first saved row (rule 6): Autolaunch's covered-call reader,
   `platform/lib/autolaunch/covered_calls/sales.ex` (`compare/4`, the warning once a
   transaction's block is read for the last time), its resources `covered_calls/sale.ex`
-  (the `:seen` read) and `covered_calls/cursor.ex`, and its tests in
-  `platform/test/autolaunch/points_covered_call_awards_test.exs`; and Patchbay's offer
-  reader, `platform/lib/patchbay/offers/scanner.ex` and `cursor.ex`, with
-  `platform/test/patchbay/offers/scanner_test.exs`.
-- The reading job, its watch and the stub client: Keyfleet,
-  `platform/lib/keyfleet/chain/` (`read_fleet.ex`, `watch.ex`) and
-  `test/support/chain_stub_client.ex`.
+  (the `:seen` read) and `covered_calls/cursor.ex`; and Patchbay's offer reader,
+  `platform/lib/patchbay/offers/scanner.ex` and `cursor.ex`.
+- The reading job and its watch: Keyfleet, `platform/lib/keyfleet/chain/`
+  (`read_fleet.ex`, `watch.ex`).
 - The page: Autolaunch, `platform/lib/autolaunch/auction.ex` (`pub_sub`),
   `platform/lib/autolaunch/auction_activity.ex` (notices sent once its own transaction
   commits) and `platform/lib/autolaunch_web/live/live_listings.ex` (subscribe when

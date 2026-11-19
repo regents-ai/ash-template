@@ -8,9 +8,9 @@ again before a release.
 
 1. **Where main and live are.** Read the deployed commit from the site's health endpoint
    before the release and again after it.
-2. **Suite against live.** Run the suite and report pass and fail counts beside the live
-   commit's counts. A failure live already has gets a named owner before the release
-   goes out.
+2. **Migration read.** `make release` runs every gate, then `scripts/release.sh` builds
+   the committed tree into the release image and runs its release commands on a
+   throwaway database; `pending-migrations` must answer none before the image goes out.
 3. **Sites never wait on each other** (Sean, 12 Nov: "I do not want to wait, I want it
    parallelized"). Each site deploys to its own Fly app. The only turns left are these,
    each for something that really is shared:
@@ -30,21 +30,18 @@ again before a release.
      `scripts/rollback.sh` takes its place as the deploy does; a hand-run `fly deploy`,
      `fly machine restart` or `fly secrets set` without `--stage` takes one the same
      way.
-   - **Three full checks at once.** `make check`, `mix precommit` and whole test or
-     Playwright suites share the Mac's 48 GB, so each takes one of three places:
+   - **Three full checks at once.** `make check` and `mix precommit` share the Mac's
+     48 GB, so each takes one of three places:
 
      ```bash
      for place in /tmp/regent-cmcp-check.lock /tmp/regent-cmcp-check-2.lock /tmp/regent-cmcp-check-3.lock; do
        lockf -k -s -t 0 "$place" true && break
      done
-     MIX_TEST_PARTITION="_$(basename "$PWD" | tr -c 'a-z0-9\n' _)" lockf -k "$place" make check
+     lockf -k "$place" make check
      ```
 
-     Each run keeps its own worktree, `_build`, `node_modules` and test databases (the
-     partition above), and its own browser port: on regents and keyfleet set `PORT`, on
-     techtree `TECHTREE_BROWSER_PORT` and `TECHTREE_BROWSER_COPY`, to a free port and the
-     partition name; the other sites pick theirs. So checks of different sites, or of
-     one site in two worktrees, never meet.
+     Each run keeps its own worktree, `_build` and `node_modules`, so checks of
+     different sites, or of one site in two worktrees, never meet.
 
    Always pass `-k` to `lockf`. Never wrap `scripts/deploy.sh` in `lockf`: it takes its
    own locks, and a wrapper on its site lock waits on itself forever.
@@ -55,7 +52,7 @@ again before a release.
    backlog.
 5. **Live first, small and reversible** (Sean, 27 Oct: "reducing process and
    accelerating safe but not overengineered code deployment and live testing"). Ship the
-   smallest change that works, then test the changed behaviour on the live site,
+   smallest change that works, then check the changed behaviour on the live site,
    read-only, as "Live checks" says. Name the rollback before the release goes out: the
    previous Fly release and image. `scripts/rollback.sh <fly app> <release>` goes back
    to it when its migrations match the live commit's and refuses otherwise, which then
@@ -89,32 +86,25 @@ and report what blocked it. Never release from a `git archive` export or a fresh
 
 ## Live checks
 
-Sean, 28 Oct: the Mac checks a live site "the way an agent does, through the CLI as a
-paired agent and WebMCP in the headless browser, and those go on the allowlist; raw
-curl is dropped." This holds on all five sites and the template, for a Mac session, a
-Claude Projects thread and every helper either starts.
+Sean, 28 Oct: the Mac checks a live site the way an agent does, through the CLI as a
+paired agent, and that goes on the allowlist; raw curl is dropped. This holds on all
+five sites and the template, for a Mac session, a Claude Projects thread and every
+helper either starts.
 
 - **The CLI as a paired agent.** The regents CLI, or the site's SIWA client
   (`uv run siwa_agent.py request`), run from the agent's own folder with its own signer
   and pairing. A check reads: `whoami`, lists and reads.
-- **WebMCP in headless Chromium.** Open the live page in Playwright's Chromium, list the
-  tools the page registers, call its public reads, and call signed reads through
-  `prepare_agent_request` and the SIWA client. The page walk at 390 and 1280 wide, the
-  health page and `/capabilities.json` are read in the same browser.
 - **Claude threads use the connector.** Once a site's connector switch is on and its
   `/mcp` address is a custom connector on Sean's Claude account, a thread uses the site
   through MCP as a paired agent, with the same pairing, refusals and rate limits as any
   other agent. Until then a thread asks the Mac session to run the check and reports
   what ran.
-- **The template's route.**
-  `SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make live-check`
-  runs both against template.regents.sh (`scripts/live-check.sh`, `platform/test/live`):
-  `doctor` and `whoami` through the CLI, then the health page, `/capabilities.json`,
-  every public page and document from the walk's page map, and every read-only tool
-  that takes no input, signed ones signed by the agent's own key. Each site keeps the
-  same script with its own address and CLI group.
-- **The report** names the surface (CLI, WebMCP or MCP), the agent (`type#N`), the live
-  commit and the result.
+- **The template's route.** `SIWA_AGENT_HOME=<the agent's key folder> make live-check`
+  runs `doctor` and `whoami` through the CLI against template.regents.sh and fails
+  unless the agent is paired (`scripts/live-check.sh`). Each site keeps the same script
+  with its own address and CLI group.
+- **The report** names the surface (CLI or MCP), the agent (`type#N`), the live commit
+  and the result.
 
 ## The allowlist
 
@@ -122,8 +112,7 @@ Each site repository commits `.claude/settings.json` so these checks never promp
 template commits its file first; the shape reaches every site as a shared change.
 
 - `permissions.allow`: the CLI's read commands for that site, the repository's checks
-  and tests (`make check`, `make check-change`, `mix test`), its live check and its
-  headless Chromium scripts.
+  (`make check`, `mix precommit`) and its live check.
 - `permissions.ask`: deploys, every `fly` command, release functions, sign-in, every CLI
   command that writes, any CLI command given another `--base-url` (its signed request
   could be replayed at the site), and every SIWA-client command, whose arguments no

@@ -8,9 +8,9 @@ description: Watching a chain for contract events on Regent's Phoenix and Ash si
 **Load `ash-stack` first, then `ash-data` for the tables and `ash-frontend` for the page.**
 Buttons that send transactions are `onchain-buttons`. Autolaunch's covered-call reader
 (`platform/lib/autolaunch/covered_calls/sales.ex`) and Patchbay's offer reader
-(`platform/lib/patchbay/offers/scanner.ex`) are the tested models for keeping the first
+(`platform/lib/patchbay/offers/scanner.ex`) are the models for keeping the first
 saved row (rule 6), and Keyfleet's reader (`platform/lib/keyfleet/chain/`) for the
-reading job, its watch and the stub client; [sites-today.md](references/sites-today.md)
+reading job and its watch; [sites-today.md](references/sites-today.md)
 says where each still differs.
 
 ## Rules
@@ -103,7 +103,7 @@ says where each still differs.
 
 | File | Covers |
 | --- | --- |
-| [watcher.md](references/watcher.md) | Client, cursor, event row, one pass (comparing a stretch with the saved rows, committing it), the reading job and its watch, the page, tests |
+| [watcher.md](references/watcher.md) | Client, cursor, event row, one pass (comparing a stretch with the saved rows, committing it), the reading job and its watch, the page |
 | [sites-today.md](references/sites-today.md) | How each site watches the chain now and where it differs |
 
 How Ash rows reach a page in general (actors, re-reading after a broadcast, streams) is in

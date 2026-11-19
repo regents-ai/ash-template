@@ -61,5 +61,4 @@ the installed version.
 - Reuse Regent UI primitives and keep each product's theme, navigation and layout.
   Components own no authentication, database or wallet admission decisions.
 - Keep the returned error form after a failed submission.
-- LiveView tests do not run hooks: use a browser when behaviour depends on JavaScript
-  or layout.
+- Check behaviour that depends on JavaScript or layout in a browser.

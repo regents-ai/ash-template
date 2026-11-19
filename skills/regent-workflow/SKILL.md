@@ -29,7 +29,7 @@ the work never waits for a peer, votes, locks or channels.
 
 Sean, 19 Oct: "why does every action need me to rubberstamp it?"; 27 Oct: "the agents
 need more autonomy". When you have a recommendation, act on it and report it. Wording,
-names, layout, tests, order of work, pushes and ordinary releases are never questions:
+names, layout, order of work, pushes and ordinary releases are never questions:
 ship, check the live site, report with the rollback.
 
 **Protected: wait for Sean's go naming the action.**
@@ -100,7 +100,7 @@ grant authority it does not hold.
 4. Build the bounded change on main, in the assigned checkout: the worker builds it from
    your brief unless it is a few lines ([agent tree](#agent-tree)). No feature
    branches (15 Oct): main goes to production after its checks. A side branch is only a
-   handoff: a cloud thread's, which the Mac session tests, pushes to main and deploys
+   handoff: a cloud thread's, which the Mac session checks, pushes to main and deploys
    (16 Oct), or protected work held for Sean's go. Nothing ships from a branch.
 5. Review your own change: the design check first (code that rebuilds Oban, Ecto,
    Phoenix, OTP or Ash is reported as a replacement, not repaired in place), then
@@ -138,7 +138,7 @@ still waits for Sean.
 
 Sean, 11 Nov: a cost-efficient tree, "Split useful work. Don't spawn every role." Every
 session, chiefs and lane threads included, runs as its root. Fable is the scarce
-allowance: spend it on judgment, never on reading files or running tests. Sean, 12 Nov:
+allowance: spend it on judgment, never on reading files or running checks. Sean, 12 Nov:
 "For implementing code, I want the chiefs to start up opus 5.5 extra high subagents."
 
 | Role | Agent | Model | Does |
@@ -146,12 +146,12 @@ allowance: spend it on judgment, never on reading files or running tests. Sean, 
 | Root | the session | Fable 5.2, medium | plans, delegates, integrates and verifies |
 | Explorer | `Explore` | Haiku 5.5 | finds files, symbols and call sites |
 | Worker | `worker` | Opus 5.5, extra high | edits code to a brief |
-| Tester | `tester` | Haiku 5.5 | runs tests and checks, reports failures |
+| Tester | `tester` | Haiku 5.5 | runs checks and builds, reports failures |
 | Stuck | `unstick` | Fable 5.2, high | only when the root is stuck |
 
 - Delegate only what saves work. A lookup whose target you know, or an edit of a few
   lines, you do yourself. A search across several files goes to the explorer, a larger
-  code change to the worker, a long or noisy test or check run to the tester.
+  code change to the worker, a long or noisy check or build run to the tester.
 - Results come back to the root, which integrates and verifies them: it reads the
   worker's diff, checks the decisive result itself, and never ships on a report alone.
 - `unstick` only after two failed attempts at the same problem, evidence that
@@ -347,53 +347,33 @@ and the current `repos/design-system/STYLE.md`.
 
 ## Every change proves itself (18 Oct)
 
-The standard is `/Users/sean/Documents/regent/control/verification/standard.md`; read it
-before building checks, and where it and this summary differ, follow it. Automated
-checks do the code checking; Sean judges intent, risk and evidence. Report what a person
-or agent can now do, the checks that prove it, and what is not proven; a large passing
-suite is not a readiness claim.
+Automated checks do the code checking; Sean judges intent, risk and evidence. Report
+what a person or agent can now do, what proved it, and what is not proven.
 
-- **Add tests without asking** (Sean: "Stop asking"): end-to-end walks, property tests,
-  regression tests, health checks. Never tests of exact wording, source names, component
-  structure or mock choreography. Tests come after the feature works, and test code
-  stays out of site code.
-- **One `make check`** (and `mix precommit`): the design system's style check,
-  warnings as errors, format, Credo, the
-  suite, typechecks and the browser walk. No check lives in a scratch script.
-- **The browser walk.** Headless Chromium at 390 and 1280 wide opens every page signed
-  out and signed in and walks the paths a person takes on each changed page, on its own
-  server and database with its own local person. WebKit is not run on the Mac; say so in
-  every report.
-- **A feature map** (`docs/feature-map.md`, until the shared kit's
-  `verification/features.yml`): each thing a person or agent can do, the check that
-  proves it, and gaps listed as gaps. A feature change updates its row in the same
-  commit, and a check fails when a page is added without being walked.
-- **Property tests** (StreamData, or generated inputs in TypeScript) where a rule must
-  hold for every input: money, limits, ownership, names, ordering.
+A release is proved by compile with warnings as errors, style and type checks, the
+migration read, the live read-back and Sentinel's after-read. `make check` (and
+`mix precommit`) runs the first three: warnings as errors, the design system's style
+check, format, Credo and the TypeScript typecheck. No check lives in a scratch script.
+
 - **Adversarial review for protected work.** A separate helper tries to break the
-  change: real pages at both widths, edge cases and the elixir-stack design check. A
-  finding counts when it comes with a failing check, and confirmed findings are fixed
-  before Sentinel's read. For sign-in, signing, keys, single-use checks or money the
-  reviewer gets the code and the question, never your conclusion, and every fix made
-  during review or release gets its own review: a fix that removes a guard can open what
-  the guard closed.
-- **Regressions after an hour live** (Sean, 27 Oct). A real failure gets a check that
-  fails on the old code (run it there once to see it fail) and passes on the fix, listed
-  in the feature map and written once Sean confirms the fix has worked live for an hour
-  or more. Until then the release report lists the checks to add.
+  change: real pages at both widths, edge cases and the elixir-stack design check.
+  Confirmed findings are fixed before Sentinel's read. For sign-in, signing, keys,
+  single-use checks or money the reviewer gets the code and the question, never your
+  conclusion, and every fix made during review or release gets its own review: a fix
+  that removes a guard can open what the guard closed.
 
 ### Live checks
 
 Live sites are checked the way an agent does (28 Oct): the regents CLI as a paired
-agent, and WebMCP in headless Chromium; a Claude thread uses the site's MCP connector
-once it is on. Never raw `curl`, never a person's cookies. A
+agent; a Claude thread uses the site's MCP connector once it is on. Never raw `curl`,
+never a person's cookies. A
 check only reads; a command that changes live data is agent work and asks first. Name
 the surface, the agent (`type#N`), the live commit and the result. Procedure and the
 permission allowlist: [release](references/release.md#live-checks).
 
 ## Release
 
-Ordinary work ships on a passing check with no letter, is tested on the live site, and
+Ordinary work ships on a passing check with no letter, is checked on the live site, and
 is reported after with its rollback. Follow [the release
 checklist](references/release.md) every time. Always:
 
@@ -416,7 +396,7 @@ Sean, 19 Oct, after the disk filled. Every agent and subagent removes what it ma
 before its task ends, and every delegation brief says so.
 
 - Keep a list of what you create: worktrees, scratch folders, `node_modules`, `deps`,
-  `_build`, test databases, screenshots, recordings, exports, logs. When the task ends,
+  `_build`, scratch databases, screenshots, recordings, exports, logs. When the task ends,
   remove what is no longer needed and report what you removed and what you kept. Work
   not yet on main is kept and named.
 - Never delete what you did not make, even when it looks abandoned; list it for Sean,
@@ -430,13 +410,13 @@ before its task ends, and every delegation brief says so.
   are on main, delete its build output and retire it with `scripts/worktrees.py retire`;
   never edit `/Users/sean/Documents/regent/.agent-worktrees.json` by hand. Never reset
   or clean another worktree, and never set `core.worktree` in a shared repository.
-- **Databases.** Use isolated test databases and ports. Drop a test database you
+- **Databases.** Use isolated scratch databases and ports. Drop a scratch database you
   created, by its exact name; never one you found, a shared or development database, or
   production.
 - **Local sites** (6 Oct, critical). Start a site only with its own settings loaded, the
   way its repository loads them; for Regents, `direnv exec
   /Users/sean/Documents/regent/repos/regents/platform mix phx.server` from the checkout
-  under test. A worktree holds no settings files, so a plain `mix phx.server` there
+  in use. A worktree holds no settings files, so a plain `mix phx.server` there
   answers 200 on every page and nobody can sign in. After every start, check the home
   page's `privy-app-id` meta is non-empty (its length, never its value).
 - **Stop what you start** (19 Oct). Start a local chain or lab site through a script

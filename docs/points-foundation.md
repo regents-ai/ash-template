@@ -229,7 +229,7 @@ the old local Points fixture schema was backed up and rebuilt successfully.
 Canonical users, Credits, legacy queued jobs and other schemas were left intact.
 
 The five start rules are approved in `platform/config/config.exs`, which sets no start,
-so nothing earns in development or tests. The hosted template's start is in
+so nothing earns in development. The hosted template's start is in
 `platform/config/prod.exs`: 16 November 2026 17:00 UTC. The NFT reads use the latest Base block through the site's chain client
 (`chain_nodes[8453]`).
 Full Account filters/detail navigation remain separate work.

@@ -201,18 +201,6 @@ Named/dev generation, squashing, snapshots, release migration; displayed 2.13.0.
 
 Dry-run/check/dev behavior.
 
-## S32 — Testing with AshPostgres
-
-[Official reference](https://hexdocs.pm/ash_postgres/testing.html)
-
-Data-layer test setup; displayed 2.12.0 when opened.
-
-## S33 — Ash testing
-
-[Official reference](https://hexdocs.pm/ash/testing.html)
-
-Resource/action testing guidance.
-
 ## S34 — AshOban
 
 [Official reference](https://hexdocs.pm/ash_oban/readme.html)

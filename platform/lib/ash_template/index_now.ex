@@ -64,9 +64,7 @@ defmodule AshTemplate.IndexNow do
       urlList: urls
     }
 
-    request =
-      Req.new(url: @endpoint, retry: false, redirect: false, receive_timeout: 15_000)
-      |> Req.merge(Application.get_env(:ash_template, :indexnow_req, []))
+    request = Req.new(url: @endpoint, retry: false, redirect: false, receive_timeout: 15_000)
 
     case Req.post(request, json: body) do
       {:ok, %{status: status}} when status in [200, 202] ->

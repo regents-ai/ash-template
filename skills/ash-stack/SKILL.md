@@ -26,7 +26,6 @@ regent-workflow's.
 | Forms, LiveView, page reads, shared figures | [ash-frontend](../ash-frontend/SKILL.md) |
 | Schema changes, migrations, SQL, concurrency, the shared database | [ash-data](../ash-data/SKILL.md) |
 | Policies, actors, tenants, field exposure, staff and release commands | [ash-security](../ash-security/SKILL.md) |
-| Regression design, test cleanup | [ash-testing](../ash-testing/SKILL.md) |
 | One resource reacting to another's action | [ash-signals](../ash-signals/SKILL.md) |
 | Agent surfaces: WebMCP tools, Markdown pages, discovery metadata | [ash-webmcp](../ash-webmcp/SKILL.md) |
 | Background, retried or scheduled work, webhooks, polling, GenServers, PubSub, HTTP clients, shared Elixir libraries | [elixir-stack](../elixir-stack/SKILL.md) |
@@ -47,7 +46,7 @@ regent-workflow's.
   thin, and durable work never depends on a browser connection. AshPhoenix forms call
   resource actions directly; never wrap them in a second Ecto changeset pipeline.
 - **Ecto is not banned.** Existing Ecto-only resources may stay. `Repo` is right for
-  migrations, sandbox setup, diagnostics, third-party integration requirements and
+  migrations, diagnostics, third-party integration requirements and
   reviewed data-layer work. A runtime path around Ash-managed rules needs a stated
   reason and explicit treatment of policy, tenant, validation, notification and
   transaction effects.
@@ -55,8 +54,7 @@ regent-workflow's.
   never submitted fields. A tenant value is not proof of membership. Use the site's
   one scope representation; never add a second.
 - **Never loosen to pass.** No `authorize?: false`, impersonation or permissive policy
-  to make a failing request work. A privileged internal operation gets narrow intent and
-  tests.
+  to make a failing request work. A privileged internal operation gets narrow intent.
 - **Specific actions over open CRUD**, with explicit accepted inputs. Keep validation,
   authorization, uniqueness, concurrency and transport errors distinct. A disabled
   button is not authorization; a success tuple is not a verified external effect. Review

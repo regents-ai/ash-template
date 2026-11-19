@@ -57,7 +57,7 @@ Headers and browsers:
   Permissions-Policy, so Chrome knows it before reading `tools`. Locally, turn on
   `chrome://flags/#enable-webmcp-testing` instead. Edge 150 has a trial too;
   ChatGPT's in-app browser supports it; Firefox and Safari do not.
-- A browser started by a test or from a command line takes
+- A browser started from a command line or by Playwright takes
   `--enable-features=WebMCP`. From Chromium 159 (Playwright 1.65.1) the older
   `WebMCPTesting` name offers nothing; the flags entry above keeps its name and
   still works.
@@ -262,7 +262,7 @@ ignoring them; validate every authority-bearing proof header strictly.
 
 Reference source is ash-template. Its unified integration is unreleased until the
 native desktop/web-agent demonstration, shared pins and coordinated deployment
-pass. Source inspection and mocked broker tests are not native acceptance. Record
+pass. Source inspection is not native acceptance. Record
 source, released client and deployed versions separately, along with first failure,
 assistance and blocked cases. Product `/agents.md` is the contract; `/skill.md` is
 the product entry and `/llms.txt` its index. Developer Skills stay separate. Link

@@ -66,7 +66,7 @@ accessible names, readable contrast, status announcements where appropriate, and
 text beyond color. Respect reduced motion. Essential information should not require
 hover. Custom browser-only effects should fail without hiding the page's content;
 do not promise a LiveView-only mutation works without JavaScript unless a fallback
-HTTP form was actually implemented and tested.
+HTTP form was actually implemented and tried.
 
 **Consistency:** Follow existing tokens, light/dark treatment, icon system, component
 primitives, and content width. Do not add a UI library or change Tailwind versions for
@@ -78,7 +78,7 @@ place of a real image. The tokens' flat square and cut skins, ruled frames and G
 Serif type are the look.
 
 **Browser proof:** Inspect the changed route at a narrow mobile width and a normal
-desktop width, with long text and realistic records. Test the actual primary action,
+desktop width, with long text and realistic records. Try the actual primary action,
 error handling, and keyboard navigation. Screenshots document appearance; they do not
 by themselves prove interaction or server authorization. Read each screenshot yourself
 before reporting: clipped or overlapping text, a control past the edge, a missing focus

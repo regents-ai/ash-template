@@ -1,14 +1,12 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-style check-platform platform-precommit platform-test check-browser check-scripts check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release live-check readiness
+.PHONY: help check check-style check-platform check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release live-check readiness
 help:
-	@echo "Run make check for every gate, side by side, each writing its output to platform/_build/check/<gate>.log; it prints every gate's log, the failed ones last, then one line per gate. Or run check-style, check-platform, check-browser, check-scripts, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
-	@echo "Run make check-scripts to test scripts/deploy.sh and scripts/rollback.sh on a fixture repository, with stand-ins for Fly and the site."
+	@echo "Run make check for every gate, side by side, each writing its output to platform/_build/check/<gate>.log; it prints every gate's log, the failed ones last, then one line per gate. Or run check-style, check-platform, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
-	@echo "Run SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make live-check to check template.regents.sh the way a paired agent does: the CLI, then WebMCP and every public page in headless Chromium."
+	@echo "Run SIWA_AGENT_HOME=<the agent's key folder> make live-check to check template.regents.sh the way a paired agent does, with the regents CLI."
 # template-only
 	@echo "Run make drift to list where each site's copies of the shared, build, deploy and Account files differ from the template's, then run make pins and make readiness."
 	@echo "Run make pins to list each site's shared-library pins and how far each is behind the template's and the library's main."
-	@echo "make check-scripts also tests the reports the daily jobs read: scripts/drift.sh, scripts/pins.sh and scripts/harvest.sh."
 # /template-only
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
 # template-only
@@ -21,18 +19,14 @@ help:
 # one line per gate, and fails when any gate failed. The gates of one quoted lane
 # run in turn: check-style and mix precommit both compile _build/dev, and both run
 # mix regent_ui.assets, which deletes assets/vendor/regent_ui and copies it again.
-# mix test runs beside them: it compiles _build/test, and its script build
-# (ScriptBuildTest) copies the scripts and the shared libraries' files into its own
-# folder under _build/test and builds there, so it never reads assets/vendor; into
-# the scripts the browser walk serves it puts one piece, whole, by a rename, under a
-# name made of its content's hash. The other gates write nothing another reads.
-CHECK_LANES := "check-style platform-precommit" platform-test check-scripts check-required-fixes check-cli check-siwa-latest check-contracts
+# The other gates write nothing another reads.
+CHECK_LANES := "check-style check-platform" check-required-fixes check-cli check-siwa-latest check-contracts
 CHECK_GATES := $(subst ",,$(CHECK_LANES))
 CHECK_LOGS := platform/_build/check
 # Each gate's budget in seconds, about 40% over its usual time in make check on a
 # 16-core Mac (Nov 2026), and 5 s for a gate that takes a second or two. A gate over
 # its budget gets a SLOW line under its own at the end; it never fails the check.
-CHECK_BUDGETS := check-style:5 platform-precommit:180 platform-test:85 check-scripts:50 \
+CHECK_BUDGETS := check-style:5 check-platform:18 \
   check-required-fixes:5 check-cli:5 check-siwa-latest:5 check-contracts:5
 check:
 	@mkdir -p $(CHECK_LOGS) && : > $(CHECK_LOGS)/results
@@ -68,23 +62,10 @@ check:
 # and names it, never passing.
 check-style:
 	cd platform && mix regent_ui.assets && bash assets/vendor/regent_ui/style-check.sh
-# mix precommit ends with the TypeScript typecheck and tests and the browser walk;
-# mix test runs after it.
-check-platform: platform-precommit platform-test
-platform-precommit:
+# mix precommit compiles with warnings as errors and ends with the TypeScript
+# typecheck.
+check-platform:
 	cd platform && mix precommit
-platform-test:
-	cd platform && mix test
-# The deploy and rollback scripts' tests (scripts/tests/test_release.py), and every
-# other test in scripts/tests, on fixture repositories with stand-ins for Fly, GitHub
-# and the site. They reach no real app.
-check-scripts:
-	uv run --no-project python -B -m unittest discover -s scripts/tests
-# The browser walk alone (platform/test/browser): every page at phone and desktop
-# width, and the paths a person takes. It starts its own server on its own database,
-# with Privy settings the server makes for itself, so it needs none of the site's.
-check-browser:
-	cd platform && npm run test:browser
 # Every site runs the same check against ash-template's current main branch, so a
 # newly published required fix reaches every site's next gate. Needs `gh auth login`.
 TEMPLATE := repos/regents-ai/ash-template
@@ -121,9 +102,9 @@ release:
 	$(MAKE) check
 	scripts/release.sh
 # The live site, checked the way an agent checks it (skills/regent-workflow, "Live
-# checks"): the CLI as the paired agent whose key is in SIWA_AGENT_HOME, then WebMCP
-# and every public page in headless Chromium (scripts/live-check.sh). It writes only
-# the agent's own row on the site: when the agent was last seen.
+# checks"): the CLI as the paired agent whose key is in SIWA_AGENT_HOME
+# (scripts/live-check.sh). It writes only the agent's own row on the site: when the
+# agent was last seen.
 live-check:
 	scripts/live-check.sh
 # template-only

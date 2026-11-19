@@ -127,8 +127,7 @@ attributes from its LiveView. Keep the dialog outside the page's prose, so the
 document's list and code styles stay off it.
 
 A signed-out visitor sees the texts and no form. The form's ids follow the dialog's
-(`<id>-person-form`, `<id>-person-receipt`), for a page's own browser check
-(`test/browser/agent_message.spec.ts` walks the `/app` home and `/agents`).
+(`<id>-person-form`, `<id>-person-receipt`).
 
 ## 5. The shared head
 
@@ -193,7 +192,7 @@ not acceptance.
 ## Verify and roll out
 
 1. Compile and format the change, build affected assets, verify real HTTP and browser
-   behaviour, and add the checks regent-workflow's "Every change proves itself" sets.
+   behaviour, and run the checks regent-workflow's "Every change proves itself" names.
 2. When extracting shared code, compare rendered metadata and public representations
    before and after. Auth, claims, schemas, frozen contracts and other people's
    uncommitted work stay unchanged.

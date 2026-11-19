@@ -75,12 +75,12 @@ fi
 # records.
 as_written=(skills 'docs/*-plan.md' CHANGELOG.md)
 # The template's own scripts, which a new product has no use for: the reports that
-# compare Regent's sites with the template, their file lists and tests, the
-# instructions of the daily jobs that read them, and scripts/regent-ui-update, which
-# moves the five Regent sites onto one design-system commit. They are removed below.
+# compare Regent's sites with the template, their file lists, the instructions of
+# the daily jobs that read them, and scripts/regent-ui-update, which moves the five
+# Regent sites onto one design-system commit. They are removed below.
 removed=(
   scripts/drift.sh scripts/pins.sh scripts/github.sh scripts/shared-files.sh scripts/harvest.sh
-  scripts/stale-prs.sh scripts/tests/test_reports.py automation/harvest.md automation/spread.md
+  scripts/stale-prs.sh automation/harvest.md automation/spread.md
   scripts/regent-ui-update
 )
 # Every tracked file the rename reads: all but this script and the two lists above.

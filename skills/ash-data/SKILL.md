@@ -14,8 +14,6 @@ Load `ash-stack` first. State the persistence invariant the change must keep, th
   `change filter(expr(...))`: Ash 3.33.11 drops that filter from single-record atomic
   updates ([details](references/migrations-and-concurrency.md#four-distinct-concurrency-questions)).
   Do not switch off atomic requirements to get past an error.
-- **A race test needs independent transactions**, not two processes sharing one
-  sandbox connection.
 - **Every filter or sort on a growing table names the index that serves it**, declared
   in `custom_indexes`: page reads, and also what runs per request, per event or per
   minute (pruners, policies, budgets, listeners). The agent feed and its direct-message

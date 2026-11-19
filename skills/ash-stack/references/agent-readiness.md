@@ -4,14 +4,13 @@ How to make a Phoenix 1.8 / Ash 3 product usable by agents first and by WebMCP o
 Written from the Patchbay pass of 11 September 2026 (`repos/patchbay/platform`), which
 is the worked example for every item below. Apply to regents, autolaunch and techtree.
 
-The test recipes below follow `regent-workflow` ("Every change proves itself"). The order is the order an external readiness checker scores: failures first, then
+The order is the order an external readiness checker scores: failures first, then
 warnings. Do the items in order; each one is small.
 
 ## 0. Before touching anything
 
 - Read the router, the endpoint, `lib/<app>_web.ex`, the error views and
   `config/config.exs`. Know which pipelines are browser, JSON and LiveView.
-- Run the suite with the partition the repo expects and record the baseline count.
 - Decide the canonical error shape once (see 3) and the markdown trailer once (see 4).
 
 ## 1. Agent-friendly 404
@@ -26,8 +25,7 @@ and markdown bodies carry a short map of the site.
   `/openapi.json`, `/llms.txt`, `/sitemap.xml`).
 - Add the same link list to `error_html/404.html.heex` inside a `<nav>`; keep the
   existing design, add one CSS class.
-- Test: `get(conn, "/nope")` with each `Accept` value, assert status and content type.
-  Note that `debug_errors: true` in dev shows the Plug debugger, not your page.
+- `debug_errors: true` in dev shows the Plug debugger, not your page.
 
 ## 2. Content negotiation for markdown, with `Vary: Accept`
 
@@ -58,8 +56,6 @@ Goal: every ordinary page answers `Accept: text/markdown` with a markdown docume
 - Endpoint plug before the router: paths under the API prefixes get
   `put_private(:phoenix_format, "json")`; every other path gets
   `put_resp_header("vary", "accept")`.
-- Test: one test per page family asserting `text/markdown` and `vary: accept`; one
-  test asserting the LiveView route raises `Phoenix.NotAcceptableError`.
 
 ## 3. JSON errors with code, message and hint
 
@@ -86,9 +82,6 @@ Goal: every ordinary page answers `Accept: text/markdown` with a markdown docume
   `components/schemas`, and the error schema from item 3 as the default response.
 - Security schemes describe what really exists (a session cookie, a signed proof), not
   API keys the product does not have.
-- Test: load the file, iterate every path and method, and assert
-  `Phoenix.Router.route_info(Router, method, path, host)` is not `:error`. This is the
-  one test that keeps the file honest as routes change.
 
 ## 5. Developer portal at `/developers`
 
@@ -105,7 +98,6 @@ Goal: every ordinary page answers `Accept: text/markdown` with a markdown docume
 - Same controller as item 5. Each page over 500 characters of real copy in the main
   element; About carries a real email in its Contact section. Footer links to both.
 - Keep customer-facing copy free of implementation words.
-- Test: Floki text length of `main` ≥ 500 for each, footer contains each href.
 
 ## 7. Head: canonical, sharing image, JSON-LD
 
@@ -117,8 +109,6 @@ Goal: every ordinary page answers `Accept: text/markdown` with a markdown docume
   `contactPoint` (email, contactType, url). Founder ruling for Regent: no postal
   address. Build the map in the layout module and `Jason.encode!` it; do not write
   JSON by hand in the template.
-- Update any test that asserted a hard-coded `og:url`; it is now derived from the
-  endpoint, so the test value is the test endpoint URL.
 
 ## 8. `/sitemap.xml` with lastmod
 
@@ -128,7 +118,6 @@ Goal: every ordinary page answers `Accept: text/markdown` with a markdown docume
   minimal load, deduplicated) rather than reusing a listing action with pagination.
 - Cap dynamic entries (Patchbay uses 2 000 threads) and note the cap.
 - Append `Sitemap: https://<host>/sitemap.xml` to `robots.txt`.
-- Test: well-formed XML, the static pages present, one dynamic entry with lastmod.
 
 ## 9. `llms.txt`
 
@@ -170,4 +159,4 @@ reloader refuses otherwise):
 5. `/robots.txt`, `/llms.txt`, the sharing image, the health endpoint.
 6. Screenshots of every new HTML page at 1280 px and 390 px, compared with an existing
    page for frame, type and spacing.
-7. Full suite with the partition variable, then the precommit alias.
+7. The precommit alias.

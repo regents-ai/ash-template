@@ -154,10 +154,6 @@ _A declarative, extensible framework for building Elixir applications._
 ## ash:temporal usage
 [ash:temporal usage rules](deps/ash/usage-rules/temporal.md)
 <!-- ash:temporal-end -->
-<!-- ash:testing-start -->
-## ash:testing usage
-[ash:testing usage rules](deps/ash/usage-rules/testing.md)
-<!-- ash:testing-end -->
 <!-- ash_ai-start -->
 ## ash_ai usage
 _Integrated LLM features for your Ash application._

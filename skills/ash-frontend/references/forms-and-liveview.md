@@ -36,7 +36,7 @@ existing records; what does remove do; does omission leave existing children unc
 what does an empty list mean; where do child authorization and tenant checks happen?
 For editing existing children, load the required relationships under the current
 scope before constructing the form; absent loads must not masquerade as no children.
-Test at least one invalid child and one malicious related ID. Prefer stable form paths
+Try at least one invalid child and one malicious related ID. Prefer stable form paths
 and supported add/remove helpers to manually editing internal form structures.
 
 ## Changing scope while a form is open

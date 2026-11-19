@@ -190,13 +190,9 @@ All standard tools; nothing is queued or stored by the site.
 
 ## Proof
 
-- `platform/test/ash_template_web/visit_log_test.exs`: property tests that throw
-  random headers, events and browser reports at the writer and check that only
-  fitting values reach a line.
-- `platform/test/browser/visits.spec.ts` (browser walk): the walk's person opens
-  Notes and saves a note; the server's lines for that visit, in production's
-  shape, replay it in order (request, page, `note.create`, the press), with one
-  person code and nothing they wrote.
+- A person opens Notes and saves a note; the server's lines for that visit, in
+  production's shape, replay it in order (request, page, `note.create`, the press),
+  with one person code and nothing they wrote.
 
 ## Sentinel's part
 

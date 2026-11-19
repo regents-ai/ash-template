@@ -48,9 +48,6 @@ Keep raw user data out of reports and evaluation fixtures.
 - A domain code interface is not wrapper waste. Remove a wrapper only after checking
   its callbacks, external callers, error semantics, actor propagation and any
   computation it does.
-- Before removing a test, name the behaviour it protects and whether another test sees
-  the same failure. Replace source-text and copy locks; keep ABI, policy,
-  data-integrity and user-visible contract checks.
 - Reproduce relationship problems on real SQL (ETS hides SQL behaviour), as a minimal
   failing and passing pair before adding forms or other relationships.
 - Only one action per type is primary. For many-to-many changes, confirm the locked

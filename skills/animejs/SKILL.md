@@ -66,5 +66,4 @@ exists; do not use it. v3 code (`anime({...})`, `easing: 'easeOutQuad'`,
   reaches the wallet.
 - Transform and opacity only, no idle loops, reduced motion wins, content visible
   without JavaScript, keyboard-triggered UI does not animate.
-- LiveView tests do not run hooks. Prove motion in a browser, then run `npm run typecheck`
-  and `npm test` in `platform/`.
+- Prove motion in a browser, then run `npm run typecheck` in `platform/`.

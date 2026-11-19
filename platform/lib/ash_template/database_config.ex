@@ -19,28 +19,26 @@ defmodule AshTemplate.DatabaseConfig do
   ]
   @deployment_role_error ~s(ASH_TEMPLATE_DEPLOYMENT_ROLE must be set to "production" or "staging")
   @remote_target_error "remote database access requires cluster dzx6qo6xqzvojpv5 named regents-platform-prod"
-  # Serving, development and tests each hold 5 connections: the database queues
+  # Serving and development each hold 5 connections: the database queues
   # (`default` and `points`, config/config.exs) take 3 at most, which leaves 2 for
   # pages in development as in production.
   @pool_size 5
 
-  def runtime_config!(environment, getenv \\ &System.get_env/1)
-
-  def runtime_config!(:prod, getenv) do
-    role = deployment_role!(getenv)
-    getenv |> database_url!("DATABASE_POOLED_URL", role) |> serving()
+  def runtime_config!(:prod) do
+    role = deployment_role!()
+    "DATABASE_POOLED_URL" |> database_url!(role) |> serving()
   end
 
-  def runtime_config!(:dev, getenv) do
-    case remote_target(getenv) do
+  def runtime_config!(:dev) do
+    case remote_target() do
       :local ->
-        partition = getenv.("ASH_TEMPLATE_DEV_PARTITION") || ""
+        partition = System.get_env("ASH_TEMPLATE_DEV_PARTITION") || ""
 
         unless Regex.match?(~r/\A[a-z0-9_]*\z/, partition),
           do: raise("invalid development partition")
 
         [
-          username: getenv.("USER"),
+          username: System.get_env("USER"),
           password: nil,
           hostname: "127.0.0.1",
           port: 5432,
@@ -49,38 +47,23 @@ defmodule AshTemplate.DatabaseConfig do
         ]
 
       :remote ->
-        getenv
-        |> database_url!("DATABASE_POOLED_URL", :remote)
+        "DATABASE_POOLED_URL"
+        |> database_url!(:remote)
         |> Keyword.put(:pool_size, @pool_size)
     end
   end
 
-  def runtime_config!(:test, getenv) do
-    partition = getenv.("MIX_TEST_PARTITION") || ""
-    unless Regex.match?(~r/\A[a-z0-9_]*\z/, partition), do: raise("invalid test partition")
-
-    [
-      username: getenv.("USER"),
-      password: nil,
-      hostname: "127.0.0.1",
-      port: 5432,
-      database: "ash_template#{partition}_test",
-      pool: Ecto.Adapters.SQL.Sandbox,
-      pool_size: @pool_size
-    ]
-  end
-
   @doc "Whether a developer's machine is set to use the remote database instead of its own."
-  def remote?(getenv \\ &System.get_env/1), do: remote_target(getenv) == :remote
+  def remote?, do: remote_target() == :remote
 
   @doc """
   The one connection the site's listeners share (`AshTemplate.SharedChanges`): the
   serving login and address, outside the pool.
   """
-  def notifications_config!(environment, getenv \\ &System.get_env/1) do
+  def notifications_config!(environment) do
     environment
-    |> runtime_config!(getenv)
-    |> Keyword.drop([:pool, :pool_size, :max_lifetime, :parameters])
+    |> runtime_config!()
+    |> Keyword.drop([:pool_size, :max_lifetime, :parameters])
     |> connection_keys()
     |> Keyword.merge(auto_reconnect: true, parameters: [application_name: "ash-template-listen"])
   end
@@ -93,10 +76,10 @@ defmodule AshTemplate.DatabaseConfig do
     end
   end
 
-  def release_config!(getenv \\ &System.get_env/1) do
-    role = deployment_role!(getenv)
-    if role == :production, do: require_production_target!(getenv)
-    database_url!(getenv, "DATABASE_DIRECT_URL", role)
+  def release_config! do
+    role = deployment_role!()
+    if role == :production, do: require_production_target!()
+    database_url!("DATABASE_DIRECT_URL", role)
   end
 
   # The serving connection shares one database with every other site, so it holds
@@ -123,8 +106,8 @@ defmodule AshTemplate.DatabaseConfig do
 
   # No default and no fallback between roles: an unset or unrecognized role stops
   # the boot before any database URL is read.
-  defp deployment_role!(getenv) do
-    case getenv.("ASH_TEMPLATE_DEPLOYMENT_ROLE") do
+  defp deployment_role! do
+    case System.get_env("ASH_TEMPLATE_DEPLOYMENT_ROLE") do
       "production" -> :production
       "staging" -> :staging
       _unset_or_unknown -> raise @deployment_role_error
@@ -138,10 +121,10 @@ defmodule AshTemplate.DatabaseConfig do
   defp venue(:staging), do: {@staging_hosts, @staging_refusals}
   defp venue(:remote), do: {nil, @production_identities}
 
-  defp database_url!(getenv, variable, venue) do
+  defp database_url!(variable, venue) do
     {admitted_hosts, refused_terms} = venue(venue)
 
-    with value when is_binary(value) and value != "" <- getenv.(variable),
+    with value when is_binary(value) and value != "" <- System.get_env(variable),
          {:ok, %URI{scheme: scheme, host: host, path: "/" <> database, userinfo: userinfo} = uri}
          when scheme in ["postgres", "postgresql"] <- URI.new(value),
          true <- present?(host) and present?(database) and valid_userinfo?(userinfo),
@@ -207,23 +190,23 @@ defmodule AshTemplate.DatabaseConfig do
     host != "flympg.net" and String.ends_with?(host, ".flympg.net")
   end
 
-  defp remote_target(getenv) do
-    cluster_id = getenv.("ASH_TEMPLATE_DATABASE_CLUSTER_ID")
-    cluster_name = getenv.("ASH_TEMPLATE_DATABASE_CLUSTER_NAME")
+  defp remote_target do
+    cluster_id = System.get_env("ASH_TEMPLATE_DATABASE_CLUSTER_ID")
+    cluster_name = System.get_env("ASH_TEMPLATE_DATABASE_CLUSTER_NAME")
 
     cond do
-      production_identity?(getenv.("FLY_APP_NAME")) -> raise @remote_target_error
+      production_identity?(System.get_env("FLY_APP_NAME")) -> raise @remote_target_error
       is_nil(cluster_id) and is_nil(cluster_name) -> :local
       cluster_id == @cluster_id and cluster_name == @cluster_name -> :remote
       true -> raise @remote_target_error
     end
   end
 
-  defp require_production_target!(getenv) do
-    if getenv.("ASH_TEMPLATE_DATABASE_TARGET_MODE") == "production" and
-         getenv.("ASH_TEMPLATE_DATABASE_CLUSTER_ID") == @cluster_id and
-         getenv.("ASH_TEMPLATE_DATABASE_CLUSTER_NAME") == @cluster_name and
-         not production_identity?(getenv.("FLY_APP_NAME")) do
+  defp require_production_target! do
+    if System.get_env("ASH_TEMPLATE_DATABASE_TARGET_MODE") == "production" and
+         System.get_env("ASH_TEMPLATE_DATABASE_CLUSTER_ID") == @cluster_id and
+         System.get_env("ASH_TEMPLATE_DATABASE_CLUSTER_NAME") == @cluster_name and
+         not production_identity?(System.get_env("FLY_APP_NAME")) do
       :ok
     else
       raise "database migration requires production mode for cluster dzx6qo6xqzvojpv5 named regents-platform-prod"
