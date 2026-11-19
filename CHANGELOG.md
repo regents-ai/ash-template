@@ -13325,4 +13325,21 @@ For the template chief to release. No migration. No new package.
   `AshTemplate.Points.AccountActivated` and `LinkedSocial` are their only callers; what
   the start run awards is unchanged.
 - No migration.
-- Full check: COUNTS.
+- Full check: with the entry below.
+
+## 2026-11-19 — Shared libraries at 4259fe6: the start run offers again what has not earned
+
+- elixir-utils `4259fe6c` (was `0e89c4fc`), every library on the one commit. Points only:
+  - `record_event/2` always answers `{:ok, _}`: with the rule on, an offer whose
+    reference fields are not each 1 to 512 bytes answers `invalid`, queues nothing and
+    logs one warning; the action it rides in goes ahead.
+  - The start run's checks and awards run at a lower priority than live ones, and a
+    check job is one job per reference while it waits.
+  - The start run leaves out only accounts whose event for the rule earned or was
+    capped; one refused, or still waiting, is offered again, and any offer of a source
+    whose event still waits queues that event's award.
+  - Before the start the run stops and the next hourly line tries again.
+- No template code changed for it: the pin and the lock. No migration; no Points
+  setting, rule or rate changed.
+- Full check exit 0 by the chief on the exact commit, with the entry above (784 walk
+  tests passed, 7 skipped; 392 Elixir; 499 script).
