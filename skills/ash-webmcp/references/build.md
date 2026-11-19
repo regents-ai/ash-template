@@ -57,6 +57,10 @@ Headers and browsers:
   Permissions-Policy, so Chrome knows it before reading `tools`. Locally, turn on
   `chrome://flags/#enable-webmcp-testing` instead. Edge 150 has a trial too;
   ChatGPT's in-app browser supports it; Firefox and Safari do not.
+- A browser started by a test or from a command line takes
+  `--enable-features=WebMCP`. From Chromium 159 (Playwright 1.65.1) the older
+  `WebMCPTesting` name offers nothing; the flags entry above keeps its name and
+  still works.
 
 ## How the pieces fit in an Ash site
 

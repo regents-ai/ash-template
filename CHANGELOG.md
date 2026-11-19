@@ -13236,3 +13236,12 @@ For the template chief to release. No migration. No new package.
   387 Elixir; 499 script).
 - Not proven: the start run against a live-sized pairing list; Safari, Firefox, real
   phones.
+
+## 2026-11-19 — WebMCP skill: the start-up switch for a test browser
+
+- `skills/ash-webmcp/references/build.md` names the switch a browser started by a test or
+  from a command line takes, `--enable-features=WebMCP`. Probed on Playwright 1.65.1's
+  Chromium 159.0.8154.6 on a secure page with no origin-trial token:
+  `document.modelContext` is there under that switch and absent under the older
+  `WebMCPTesting` name; `chrome://flags/#enable-webmcp-testing` keeps its name and still
+  works. Not proven: stable Google Chrome 159, Edge.
