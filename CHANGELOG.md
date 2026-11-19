@@ -12911,3 +12911,12 @@ For the template chief to release. No migration. No new package.
 - The template asks for the newest command line, 1.10.33 (source commit `c12d8563`): the agent
   guide, the install lines, the capability list and the Makefile's pin name it. The
   `regents ash-template` commands are the same as in 1.10.32.
+
+## 2026-11-19 — idna 8.0.0
+
+- `mix hex.audit` reports advisory EEF-CVE-2026-117678 against idna 7.1.0; idna 8.0.0
+  fixes it. elixir-utils moves from `1c80443a` to `d3764a4a`, the same pin plus one
+  commit in `ens` (`ens_elixir` asks for idna 8 and keeps its ASCII rule: letters,
+  digits and hyphens). `platform/mix.exs` pins `{:idna, "~> 8.0", override: true}`
+  because ethers 0.8.0 and jsv 0.27.0 still ask for idna 7; both call only what idna 8
+  keeps. ENS names: emoji names are now kept, and an empty label is refused.

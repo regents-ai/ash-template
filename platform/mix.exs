@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "1c80443a1cfbcd49dac2701278d3055bd0cb7441"
+  @elixir_utils_ref "d3764a4a7b5cb3af4ee3471cfd7bddbf98b5845e"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "539a9e49ea09e6799e50a07d77a9f79c45db1478"
 
@@ -93,6 +93,10 @@ defmodule AshTemplate.MixProject do
       {:regent_payments,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/payments"},
       {:ens_elixir, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ens"},
+      # idna 8.0.0 fixes EEF-CVE-2026-117678. ethers 0.8.0 and jsv 0.27.0 still ask
+      # for idna 7 and call only what idna 8 keeps (`encode/2`, `decode/1`,
+      # `to_ascii/1`), so this pin stands in until each has a release that allows 8.
+      {:idna, "~> 8.0", override: true},
       # ens_elixir names siwa by a sibling path; this pin replaces it.
       {:siwa,
        git: @elixir_utils,
