@@ -55,6 +55,17 @@ the full address) and a link to Connected apps. Connected apps
 day it connected (`17 Nov 2026`) and Disconnect, which revokes at once without a
 second step.
 
+Allow and Cancel answer a short page ("Returning") whose refresh and Continue link
+take the browser to the app's callback, never a redirect: Chromium checks every host
+a form's redirects pass through against the site's `form-action 'self'`, and an
+app's callback may send the browser on to another host. The site's browser policy is
+the same on the consent page as on every other page. Opening consent still answers a
+refusal with a redirect, and Disconnect still returns to Connected apps with one
+(elixir-utils `0a9467f9`, 18 November). Migration `20261118230000` runs the
+library's version 4, which lifts the 255-character limit from a code's `state` and
+callback and from an app's name, callbacks and keys address, since OpenAI's apps
+send a longer `state`.
+
 ## The Claude connector: one switch
 
 `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED=true` turns on everything at once, read at

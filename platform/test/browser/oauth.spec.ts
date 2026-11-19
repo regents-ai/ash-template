@@ -10,8 +10,8 @@ import {signedIn, watch} from "./support/person"
 // the host it returns to, and the person allows or cancels; Connected apps lists
 // each app with the day it connected and Disconnect. Each fits the screen, shows every address with its copy icon and lets
 // a keyboard scroll every box that scrolls, at every width the walk runs. The app
-// has a long name and a long return address, as a real one may; Chromium keeps a
-// .localhost name on this machine, so the return goes nowhere else.
+// has a long name and a long return address, as a real one may. The walk answers its
+// callback itself, so the return goes nowhere else.
 const callback = "https://agent-callbacks.research-assistant-for-long-organisation-names.localhost/api/mcp/auth_callback"
 
 async function register(request: APIRequestContext, name: string) {
@@ -57,7 +57,7 @@ test("signed out, the consent page asks the person to sign in first", async ({pa
 test.describe("signed in", () => {
   test.use(signedIn)
 
-  test("the consent page connects the app, and Connected apps disconnects it", async ({page}, testInfo) => {
+  test("the consent page connects the app, and Connected apps disconnects it", async ({page, baseURL}, testInfo) => {
     const name = `Research Assistant for Long Organisation Names (${testInfo.project.name})`
     const verifier = randomBytes(32).toString("base64url")
     const clientId = await register(page.request, name)
@@ -71,10 +71,17 @@ test.describe("signed in", () => {
     await fits(page, problems)
 
     // Allow returns the person to the app with a code, which the app trades for its
-    // tokens.
-    const returned = page.waitForRequest(request => request.url().startsWith(`${callback}?`))
+    // tokens. The app's callback sends the browser on to another host, as a real
+    // app's may, and the code arrives there: this site's health page under its other
+    // local name, which the browser reaches without leaving the machine.
+    const onward = new URL("/healthz", baseURL)
+    onward.hostname = "localhost"
+    await page.route(url => url.host === new URL(callback).host, route =>
+      route.fulfill({status: 302, headers: {location: `${onward}${new URL(route.request().url()).search}`}}),
+    )
     await page.getByRole("button", {name: "Allow"}).click()
-    const code = new URL((await returned).url()).searchParams.get("code")!
+    await page.waitForURL(url => url.host === onward.host)
+    const code = new URL(page.url()).searchParams.get("code")!
     const {resource} = await (await page.request.get("/.well-known/oauth-protected-resource")).json()
     const token = await page.request.post("/oauth/token", {
       form: {grant_type: "authorization_code", client_id: clientId, code, redirect_uri: callback, code_verifier: verifier, resource},

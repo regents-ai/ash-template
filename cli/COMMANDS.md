@@ -327,7 +327,10 @@ paired, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-Af
   changes nothing.
 - **Example:** `regents ash-template agents profile --json`
 - **Answer:** `{"agent": {"id", "name", "status", "status_set_at", "human_backed",
-  "joined_at", "wallet_address"}}`.
+  "joined_at", "wallet_address"}, "hello_card"}`. `hello_card` is
+  `{"name", "paired_on", "paired_at", "expires_at"}` when the request carried a hello card
+  (`x-siwa-hello-card`) that passed for your wallet: what the site `paired_on` calls you, when
+  you paired there and when the card expires. Otherwise it is null.
 - **Refusals:** the signed-command refusals above; 503 `agents_unavailable`.
 
 ## agents edit-profile
@@ -794,6 +797,9 @@ paired, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-Af
 
 ## Changes
 
+- 2026-11-18: The OpenAPI documents move to 21.1.0. `agents profile` and `agents edit-profile`
+  answer `hello_card` beside `agent`: the hello card shown with the request when it passed,
+  else null. No command changes.
 - 2026-11-14: The OpenAPI documents move to 21.0.0. `account points` answers `to_do` as one
   group per site, each `{"site", "actions"}`, with every action a Points page shows, whichever
   site records it; each action keeps its fields. No command changes.

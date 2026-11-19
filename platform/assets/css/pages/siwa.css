@@ -32,6 +32,29 @@
   margin-block-start: var(--space-1);
 }
 
+/* The quiet press under the New site form that turns it between a live site and
+   a practice one: smaller and fainter than the form's own buttons. The button
+   takes its size from this line and its ink from --rg-local-ink. */
+.siwa-switch {
+  margin: 0;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+.siwa-switch .rg-button {
+  --rg-local-ink: var(--ash-quiet);
+}
+
+.siwa-switch .rg-button:focus-visible {
+  --rg-local-ink: var(--ash-ink);
+}
+
+@media (hover: hover) {
+  .siwa-switch .rg-button:hover {
+    --rg-local-ink: var(--ash-ink);
+  }
+}
+
 .siwa-link {
   color: inherit;
   text-decoration: underline;
@@ -76,7 +99,17 @@
   }
 }
 
+/* A site's name, with Practice beside it for a practice site. */
+.siwa-sites__site {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
 .siwa-sites__name {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 
@@ -99,7 +132,7 @@
 @media (min-width: 48rem) {
   .siwa-sites__head,
   .siwa-sites__row {
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.8fr) minmax(0, 0.8fr);
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.8fr);
     align-items: center;
     gap: var(--space-3);
   }

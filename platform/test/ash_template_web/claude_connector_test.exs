@@ -31,6 +31,8 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   @claude "https://claude.ai/oauth/mcp-oauth-client-metadata"
   @claude_callback "https://claude.ai/api/mcp/auth_callback"
   @verifier String.duplicate("v", 43)
+  # What Phoenix.HTML.html_escape/1 writes for each character it escapes.
+  @escaped %{"&amp;" => "&", "&lt;" => "<", "&gt;" => ">", "&quot;" => "\"", "&#39;" => "'"}
 
   defmodule ClaudeDocument do
     @moduledoc false
@@ -1038,10 +1040,21 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       |> put_req_header("accept", "text/html")
       |> @endpoint.call([])
 
-    assert approved.status == 303
-    [location] = get_resp_header(approved, "location")
-    assert String.starts_with?(location, callback <> "?")
-    {page, URI.decode_query(URI.parse(location).query)["code"]}
+    assert approved.status == 200
+    address = returned_to(approved)
+    assert String.starts_with?(address, callback <> "?")
+    {page, URI.decode_query(URI.parse(address).query)["code"]}
+  end
+
+  # Allow answers a page that takes the browser on to the app: its refresh and
+  # its Continue link name the same address, HTML-escaped.
+  defp returned_to(conn) do
+    assert [_, refresh] =
+             Regex.run(~r/<meta http-equiv="refresh" content="0;url=([^"]*)">/, conn.resp_body)
+
+    assert [_, continue] = Regex.run(~r/<a href="([^"]*)">Continue<\/a>/, conn.resp_body)
+    assert refresh == continue
+    String.replace(refresh, Map.keys(@escaped), &Map.fetch!(@escaped, &1))
   end
 
   # What an app that signs its requests sends to authenticate: an assertion by

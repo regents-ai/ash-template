@@ -12931,3 +12931,143 @@ For the template chief to release. No migration. No new package.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   382 Elixir; 499 script). Not proven: the scene pages shown inside a real marketplace's
   frame; Safari, Firefox, real phones.
+
+## 2026-11-18 — Sites: a name, an address and a handle
+
+- Sean's choice: the New site form asks for a name and the site's real web address; the
+  handle is filled in from the name and can be changed before saving, with one line
+  saying what it is; practice sites move to a smaller Practice site press. Nothing in
+  the SIWA service changes: the page still sends `name`, `audience`, `environment` and
+  `origins`.
+- `/siwa/sites` (`AshTemplateWeb.SiwaLive`): New site asks for Name, Address and Handle,
+  in that order, and makes a production site with the one address, trimmed, as its only
+  origin. The handle is made from the name in the form's `draft` event (`handle/1`:
+  lowercase, each run of anything but a-z and 0-9 one "-", none at either end, at most
+  64) and follows it while it is still the handle the name before made (`follow/2`);
+  once the person types their own, it stays. Name now sends its changes after 200 ms
+  rather than when it loses focus, so the handle follows while the person types. The
+  Practice site press under the form turns it into Practice site, for an
+  http://localhost address, sent as `sandbox`, with one line: on your own computer, no
+  proof, never counted or billed. Live site turns it back; both keep what was typed and
+  clear the form's refusals. Cancel and an added site leave it a live site again.
+- Words on the page: Audience is Handle and Origins is Addresses everywhere (the list,
+  the site page, the archive line and its confirm window, the tips), and the overview's
+  and billing's sandbox lines speak of practice sites. The Environment column and row
+  are gone: a practice site shows a Practice status beside its name in the list and
+  beside Summary on its page. Proof stays. A refusal of `audience` shows under Handle,
+  of `origins` under Address, and of `environment` as the form's notice. The site
+  page's Addresses hint fits the site's kind.
+- No SIWA docs page exists in `platform/priv/public` or `docs`, so none changed.
+  `docs/feature-map.md` names the new checks.
+- Tests: `platform/test/ash_template_web/siwa_live_test.exs` sends the first site as a
+  production site with its one trimmed origin; new: the handle follows the name until
+  the person changes it; a property that any name makes a handle matching the
+  service's rule (as the walk's stand-in holds it) or none; Practice site sends a
+  sandbox site, shows a refused kind as the form's notice, and turns back; Practice
+  shows only for a practice site, in the list and on its page.
+  `platform/test/browser/siwa.spec.ts` sees the handle follow the name, is refused a
+  localhost address on the New site form, and adds it as a practice site.
+- Checks: `mix compile --warnings-as-errors` and `mix format --check-formatted` exit 0;
+  `mix credo --strict` on the touched files, no issues; `siwa_live_test.exs` 23 passed
+  (1 property); `sh test/browser/walk.sh siwa.spec.ts` 8 passed; `npm test` 380 passed;
+  `npm run typecheck` exit 0; `make check-style` exit 0.
+- Pictures at 1280, 390 and 320 of the New site and Practice site forms, the list and a
+  practice site's page: no page wider than the screen. Not proven: Safari, Firefox,
+  real phones; the real SIWA service's rule for a handle (the walk's stand-in holds
+  that it starts with a letter or digit).
+
+## 2026-11-18 — An agent's profile says whether its hello card passed
+
+- `GET /api/v1/agents/me` and `PATCH /api/v1/agents/me` (`AshTemplateWeb.AgentsController`,
+  one renderer, `me/2`) answer `hello_card` beside `agent`: null when the request showed
+  no card or its card did not pass for the agent's own wallet; otherwise
+  `{"name", "paired_on", "paired_at", "expires_at"}` from the card that
+  `AshTemplateWeb.Plugs.AgentWallet` kept on the request. The card's `person` is never
+  in the answer. `GET /api/v1/agents/{id}` is unchanged.
+- The OpenAPI documents move to 21.1.0 with a `ProfileHelloCard` schema
+  (`platform/contracts/api-contract.openapiv3.yaml`, its copy in `platform/priv/static`,
+  and `platform/priv/public/openapi.json`). `cli/COMMANDS.md` (agents profile and its
+  Changes line), `platform/priv/public/agents.md`, `platform/priv/public/docs.md` and
+  `docs/feature-map.md` say what the field holds. The one-line command and browser tool
+  descriptions are unchanged.
+- Tests: `platform/test/ash_template_web/hello_card_test.exs` (1 new): through `GET` and
+  `PATCH`, a passing card gives its name, site, pairing time and expiry, and the answer
+  never holds its `person`; no card, another wallet's and an expired one give null.
+- Checks: `mix compile --warnings-as-errors` and `mix format --check-formatted` exit 0;
+  `mix credo --strict` on the touched files, no issues; `hello_card_test.exs` and
+  `siwa_live_test.exs` 30 passed; the whole `mix test` 379 passed (11 properties), with
+  both entries; `make check-cli` ok. Not proven: a card from the real SIWA service.
+
+## 2026-11-18 — Sites: plain handles, typed handles kept, and a practice site's agent
+
+- A handle made from a name is made as a room's address is, by
+  `AshTemplate.Rooms.Room.slug/1`: accents dropped ("Café Docs" gives `cafe-docs`),
+  each run of other characters one "-", at most 40 characters. The SIWA page's own
+  handle maker is gone. A handle the person types is kept and sent as typed, "_"
+  included: the service's owner confirms its rule, 1 to 64 lowercase letters, digits,
+  "-" and "_", and the walk's stand-in (`AshTemplate.WalkControl`) now holds that rule
+  in place of one that wanted a letter or digit first.
+- Agents now reach a practice site (siwa-server v100, agent clients 2.13). The Practice
+  site form says so: "For trying SIWA on your own computer, where your agent reaches it
+  by its handle. It needs no proof and is never counted or billed." A practice site's
+  Summary shows Agent request beside its handle: `uv run siwa_agent.py request GET
+  <first address>/ --handle <handle>`, with a copy icon that copies the line. The line
+  ends at the address, so it runs as pasted; the person adds a path.
+- Tests: `platform/test/ash_template_web/siwa_live_test.exs`: the handle follows "Café
+  Docs" as `cafe-docs`; a typed `docs_2` stays through a name change; the first site is
+  sent with the typed handle `acme_docs`; the property holds the service's confirmed
+  rule; a practice site shows the request with its first address and handle, a
+  production site none. `platform/test/browser/siwa.spec.ts` finds the walk's practice
+  site's request.
+- Checks: `mix compile --warnings-as-errors` and `mix format --check-formatted` exit 0;
+  `siwa_live_test.exs` and `hello_card_test.exs` 30 passed; the whole `mix test` 379
+  passed (11 properties); `sh test/browser/walk.sh siwa.spec.ts` 8 passed; `npm run
+  typecheck` exit 0. Pictures of the Practice site form and a practice site's Summary
+  at 1280 and 320: no page wider than the screen; on a phone the request wraps onto
+  four lines. Not proven: a real agent client sending the request to a practice site.
+
+## 2026-11-18 — Privacy blanks, Production site and Setup's Guide, and Allow returns through a page
+
+- `platform/priv/legal/privacy.md` marks the six places a site made from the template fills
+  in for itself, each as a plain-text `[FILL IN: …]` marker in the owner's words: its own
+  effective date and version, the company that runs it, what people and agents write
+  there, each service that receives what they write, any other service its pages connect a
+  visitor's browser to, and how long it keeps each kind of record. Everything else on the
+  page is unchanged. `AGENTS.md`'s "New site" list says every such marker is replaced
+  before the site goes live.
+- `/siwa/sites` (`AshTemplateWeb.SiwaLive`): the press under the Practice site form that
+  turns it back reads Production site, as the rest of the page says. A site's Setup has a
+  Guide link to SIWA's guide for websites (`https://siwa.regents.sh/websites.md`), opening
+  in a new tab.
+- Shared sign-in library: elixir-utils `1c80443a` to `0a9467f9` (only its `oauth` package
+  changed). Allow and Cancel on the Connect page now answer a short "Returning" page whose
+  refresh and Continue link take the browser on to the app, instead of a redirect, so an
+  app whose callback sends the browser on to another host gets its code (seen live,
+  18 Nov: Allow did nothing). The Connect page keeps the site's own browser policy.
+  Opening the Connect page still answers a refusal with a redirect, and Disconnect still
+  returns to Connected apps with one. A failure inside sign-in is now logged as one line
+  naming where it happened, with no values.
+- Migration `20261118230000_oauth_long_values` runs the library's version 4: a code's
+  `state` and callback and an app's name, callbacks and keys address lose their
+  255-character limit, since OpenAI's apps send a longer `state`, which Allow could not
+  store. No row changes and no table is rewritten.
+- `docs/oauth-reference.md` and `docs/feature-map.md` say how Allow returns.
+- Tests: `platform/test/ash_template_web/claude_connector_test.exs` reads the code from the
+  page Allow answers (its refresh and Continue link name the same address).
+  `platform/test/browser/oauth.spec.ts` answers the app's callback itself, with a
+  redirect to another host (the site's health page under its other local name), and
+  finds the code arrive there, then trades it for tokens.
+  `platform/test/browser/siwa.spec.ts` finds Setup's Guide link.
+- Checks: `mix format --check-formatted` and `mix compile --warnings-as-errors` exit 0;
+  the whole `mix test` 379 passed (11 properties); `npm run typecheck` exit 0;
+  `sh test/browser/walk.sh oauth.spec.ts siwa.spec.ts` 14 passed. Not proven: Allow
+  with a live app whose callback sends the browser on; the migration on a copy of the
+  production rows.
+
+## 2026-11-19 — The bundle above joins main on elixir-utils `caba486c`
+
+- Merged onto main after v288. The shared library pin is elixir-utils main `caba486c`,
+  which holds everything the entry above names at `0a9467f9` plus two later commits
+  already described: the hosted signer's refusal is logged with its status and code
+  (`dccdfbda`, `mcp_agents`), and idna 8.0.0 in `ens` (the same commit v288 took on the
+  older pin).

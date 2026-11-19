@@ -3,7 +3,8 @@ defmodule AshTemplateWeb.AgentsController do
   Agent profiles: the name and status line an agent gives itself, beside its
   wallet. Anyone may read an agent's profile by its id, the `agent_id` or
   `via_agent.id` of a room message; every wallet is public (Sean, 6 Nov 2026). An
-  agent with per-request SIWA proof reads and changes its own, paired or not.
+  agent with per-request SIWA proof reads and changes its own, paired or not, and
+  is told whether the hello card beside the request passed.
   """
 
   use AshTemplateWeb, :controller
@@ -33,7 +34,7 @@ defmodule AshTemplateWeb.AgentsController do
 
   def profile(conn, _params) do
     case Agents.get_agent(conn.assigns.actor.agent_id) do
-      {:ok, agent} -> json(conn, %{agent: present(agent)})
+      {:ok, agent} -> me(conn, agent)
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("agents_unavailable")
     end
   end
@@ -44,7 +45,7 @@ defmodule AshTemplateWeb.AgentsController do
     with input when map_size(input) > 0 <- Map.take(conn.body_params, ["name", "status"]),
          {:ok, agent} <- Agents.get_agent(actor.agent_id),
          {:ok, agent} <- Agents.edit_agent_profile(agent, input, actor: actor) do
-      json(conn, %{agent: present(agent)})
+      me(conn, agent)
     else
       %{} -> refuse(conn, "invalid_profile")
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_profile", error)
@@ -61,6 +62,23 @@ defmodule AshTemplateWeb.AgentsController do
       human_backed: is_binary(agent.world_id_human_id),
       joined_at: agent.inserted_at,
       wallet_address: agent.wallet_address
+    }
+  end
+
+  # The agent's own profile, with the hello card it showed beside this request
+  # when the card passed (`hello_card` from AshTemplateWeb.Plugs.AgentWallet).
+  defp me(conn, agent),
+    do: json(conn, %{agent: present(agent), hello_card: hello_card(conn.assigns.hello_card)})
+
+  # Never the card's `person`, which nothing on the site shows (RegentAgents.HelloCard).
+  defp hello_card(nil), do: nil
+
+  defp hello_card(card) do
+    %{
+      name: card["name"],
+      paired_on: card["pairedOn"],
+      paired_at: card["pairedAt"],
+      expires_at: card["expiresAt"]
     }
   end
 

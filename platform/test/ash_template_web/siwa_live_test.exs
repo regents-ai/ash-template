@@ -4,6 +4,7 @@ defmodule AshTemplateWeb.SiwaLiveTest do
   # machine as the trade leaves it (AshTemplateWeb.SiwaSessionTest), and the
   # browser's side of a trade is the `traded` event its sign-in bridge sends.
   use ExUnit.Case, async: false
+  use ExUnitProperties
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
@@ -233,33 +234,30 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     assert Jason.decode!(sent) == %{"name" => "Acme"}
     assert has_element?(view, "#siwa-site-form")
 
-    site = %{
-      name: "Docs",
-      audience: "acme-docs",
-      environment: "sandbox",
-      origins: "http://localhost:4000\r\n\r\n  http://localhost:4001  "
-    }
+    site = %{name: "Docs", audience: "acme_docs", origins: "  https://acme.example  "}
 
     service(%{
       {"POST", @base <> "/sites"} =>
-        refused(422, "control_fields_invalid", %{origins: ["lists an origin twice"]})
+        refused(422, "control_fields_invalid", %{origins: ["must each be https:// and a host"]})
     })
 
     view |> form("#siwa-site-form", site: site) |> render_submit()
     render_async(view)
     assert_received {:asked, "POST", "/api/control/v1/sites", sent}
 
+    # The form makes a production site, its one address the site's one origin and
+    # its handle as typed.
     assert Jason.decode!(sent) == %{
              "name" => "Docs",
-             "audience" => "acme-docs",
-             "environment" => "sandbox",
-             "origins" => ["http://localhost:4000", "http://localhost:4001"]
+             "audience" => "acme_docs",
+             "environment" => "production",
+             "origins" => ["https://acme.example"]
            }
 
     assert has_element?(view, "#siwa-site-origins[aria-invalid='true']")
     assert has_element?(view, "#siwa-site-origins-errors p")
     assert has_element?(view, "#siwa-site-audience[aria-invalid='false']")
-    assert has_element?(view, "#siwa-site-audience[value='acme-docs']")
+    assert has_element?(view, "#siwa-site-audience[value='acme_docs']")
 
     service(Map.put(site_answers(), {"POST", @base <> "/sites"}, ok(201, "site_created", @site)))
     view |> form("#siwa-site-form", site: site) |> render_submit()
@@ -269,13 +267,120 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     assert has_element?(view, "#siwa-audience")
   end
 
+  defp no_sites, do: Map.put(company(), {"GET", @base <> "/sites"}, ok("sites", %{sites: []}))
+
+  # What the New site form's Handle holds now.
+  defp handle(view) do
+    view
+    |> element("#siwa-site-audience")
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.attribute("value")
+  end
+
+  # A change as the browser sends it: every field of the form as it stands.
+  defp typed(view, name, audience),
+    do: view |> form("#siwa-site-form", site: %{name: name, audience: audience}) |> render_change()
+
+  test "the handle is made from the name and follows it until the person changes it", %{browser: browser} do
+    service(no_sites())
+    view = open(browser, "/siwa/sites")
+
+    typed(view, "Café Docs!", "")
+    assert handle(view) == ["cafe-docs"]
+
+    typed(view, "  Café -- Docs (2) ", "cafe-docs")
+    assert handle(view) == ["cafe-docs-2"]
+
+    # A handle the person types is theirs as typed, "_" and all.
+    typed(view, "Café -- Docs (2)", "docs_2")
+    assert handle(view) == ["docs_2"]
+
+    typed(view, "Something else", "docs_2")
+    assert handle(view) == ["docs_2"]
+  end
+
+  property "a handle made from any name is one the service takes, or empty", %{browser: browser} do
+    service(no_sites())
+    view = open(browser, "/siwa/sites")
+    typed(view, "", "")
+
+    check all(name <- one_of([string(:printable, max_length: 120), string(:ascii, max_length: 120)])) do
+      [before] = handle(view)
+      typed(view, name, before)
+      [made] = handle(view)
+
+      # The service's rule for an audience: 1 to 64 of a-z, 0-9, "-" and "_".
+      assert made == "" or made =~ ~r/\A[a-z0-9_-]{1,64}\z/
+    end
+  end
+
+  test "Practice site turns the form into one for a practice site, sent as a sandbox site, and back",
+       %{browser: browser} do
+    service(Map.merge(company(), %{{"GET", @base <> "/sites"} => ok("sites", %{sites: [@site, @production]})}))
+    view = open(browser, "/siwa/sites")
+
+    # In the list, only the practice site says so.
+    assert has_element?(view, "#siwa-site-#{@site["id"]}-practice")
+    refute has_element?(view, "#siwa-site-#{@production["id"]}-practice")
+
+    view |> element("#siwa-add-site") |> render_click()
+    assert has_element?(view, "#siwa-new-site[data-kind='live']")
+    typed(view, "Local docs", "")
+
+    view |> element("#siwa-site-kind") |> render_click()
+    assert has_element?(view, "#siwa-new-site[data-kind='practice']")
+    assert handle(view) == ["local-docs"]
+
+    service(%{
+      {"POST", @base <> "/sites"} =>
+        refused(422, "control_fields_invalid", %{environment: ["is invalid"]})
+    })
+
+    site = %{name: "Local docs", audience: "local-docs", origins: "http://localhost:4000"}
+    view |> form("#siwa-site-form", site: site) |> render_submit()
+    render_async(view)
+    assert_received {:asked, "POST", "/api/control/v1/sites", sent}
+
+    assert Jason.decode!(sent) == %{
+             "name" => "Local docs",
+             "audience" => "local-docs",
+             "environment" => "sandbox",
+             "origins" => ["http://localhost:4000"]
+           }
+
+    # The kind of site has no field of its own, so a refusal of it is the form's notice.
+    assert has_element?(view, "#siwa-site-notice")
+    refute has_element?(view, "#siwa-site-form [aria-invalid='true']")
+
+    view |> element("#siwa-site-kind") |> render_click()
+    assert has_element?(view, "#siwa-new-site[data-kind='live']")
+    refute has_element?(view, "#siwa-site-notice")
+    assert handle(view) == ["local-docs"]
+
+    # Cancel closes the form; it opens again for a live site.
+    view |> element("#siwa-site-kind") |> render_click()
+    view |> element("#siwa-site-cancel") |> render_click()
+    refute has_element?(view, "#siwa-new-site")
+    view |> element("#siwa-add-site") |> render_click()
+    assert has_element?(view, "#siwa-new-site[data-kind='live']")
+  end
+
   test "a new key goes to the browser once and nowhere into the page, and a revoked key stays listed",
        %{browser: browser} do
     secret = "siwa_sk_test_" <> String.duplicate("s", 43)
     service(site_answers())
     view = open(browser, "/siwa/sites/#{@site["id"]}")
-    # A sandbox site needs no proof.
+    # A sandbox site is a practice site, and needs no proof.
+    assert has_element?(view, "#siwa-practice")
     refute has_element?(view, "#siwa-proof")
+    refute has_element?(view, "#siwa-proof-warning")
+
+    # Its agent reaches it at its first address by its handle, a line to copy.
+    request = view |> element("#siwa-agent-request") |> render()
+    assert request =~ " GET #{hd(@site["origins"])}/"
+    assert request =~ "--handle #{@site["audience"]}<"
+    assert has_element?(view, "#siwa-agent-request-copy[data-copy-target='siwa-agent-request']")
 
     keys = "#{@base}/sites/#{@site["id"]}/keys"
     service(Map.put(site_answers(), {"POST", keys}, ok(201, "site_key_created", Map.put(@key, "key", secret))))
@@ -333,6 +438,9 @@ defmodule AshTemplateWeb.SiwaLiveTest do
     view = open(browser, "/siwa/sites/#{@production["id"]}")
 
     assert has_element?(view, "#siwa-proof[data-state='unverified']")
+    refute has_element?(view, "#siwa-practice")
+    refute has_element?(view, "#siwa-agent-request")
+    assert has_element?(view, "#siwa-proof-warning")
     assert view |> element("#siwa-proof-token") |> render() =~ proof["token"]
     assert has_element?(view, "#siwa-proof-token-copy")
 

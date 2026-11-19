@@ -3,7 +3,8 @@ defmodule AshTemplateWeb.HelloCardTest do
   # router:
   # - the SIWA service's pairing read, sent as the service sends it, with only its
   #   token: no agent signature, cookie, forms token or Origin;
-  # - a card beside an agent's signed request, on the API and at /mcp.
+  # - a card beside an agent's signed request, on the API and at /mcp, and what the
+  #   agent's own profile says of it.
   # The SIWA service is stood in for: it publishes an Ed25519 key made here, and
   # vouches for @agent's signed requests. The published keys are kept for the
   # whole node, so each test starts and ends with none kept.
@@ -140,6 +141,36 @@ defmodule AshTemplateWeb.HelloCardTest do
       end
     end
 
+    test "is in the agent's own profile when it passes, without its person, and null otherwise",
+         %{key: key, from: from} do
+      for ask <- [&api/2, &edit/2] do
+        claims = card_claims()
+        shown = ask.(sign(key, @card, claims), from)
+        assert shown.status == 200
+
+        assert Jason.decode!(shown.resp_body)["hello_card"] == %{
+                 "name" => "Sol",
+                 "paired_on" => "keyfleet",
+                 "paired_at" => claims["pairedAt"],
+                 "expires_at" => claims["expiresAt"]
+               }
+
+        refute shown.resp_body =~ claims["person"]
+
+        for other <- [
+              nil,
+              sign(key, @card, card_claims(%{"subject" => @other_subject})),
+              expired(key)
+            ] do
+          conn = ask.(other, from)
+          assert conn.status == 200
+
+          assert %{"agent" => %{"wallet_address" => @agent}, "hello_card" => nil} =
+                   Jason.decode!(conn.resp_body)
+        end
+      end
+    end
+
     test "at /mcp is kept when it passes for the agent's own wallet, and left out otherwise",
          %{key: key, from: from} do
       claims = card_claims()
@@ -174,6 +205,15 @@ defmodule AshTemplateWeb.HelloCardTest do
   defp api(card, from) do
     conn(:get, "/api/v1/agents/me")
     |> Map.put(:remote_ip, from)
+    |> signed(card)
+    |> @endpoint.call([])
+  end
+
+  # The agent's signed change to its own status line, with `card` beside it when given.
+  defp edit(card, from) do
+    conn(:patch, "/api/v1/agents/me", Jason.encode!(%{"status" => "Reading"}))
+    |> Map.put(:remote_ip, from)
+    |> put_req_header("content-type", "application/json")
     |> signed(card)
     |> @endpoint.call([])
   end

@@ -5,9 +5,10 @@ import {unreachableScrollers} from "./support/scrollers"
 import {ready, watch} from "./support/person"
 
 // SIWA, against the walk's own SIWA stand-in (AshTemplate.WalkControl): each width
-// has its own person who has never used it (sign_in.exs), names their company, is
-// refused an origin a sandbox site can't list, adds the site, makes a key, sees it
-// once, revokes it through the confirm window, opens Settings, on Overview finds
+// has its own person who has never used it (sign_in.exs), names their company, sees
+// the handle follow the name and gives it their own, is refused a localhost address
+// on the New site form, turns it into a practice site and adds it, finds the command
+// its agent reaches the site with, makes a key, sees it once, revokes it through the confirm window, opens Settings, on Overview finds
 // billing not started and sets, is refused and removes a cap, then follows its link
 // to Billing, subscribes on Stripe, comes back to Manage and a first invoice, and
 // goes to Stripe and back again with Manage. Each width also has a person whose
@@ -48,7 +49,7 @@ test.describe("a new SIWA customer", () => {
     storageState: async ({}, use, info) => use(`test/browser/.auth/siwa-${info.project.name}.json`),
   })
 
-  test("names their company, adds a sandbox site, makes and revokes a key, and opens Settings", async ({page, hasTouch}, info) => {
+  test("names their company, adds a practice site, makes and revokes a key, and opens Settings", async ({page, hasTouch}, info) => {
     const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
     const problems = watch(page)
     await trading(page, `did:privy:browser-walk-siwa-${info.project.name}`)
@@ -61,23 +62,43 @@ test.describe("a new SIWA customer", () => {
     await press(company.locator("button[type='submit']"))
 
     const site = page.locator("#siwa-site-form")
+    const panel = page.locator("#siwa-new-site")
     await expect(site).toBeVisible()
+    await expect(panel).toHaveAttribute("data-kind", "live")
     await tidy(page)
-    await page.locator("#siwa-site-name").fill("Walk Site")
-    await page.locator("#siwa-site-audience").fill(`walk-${info.project.name}`)
-    await page.locator("#siwa-site-environment").selectOption("sandbox")
-    const origins = page.locator("#siwa-site-origins")
-    await origins.fill("https://example.com")
-    await press(page.locator("#siwa-site-submit"))
-    await expect(origins).toHaveAttribute("aria-invalid", "true")
-    await expect(page.locator("#siwa-site-origins-errors p")).toHaveCount(1)
-    await expect(page.locator("#siwa-site-audience")).toHaveAttribute("aria-invalid", "false")
 
-    await origins.fill("http://localhost:4000")
+    // The handle follows the name; the walk then gives it one of its own, unique to the width.
+    const handle = page.locator("#siwa-site-audience")
+    await page.locator("#siwa-site-name").fill("Walk Site")
+    await expect(handle).toHaveValue("walk-site")
+    await handle.fill(`walk-${info.project.name}`)
+
+    // The New site form takes only an https address; a practice site takes this one.
+    const address = page.locator("#siwa-site-origins")
+    await address.fill("http://localhost:4000")
+    await press(page.locator("#siwa-site-submit"))
+    await expect(address).toHaveAttribute("aria-invalid", "true")
+    await expect(page.locator("#siwa-site-origins-errors p")).toHaveCount(1)
+    await expect(handle).toHaveAttribute("aria-invalid", "false")
+
+    await press(page.locator("#siwa-site-kind"))
+    await expect(panel).toHaveAttribute("data-kind", "practice")
+    await expect(address).toHaveAttribute("aria-invalid", "false")
+    await expect(handle).toHaveValue(`walk-${info.project.name}`)
+    await tidy(page)
     await press(page.locator("#siwa-site-submit"))
     await expect(page).toHaveURL(/\/siwa\/sites\/[0-9a-f-]{36}$/)
     await expect(page.locator("#siwa-audience")).toHaveText(`walk-${info.project.name}`)
+    await expect(page.locator("#siwa-practice")).toBeVisible()
+    await expect(page.locator("#siwa-agent-request")).toContainText(
+      `GET http://localhost:4000/ --handle walk-${info.project.name}`,
+    )
     await expect(page.locator("#siwa-proof")).toHaveCount(0)
+
+    // Setup's Guide opens SIWA's guide for websites in a new tab.
+    const guide = page.locator("#siwa-site-guide")
+    await expect(guide).toHaveAttribute("href", "https://siwa.regents.sh/websites.md")
+    await expect(guide).toHaveAttribute("target", "_blank")
 
     await press(page.locator("#siwa-make-key"))
     await expect(page.locator("#siwa-key-value")).toHaveText(/^siwa_sk_test_[A-Za-z0-9_-]{43}$/)
