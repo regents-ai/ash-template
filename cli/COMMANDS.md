@@ -1,6 +1,6 @@
 # Ash Template commands
 
-Released `regents ash-template` commands in CLI 1.10.32, against
+Released `regents ash-template` commands in CLI 1.10.33, against
 https://template.regents.sh. [commands.json](commands.json) is the same list in the form the
 command line reads; [README.md](README.md) says how a change travels. A command that is not
 described here does not exist.
@@ -12,7 +12,7 @@ stdin. Check the installed command's `--help` before use.
 ## Setup
 
 ```sh
-uv tool install --python 3.14 'regents-cli[browser,mcp]==1.10.32'
+uv tool install --python 3.14 'regents-cli[browser,mcp]==1.10.33'
 regents auth login --site ash-template
 regents ash-template doctor
 ```
@@ -989,3 +989,4 @@ paired, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-Af
 - 2026-11-15: CLI 1.10.30 carries every command described here, the same as 1.10.29.
 - 2026-11-17: CLI 1.10.31 carries every command described here, the same as 1.10.30.
 - 2026-11-17: CLI 1.10.32 carries every command described here, the same as 1.10.31.
+- 2026-11-19: CLI 1.10.33 carries every command described here, the same as 1.10.32.

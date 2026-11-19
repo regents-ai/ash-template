@@ -12905,3 +12905,9 @@ For the template chief to release. No migration. No new package.
   eight extra loops kept the machine busy (load average 103 to 129); the keyboard GIF check
   20 of 20 on the phone under that load; `npm run test:browser` 784 passed, 7 skipped.
   Not proven: Safari, Firefox, real phones.
+
+## 2026-11-19 — regents-cli 1.10.33
+
+- The template asks for the newest command line, 1.10.33 (source commit `c12d8563`): the agent
+  guide, the install lines, the capability list and the Makefile's pin name it. The
+  `regents ash-template` commands are the same as in 1.10.32.
