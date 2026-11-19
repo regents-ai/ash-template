@@ -13422,3 +13422,12 @@ For the template chief to release. No migration. No new package.
 - The identity state the browser hands the page carries `stage`: `opened` for Privy's
   Farcaster window, `ended` for every finished request, whose `error` is now also
   `not-started`. The page hears it as `verified_connection_state`.
+
+## 2026-11-19 — Released v301: Farcaster's scan line waits for Privy's window
+
+- v301 on template.regents.sh carries two commits (head `386901f0`): the entry above and
+  the regent-workflow Live checks wording (`f0d29415`). No migration; library pin
+  unchanged; no Points setting changed.
+- Rollback: v300 (`a350c33d`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit. Not proven: the three outcomes in
+  a signed-in browser against Privy.
