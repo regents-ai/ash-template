@@ -13071,3 +13071,15 @@ For the template chief to release. No migration. No new package.
   already described: the hosted signer's refusal is logged with its status and code
   (`dccdfbda`, `mcp_agents`), and idna 8.0.0 in `ens` (the same commit v288 took on the
   older pin).
+
+## 2026-11-19 — Released v289: Sites form, Privacy blanks, and Allow returns through a page
+
+- v289 on template.regents.sh carries the entries above from "Sites: a name, an address
+  and a handle" on (worker branch `2e348b77`, merged as `b55b5199`; public changelog
+  `8b388b33`), with the Privacy blanks on Sean's "7. a" of 18 Nov. One migration,
+  `20261118230000_oauth_long_values`: no row changes, no table rewrite.
+- Rollback: v288 (`f61b8043`) image; the widened columns stay and the older code reads
+  them unchanged.
+- Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
+  386 Elixir; 499 script). Not proven: Allow from a real app's own portal on this site;
+  the migration on a copy of the production rows; Safari, Firefox, real phones.
