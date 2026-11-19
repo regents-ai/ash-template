@@ -13102,3 +13102,16 @@ For the template chief to release. No migration. No new package.
 - Checks: `mix format --check-formatted`, `mix usage_rules.sync --check` and `MIX_ENV=test mix
   compile --warnings-as-errors` exit 0; `mix test` 382 passed (10 properties, 372 tests);
   `make check-required-fixes` passes against ash-template main `bdfe540f`.
+
+## 2026-11-19 — Released v290: the Ash libraries of the six-site version refresh
+
+- v290 on template.regents.sh carries one commit (`f513e944`): Ash 3.37.7, Ash AI 1.5.6,
+  Ash SQL 0.8.9, Spark 2.7.10, WebSock Adapter 0.7.2, and AshPostgres at its 2.16.0
+  release commit `e36aa20a` (which contains the required commit `55db7d44`). Pins and
+  lock only; no migration. finch, llm_db, nimble_pool, reactor and req_llm stay at their
+  earlier versions for this wave.
+- Rollback: v289 (`8b388b33`) image; nothing to undo.
+- Full check exit 0 by the chief on the exact commit (784 walk tests passed; 386 Elixir;
+  499 script). Not proven: the new libraries under production traffic; Safari, Firefox,
+  real phones. Still to come as their own releases: Node 26.13.1 with PostgreSQL 17.12,
+  and the browser test tools.
