@@ -13169,3 +13169,17 @@ For the template chief to release. No migration. No new package.
 - Checks: `npm run typecheck` exits 0; `npx vitest run` 499 passed; `mix assets.build`
   exits 0; `walk.sh pages.spec.ts oauth.spec.ts` 369 passed. `npm audit` names the same one
   moderate finding (hono) before and after.
+
+## 2026-11-19 — Released v292: Playwright 1.65.1 and Vitest 5.1.1
+
+- v292 on template.regents.sh carries one commit (`0b0399cd`), the entry above. Test
+  tools only. No migration.
+- Rollback: v291 (`54a58195`) image; nothing to undo.
+- Before the check: all 818 locked packages have verified registry signatures; `npm audit`
+  names the same one moderate finding (hono) as before the change.
+- Full check exit 0 by the chief on the exact commit, on Node v26.13.1 (784 walk tests
+  passed, 7 skipped; 386 Elixir; 499 script). A first run of the same check failed two
+  timed walk tests (`motion.spec.ts:180`, `ink.spec.ts:17`) while the Mac's load was over
+  60; alone on the same commit, three times each at every width, both passed (102 of
+  102), and the unchanged full check then passed at load 33.
+- Not proven: Safari, Firefox, real phones.
