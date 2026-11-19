@@ -1,9 +1,10 @@
 # Ash Template Privacy Policy
 
 **Effective date:** October 27, 2026  
-**Version:** 1.3
+**Version:** 1.3  
+[FILL IN: your own effective date and version]
 
-This Privacy Policy explains how **Regents Labs, Inc.** ("Regents Labs," "we," "us," or "our") collects, uses, discloses, and protects personal information when you use the website, applications, APIs, documentation, and related services that we operate under the **Ash Template** name at `template.regents.sh` (collectively, the "Services").
+This Privacy Policy explains how **Regents Labs, Inc.** [FILL IN: the company that runs your site, here and wherever Regents Labs is named] ("Regents Labs," "we," "us," or "our") collects, uses, discloses, and protects personal information when you use the website, applications, APIs, documentation, and related services that we operate under the **Ash Template** name at `template.regents.sh` (collectively, the "Services").
 
 This Policy does not govern third-party websites, wallets, sign-in providers, or other services that we do not control. Those parties have their own privacy practices.
 
@@ -39,7 +40,7 @@ We do not receive your wallet recovery phrase from Privy or need it to authentic
 
 ### B. Content you provide
 
-We collect information you or your agent submits to the Services, including profile details, support requests, bug reports, feedback, and support correspondence.
+We collect information you or your agent submits to the Services, including profile details, support requests, bug reports, feedback, and support correspondence. [FILL IN: what people and agents write on your site, for example notes, messages and polls]
 
 Do not submit private keys, recovery phrases, passwords, highly sensitive personal information, confidential information you are not authorized to disclose, or personal information about another person without a lawful basis.
 
@@ -88,6 +89,7 @@ We may use automated systems to detect abuse, fraud, or security threats and to 
 We use service providers to operate the Services. Depending on the feature, these may include:
 
 - **Privy** for authentication and wallet functionality;
+- **[FILL IN: each service that receives what people write, for example OpenRouter]**, which passes the title and text of a note you save to the model that suggests its label. Your account and name are not sent with it;
 - hosting, database, and infrastructure providers;
 - email, support, monitoring, and error-diagnostic providers; and
 - professional advisers such as lawyers, accountants, auditors, and insurers.
@@ -101,8 +103,9 @@ When you connect a social account, identity, or wallet, we disclose information 
 Signing in, and staying signed in, also connects your browser to these services, each under its own privacy policy:
 
 - **Privy**, which runs sign-in and the wallets linked to your account;
-- **Cloudflare**, which checks that a person is signing in; and
-- **WalletConnect** and **Coinbase Wallet**, when you connect a wallet through them.
+- **Cloudflare**, which checks that a person is signing in;
+- **WalletConnect** and **Coinbase Wallet**, when you connect a wallet through them; and
+- [FILL IN: any other service your pages connect a visitor's browser to].
 
 If your wallet has an ENS name with a picture, your browser loads that picture from the ENS avatar service, which can see your internet address and ENS name.
 
@@ -140,7 +143,7 @@ Where applicable, we process personal information under one or more of these leg
 
 We retain information for no longer than reasonably necessary for the purposes described in this Policy, considering how long your account remains active, whether information is needed to provide the Service, security and legal requirements, applicable limitation periods, and whether data can be safely deleted or de-identified.
 
-Account and profile information is generally retained while the account is active and for a reasonable period afterward. Security and authentication records may be retained as needed to prevent fraud and comply with law. Backup copies may remain for a limited period before being overwritten.
+Account and profile information is generally retained while the account is active and for a reasonable period afterward. Security and authentication records may be retained as needed to prevent fraud and comply with law. Backup copies may remain for a limited period before being overwritten. [FILL IN: how long your site keeps each kind of record, where it has a fixed period]
 
 ## 11. Security
 

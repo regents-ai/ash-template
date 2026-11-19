@@ -95,6 +95,11 @@ test.describe("a new SIWA customer", () => {
     )
     await expect(page.locator("#siwa-proof")).toHaveCount(0)
 
+    // Setup's Guide opens SIWA's guide for websites in a new tab.
+    const guide = page.locator("#siwa-site-guide")
+    await expect(guide).toHaveAttribute("href", "https://siwa.regents.sh/websites.md")
+    await expect(guide).toHaveAttribute("target", "_blank")
+
     await press(page.locator("#siwa-make-key"))
     await expect(page.locator("#siwa-key-value")).toHaveText(/^siwa_sk_test_[A-Za-z0-9_-]{43}$/)
     const keys = page.locator("#siwa-keys > li")

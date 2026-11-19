@@ -12892,3 +12892,41 @@ For the template chief to release. No migration. No new package.
   typecheck` exit 0. Pictures of the Practice site form and a practice site's Summary
   at 1280 and 320: no page wider than the screen; on a phone the request wraps onto
   four lines. Not proven: a real agent client sending the request to a practice site.
+
+## 2026-11-18 — Privacy blanks, Production site and Setup's Guide, and Allow returns through a page
+
+- `platform/priv/legal/privacy.md` marks the six places a site made from the template fills
+  in for itself, each as a plain-text `[FILL IN: …]` marker in the owner's words: its own
+  effective date and version, the company that runs it, what people and agents write
+  there, each service that receives what they write, any other service its pages connect a
+  visitor's browser to, and how long it keeps each kind of record. Everything else on the
+  page is unchanged. `AGENTS.md`'s "New site" list says every such marker is replaced
+  before the site goes live.
+- `/siwa/sites` (`AshTemplateWeb.SiwaLive`): the press under the Practice site form that
+  turns it back reads Production site, as the rest of the page says. A site's Setup has a
+  Guide link to SIWA's guide for websites (`https://siwa.regents.sh/websites.md`), opening
+  in a new tab.
+- Shared sign-in library: elixir-utils `1c80443a` to `0a9467f9` (only its `oauth` package
+  changed). Allow and Cancel on the Connect page now answer a short "Returning" page whose
+  refresh and Continue link take the browser on to the app, instead of a redirect, so an
+  app whose callback sends the browser on to another host gets its code (seen live,
+  18 Nov: Allow did nothing). The Connect page keeps the site's own browser policy.
+  Opening the Connect page still answers a refusal with a redirect, and Disconnect still
+  returns to Connected apps with one. A failure inside sign-in is now logged as one line
+  naming where it happened, with no values.
+- Migration `20261118230000_oauth_long_values` runs the library's version 4: a code's
+  `state` and callback and an app's name, callbacks and keys address lose their
+  255-character limit, since OpenAI's apps send a longer `state`, which Allow could not
+  store. No row changes and no table is rewritten.
+- `docs/oauth-reference.md` and `docs/feature-map.md` say how Allow returns.
+- Tests: `platform/test/ash_template_web/claude_connector_test.exs` reads the code from the
+  page Allow answers (its refresh and Continue link name the same address).
+  `platform/test/browser/oauth.spec.ts` answers the app's callback itself, with a
+  redirect to another host (the site's health page under its other local name), and
+  finds the code arrive there, then trades it for tokens.
+  `platform/test/browser/siwa.spec.ts` finds Setup's Guide link.
+- Checks: `mix format --check-formatted` and `mix compile --warnings-as-errors` exit 0;
+  the whole `mix test` 379 passed (11 properties); `npm run typecheck` exit 0;
+  `sh test/browser/walk.sh oauth.spec.ts siwa.spec.ts` 14 passed. Not proven: Allow
+  with a live app whose callback sends the browser on; the migration on a copy of the
+  production rows.

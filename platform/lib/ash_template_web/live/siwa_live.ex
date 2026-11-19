@@ -1689,7 +1689,7 @@ defmodule AshTemplateWeb.SiwaLive do
           phx-click={if @practice, do: "live_site", else: "practice_site"}
           phx-target={@myself}
         >
-          {if @practice, do: "Live site", else: "Practice site"}
+          {if @practice, do: "Production site", else: "Practice site"}
         </P.button>
       </p>
     </section>
@@ -1979,6 +1979,15 @@ defmodule AshTemplateWeb.SiwaLive do
       <pre class="siwa-code" tabindex="0" aria-label="Setup example"><code id="siwa-setup-code">{example(@site)}</code></pre>
       <div class="siwa-actions">
         <P.copy_button id="siwa-setup-copy" target="siwa-setup-code">Copy example</P.copy_button>
+        <a
+          id="siwa-site-guide"
+          class="siwa-link"
+          href="https://siwa.regents.sh/websites.md"
+          target="_blank"
+          rel="noopener"
+        >
+          Guide
+        </a>
       </div>
     </section>
 
