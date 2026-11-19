@@ -13115,3 +13115,26 @@ For the template chief to release. No migration. No new package.
   499 script). Not proven: the new libraries under production traffic; Safari, Firefox,
   real phones. Still to come as their own releases: Node 26.13.1 with PostgreSQL 17.12,
   and the browser test tools.
+
+- `platform/package.json` asks for Playwright 1.65.1 (was 1.64.1) and Vitest 5.1.1 (was
+  5.1.0). npm moved what they pull in with them: Vite 8.3.5 → 8.3.8, Rolldown 1.2.16 →
+  1.2.19 and its binaries, and a few small helpers, all from registry.npmjs.org.
+- Rolldown 1.2.19 also lists a WebAssembly binary with four helpers of its own (`@emnapi/*`,
+  `@napi-rs/wasm-runtime`, `@tybys/wasm-util`). All are optional and only for a wasm32
+  machine, so `npm ci` installs none of them on a Mac or in the image.
+- Playwright 1.65.1 uses Chromium build 1255; `npx playwright install chromium` fetches it
+  on a machine that only has the earlier build.
+- Checks: `npm run typecheck` exits 0; `npx vitest run` 499 passed; `mix assets.build`
+  exits 0; `walk.sh pages.spec.ts oauth.spec.ts` 369 passed. `npm audit` names the same one
+  moderate finding (hono) before and after.
+
+## 2026-11-19 — Node 26.13.1 and PostgreSQL 17.12
+
+- `platform/.tool-versions` names Node 26.13.1 (was 26.13.0) and PostgreSQL 17.12 (was
+  17.7). Erlang and Elixir stay where they are.
+- The image's Node stage in `platform/Dockerfile` is `node:26.13.1-trixie-slim` at digest
+  `sha256:e6bedef2…20bc`, the tag's multi-platform list as Docker Hub serves it (amd64,
+  arm64, ppc64le and s390x); its amd64 image says `NODE_VERSION=26.13.1`.
+- Nothing else in the repository names either old version. `scripts/release.sh` starts its
+  throwaway database from `postgres:17`, which already follows the newest 17.
+- Checks: the full check on the exact commit, recorded with the release below.
