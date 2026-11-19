@@ -1,8 +1,9 @@
 defmodule AshTemplate.Points.FirstAgentNoteTest do
   # Invariant: a one-time award yields exactly one ledger entry per account,
   # however many qualifying events arrive, in whatever order or at once, and an
-  # award already earned records nothing more and queues no award. The agent's
-  # Points answer names the agent that earned it.
+  # award already earned records nothing more and queues no award; events checked
+  # at once with the one that earns end capped. The agent's Points answer names
+  # the agent that earned it.
   #
   # The races need separate connections that really commit; every run uses its
   # own person.
@@ -63,10 +64,15 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
                  actor: Store.system()
                )
 
-      assert [%{processing_status: :confirmed}] =
-               Ash.read!(Ash.Query.filter(Event, account_id == ^account_id),
-                 actor: Store.system()
-               )
+      # One event earned; any checked beside it ended capped, none waits or was refused.
+      assert [:confirmed | capped] =
+               Event
+               |> Ash.Query.filter(account_id == ^account_id)
+               |> Ash.read!(actor: Store.system())
+               |> Enum.map(& &1.processing_status)
+               |> Enum.sort_by(&(&1 != :confirmed))
+
+      assert Enum.all?(capped, &(&1 == :capped))
 
       {:ok, standing} = AshTemplate.Points.my_points(actor: hd(actors))
 

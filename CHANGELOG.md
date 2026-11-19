@@ -13279,3 +13279,18 @@ For the template chief to release. No migration. No new package.
 - Rollback: v295 (`91e79240`) image; nothing to undo. An award already given stays.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   388 Elixir; 499 script).
+
+## 2026-11-19 — Shared libraries at 0e89c4f: a refused award blocks no later one
+
+- elixir-utils `0e89c4fc` (was `f555affb`), every library on the one commit. One change,
+  Points (Sean, 19 November, 13 a): a one-time award still being checked, or refused, no
+  longer keeps a later genuine offer for the same account or social account from being
+  recorded. A refused source can be offered again and waits for its own award; one that
+  earned stands. The limits per account and per social account, read under the
+  account's lock, still let only one earn.
+- No template code changed: the pin, the lock and one test. Offers checked at once for
+  one account are now each recorded, one earning and the rest ending capped, where
+  only one was recorded before; `first_agent_note_test.exs` asserts that, with one
+  entry as before. No migration; no Points setting, rule or rate changed.
+- Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
+  388 Elixir; 499 script).
