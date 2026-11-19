@@ -13294,3 +13294,11 @@ For the template chief to release. No migration. No new package.
   entry as before. No migration; no Points setting, rule or rate changed.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   388 Elixir; 499 script).
+
+## 2026-11-19 — Released v297: a refused award blocks no later one
+
+- v297 on template.regents.sh carries one commit (`8d59312e`), the entry above.
+  elixir-utils `0e89c4fc`; no migration; no Points setting changed.
+- Rollback: v296 (`905a519c`) image; nothing to undo. An award already given stays.
+- Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
+  388 Elixir; 499 script).
