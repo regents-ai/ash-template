@@ -86,11 +86,15 @@ and report what blocked it. Never release from a `git archive` export or a fresh
 
 ## Live checks
 
-Sean, 28 Oct: the Mac checks a live site the way an agent does, through the CLI as a
-paired agent, and that goes on the allowlist; raw curl is dropped. This holds on all
-five sites and the template, for a Mac session, a Claude Projects thread and every
-helper either starts.
+A live site is read two ways after a release: plain requests for its public pages,
+signed out, and the CLI as a paired agent for anything that needs a sign-in (Sean, 28
+Oct; the browser walks left with the tests, 19 Nov). This holds on all five sites and
+the template, for a Mac session, a Claude Projects thread and every helper either
+starts.
 
+- **Public pages, signed out.** A plain request for each page and file the release
+  touched, reading the status, the size and the words that changed. No cookie, no
+  header that signs anyone in, no request that changes anything, no load.
 - **The CLI as a paired agent.** The regents CLI, or the site's SIWA client
   (`uv run siwa_agent.py request`), run from the agent's own folder with its own signer
   and pairing. A check reads: `whoami`, lists and reads.
@@ -117,4 +121,5 @@ template commits its file first; the shape reaches every site as a shared change
   command that writes, any CLI command given another `--base-url` (its signed request
   could be replayed at the site), and every SIWA-client command, whose arguments no
   pattern can hold to reads.
-- Raw `curl` against a live site is not on the list.
+- A plain signed-out read of a public page needs no entry; a request that carries a
+  sign-in or changes anything is never made with `curl`.

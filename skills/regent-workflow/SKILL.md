@@ -364,9 +364,10 @@ check, format, Credo and the TypeScript typecheck. No check lives in a scratch s
 
 ### Live checks
 
-Live sites are checked the way an agent does (28 Oct): the regents CLI as a paired
-agent; a Claude thread uses the site's MCP connector once it is on. Never raw `curl`,
-never a person's cookies. A
+A live site is read with plain signed-out requests for its public pages, and, for
+anything behind a sign-in, the way an agent does (28 Oct): the regents CLI as a paired
+agent; a Claude thread uses the site's MCP connector once it is on. Never a signed
+request by `curl`, never a person's cookies. A
 check only reads; a command that changes live data is agent work and asks first. Name
 the surface, the agent (`type#N`), the live commit and the result. Procedure and the
 permission allowlist: [release](references/release.md#live-checks).
