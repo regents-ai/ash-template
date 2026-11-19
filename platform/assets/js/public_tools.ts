@@ -1,8 +1,10 @@
-// Manifest-listed WebMCP operations. A signed tool takes only its input; the agent's
+// Manifest-listed WebMCP tools. A signed tool takes only its input; the agent's
 // browser host signs the exact request (window.regentsSign), so no key, signature or
-// receipt passes through the page.
+// receipt passes through the page. The feedback tool hands its post to the agent's
+// browser host and has no route here (feedback_tool.ts).
 import manifest from "../../priv/tool_manifest.json" with {type: "json"}
 import {Refused, signedTools, type SignedOperation} from "../vendor/regent_agent_access/signed_tools"
+import {type FeedbackEntry, feedbackTool, offerTools} from "./feedback_tool"
 import {report, visitId} from "./visit_log"
 
 function signedTransport() { return signedTools({
@@ -32,8 +34,10 @@ type Entry = {
   annotations: Record<string, boolean>
   route: string
   scope: string
-  authentication: string
+  authentication: "public" | "siwa_per_request"
 }
+
+type Feedback = FeedbackEntry & {scope: string; authentication: "patchbay_feedback"}
 
 type Input = Record<string, string | number>
 
@@ -216,9 +220,9 @@ async function signed(entry: Entry, input: Record<string, unknown>, signal: Abor
 
 // JSON imports widen every literal, so the manifest is read as the shape it is written in.
 // Every page offers the site's tools; a page's own tools are offered by that page.
-const entries = (manifest.tools as unknown as Entry[]).filter(entry => entry.scope === "site")
+const entries = (manifest.tools as unknown as Array<Entry | Feedback>).filter(entry => entry.scope === "site")
 
-const tools: ModelContextTool[] = entries.map(entry => ({
+const operationTool = (entry: Entry): ModelContextTool => ({
   name: entry.name,
   title: entry.title,
   description: entry.description,
@@ -237,36 +241,10 @@ const tools: ModelContextTool[] = entries.map(entry => ({
       return unanswered(entry, signal)
     }
   },
-}))
+})
 
-// One registration per shown page: register now and again when the page comes
-// back from the back/forward cache, remove on pagehide, so a page never holds
-// two sets. The html element's data-webmcp-status says whether the browser
-// holds them all; only the latest registration writes it.
+const tools = entries.map(entry => entry.authentication === "patchbay_feedback" ? feedbackTool(entry) : operationTool(entry))
+
 export function installPublicTools(): void {
-  const status = document.documentElement.dataset
-  let registration: AbortController | undefined
-
-  const register = () => {
-    const current = new AbortController()
-    registration = current
-    const {signal} = current
-    Promise.all(tools.map(tool => document.modelContext.registerTool(tool, {signal})))
-      .then(() => document.modelContext.getTools())
-      .then(held => {
-        if (registration !== current) return
-        const names = new Set(held.map(tool => tool.name))
-        status.webmcpStatus = tools.every(tool => names.has(tool.name)) ? "connected" : "error"
-      })
-      .catch((error: unknown) => {
-        current.abort()
-        if (registration !== current) return
-        status.webmcpStatus = "error"
-        console.warn("The browser tools could not be offered.", error)
-      })
-  }
-
-  register()
-  window.addEventListener("pageshow", event => { if (event.persisted) register() })
-  window.addEventListener("pagehide", () => registration?.abort())
+  offerTools(tools)
 }

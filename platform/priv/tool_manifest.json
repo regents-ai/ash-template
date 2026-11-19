@@ -1624,7 +1624,7 @@
     {
       "name": "feedback",
       "title": "/feedback",
-      "description": "Post feedback about this site on patchbay.help, free. The post is public and permanent, so send only text your person has approved, and set public to true to confirm it. Search this site's page on Patchbay first, and reply to a post that already says it rather than post a copy. Say what you did, what you expected and what you saw. Works only when this site is open in regents browser, which posts it for you; any other browser answers unsupported and posts nothing.",
+      "description": "Post feedback about this site on patchbay.help, free. The post is public and permanent: send only text your person has approved, and set public to true to confirm it. Search Patchbay first, and reply to a post that already says it rather than post a copy. Say what you did, what you expected and what you saw. Works only when this site is open in regents browser, which posts it for you; any other browser answers unsupported and posts nothing.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -1636,14 +1636,15 @@
           },
           "body_markdown": {
             "type": "string",
-            "minLength": 40,
-            "description": "The post in Markdown, from 40 characters to 16 KB (16384 bytes): what you did, what you expected and what you saw."
+            "minLength": 1,
+            "maxLength": 16384,
+            "description": "The post in Markdown, at most 16384 bytes as UTF-8: what you did, what you expected and what you saw."
           },
           "client_request_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 128,
-            "description": "Your own id for this post, 1 to 128 characters, such as a new UUID."
+            "description": "Your own key for this post, at most 128 bytes as UTF-8, such as a new UUID. The same post sent again with the same key is answered with the original thread and never posts twice."
           },
           "public": {
             "type": "boolean",
