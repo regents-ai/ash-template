@@ -60,8 +60,9 @@ config :ash_template, AshTemplateWeb.Endpoint,
   code_reloader: not walk?,
   # Signal listeners added while the server runs are picked up on reload.
   reloadable_compilers: [:ash_signals, :phoenix_live_view, :elixir, :app],
-  # `make readiness` sets this to off, so error pages answer as they do in a release.
-  debug_errors: System.get_env("ASH_TEMPLATE_DEBUG_ERRORS", "on") == "on",
+  # `make readiness` sets this to off, and the walk has it off, so error pages answer
+  # as they do in a release.
+  debug_errors: not walk? and System.get_env("ASH_TEMPLATE_DEBUG_ERRORS", "on") == "on",
   secret_key_base: "6ihHqnWB0px5FXmoddiKg3V2NLeiM0k0UsFs5DwmIADSX35FFdeSs5VNICCc3iU5",
   # The browser walk builds the pages' scripts and styles before its server starts
   # (playwright.config.ts), so nothing rebuilds them and reloads a page while a check
@@ -71,7 +72,8 @@ config :ash_template, AshTemplateWeb.Endpoint,
       do: [],
       else: [
         esbuild: {Esbuild, :install_and_run, [:ash_template, ~w(--sourcemap=inline --watch)]},
-        scene_page: {Esbuild, :install_and_run, [:scene_page, ~w(--sourcemap=inline --watch)]}
+        scene_page: {Esbuild, :install_and_run, [:scene_page, ~w(--sourcemap=inline --watch)]},
+        error_page: {Esbuild, :install_and_run, [:error_page, ~w(--sourcemap=inline --watch)]}
       ]
     ),
   live_reload:

@@ -1636,7 +1636,6 @@
           },
           "body_markdown": {
             "type": "string",
-            "minLength": 1,
             "maxLength": 16384,
             "description": "The post in Markdown, at most 16384 bytes as UTF-8: what you did, what you expected and what you saw."
           },

@@ -5,7 +5,8 @@ defmodule AshTemplateWeb.Components.AgentTools do
   (`assets/js/public_tools.ts` offers the entries scoped to the site). The bottom
   bar's button says how many there are and opens a dialog listing each tool with
   its description, which copies the whole list as Markdown, or every Regent
-  site's tools at once.
+  site's tools at once. A page with its own small script in place of the site's
+  carries the feedback tool's entry (`feedback/1`).
   """
 
   use Phoenix.Component
@@ -14,11 +15,19 @@ defmodule AshTemplateWeb.Components.AgentTools do
 
   manifest = Application.app_dir(:ash_template, "priv/tool_manifest.json")
   @external_resource manifest
+  manifest_tools = manifest |> File.read!() |> Jason.decode!() |> Map.fetch!("tools")
 
-  @tools (for %{"scope" => "site"} = tool <-
-                manifest |> File.read!() |> Jason.decode!() |> Map.fetch!("tools") do
+  @tools (for %{"scope" => "site"} = tool <- manifest_tools do
             %{name: tool["name"], title: tool["title"], description: tool["description"]}
           end)
+
+  # The feedback tool's entry as a script's JSON, with `<` escaped so no text in it
+  # can end the element.
+  @feedback manifest_tools
+            |> Enum.find(&(&1["authentication"] == "patchbay_feedback"))
+            |> Map.take(~w(name title description input_schema annotations))
+            |> Jason.encode!()
+            |> String.replace("<", "\\u003c")
 
   @count "#{length(@tools)} WebMCP Tools"
   @label "Agents see #{@count}"
@@ -68,6 +77,21 @@ defmodule AshTemplateWeb.Components.AgentTools do
     >
       <span class="agent-tools-button__lead">Agents see</span> {@count}
     </button>
+    """
+  end
+
+  @doc """
+  The feedback tool's manifest entry as JSON, for a page whose own small script
+  offers that tool alone (`offerFeedbackTool` in `assets/js/feedback_tool.ts`): a
+  scene's page and the error pages. Every other page's script reads the manifest.
+  """
+  def feedback(assigns) do
+    assigns = assign(assigns, :json, @feedback)
+
+    ~H"""
+    <script type="application/json" id="feedback-tool">
+      <%= Phoenix.HTML.raw(@json) %>
+    </script>
     """
   end
 

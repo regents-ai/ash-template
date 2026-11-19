@@ -1,6 +1,12 @@
 defmodule AshTemplateWeb.ErrorHTML do
-  @moduledoc "Errors on HTML requests: a headline and recovery links, in the visitor's chosen theme."
+  @moduledoc """
+  Errors on HTML requests: a headline and recovery links, in the visitor's chosen
+  theme. Its one small script (`assets/js/error_page.ts`) offers a browser agent the
+  feedback tool, whose entry the head carries.
+  """
   use AshTemplateWeb, :html
+
+  alias AshTemplateWeb.Components.AgentTools
 
   def render(template, assigns) do
     cookie = Plug.Conn.fetch_cookies(assigns.conn).req_cookies["regent_theme"]
@@ -15,6 +21,9 @@ defmodule AshTemplateWeb.ErrorHTML do
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{@title} · Ash Template</title>
         <link rel="stylesheet" href="/assets/js/app.css" />
+        <AgentTools.feedback />
+        <script defer src="/assets/js/error_page.js">
+        </script>
       </head>
       <body>
         <Regent.Utility.page title={@title} id="error-page">

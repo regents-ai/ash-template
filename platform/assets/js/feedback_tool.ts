@@ -33,7 +33,7 @@ const fields = ["title", "body_markdown", "client_request_id", "public"]
 // Each text field's limits, as the host counts them, and the unit they are counted in.
 const limits = {
   title: {min: 1, max: 160, unit: "characters"},
-  body_markdown: {min: 1, max: 16384, unit: "bytes"},
+  body_markdown: {min: 0, max: 16384, unit: "bytes"},
   client_request_id: {min: 1, max: 128, unit: "bytes"},
 } as const
 
@@ -70,7 +70,9 @@ function inputProblem(input: unknown): Refusal | null {
     // With the u flag only a lone surrogate matches, and text with one has no UTF-8 form.
     if (/[\uD800-\uDFFF]/u.test(value)) return invalid(field, `${field} has a broken character.`)
     const size = units[unit].count(value)
-    if (size < min || size > max) return invalid(field, `${field} must be ${min} to ${max} ${units[unit].words}.`)
+    if (size < min || size > max) {
+      return invalid(field, `${field} must be ${min ? `${min} to ${max}` : `at most ${max}`} ${units[unit].words}.`)
+    }
   }
   if (values.public !== true) {
     return invalid(

@@ -204,7 +204,8 @@ defmodule AshTemplate.MixProject do
         "regent_privy.assets",
         "regent_agent_access.assets",
         "esbuild ash_template",
-        "esbuild scene_page"
+        "esbuild scene_page",
+        "esbuild error_page"
       ],
       "assets.deploy": [
         "regent_ui.assets",
@@ -213,6 +214,7 @@ defmodule AshTemplate.MixProject do
         "regent_agent_access.assets",
         "esbuild ash_template --minify",
         "esbuild scene_page --minify",
+        "esbuild error_page --minify",
         "phx.digest"
       ],
       precommit: [

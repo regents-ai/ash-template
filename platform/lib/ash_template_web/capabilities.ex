@@ -56,6 +56,19 @@ defmodule AshTemplateWeb.Capabilities do
       {id, get_in(success, ["content", "application/json", "schema"])}
     end
 
+  # Every browser tool is one of the site's operations, public or signed, or the
+  # feedback post the agent's browser host sends to Patchbay, which has no route here.
+  for tool <- @manifest["tools"] do
+    unless (tool["authentication"] in ~w(public siwa_per_request) and
+              is_map_key(openapi, tool["operation_id"])) or
+             (tool["authentication"] == "patchbay_feedback" and
+                not is_map_key(tool, "operation_id") and not is_map_key(tool, "route")),
+           do:
+             raise(
+               "#{tool["name"]} in priv/tool_manifest.json has an authentication that differs from its operation"
+             )
+  end
+
   tools = for %{"operation_id" => id} = tool <- @manifest["tools"], into: %{}, do: {id, tool}
 
   # The tools each domain hands AshAi for hosted MCP, by name, with their title
@@ -380,7 +393,13 @@ defmodule AshTemplateWeb.Capabilities do
   defp proof_words(%{auth_modes: []}), do: "None"
   defp proof_words(_row), do: "Its person's sign-in"
 
-  @doc "Every browser tool and who may run it, as a Markdown table for the developer documentation."
+  @patchbay_feedback "An agent with this site open in `regents browser`, signed in on Patchbay."
+
+  @doc """
+  Every browser tool and who may run it, as a Markdown table for the developer
+  documentation. The feedback tool is no operation of this site: the agent's browser
+  host posts it on Patchbay.
+  """
   @spec summary_table() :: String.t()
   def summary_table do
     rows = Map.new(@operations, &{&1.operation, &1})
@@ -392,7 +411,8 @@ defmodule AshTemplateWeb.Capabilities do
     """
   end
 
-  defp tool_row(tool, nil), do: "| `#{tool["name"]}` | none | #{authority_words("public")} |"
+  defp tool_row(%{"authentication" => "patchbay_feedback"} = tool, nil),
+    do: "| `#{tool["name"]}` | none | #{@patchbay_feedback} |"
 
   defp tool_row(tool, row),
     do: "| `#{tool["name"]}` | `#{row.operation}` | #{who(row)} |"

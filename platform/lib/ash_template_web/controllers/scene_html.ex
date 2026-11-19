@@ -4,12 +4,13 @@ defmodule AshTemplateWeb.SceneHTML do
   (`AshTemplateWeb.Components.SplatStage.stage/1`), filling the page on the scene's
   own sky, with its zoom buttons small in the corner once it has drawn. No header,
   footer, title or traits, and no Download GIF. The head carries the link preview: the
-  title, the line and the card picture (1440 by 960) as a large picture.
+  title, the line and the card picture (1440 by 960) as a large picture, and the
+  feedback tool's entry, which the page's script offers to a browser agent.
   """
 
   use AshTemplateWeb, :html
 
-  alias AshTemplateWeb.Components.SplatStage
+  alias AshTemplateWeb.Components.{AgentTools, SplatStage}
   alias AshTemplateWeb.{Endpoint, PublicDocuments, Scenes}
 
   def show(assigns) do
@@ -33,6 +34,7 @@ defmodule AshTemplateWeb.SceneHTML do
           structured_data={PublicDocuments.structured_data([])}
         />
         <link rel="stylesheet" href={url(~p"/assets/js/scene_page.css")} />
+        <AgentTools.feedback />
         <script defer src={url(~p"/assets/js/scene_page.js")}>
         </script>
       </head>

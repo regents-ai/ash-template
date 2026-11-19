@@ -293,6 +293,13 @@ config :esbuild,
       ~w(js/scene_page.ts --bundle --format=iife --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => [Mix.Project.deps_path(), Mix.Project.build_path()]}
+  ],
+  # An error page (AshTemplateWeb.ErrorHTML) offers only the feedback tool: one small
+  # classic script, built on its own.
+  error_page: [
+    args:
+      ~w(js/error_page.ts --bundle --format=iife --target=es2022 --outdir=../priv/static/assets/js),
+    cd: Path.expand("../assets", __DIR__)
   ]
 
 config :logger, :default_formatter,
