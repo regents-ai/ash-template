@@ -5,9 +5,9 @@ defmodule AshTemplate.Points.LinkedSocial do
   one social account earns once, whichever account links it; a link removed
   before the check earns nothing.
 
-  `existing/2` lists the links to the rule's provider made before the Points
-  start and still there, for `RegentPoints.StartAwards`; `held/2` answers,
-  before the start, whether one account has such a link now.
+  `existing/2` lists the links to the rule's provider made before the moment
+  `RegentPoints.StartAwards` asks about, the time it runs, and still there;
+  `held/2` answers, before the start, whether one account has such a link now.
   """
 
   alias AshTemplate.Accounts
@@ -23,9 +23,8 @@ defmodule AshTemplate.Points.LinkedSocial do
     end
   end
 
-  def existing("social." <> provider, starts_at) do
-    for identity <-
-          Accounts.linked_identities_before!(provider, starts_at, actor: %System{}) do
+  def existing("social." <> provider, at) do
+    for identity <- Accounts.linked_identities_before!(provider, at, actor: %System{}) do
       {identity.human_account_id,
        %{
          source_app: AshTemplate.site(),

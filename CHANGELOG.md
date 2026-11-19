@@ -13253,3 +13253,20 @@ For the template chief to release. No migration. No new package.
 - Rollback: v294 (`6fabd5f4`) image; nothing to undo.
 - Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
   387 Elixir; 499 script).
+
+## 2026-11-19 — Shared libraries at f555aff: the start run covers a late switch-on
+
+- elixir-utils `f555affb` (was `b695c5a0`), every library on the one commit. One change,
+  Points: `RegentPoints.StartAwards` asks each start rule's source for `existing(rule_id,
+  at)` with the run's own time, where it asked with the Points start, and runs at most
+  once a day. An account made, a social account linked or an agent paired after the
+  start, before a site switched Points on, gets each one-time award once, earned at the
+  time it happened; what was there before the start still earns at the start (Sean, 19
+  November).
+- `AshTemplate.Points.AccountActivated`, `LinkedSocial` and `PairedAgent` already read
+  any moment; their `existing/2` takes `at` and their docs say what it lists. A new test
+  in `platform/test/ash_template/points/start_awards_test.exs` covers an account, an X
+  link and a pairing from after the start that no listener recorded, beside an account
+  from before it, and a second run that awards nothing more.
+- No migration; no Points setting, rule or start time changed.
+- Full check exit 0 by the chief on the exact commit (COUNTS).

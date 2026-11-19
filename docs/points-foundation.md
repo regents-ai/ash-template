@@ -80,10 +80,13 @@ under. To stop a rule, take it off `approved_rules`.
 What an account already had at the start earns at the start time, at most 80
 points, without the person doing anything (Sean, POINTS-EXISTING a, 6 November):
 the account, its linked X, GitHub and Farcaster accounts still linked, and its
-first paired agent still paired. `RegentPoints.StartAwards` runs hourly on every
-site, asks each checker's `existing/2` and records through the normal path, so an
-account earns each once whichever site records it. No other rule earns for what
-happened before the start.
+first paired agent still paired. The same run gives these awards for what came
+after the start that Points has not recorded, such as an account made before its
+site switched Points on, earned at the time it happened (Sean, 19 November).
+`RegentPoints.StartAwards` runs at most once a day on every site, asks each
+checker's `existing/2` for what was there before the run's own time and records
+through the normal path, so an account earns each once whichever site records it.
+No other rule earns for what happened before the start.
 
 ## NFT bonus
 
@@ -162,7 +165,7 @@ See the package README for the adapter contract, actor policy and migration inst
   action is listed. Before the start, each start rule
   (`RegentPoints.Rules.start_rules/0`) the account already meets is ticked and marked
   as added at the start. Each start adapter's `held/2` answers that for the one
-  account, from the same tables its `existing/2` reads for the start itself.
+  account, from the same tables its `existing/2` reads for the start run.
 - **Leaderboard**: the ten highest totals by the name and picture the site already
   shows the public, the reader's row marked. A reader below the ten gets their own
   place on a row under the list. Accounts level on points share a place: one more
