@@ -166,6 +166,6 @@ export function offerFeedbackTool(): void {
     status.webmcpStatus = "unsupported"
     return
   }
-  const entry = JSON.parse(document.getElementById("feedback-tool")!.textContent!) as FeedbackEntry
+  const entry = JSON.parse(document.querySelector<HTMLMetaElement>("meta[name='feedback-tool']")!.content) as FeedbackEntry
   offerTools([feedbackTool(entry)])
 }
