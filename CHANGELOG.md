@@ -13197,3 +13197,13 @@ For the template chief to release. No migration. No new package.
   to (`signal_in/2`), the shape `skills/ash-signals/SKILL.md` gives for a listener. A site
   copies it as written: one `policy action(:name)` per listener action with
   `authorize_if signal_in(SignalsModule, :signal)`. A test covers each action.
+
+## 2026-11-19 — Released v293: hono 4.13.19, and Points offers name their signal
+
+- v293 on template.regents.sh carries two commits (`f6e5db14`, `6afa0ebe`), the two
+  entries above. No migration; no Points setting, rule or start time changed.
+- Rollback: v292 (`0b0399cd`) image; nothing to undo.
+- `npm audit` reports nothing; all 818 locked packages have verified registry signatures.
+- Full check exit 0 by the chief on the exact commit (784 walk tests passed, 7 skipped;
+  387 Elixir; 499 script).
+- Not proven: Safari, Firefox, real phones.
