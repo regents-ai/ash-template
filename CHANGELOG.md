@@ -13357,3 +13357,11 @@ For the template chief to release. No migration. No new package.
 - Deleted every test and everything only they used; `make check` runs the style check,
   `mix precommit` (warnings as errors, format, Credo, Sobelow, xref, codegen, TypeScript
   typecheck), the required-fixes, command description, SIWA and contract checks.
+
+## 2026-11-19 — Released v299: no tests
+
+- v299 on template.regents.sh carries one commit (head `37c86b5d`), the entry above.
+  elixir-utils `b9d530d4`; no migration; no Points setting changed.
+- Rollback: v298 (`e3898de9`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit (six gates, about 20 seconds), and
+  the release image built and started against a throwaway database.
