@@ -13519,3 +13519,14 @@ For the template chief to release. No migration. No new package.
   no trait is used more often than the collection holds it.
 - Their baked files and pictures sit beside the others, and the stills list names them;
   the run left the 72 earlier pictures byte for byte as they were.
+
+## 2026-11-20 — Released v304: fifteen more numbered scenes
+
+- v304 on template.regents.sh carries six commits (head `3d21fb5c`): the entries above
+  from the design chief's branch. No migration; library pin unchanged; no Points setting
+  changed. About 88 MB of new static files.
+- Rollback: v303 (`26b9f20d`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit. Live, signed out: 22 Splats tabs,
+  20 Scenes cards, every scene's page, trait file, baked file, card and item picture
+  answer; `/scenes/0` and `/scenes/21` are not found. Not proven by the chief: the
+  turning worlds and Download GIF in a browser with WebGPU.
