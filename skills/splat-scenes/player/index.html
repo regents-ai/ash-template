@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- The player page: the canvas the scene is painted on, the still picture over it until the first frame, and the import map that
-     points the browser at the installed vgpu packages. -->
+<!-- The player page: the still picture, the canvas the scene is painted on (shown, with a short fade, once the stage's data-ready
+     flag is "true"), and the import map that points the browser at the installed vgpu packages. -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -22,6 +22,7 @@
         --ink: #1a1f36;
         --muted: #697386;
         --edge: #e3e8ee;
+        --focus: #635bff;
         color-scheme: light dark;
       }
       @media (prefers-color-scheme: dark) {
@@ -30,6 +31,7 @@
           --ink: #f1f4f8;
           --muted: #8792a2;
           --edge: #232a36;
+          --focus: #8f8aff;
         }
       }
       * {
@@ -65,14 +67,28 @@
         image-rendering: pixelated;
       }
       canvas {
-        touch-action: none;
+        opacity: 0;
+        transition: opacity 240ms ease-out;
+        touch-action: pan-y;
         cursor: grab;
       }
       canvas:active {
         cursor: grabbing;
       }
-      [hidden] {
+      canvas:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: -2px;
+      }
+      [data-ready='true'] canvas {
+        opacity: 1;
+      }
+      [data-ready='false'] canvas {
         display: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        canvas {
+          transition: none;
+        }
       }
       .note {
         margin: 0;
@@ -83,8 +99,8 @@
   </head>
   <body>
     <main class="stage">
-      <canvas aria-label="Splat scene"></canvas>
       <img src="still.png" alt="Splat scene" />
+      <canvas tabindex="0" role="img" aria-label="Splat scene. Drag or use the arrow keys to turn it."></canvas>
     </main>
     <p class="note">Drag or use the arrow keys to turn.</p>
     <script type="module" src="main.js"></script>

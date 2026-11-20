@@ -1,142 +1,156 @@
 ---
 name: splat-scenes
-description: Make small looping pixel-art scenes out of Gaussian splats placed by code, and play them in the browser with WebGPU. Use when asked to build, change or add to a splat scene, write a new piece for one (a ground, a thing, a character, weather, sky, palette, light, camera or finish), bake a scene file, check how one looks, play one on a page, or deal random scenes from a library of pieces. Everything needed is in this folder plus an ink-studio download.
+description: Sculpt 3D Gaussian splat scenes in code with ink-studio, bake each into one small file, and play it on a web page with a WebGPU pixel-art player (vgpu 0.6) that turns under drag, touch and keys, with stills, a GIF and a proof that the page draws what the toolkit draws. Use when making, changing or baking a splat scene, putting one on a page, exporting its stills or GIF, or when a splat picture shows holes, popping, a wrong order, a jump at the loop or colours outside its palette.
 ---
 
 # Splat scenes
 
-A scene is a few hundred thousand real 3D Gaussian splats. They are placed by code, not trained from photographs. ink-studio
-sculpts, lights and draws them offline; the kit bakes them into one file of a few megabytes; the player draws that file in the
-browser as pixel art: 48 colours, outlines, an ordered dither, and an 8-second loop that every motion comes round in. People turn it
-by dragging, touching or pressing the arrow keys.
+A splat scene is a small 3D picture made of Gaussian splats: soft coloured blobs, each with a centre, a size and shape, a palette
+colour and a density, drawn as crisp pixel art. You write the scene as code against **ink-studio** (an MIT-licensed toolkit: solids,
+light, materials, hand-placed splats, rigs, cloth), this kit **bakes** it into one file, and the **player** draws that file in a
+browser with WebGPU, turning slowly and following the pointer. Light is baked into colours, motion into a loop of a few seconds, so
+the page does only cheap arithmetic each frame. Describe the result as "baked from code, drawn as pixel art": the splats are real
+Gaussian splats, but not trained from photographs (references/splats.md).
 
-A scene is made of pieces. Each piece is one short file of a known kind, and a scene file lists the pieces.
-
-| Path | What it is |
-| --- | --- |
-| `kit/run.cjs` | the one runner: setup, stand, build, check, deal |
-| `kit/example.json` | the example scene: a grassy isle in the air with a tree, a lamp, a pool, a walker, rain and sky |
-| `kit/pieces/` | the example's pieces, one folder per kind |
-| `player/` | the browser player and its local server |
-| `references/contract.md` | what each kind of piece exports and the rules it is held to |
-| `references/format.md` | the baked file, for anyone reading or drawing it |
-
-Run every command below from this folder, except the download in Setup.
+This folder is complete on its own: copy it anywhere. It needs Node 18 or later, a download of ink-studio, and a browser with WebGPU.
 
 ## Setup
 
-1. Install Node 18 or newer.
-2. From any folder outside this one, download ink-studio (MIT, github.com/siliconjungle/shapeshift-labs-ink-studio) at commit
-   433ab1d, the version this kit was proven with:
+1. **ink-studio, in a folder you can write to.** The kit calls it from there and never copies it. Download the newest:
 
    ```sh
-   mkdir ink-studio
-   curl -fsSL https://github.com/siliconjungle/shapeshift-labs-ink-studio/archive/433ab1d.tar.gz | tar -xz --strip-components=1 -C ink-studio
+   mkdir -p /abs/path/ink-studio
+   curl -sL https://github.com/siliconjungle/shapeshift-labs-ink-studio/archive/HEAD.tar.gz | tar xz -C /abs/path/ink-studio --strip-components 1
    ```
 
-3. Point the kit at it, with the folder's absolute path, in every shell you use:
+   Or install it as a package in a scratch folder, `npm install github:siliconjungle/shapeshift-labs-ink-studio`, and use
+   `node_modules/@shapeshift-labs/ink-studio`. The folder must be writable: the download carries no `dist/`, and loading the toolkit
+   writes `dist/standalone.js` (several MB) inside it on first use and after any change to its sources. Check it with
+   `node /abs/path/ink-studio/cli/ink-studio.js help`.
 
-   ```sh
-   export INK_STUDIO=/absolute/path/to/ink-studio
-   ```
+   The notes in `references/` were written against commit `433ab1d` (put `433ab1d` in place of `HEAD` for exactly that copy). The
+   newest copy on 20 Nov 2026 (`b737660`) bakes ink-studio's examples to the same bytes, but has far more guides and examples than
+   references/ink-studio.md maps; for one not in the map, bake and the baker says whether it travels.
+2. **The player's packages:** `npm install --prefix /abs/path/splat-scenes/player` (vgpu 0.6.0 and @vgpu/wgsl 0.6.0, pinned exactly).
+   npm may warn that two packages' install scripts did not run (vgpu's Node adapter); the browser player does not need them.
+3. **A browser with WebGPU:** desktop Chrome or Edge; headless Chromium with `--enable-unsafe-webgpu` (and `--use-angle=metal` on a
+   Mac). Without WebGPU the player shows the scene's still picture.
 
-4. Check ink-studio loads and install the player's two packages (vgpu and @vgpu/wgsl 0.6.0):
+## Notes for agents
 
-   ```sh
-   node kit/run.cjs setup
-   ```
+- **Name the toolkit on every command.** Each command may run in a fresh shell, so an `export` does not reach the next one. Write
+  `env INK_STUDIO=/abs/path/ink-studio node kit/bake.cjs ...` every time. A kit command run without it stops and says so.
+- **Absolute paths** for the scene file, the outputs and ink-studio's `--out`; or run from this folder, as the commands below do.
+- **Script files for anything with variables, loops or `$(...)`**: write a small `.sh` file and run it, rather than typing them into a
+  shell that may refuse or forget them.
+- **Out of the way:** `out/` in this folder is ignored by git; put bakes there or anywhere outside it.
+- **Scene files** are plain CommonJS (`.js` or `.cjs`) and can live anywhere; they reach the kit's loop helper by its path.
 
-## Build the example
+## From a blank file to a scene on a page
 
-```sh
-node kit/run.cjs build kit/example.json out/example
-```
+1. **Check the pipeline** with ink-studio's own first example, `examples/sculpt.js` (a stone block with a ball carved out and a green
+   ball on top): bake, prove, stills, play (Commands, below; a few seconds in all). It is a pipeline check, not a model of what
+   a scene should look like: a real scene has many more parts, its own palette of colour ramps, light set on purpose, and things that
+   move. ink-studio's `examples/cloth.js` also bakes, and checks the moving path.
+2. **Write the scene file**: a module that takes the toolkit and returns `{ id, name, seed, build(seed) }`. Start from the skeleton
+   in references/ink-studio.md, 2.1, and follow its order: palette and builder, light, a rig if parts move, solids and `S.bake()`,
+   hand-placed splats, flames, motes, a cloth, then `B.finish({ cam, detail, radius, ... })` and the stage. 2.2 to 2.6 there cover
+   light, materials, hand-placed splats, things that move and the finish, and what of each the file carries.
+3. **Look while you sculpt**: ink-studio's `render`, `turn` and `stats` commands draw the scene with the same renderer the kit uses
+   (references/ink-studio.md, 2.7). Leave its look options off: the file does not carry them.
+4. **Make it loop** (The loop, below).
+5. **Bake** it. Read what the baker prints: splats, parts, frames, cloth dabs, the size raw and gzipped, how near every stored number
+   is, and how far each part and the cloth are from where they began a loop on. When it refuses, it names the cause
+   (references/format.md, 9): take that feature out or rebuild it from what the file carries.
+6. **Prove** the file draws what the scene draws (`verify.cjs`): expect 0 or 1 art pixels of 21,600 a view for a still scene and a
+   few hundredths of a percent with motion (ink-studio's `cloth.js`: 0.023%). It keeps the toolkit's pictures as the reference for
+   any painter.
+7. **Stills**: `still.png` is the page's picture until the live scene's first frame and without WebGPU; `sheet.png` and `moments.png`
+   are six views and eight moments to look at.
+8. **Play** it: serve the player and open it in a browser. A **GIF** of the loop comes from `gif.cjs`.
+9. **Put it on a site**: references/hosting.md (the island pattern, serving, loading, orbit and touch), and prove it with
+   references/proof.md.
 
-It prints each step's time, the splat count and the file size, then the look report, and exits with an error when there is a
-fault. It writes to `out/example/`:
+## Commands
 
-- `stills/`: seven views at the start of the loop (`hero.png` is the opening view; then `000`, `090`, `180`, `270`, `above`,
-  `below`) and `sheet.png` with six of them.
-- `moments.png`: the opening view at eight moments through the loop.
-- `scene.bin`: the baked scene.
-- `look.md`: the look measures, what each piece costs against its share, and every fault.
+From this folder, with `INK_STUDIO` named on each line. `scenes/my-scene.js` stands for your scene file (for the pipeline check,
+`/abs/path/ink-studio/examples/sculpt.js`).
 
-Open `stills/sheet.png` and `moments.png` and look at them. The numbers catch a piece that is missing, hidden or too big; only your
-eyes catch one that looks wrong.
+| Step | Command | Makes |
+| --- | --- | --- |
+| Bake | `env INK_STUDIO=/abs/path/ink-studio node kit/bake.cjs scenes/my-scene.js 8 out/my-scene/scene.bin` | The file; `8` is the loop in seconds (a whole number of thirtieths) |
+| Prove | `env INK_STUDIO=/abs/path/ink-studio node kit/verify.cjs scenes/my-scene.js out/my-scene/scene.bin out/my-scene/reference` | The toolkit's pictures and `reference.json`; prints the art pixels that differ |
+| Stills | `env INK_STUDIO=/abs/path/ink-studio node kit/stills.cjs out/my-scene/scene.bin out/my-scene` | `still.png`, `sheet.png`, `moments.png` |
+| GIF | `env INK_STUDIO=/abs/path/ink-studio node kit/gif.cjs out/my-scene/scene.bin out/my-scene/scene.gif` | One loop, once round, playing for ever |
+| Play | `node player/serve.mjs out/my-scene/scene.bin out/my-scene/still.png 4173` | The player at http://127.0.0.1:4173/ (stop it with Ctrl-C) |
+| Preview | `env INK_STUDIO=/abs/path/ink-studio node /abs/path/ink-studio/cli/ink-studio.js render scenes/my-scene.js --out /tmp/look.png` | ink-studio's own picture of the live scene |
 
-## Play it
+What ink-studio's `sculpt.js` gives on a Mac: 4,027 splats, a 0.08 MB file (0.02 MB gzipped), baked in 0.1 s, proved in 0.6 s (at
+most 1 art pixel of 21,600 differs in any view), stills in 0.2 s, a GIF of 120 frames (0.41 MB) in about 2 s. Its `cloth.js`: 1,413
+splats and 396 cloth dabs, 0.89 MB (0.66 MB gzipped), baked in 2 s.
 
-```sh
-node player/serve.mjs out/example/scene.bin out/example/stills/hero.png
-```
+In the player: it turns once every 30 seconds; drag to turn and tilt, flick to spin, arrow keys on the focused picture turn 20° and
+tilt 12°; a finger only turns, so the page still scrolls; with reduced motion it holds still until moved.
 
-Open http://127.0.0.1:4173/ in a browser with WebGPU, such as a recent Chrome. A third argument changes the port. The scene turns
-slowly and plays its loop. Drag to turn and tilt it, or use the arrow keys. With reduced motion asked for, it holds still at the
-opening view until dragged. Without WebGPU the page shows the still picture.
+## The loop
 
-To put a scene on a site, serve `player/` with its `node_modules/` from any static file server, with the scene and a still beside
-`index.html` as `scene.bin` and `still.png`. There is no build step.
+The file holds one loop of L seconds (the bake's second argument), and the player plays it for ever, so everything that moves must be
+back where it started after L seconds.
 
-## Make a new piece
+- **Kinds of motion on single splats** (sway, bob, orbit, flicker, ...): end `build` with the kit's loop helper, which moves each speed
+  to the nearest whole number of cycles a loop and changes nothing else:
 
-1. Read `references/contract.md`.
-2. Copy the example piece nearest to what you want into a pieces folder and rename it. Keep the comment at its top to one to three
-   sentences saying what the piece is.
-3. Write it. Take every colour from `pal`, stay inside the place you are given, and make every motion come round in the loop.
-4. Try it on a stand: the example's palette, light, camera, finish and ground with your piece in place, or in place of the example's
-   own piece of the same kind.
+  ```js
+  const loopable = require('/abs/path/splat-scenes/kit/loop.cjs');
+  // ... at the end of build(seed):
+  return loopable(W, 8); // the same 8 as the bake
+  ```
 
-   ```sh
-   node kit/run.cjs stand kit/pieces/thing/lamp.cjs out/stand-lamp
-   ```
+  The bake refuses a speed that is not whole cycles a loop. A sway's second motion never comes round exactly; the helper picks the
+  cycle count that brings it nearest, and what is left is well under an art pixel.
+- **Rigid parts** (`K.rig`): write each part's motion as a function of time that comes back in L, such as a turn of 2π k t / L or a
+  swing of sin(2π k t / L). The bake prints how far each part is from where it began, a loop on: about 1e-11 is exact; anything you
+  can see means a period that does not divide L.
+- **A cloth** is simulated: the bake runs it for 15 loops first so it settles, stores every frame of the 16th, and prints how far it
+  ends from where it began. Gusty wind never comes round exactly; calm wind and a small seam (well under an art pixel) do not show.
 
-   It writes `out/stand-lamp/sheet.png` (your piece from several sides and moments), prints what it costs against its share and how
-   many art pixels it adds, and lists every fault that names it. Add a scene file as a third argument to stand it in another scene.
-5. Tune its spacing (`res`) and counts until it uses 70 to 100% of its share and no fault names it. Look at the sheet each time.
-6. Add it to a scene file and build that scene.
+## What a file can hold
 
-To check a built scene again without drawing the stills, run `node kit/run.cjs check kit/example.json out/example`. It composes
-the scene, runs the look checks, reads `out/example/scene.bin` back and rewrites `look.md`.
+Sculpted solids with baked light and their palette colours; glass; hand-placed splats; flames and motes; eight kinds of motion; rigid
+parts; one cloth; fog, outline, contact shade and dither. Not: per-pixel looks, skies, live lights, water, bones and puppets, particles,
+physics beyond one cloth, a camera that zooms. The baker stops on any of those and names it. Details: references/format.md, 9, and
+references/ink-studio.md, 2.5 and 2.6. A palette may have up to 256 colours (255 for a GIF).
 
-## Make a new scene
+## Folder
 
-Write a scene file like `kit/example.json`: a seed and the piece paths, relative to the scene file. It needs exactly one palette,
-light, camera, finish and ground, at most one sky and one character, any weather, and things up to the ground's places of each size.
-Things take the places of their size in list order. Then build it as above.
+| Path | What it is |
+| --- | --- |
+| `kit/toolkit.cjs` | Loads ink-studio from `INK_STUDIO`, builds a scene file, walks its world through time |
+| `kit/bake.cjs` | Scene file to baked file; prints cost and accuracy; refuses what the file cannot carry |
+| `kit/format.cjs` | The file's layout and codecs, shared by the baker and the decoder |
+| `kit/decode.cjs` | Reads a baked file back into ink-studio's rows at any frame |
+| `kit/verify.cjs` | The proof: live scene against decoded file, drawn by ink-studio, plus the reference pictures |
+| `kit/stills.cjs` | `still.png`, `sheet.png`, `moments.png` |
+| `kit/gif.cjs` | The loop as a GIF, palette exact |
+| `kit/loop.cjs` | `loopable(world, seconds)`: every kind's speed made whole cycles a loop |
+| `player/index.html` | The page: still picture, canvas, ready flag, import map |
+| `player/main.js` | Starting the GPU, cruise, drag, flick, keys, touch, reduced motion, device loss |
+| `player/painter.js` | The WebGPU painter (vgpu): three passes a frame |
+| `player/scene.js`, `camera.js`, `motion.js`, `order.js` | Reading the file, the camera and grid, motion on the processor, the far-to-near order |
+| `player/serve.mjs` | Serves the player with one scene on 127.0.0.1 |
+| `references/` | The topic notes below |
 
-To change the look of every piece at once, change the palette, light, camera or finish pieces. The camera frames the ground, the
-things and the character by itself; `dist`, `pitch` and `yaw` adjust it.
+Each file's opening comment says what it owns.
 
-## Random scenes (optional)
+## References
 
-Skip this unless you want scenes dealt at random. Put interchangeable pieces in one folder (any layout; every `.cjs` file in it is a
-piece). Deal a scene from it with a whole-number seed:
-
-```sh
-node kit/run.cjs deal kit/pieces 1 out/dealt-1.json
-node kit/run.cjs build out/dealt-1.json out/dealt-1
-```
-
-A deal picks one palette, light, camera, finish and ground; a sky and a character when the folder has any; no weather or one; and
-for each place on the dealt ground a thing of that size while any are left, each thing at most once. The same seed and folder deal
-the same scene. Every piece in the folder must work with every other, so give a library of pieces one shared scale: the place sizes
-and shares in the contract are that scale. The example pieces alone deal nearly the same scene each time; add alternatives to see
-the seeds differ.
-
-## Rules the kit holds you to
-
-- Shares: each kind of piece has a ceiling of splats, styles, motions and moving parts, and should use at least 70% of its splats.
-- Places: things stand on the ground's places, the character on its stage; a piece may not reach or stand past its place's size.
-- Loop: every motion makes a whole number of cycles in 8 seconds, and every moving part is back where it began after 8 seconds.
-- Palette: 48 colours in 13 roles, each ramp dark to light, every splat one of them.
-- Errors that stop a build, and faults in `look.md`, start with the piece at fault.
-
-## Known limits
-
-- The offline drawing is slow: the example takes about two minutes to build, most of it drawing the stills, the moments and the look
-  checks. A scene of more splats, or a bigger picture, takes longer. Use `stand` while working on a piece; build the whole scene
-  when the piece is done.
-- Pieces do not see each other. A character that walks off its stage passes through whatever stands in its way, so keep a
-  character's path on its stage, or have the piece route around the places it knows of.
-- The player draws one scene with one camera. It has no zoom and no sound, and the scene's loop is fixed at bake time.
-- The baked file holds at most 256 styles, 256 motions and 256 moving parts, and the kit stops the build past them.
+| Note | Read it for |
+| --- | --- |
+| references/ink-studio.md | Writing a scene: the skeleton and lifecycle, light, solids and materials, hand-placed splats, rigs and cloth, the finish, previewing; maps of ink-studio's README, every `docs/` guide and its examples, each marked with whether it survives the bake |
+| references/format.md | The baked file byte by byte, every kind of motion's maths, how to draw a picture from it, costs, accuracy, what the baker refuses, notes for writing a painter |
+| references/painter.md | How `player/painter.js` draws, the toolkit's rules a painter must follow, mistakes made and caught, performance |
+| references/hosting.md | vgpu (version, offline docs), the GPU island pattern for putting a scene in a site, serving and loading, orbit and touch |
+| references/proof.md | Proving a file, proving a painter against the toolkit pixel for pixel, browser checks |
+| references/gif.md | The GIF from the command line, and a GIF button in a page |
+| references/splats.md | What "true" splats means here, what stays offline, baking again, sources |
+| references/random-scenes.md | Optional: a different scene for each seed |

@@ -1,6 +1,6 @@
 /* How a baked scene moves over its loop, worked on the processor: where a splat is at a moment, for ordering the few splats drawn far
    to near (order.js). The painter's vertex shader works the same rules on the graphics card for every splat. */
-import { FRAME_RATE, restCentre } from './scene.js';
+import { clothCentre, FRAME_RATE, restCentre } from './scene.js';
 
 // the kinds of motion that move or fade a splat (blink only brightens it)
 export const FLICKER = 1;
@@ -14,14 +14,14 @@ export const SWAY = 11;
 const TAU = Math.PI * 2;
 const frac = x => x - Math.floor(x);
 
-// the stored frame shown `seconds` into the loop
+// the stored frame shown `seconds` into the loop: the one before, held until the next
 export const frameAt = (header, seconds) => Math.min(header.frames - 1, Math.floor(seconds * FRAME_RATE));
 
-// a moving splat's centre moved by its kind at `seconds` into the loop (only the centre matters for ordering)
-function moved(scene, n, [x, y, z], seconds) {
+// a moving splat's centre moved by its kind at clock t (only the centre matters for ordering)
+function moved(scene, n, [x, y, z], t) {
   const { blocks, header } = scene,
     kind = blocks.styleCode[blocks.style[n]] & 15,
-    turns = (blocks.cycles[n] * seconds) / header.loop,
+    turns = (blocks.cycles[n] * t) / header.loop,
     phase = blocks.phase[n] / 65536,
     r = blocks.motionRange[blocks.motion[n]],
     angle = TAU * (turns + phase);
@@ -45,12 +45,14 @@ function moved(scene, n, [x, y, z], seconds) {
   }
 }
 
-// splat n's centre `seconds` into the loop: carried by its part, then moved by its kind
+// splat n's centre `seconds` into the loop: carried by its part, or the cloth, then moved by its kind
 export function centreAt(scene, n, seconds) {
   const { header, blocks } = scene,
-    [x, y, z] = restCentre(scene, n),
+    f = frameAt(header, seconds),
+    dab = n - header.clothFirst,
+    [x, y, z] = dab >= 0 && dab < header.cloth ? clothCentre(scene, dab, f) : restCentre(scene, n),
     a = blocks.track,
-    o = (frameAt(header, seconds) * header.parts + blocks.stylePart[blocks.style[n]]) * 12,
+    o = (f * header.parts + blocks.stylePart[blocks.style[n]]) * 12,
     carried = [a[o] * x + a[o + 1] * y + a[o + 2] * z + a[o + 9], a[o + 3] * x + a[o + 4] * y + a[o + 5] * z + a[o + 10], a[o + 6] * x + a[o + 7] * y + a[o + 8] * z + a[o + 11]];
-  return n < header.moving ? moved(scene, n, carried, seconds) : carried;
+  return n < header.moving ? moved(scene, n, carried, header.clockStart + seconds) : carried;
 }

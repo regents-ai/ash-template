@@ -1,5 +1,5 @@
 /* Paints a baked scene with WebGPU as pixel art: a coarse grid of art pixels, each one of the scene's palette colours, with every
-   splat posed in the vertex shader by its part's matrix and its kind of motion. Each frame lays the solid splats (depth-tested),
+   splat posed in the vertex shader by the cloth, its part's matrix and its kind of motion. Each frame lays the solid splats (depth-tested),
    their crisp edges and then the blended splats far to near (order.js) onto the grid, and finishes it with glass, contact shade,
    outline, dither and the nearest palette colour. The finished picture goes onto the canvas, each art pixel a square of pixels. */
 import { prepareShader } from '@vgpu/wgsl/prepare';
@@ -8,9 +8,10 @@ import { draw, effect, storage, target } from 'vgpu';
 import { gridFor, viewFrom } from './camera.js';
 import { frameAt } from './motion.js';
 import { createOrder } from './order.js';
-import { CHUNK_SIZE, GLASS, NO_DEPTH, NO_FOG } from './scene.js';
+import { GLASS, NO_DEPTH, NO_FOG } from './scene.js';
 
 const float = x => `${x}f`;
+const frac = x => x - Math.floor(x);
 
 // the scene's own numbers, as constants of every shader that reads it
 const sceneWgsl = ({ header: h, at }) => /* wgsl */ `
@@ -30,24 +31,40 @@ const CYCLES = ${at.cycles}u;
 const PHASE = ${at.phase}u;
 const MOTION = ${at.motion}u;
 const TRACK = ${at.track}u;
+const CLOTH_POSITION = ${at.clothPosition}u;
+const CLOTH_NORMAL = ${at.clothNormal}u;
+const CLOTH_COLOUR = ${at.clothColour}u;
 
 const MOVING = ${h.moving}u;
 const PARTS = ${h.parts}u;
-const CHUNK = ${CHUNK_SIZE}u;
+const CLOTH = ${h.cloth}u;
+const CLOTH_FIRST = ${h.clothFirst}u;
+const CHUNK = ${h.chunkSize}u;
 const COLOURS = ${h.colours}u;
 const FOG_INDEX = ${h.fogIndex}u;
 const OUTLINE_INDEX = ${h.outlineIndex}u;
+const BACKDROP_INDEX = ${h.backdropIndex}u;
 
 const LOG_SCALE_MIN = ${float(h.logScaleMin)};
 const LOG_SCALE_SPAN = ${float(h.logScaleMax - h.logScaleMin)};
+const CLOTH_MIN = vec3f(${h.clothMin.map(float).join(', ')});
+const CLOTH_SPAN = vec3f(${h.clothMax.map((v, k) => float(v - h.clothMin[k])).join(', ')});
+const CLOTH_RADIUS = ${float(h.clothRadius)};
+const CLOTH_THICKNESS = ${float(h.clothThickness)};
 const RADIUS = ${float(h.radius)};
-const FOG_START = ${float(h.fogStart)};
-const FOG_MAX = ${float(h.fogMax)};
+// fog only where it has some strength and starts before the back of the scene, as the toolkit draws it (a smoothstep from 1 to 1
+// would not compile)
+const FOG_START = ${float(h.fogMax > 0 && h.fogStart < 1 ? h.fogStart : 0)};
+const FOG_MAX = ${float(h.fogMax > 0 && h.fogStart < 1 ? h.fogMax : 0)};
 const OUTLINE_EDGE = ${float(h.outlineEdge)};
 const SHADE_STRENGTH = ${float(h.shadeStrength)};
 const SHADE_RANGE = ${float(h.shadeRange)};
 const DITHER = ${float(h.dither)};
 const GLASS_BEND = ${float(h.glassBend)};
+// how far into a loop the clock is when the loop starts (the bake starts it a whole number of loops in, after a warm-up), for a
+// motion of one cycle a loop and for sway's slower second swing
+const START_TURNS = ${float(frac(h.clockStart / h.loop))};
+const SWAY_START_TURNS = ${float(frac((1.3 * h.clockStart) / h.loop))};
 
 const NO_DEPTH = ${NO_DEPTH}u;
 const NO_FOG = ${NO_FOG}u;
@@ -153,6 +170,31 @@ fn restShape(n: u32) -> mat3x3f {
   return m * transpose(m);
 }
 
+// cloth entry k (a dab at one stored frame): its centre, and its disc, round across and thin along the way it faces
+fn clothCentre(k: u32) -> vec3f {
+  let at = vec3f(f32(u16At(CLOTH_POSITION, 3u * k)), f32(u16At(CLOTH_POSITION, 3u * k + 1u)), f32(u16At(CLOTH_POSITION, 3u * k + 2u)));
+  return CLOTH_MIN + CLOTH_SPAN * at / 65535.0;
+}
+fn clothShape(k: u32) -> mat3x3f {
+  var u = 2.0 * f32(u8At(CLOTH_NORMAL, 2u * k)) / 255.0 - 1.0;
+  var v = 2.0 * f32(u8At(CLOTH_NORMAL, 2u * k + 1u)) / 255.0 - 1.0;
+  let z = 1.0 - abs(u) - abs(v);
+  if (z < 0.0) {
+    let folded = vec2f((1.0 - abs(v)) * select(-1.0, 1.0, u >= 0.0), (1.0 - abs(u)) * select(-1.0, 1.0, v >= 0.0));
+    u = folded.x;
+    v = folded.y;
+  }
+  let facing = normalize(vec3f(u, v, z));
+  let r2 = CLOTH_RADIUS * CLOTH_RADIUS;
+  return mat3x3f(vec3f(r2, 0.0, 0.0), vec3f(0.0, r2, 0.0), vec3f(0.0, 0.0, r2))
+    + (CLOTH_THICKNESS * CLOTH_THICKNESS - r2) * mat3x3f(facing * facing.x, facing * facing.y, facing * facing.z);
+}
+
+// how many cycles into a motion of this many cycles a loop the clock is, apart from whole cycles
+fn turns(cycles: f32, start: f32, rate: f32) -> f32 {
+  return fract(cycles * start + cycles * rate * view.clock.x);
+}
+
 @vertex fn vs_main(@builtin(vertex_index) corner: u32, @builtin(instance_index) instance: u32) -> Dab {
   var out: Dab;
   out.position = NOWHERE;
@@ -161,8 +203,17 @@ fn restShape(n: u32) -> mat3x3f {
   let code = u8At(STYLE_CODE, style);
   let frame = u32(view.clock.y);
   var alpha = f32At(STYLE_DENSITY, style);
+
+  // at rest, or where the cloth is this frame
   var p = restCentre(n);
   var sigma = restShape(n);
+  var colourIndex = u8At(COLOUR, n);
+  if (n >= CLOTH_FIRST && n < CLOTH_FIRST + CLOTH) {
+    let k = frame * CLOTH + (n - CLOTH_FIRST);
+    p = clothCentre(k);
+    sigma = clothShape(k);
+    colourIndex = u8At(CLOTH_COLOUR, k);
+  }
 
   // carried by its part
   let track = TRACK + (frame * PARTS + u8At(STYLE_PART, style)) * 12u;
@@ -184,20 +235,20 @@ fn restShape(n: u32) -> mat3x3f {
     let extra = f32At(MOTION_EXTRA, m);
     let cycles = f32(i8At(CYCLES, n));
     let phase = f32(u16At(PHASE, n)) / 65536.0;
-    let turns = fract(cycles * view.clock.x);
-    let angle = TAU * (turns + phase);
+    let into = turns(cycles, START_TURNS, 1.0);
+    let angle = TAU * (into + phase);
     switch kind {
       case FLICKER: {
         alpha *= 0.62 + 0.38 * sin(angle);
       }
       case FALL: {
-        let u = fract(turns + phase);
+        let u = fract(into + phase);
         p.y -= u * range;
         alpha *= 1.0 - u * u;
         grow = 1.0 + u * extra;
       }
       case RISE: {
-        let u = fract(turns + phase);
+        let u = fract(into + phase);
         p += vec3f(0.25 * u * sin(7.0 * u + 50.0 * phase), u * range, 0.0);
         alpha *= (1.0 - u) * smoothstep(0.0, 0.1, u);
         grow = 0.6 + u * extra;
@@ -206,7 +257,7 @@ fn restShape(n: u32) -> mat3x3f {
         glow = 0.3 * smoothstep(0.75, 1.0, sin(angle));
       }
       case ORBIT: {
-        let turn = TAU * turns;
+        let turn = TAU * into;
         p = vec3f(p.x * cos(turn) + p.z * sin(turn), p.y, p.z * cos(turn) - p.x * sin(turn));
       }
       case BOB: {
@@ -218,7 +269,7 @@ fn restShape(n: u32) -> mat3x3f {
       case SWAY: {
         let before = p;
         p.x += range * sin(angle + 1.3 * before.y + 0.9 * before.z);
-        p.y += 0.6 * range * sin(TAU * (fract(1.3 * cycles * view.clock.x) + phase) + 1.1 * before.x);
+        p.y += 0.6 * range * sin(TAU * (turns(cycles, SWAY_START_TURNS, 1.3) + phase) + 1.1 * before.x);
       }
       default: {}
     }
@@ -253,7 +304,7 @@ fn restShape(n: u32) -> mat3x3f {
 
   // its colour, its depth and the haze
   let depth = clamp((-c.z - (view.eye.w - RADIUS)) / (2.0 * RADIUS), 0.0, 1.0);
-  var colour = paletteColour(u8At(COLOUR, n)) + glow;
+  var colour = paletteColour(colourIndex) + glow;
   if ((code & NO_FOG) == 0u) {
     colour = mix(colour, paletteColour(FOG_INDEX), smoothstep(FOG_START, 1.0, depth) * FOG_MAX);
   }
@@ -338,10 +389,10 @@ fn texel(x: i32, y: i32) -> vec2i {
   return vec2i(clamp(x, 0, size.x - 1), size.y - 1 - clamp(y, 0, size.y - 1));
 }
 
-// the layers laid over the backdrop (palette colour 0): depth 1 and no glass where nothing covers
+// the layers laid over the backdrop: depth 1 and no glass where nothing covers
 fn colourAt(x: i32, y: i32) -> vec3f {
   let c = textureLoad(colourLayer, texel(x, y), 0);
-  return c.rgb + 0.5 * c.a + (1.0 - c.a) * paletteColour(0u);
+  return c.rgb + 0.5 * c.a + (1.0 - c.a) * paletteColour(BACKDROP_INDEX);
 }
 fn depthAt(x: i32, y: i32) -> f32 {
   let d = textureLoad(depthLayer, texel(x, y), 0);
@@ -391,7 +442,7 @@ fn nearest(c: vec3f) -> vec3f {
   colour *= 1.0 - SHADE_STRENGTH * min(1.0, shut / 4.0);
 
   let step = max(2.0 * depth - depthAt(x - 1, y) - depthAt(x + 1, y), 2.0 * depth - depthAt(x, y - 1) - depthAt(x, y + 1));
-  if (step > OUTLINE_EDGE / (2.0 * RADIUS)) {
+  if (OUTLINE_EDGE > 0.0 && step > OUTLINE_EDGE / (2.0 * RADIUS)) {
     return vec4f(paletteColour(OUTLINE_INDEX), 1.0);
   }
 
@@ -417,7 +468,8 @@ struct Present {
 `;
 
 /* A painter for one scene: resize(width, height) fits the grid to a stage of that many screen pixels and returns it; encode(f,
-   { yaw, pitch, seconds }, stage) draws one moment onto the stage; compile(stage) prepares every pipeline before the first frame. */
+   { yaw, pitch, seconds }, stage) draws one moment into the picture and, when a stage is given, onto it; compile(stage) prepares every
+   pipeline before the first frame; picture is the art-pixel picture, each pixel one palette colour, to read back for a GIF or a proof. */
 export function createPainter(gpu, scene) {
   const { header } = scene;
   let grid = gridFor(header, 3, 2);
@@ -435,9 +487,10 @@ export function createPainter(gpu, scene) {
   words.write(scene.words);
   solidIds.write(order.solid);
 
-  // how far from the world's middle any splat reaches at rest, so the depth test can take each depth as a share of the farthest a
-  // splat can be from the eye, with room for the moving parts
-  const extent = Math.sqrt(3) * scene.blocks.chunkBounds.reduce((most, v) => Math.max(most, Math.abs(v)), 0);
+  // how far from the world's middle any splat or cloth dab reaches, so the depth test can take each depth as a fraction of the farthest
+  // a splat can be from the eye, with room for the moving parts
+  const extent =
+    Math.sqrt(3) * [...header.clothMin, ...header.clothMax, ...scene.blocks.chunkBounds].reduce((most, v) => Math.max(most, Math.abs(v)), 0);
   const viewOf = ({ right, up, back, eye, distance }, seconds) => {
     const limit = 1.3 / (2 * grid.focal);
     return {
@@ -502,20 +555,24 @@ export function createPainter(gpu, scene) {
       solid.set({ view });
       edges.set({ view });
       blended.set({ view });
+      // (a scene may have no solid splats, or none to sort; WebGPU warns of a draw of nothing)
       f.pass({ target: layers, clear: [0, 0, 0, 0] }, pass => {
-        pass.draw(solid);
-        pass.draw(edges);
-        pass.draw(blended, { instances: ids.length });
+        if (order.solid.length) {
+          pass.draw(solid);
+          pass.draw(edges);
+        }
+        if (ids.length) pass.draw(blended, { instances: ids.length });
       });
       f.pass({ target: picture }, finish);
-      f.pass({ target: stage }, show);
+      if (stage) f.pass({ target: stage }, show);
     },
     async compile(stage) {
       await solid.compile(layers);
       await edges.compile(layers);
       await blended.compile(layers);
       await finish.compile(picture);
-      await show.compile(stage);
-    }
+      if (stage) await show.compile(stage);
+    },
+    picture
   };
 }

@@ -2,7 +2,8 @@ MIT License
 
 Copyright (c) 2026 The splat-scenes authors
 
-This licence covers the files in player/.
+This licence covers every file in this folder. ink-studio is not part of it: the kit loads
+ink-studio from wherever INK_STUDIO points, under ink-studio's own MIT licence.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

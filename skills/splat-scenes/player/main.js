@@ -1,6 +1,8 @@
 /* The player page: one baked scene (scene.bin) painted on the canvas, turning once every thirty seconds while it plays its loop.
-   A drag or the arrow keys turn and tilt it, and a let-go drag coasts back into the slow turn and the resting tilt. With less motion
-   asked for it holds still until moved, and without WebGPU the still picture (still.png) stays in place. */
+   A mouse or pen drag, or the arrow keys on the focused canvas, turn and tilt it; a finger only turns it, so an upright swipe still
+   scrolls the page. A let-go drag coasts back into the slow turn and the resting tilt. With less motion asked for it holds still
+   until moved. The stage's data-ready flag is "true" once a first frame has really finished and "false" once it will not draw, and
+   until "true" the still picture (still.png) is what shows. */
 import { frame, init, surface } from 'vgpu';
 
 import { TILT_LIMIT } from './camera.js';
@@ -25,12 +27,14 @@ const FASTEST_TILT = Math.PI;
 // a frame after a long pause counts as this long, so nothing jumps (seconds)
 const LONGEST_STEP = 1 / 30;
 // the pointer's last moments that count towards a flick (milliseconds)
-const FLICK_WINDOW = 80;
+const FLICK_WINDOW = 100;
+// the most device pixels a CSS pixel counts for, so a scene has about the same art pixels on any screen
+const MOST_DEVICE_PIXELS = 3;
 
 const KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
 
-const canvas = document.querySelector('canvas'),
-  still = document.querySelector('img'),
+const box = document.querySelector('.stage'),
+  canvas = box.querySelector('canvas'),
   note = document.querySelector('.note');
 
 const clampTilt = pitch => Math.max(-TILT_LIMIT, Math.min(TILT_LIMIT, pitch));
@@ -39,22 +43,37 @@ const ease = (dt, over) => 1 - Math.exp(-dt / over);
 const settle = (owed, dt) => (Math.abs(owed) < 1e-4 ? owed : owed * ease(dt, KEY_SETTLE));
 
 function showStill(words) {
-  canvas.hidden = true;
-  still.hidden = false;
+  box.dataset.ready = 'false';
   note.textContent = words;
 }
 
+// the device and the file are asked for together; a device that came up is given back if anything after it fails
 async function play() {
-  const [gpu, scene] = await Promise.all([init(), loadScene('scene.bin')]),
-    { header } = scene,
+  const [started, loaded] = await Promise.allSettled([init(), loadScene('scene.bin')]);
+  if (started.status === 'rejected') throw started.reason;
+  const gpu = started.value;
+  let disposed = false;
+  gpu.lost.then(() => disposed || showStill('The live scene stopped. This is its still picture.'));
+  try {
+    if (loaded.status === 'rejected') throw loaded.reason;
+    await run(gpu, loaded.value);
+  } catch (error) {
+    disposed = true;
+    gpu.dispose();
+    throw error;
+  }
+}
+
+async function run(gpu, scene) {
+  const { header } = scene,
     stage = surface(gpu, canvas, { autoResize: false, alphaMode: 'opaque', label: 'stage' }),
     painter = createPainter(gpu, scene),
     calmQuery = matchMedia('(prefers-reduced-motion: reduce)');
-  gpu.lost.then(() => showStill('The live scene stopped. This is its still picture.'));
 
   const fit = () => {
-    const width = Math.max(1, Math.round(canvas.clientWidth * devicePixelRatio)),
-      height = Math.max(1, Math.round(canvas.clientHeight * devicePixelRatio));
+    const ratio = Math.min(devicePixelRatio, MOST_DEVICE_PIXELS),
+      width = Math.max(1, Math.round(canvas.clientWidth * ratio)),
+      height = Math.max(1, Math.round(canvas.clientHeight * ratio));
     stage.resize([width, height]);
     return painter.resize(width, height);
   };
@@ -94,12 +113,14 @@ async function play() {
     } else if (!held) turnSpeed = CRUISE;
   });
 
-  // one pointer at a time: a mouse, a pen or the first finger down
+  // one pointer at a time: a mouse, a pen or the first finger down; a finger only turns
   let pointer = null,
+    tilts = true,
     moves = [];
   canvas.addEventListener('pointerdown', event => {
     if (pointer !== null) return;
     pointer = event.pointerId;
+    tilts = event.pointerType !== 'touch';
     canvas.setPointerCapture(pointer);
     moves = [[event.timeStamp, event.clientX, event.clientY]];
     held = true;
@@ -109,7 +130,7 @@ async function play() {
     if (event.pointerId !== pointer) return;
     const [, x, y] = moves[moves.length - 1];
     draggedTurn += radians(event.clientX - x);
-    draggedTilt += radians(event.clientY - y);
+    if (tilts) draggedTilt += radians(event.clientY - y);
     moves.push([event.timeStamp, event.clientX, event.clientY]);
     moves = moves.filter(([at]) => at >= event.timeStamp - FLICK_WINDOW);
   });
@@ -123,12 +144,12 @@ async function play() {
       flicked = !calm && event.timeStamp - t1 < FLICK_WINDOW && t1 > t0,
       span = (t1 - t0) / 1000;
     turnSpeed = flicked ? clampSpeed(radians((x1 - x0) / span), FASTEST_TURN) : 0;
-    tiltSpeed = flicked ? clampSpeed(radians((y1 - y0) / span), FASTEST_TILT) : 0;
+    tiltSpeed = flicked && tilts ? clampSpeed(radians((y1 - y0) / span), FASTEST_TILT) : 0;
   };
   canvas.addEventListener('pointerup', letGo);
   canvas.addEventListener('pointercancel', letGo);
 
-  addEventListener('keydown', event => {
+  canvas.addEventListener('keydown', event => {
     const step = KEYS[event.key];
     if (!step) return;
     event.preventDefault();
@@ -175,10 +196,10 @@ async function play() {
     }
     requestAnimationFrame(tick);
   };
-  // the opening view drawn once before the still gives way to the canvas
+  // the opening view drawn once, and finished on the graphics card, before the still gives way to the canvas
   frame(gpu, f => painter.encode(f, { yaw: header.camYaw, pitch, seconds }, stage));
   await gpu.settled();
-  still.hidden = true;
+  box.dataset.ready = 'true';
   requestAnimationFrame(tick);
 }
 

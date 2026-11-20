@@ -1,16 +1,17 @@
 /* Reads a baked scene file (references/format.md): the header's counts, camera and look, and a typed view onto each block. Every
    block starts on a multiple of four bytes, so the whole file goes to the graphics card as one buffer of 32-bit words and the painter
-   reads each block from its place in it. */
+   reads each block from its place in it; the views here are for what is worked out on the processor (the far-to-near order). */
 
-const MAGIC = 'SPLT';
+const MAGIC = 'RSPL';
 export const FRAME_RATE = 30;
-export const CHUNK_SIZE = 256;
 
 // the header after the magic, in file order: [name, 'u32' or 'f64', how many]
 const HEADER = [
-  ['splats', 'u32', 1], ['moving', 'u32', 1], ['styles', 'u32', 1], ['motions', 'u32', 1], ['parts', 'u32', 1], ['frames', 'u32', 1],
-  ['colours', 'u32', 1], ['fogIndex', 'u32', 1], ['outlineIndex', 'u32', 1],
-  ['loop', 'f64', 1], ['logScaleMin', 'f64', 1], ['logScaleMax', 'f64', 1], ['camTarget', 'f64', 3], ['camDist', 'f64', 1],
+  ['version', 'u32', 1], ['splats', 'u32', 1], ['moving', 'u32', 1], ['styles', 'u32', 1], ['motions', 'u32', 1], ['parts', 'u32', 1],
+  ['frames', 'u32', 1], ['cloth', 'u32', 1], ['clothFirst', 'u32', 1], ['colours', 'u32', 1], ['chunkSize', 'u32', 1],
+  ['fogIndex', 'u32', 1], ['outlineIndex', 'u32', 1], ['backdropIndex', 'u32', 1],
+  ['loop', 'f64', 1], ['clockStart', 'f64', 1], ['logScaleMin', 'f64', 1], ['logScaleMax', 'f64', 1], ['clothMin', 'f64', 3],
+  ['clothMax', 'f64', 3], ['clothRadius', 'f64', 1], ['clothThickness', 'f64', 1], ['camTarget', 'f64', 3], ['camDist', 'f64', 1],
   ['camPitch', 'f64', 1], ['camYaw', 'f64', 1], ['fov', 'f64', 1], ['detail', 'f64', 1], ['radius', 'f64', 1], ['fogStart', 'f64', 1],
   ['fogMax', 'f64', 1], ['outlineEdge', 'f64', 1], ['shadeStrength', 'f64', 1], ['shadeRange', 'f64', 1], ['dither', 'f64', 1],
   ['glassBend', 'f64', 1]
@@ -24,7 +25,7 @@ const BLOCKS = [
   ['stylePart', Uint8Array, 1, h => h.styles],
   ['motionRange', Float32Array, 1, h => h.motions],
   ['motionExtra', Float32Array, 1, h => h.motions],
-  ['chunkBounds', Float32Array, 6, h => Math.ceil(h.splats / CHUNK_SIZE)],
+  ['chunkBounds', Float32Array, 6, h => Math.ceil(h.splats / h.chunkSize)],
   ['position', Uint16Array, 3, h => h.splats],
   ['rotation', Uint32Array, 1, h => h.splats],
   ['scale', Uint16Array, 3, h => h.splats],
@@ -33,7 +34,10 @@ const BLOCKS = [
   ['cycles', Int8Array, 1, h => h.moving],
   ['phase', Uint16Array, 1, h => h.moving],
   ['motion', Uint8Array, 1, h => h.moving],
-  ['track', Float32Array, 12, h => h.frames * h.parts]
+  ['track', Float32Array, 12, h => h.frames * h.parts],
+  ['clothPosition', Uint16Array, 3, h => h.frames * h.cloth],
+  ['clothNormal', Uint8Array, 2, h => h.frames * h.cloth],
+  ['clothColour', Uint8Array, 1, h => h.frames * h.cloth]
 ];
 
 // flags in a style's code byte, above its kind of motion (code & 15)
@@ -73,8 +77,14 @@ export async function loadScene(url) {
 }
 
 // splat n's centre at rest
-export function restCentre({ blocks }, n) {
-  const c = Math.floor(n / CHUNK_SIZE) * 6,
+export function restCentre({ header, blocks }, n) {
+  const c = Math.floor(n / header.chunkSize) * 6,
     box = blocks.chunkBounds;
   return [0, 1, 2].map(k => box[c + k] + ((box[c + 3 + k] - box[c + k]) * blocks.position[3 * n + k]) / 65535);
+}
+
+// cloth dab j's centre at stored frame f
+export function clothCentre({ header, blocks }, j, f) {
+  const k = f * header.cloth + j;
+  return [0, 1, 2].map(i => header.clothMin[i] + ((header.clothMax[i] - header.clothMin[i]) * blocks.clothPosition[3 * k + i]) / 65535);
 }
