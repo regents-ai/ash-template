@@ -13510,3 +13510,12 @@ For the template chief to release. No migration. No new package.
 - These scenes are put together outside this repository with tools the Regent team keeps
   privately; only the baked files, pictures and trait data are here, and the studio
   README says so (`assets/js/splats/studio/README.md`, Scenes made elsewhere).
+
+## 2026-11-20 — Four more numbered scenes
+
+- `AshTemplateWeb.Scenes` gains scenes 8 Drive-In, 9 Black Slab, 15 Petal Storm and 18 Nap,
+  worked out and checked the same way as the eleven before them, so the numbered scenes now
+  run 1 to 20 with no gaps and their addresses no longer answer the 404. Across all twenty,
+  no trait is used more often than the collection holds it.
+- Their baked files and pictures sit beside the others, and the stills list names them;
+  the run left the 72 earlier pictures byte for byte as they were.

@@ -4,7 +4,7 @@ Changes to Ash Template, newest first.
 
 ## 20 November 2026
 
-- **Scenes.** Eleven more numbered worlds, from Dice Owl to Portal Opens, each on Scenes,
+- **Scenes.** Fifteen more numbered worlds, from Dice Owl to Portal Opens, each on Scenes,
   on its own Splats tab and on a page of its own, with every trait it was dealt.
 - **Splats.** On a wide screen the tabs wrap onto more lines, so every world is in sight.
 - **Splats.** Each of the five numbered worlds shows every trait it was dealt under its
