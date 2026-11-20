@@ -13538,3 +13538,8 @@ For the template chief to release. No migration. No new package.
   ink-studio (downloaded at a named commit, never copied), eleven example pieces that
   make one whole scene, a standalone WebGPU player and two references. `AGENTS.md` names
   it. It is not one of the publicly served build skills, and the site does not change.
+
+## 2026-11-20 — Phoenix LiveView 1.2.14
+
+- `platform/mix.lock` moves `phoenix_live_view` from 1.2.13 to 1.2.14, the release of
+  20 November. No other package moves.
