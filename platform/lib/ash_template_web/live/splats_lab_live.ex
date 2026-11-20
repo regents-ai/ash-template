@@ -29,8 +29,14 @@ defmodule AshTemplateWeb.SplatsLabLive do
   Download GIF (`SplatStage.gif/1`), which saves one seamless loop of the scene as
   `regents-<scene>.gif`, drawn and encoded in the browser (`assets/js/splats/gif.ts`).
   Download GIF is offered once the scene has drawn, so never without WebGPU, and keeps
-  its place before then. The lede links the Scenes page for the numbered scenes'
-  traits. Nothing here reads or changes anything outside the page.
+  its place before then.
+
+  Under Formats, a numbered scene shows its traits, open: its number and whether it is
+  Action or Chill (`SplatStage.meta/1`), its rarity score (`SplatStage.rarity/1`) and
+  every trait it was dealt (`SplatStage.traits/1`), the same parts the Scenes page shows.
+  The factory and the island have none, so nothing shows there. The lede links the
+  Scenes page, which shows the five side by side. Nothing here reads or changes anything
+  outside the page.
   """
 
   use AshTemplateWeb, :live_view
@@ -69,16 +75,11 @@ defmodule AshTemplateWeb.SplatsLabLive do
     {:noreply, assign(socket, scene: scene)}
   end
 
+  # Each numbered scene as Scenes gives it, traits and all, with the stage's label.
   defp scenes do
     @unnumbered ++
-      for scene <- Scenes.all() do
-        %{
-          name: scene.name,
-          title: scene.title,
-          number: scene.number,
-          label: "#{scene.title}. #{scene.description}"
-        }
-      end
+      for scene <- Scenes.all(),
+          do: Map.put(scene, :label, "#{scene.title}. #{scene.description}")
   end
 
   defp scene_path(%{name: "factory"}), do: ~p"/animations/splats"
@@ -107,7 +108,9 @@ defmodule AshTemplateWeb.SplatsLabLive do
         <p class="motion-lab__lede">
           Seven small worlds, turning slowly. Drag one to turn it, or to look from above or below.
           Pinch, or use the buttons in its corner, to look closer.
-          Traits for five of them are on <.link navigate={~p"/animations/scenes"}>Scenes</.link>.
+          Five of them are numbered, each with the traits it was dealt;
+          <.link navigate={~p"/animations/scenes"}>Scenes</.link>
+          shows those five side by side.
         </p>
       </header>
       <%!-- Seven tabs, more than the shared tabs take; MotionTravel scrolls the
@@ -138,13 +141,25 @@ defmodule AshTemplateWeb.SplatsLabLive do
           square={Scenes.still(@scene, :square)}
         />
         <section class="splats-lab__formats" aria-labelledby="splats-formats-title">
-          <h2 id="splats-formats-title" class="splats-lab__formats-title">Formats</h2>
+          <h2 id="splats-formats-title" class="splats-lab__title">Formats</h2>
           <p class="splat-links splats-lab__links">
             <a :for={{name, href} <- formats(@scene)} href={href} target="_blank" rel="noopener">
               {name} <Regent.Icons.icon name="arrow-up-right" />
             </a>
           </p>
           <SplatStage.gif for={"splats-#{@scene.name}"} class="splats-lab__gif" />
+        </section>
+        <section
+          :if={@scene.number}
+          class="splats-lab__traits"
+          aria-labelledby="splats-traits-title"
+        >
+          <div class="splats-lab__traits-head">
+            <h2 id="splats-traits-title" class="splats-lab__title">Traits</h2>
+            <SplatStage.meta scene={@scene} />
+            <SplatStage.rarity scene={@scene} class="splats-lab__rarity" />
+          </div>
+          <SplatStage.traits scene={@scene} />
         </section>
       </div>
     </main>

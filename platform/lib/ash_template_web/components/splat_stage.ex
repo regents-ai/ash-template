@@ -14,6 +14,11 @@ defmodule AshTemplateWeb.Components.SplatStage do
   `gif/1` is Download GIF for one box, which its own `SplatGif` hook runs
   (`assets/js/hooks/splat_gif.ts`). A page offers it by placing one; a page that
   places none offers none.
+
+  `meta/1`, `rarity/1` and `traits/1` show a numbered scene's facts
+  (`AshTemplateWeb.Scenes`): its number and kind, its rarity score, and every trait it
+  was dealt as a table. The Scenes page folds the table away under Traits; the Splats
+  page shows it open. Each page places them in its own layout.
   """
 
   use Phoenix.Component
@@ -133,6 +138,61 @@ defmodule AshTemplateWeb.Components.SplatStage do
         </span>
       </Regent.Primitives.button>
       <span id={"#{@for}-gif-status"} class="visually-hidden" role="status" phx-update="ignore"></span>
+    </div>
+    """
+  end
+
+  attr :scene, :map, required: true, doc: "a numbered scene, as `AshTemplateWeb.Scenes` gives it"
+  attr :class, :any, default: nil
+
+  @doc "A numbered scene's number, and whether it is Action or Chill as a small tag."
+  def meta(assigns) do
+    ~H"""
+    <p class={["splat-meta", @class]}>
+      <span>Scene {@scene.number}</span>
+      <span class="splat-meta__kind">{@scene.kind}</span>
+    </p>
+    """
+  end
+
+  attr :scene, :map, required: true, doc: "a numbered scene, as `AshTemplateWeb.Scenes` gives it"
+  attr :class, :any, default: nil
+
+  @doc "A numbered scene's rarity score."
+  def rarity(assigns) do
+    ~H"""
+    <span class={["splat-rarity", @class]}>Rarity <b>{@scene.rarity}</b></span>
+    """
+  end
+
+  attr :scene, :map, required: true, doc: "a numbered scene, as `AshTemplateWeb.Scenes` gives it"
+
+  @doc """
+  Every trait a numbered scene was dealt: category, trait, tier and share, in the order
+  its trait list gives them. Wider than the narrowest phones, the table scrolls in its
+  own box, which a keyboard can reach and a screen reader names.
+  """
+  def traits(assigns) do
+    ~H"""
+    <div class="splat-traits" tabindex="0" role="region" aria-label={"#{@scene.title} traits"}>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Trait</th>
+            <th scope="col">Tier</th>
+            <th scope="col">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :for={trait <- @scene.traits}>
+            <td>{trait.category}</td>
+            <td>{trait.trait}</td>
+            <td>{trait.tier}</td>
+            <td>{trait.share}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     """
   end

@@ -65,21 +65,9 @@
   line-height: var(--type-title-line);
 }
 
+/* The number and kind (`.splat-meta`). */
 .scenes-lab__meta {
   grid-area: meta;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-fg-muted);
-  font-size: var(--type-caption-size);
-  line-height: var(--type-caption-line);
-  white-space: nowrap;
-}
-
-.scenes-lab__kind {
-  padding: 0 var(--space-1);
-  border: 1px solid var(--color-border);
-  color: var(--color-fg);
 }
 
 .scenes-lab__gif {
@@ -129,8 +117,10 @@
   color: var(--color-fg-muted);
 }
 
-/* Every trait, folded away, across the card's full width. */
+/* Every trait, folded away, across the card's full width. The table is the shared
+   one (`.splat-traits`), its first and last columns lined up with the card's edge. */
 .scenes-lab__traits {
+  --splat-traits-inset: var(--scenes-lab-inset);
   margin-inline: calc(-1 * var(--scenes-lab-inset));
   border-block: 1px solid var(--color-border);
 }
@@ -166,68 +156,9 @@
   transform: rotate(180deg);
 }
 
+/* The rarity score (`.splat-rarity`), at the summary's far end. */
 .scenes-lab__rarity {
   margin-inline-start: auto;
-  color: var(--color-fg-muted);
-  font-size: var(--type-caption-size);
-  font-variant-numeric: tabular-nums;
-}
-
-.scenes-lab__rarity b {
-  color: var(--color-fg);
-  font-weight: inherit;
-}
-
-.scenes-lab__table {
-  overflow-x: auto;
-}
-
-.scenes-lab__table:focus-visible {
-  outline: var(--rg-ring-width) solid var(--color-focus);
-  outline-offset: calc(-1 * var(--rg-ring-width));
-}
-
-.scenes-lab__traits table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--type-caption-size);
-  line-height: var(--type-caption-line);
-  font-variant-numeric: tabular-nums;
-}
-
-.scenes-lab__traits th,
-.scenes-lab__traits td {
-  padding: var(--space-1);
-  border-block-start: 1px solid var(--color-border);
-  text-align: start;
-  vertical-align: top;
-}
-
-/* On a phone the columns sit closer, so the four fit across the card. */
-@media (max-width: 36rem) {
-  .scenes-lab__traits :is(th, td) {
-    padding-inline: var(--space-1) 0;
-  }
-}
-
-/* A tier and a share each stay on one line. */
-.scenes-lab__traits :is(th, td):nth-child(n + 3) {
-  white-space: nowrap;
-}
-
-.scenes-lab__traits th {
-  color: var(--color-fg-muted);
-  font-weight: 400;
-}
-
-.scenes-lab__traits :is(th, td):first-child {
-  padding-inline-start: var(--scenes-lab-inset);
-  color: var(--color-fg-muted);
-}
-
-.scenes-lab__traits :is(th, td):last-child {
-  padding-inline-end: var(--scenes-lab-inset);
-  text-align: end;
 }
 
 /* The scene's own page and its trait file, each in a new tab (`.splat-links`). */

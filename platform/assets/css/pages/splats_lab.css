@@ -1,7 +1,7 @@
 @layer regents-product {
 /* The splats page (`/animations/splats`, `AshTemplateWeb.SplatsLabLive`): one box
    holding a small world in pixel art, chosen by the tabs above it, and under it the
-   world's formats. The box is the shared stage (`components/splat_stage.css`), three
+   world's formats and, for a numbered scene, its traits. The box is the shared stage (`components/splat_stage.css`), three
    wide by two high and here square on a phone, for every scene. The square still's
    `<source>` in `SplatStage` names the same width as the media query below. */
 .motion-lab--splats {
@@ -53,12 +53,16 @@
   padding-block-start: var(--space-3);
 }
 
-.splats-lab__formats-title {
-  grid-area: title;
+/* Formats and Traits, each a small quiet title. */
+.splats-lab__title {
   color: var(--color-fg-muted);
   font-family: inherit;
   font-size: var(--type-label-size);
   line-height: var(--type-label-line);
+}
+
+.splats-lab__formats > .splats-lab__title {
+  grid-area: title;
 }
 
 .splats-lab__links {
@@ -100,5 +104,31 @@
     justify-self: start;
     text-align: start;
   }
+}
+
+/* Traits, under Formats, for a numbered scene only: the title, its number and kind, and
+   its rarity at the line's far end, then the table of every trait (the stage's shared
+   one), open. The table keeps to a width a row can be read across, and closes with a
+   rule of its own. */
+.splats-lab__traits {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  max-width: 44rem;
+  padding-block-start: var(--space-5);
+}
+
+.splats-lab__traits-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.splats-lab__rarity {
+  margin-inline-start: auto;
+}
+
+.splats-lab__traits .splat-traits {
+  border-block-end: 1px solid var(--color-border);
 }
 }

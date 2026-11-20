@@ -13453,3 +13453,15 @@ For the template chief to release. No migration. No new package.
 - `make check` exit 0 by the chief on the exact commit. Live, signed out: all seven tabs
   answer, an unknown name shows the factory, the four new pictures are served. Not
   proven: the turning worlds and Download GIF in a browser with WebGPU.
+
+## 2026-11-20 — Traits on the Splats page
+
+- `/animations/splats`: for each of the five numbered scenes, a Traits section under
+  Formats shows the scene's number, whether it is Action or Chill, its rarity score and
+  every trait it was dealt (category, trait, tier and share), open. Factory and Island
+  show nothing there. The lede says five of the worlds are numbered, each with its
+  traits, and that Scenes shows those five side by side.
+- The number and kind, the rarity and the trait table are now one set of shared parts
+  (`SplatStage.meta/1`, `rarity/1` and `traits/1`, styled in
+  `assets/css/components/splat_stage.css`). The Scenes page uses them and looks as it
+  did, its table still folded away under Traits.
