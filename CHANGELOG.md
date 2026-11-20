@@ -13582,3 +13582,14 @@ For the template chief to release. No migration. No new package.
   not in the repository. It has no number, traits or page of its own.
 - `platform/assets/js/splats/painter.ts` writes fog start and strength as 0 for a scene
   without fog, as the skill's player does. Every other scene's pictures redraw unchanged.
+
+## 2026-11-20 — Released v306: Gallery on the Splats page
+
+- v306 on template.regents.sh carries two commits (head `a7718ad6`): the two entries
+  above. No migration; library pin unchanged; no Points setting changed. About 7 MB of
+  new static files.
+- Rollback: v305 (`6ea6b5d5`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit. Live, signed out: 23 Splats tabs,
+  every scene's page, baked file, card and item picture answer; the served Gallery file
+  is byte for byte the one handed over. In a signed-out browser with WebGPU the Gallery
+  turns and Download GIF saves a file. Not proven: Safari, Firefox, a phone.
