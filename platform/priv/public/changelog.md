@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 20 November 2026
 
+- **Splats.** A new world, Gallery: a flat-roofed gallery on a floating lawn, with
+  portraits in its windows and two small creatures flying round it.
 - **Scenes.** Fifteen more numbered worlds, from Dice Owl to Portal Opens, each on Scenes,
   on its own Splats tab and on a page of its own, with every trait it was dealt.
 - **Splats.** On a wide screen the tabs wrap onto more lines, so every world is in sight.

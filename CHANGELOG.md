@@ -13564,3 +13564,21 @@ For the template chief to release. No migration. No new package.
 - Run by the chief from a fresh copy with ink-studio at `433ab1d`: its first example
   bakes, proves (at most 1 art pixel of 21,600 differs in any view), and makes its stills
   and GIF. Not proven by the chief: the player in a browser.
+
+## 2026-11-20 — The splat-scenes skill's pages, filled in
+
+- `skills/splat-scenes/SKILL.md` and its `references/` gain what two fresh scene-makers
+  had to work out alone: what to read first, every material field, the art grid and
+  readable sizes, the 256 limits, a far backdrop, lettering, previews, GIF times, and what
+  to build in place of what the file cannot carry, with a new `references/recipes.md`. The
+  ink-studio map covers commit `cf35ff8`. The kit and the player are unchanged.
+
+## 2026-11-20 — Gallery on the Splats page
+
+- `/animations/splats` has a third unnumbered world, Gallery (`?scene=gallery`), after
+  Factory and Island: `platform/priv/static/splats/gallery.bin` (about 7 MB, 358,368
+  splats, an eight-second loop) and its four pictures, drawn by `npm run stills:splats`.
+  It was made with the `splat-scenes` skill and baked by that skill's kit; its source is
+  not in the repository. It has no number, traits or page of its own.
+- `platform/assets/js/splats/painter.ts` writes fog start and strength as 0 for a scene
+  without fog, as the skill's player does. Every other scene's pictures redraw unchanged.

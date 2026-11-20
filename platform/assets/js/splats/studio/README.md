@@ -23,6 +23,10 @@ their sources are not. `bake.cjs` and `verify.cjs` cover only the scenes whose s
 baked again, the design lane does it and the new file replaces the old one. What proves one is the private tools' own check (no
 faults, 48 colours, an eight-second loop) and the page's decoder reading the file.
 
+The unnumbered Gallery (`gallery.bin`) is also made elsewhere: written straight against ink-studio with the `splat-scenes` skill
+(`skills/splat-scenes/` at the repository's root) and baked by that skill's kit, whose file layout is this folder's. It has 178
+colours and no fog.
+
 ## Files
 
 | File | What it is |

@@ -84,8 +84,9 @@ const CLOTH_SPAN = vec3f(${h.clothMax.map((v, k) => float(v - h.clothMin[k]!)).j
 const CLOTH_RADIUS = ${float(h.clothRadius)};
 const CLOTH_THICKNESS = ${float(h.clothThickness)};
 const RADIUS = ${float(h.radius)};
-const FOG_START = ${float(h.fogStart)};
-const FOG_MAX = ${float(h.fogMax)};
+// A scene without fog writes both as 0: WGSL refuses a smoothstep whose two edges are the same constant.
+const FOG_START = ${float(h.fogMax > 0 && h.fogStart < 1 ? h.fogStart : 0)};
+const FOG_MAX = ${float(h.fogMax > 0 && h.fogStart < 1 ? h.fogMax : 0)};
 const OUTLINE_EDGE = ${float(h.outlineEdge)};
 const SHADE_STRENGTH = ${float(h.shadeStrength)};
 const SHADE_RANGE = ${float(h.shadeRange)};
