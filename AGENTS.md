@@ -34,7 +34,10 @@ site still replaces by hand; keep it outside this passage, which the rename drop
   one resource reacting to another's action. `animejs` covers Anime.js in
   LiveView hooks, `vgpu-island` every GPU picture (vgpu inside the shared canvas island), `onchain-buttons` wallet and on-chain buttons, and
   `chain-events` watching a chain and saving its events; load `ash-stack` and
-  `ash-frontend` before each. Change a shared skill in regents-ai/ash-template,
+  `ash-frontend` before each. `splat-scenes` stands alone: small looping
+  pixel-art scenes of Gaussian splats placed by code, with its own kit, example
+  pieces and browser player, needing only Node and an ink-studio download.
+  Change a shared skill in regents-ai/ash-template,
   never in a copy in another repository. The web app serves the `ash-*`, `animejs`,
   `onchain-buttons` and `chain-events` skills publicly as its build skills
   (`AshTemplateWeb.AgentSkills` names them), so a change to one is published

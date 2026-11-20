@@ -1,0 +1,16 @@
+{
+  "seed": 7,
+  "pieces": [
+    "pieces/palette/meadow.cjs",
+    "pieces/light/late-sun.cjs",
+    "pieces/camera/three-quarter.cjs",
+    "pieces/finish/fine-line.cjs",
+    "pieces/ground/isle.cjs",
+    "pieces/sky/clear.cjs",
+    "pieces/thing/tree.cjs",
+    "pieces/thing/lamp.cjs",
+    "pieces/thing/pool.cjs",
+    "pieces/character/walker.cjs",
+    "pieces/weather/rain.cjs"
+  ]
+}
