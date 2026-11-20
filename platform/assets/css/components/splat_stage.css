@@ -114,6 +114,27 @@
   visibility: hidden;
 }
 
+/* A scene's links that open in a new tab, each with the arrow that says so: the
+   Scenes page's Full view and Metadata, and the Splats page's formats. */
+.splat-links {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--type-label-size);
+}
+
+.splat-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-fg);
+}
+
+.splat-links .rg-icon {
+  inline-size: 1rem;
+  block-size: 1rem;
+  color: var(--color-fg-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .splat-stage__live,
   .splat-zoom,
