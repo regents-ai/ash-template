@@ -13444,3 +13444,12 @@ For the template chief to release. No migration. No new package.
 - `npm run stills:splats` now draws the full-size card and item pictures for Factory and
   Island too; every earlier picture came out unchanged. The numbered scenes, their pages
   and trait files stay five.
+
+## 2026-11-20 — Released v302: every world on the Splats page
+
+- v302 on template.regents.sh carries one commit (head `068e7fd4`): the entry above. No
+  migration; library pin unchanged; no Points setting changed.
+- Rollback: v301 (`386901f0`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit. Live, signed out: all seven tabs
+  answer, an unknown name shows the factory, the four new pictures are served. Not
+  proven: the turning worlds and Download GIF in a browser with WebGPU.
