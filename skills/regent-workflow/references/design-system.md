@@ -42,9 +42,10 @@ current founder request overrides older rollout notes. Re-read the working tree:
 - The theme switch is the template's `Shell.theme_toggle/1` (Sean, 8 Nov 2026), not
   `Regent.ThemeToggle`: a `role="switch"` button named "Light theme", night (dark) on
   the left and day (light) on the right. Signed in it is a row of the account menu
-  (`Regent.Account.menu`'s `theme` slot, words at the start, switch at the end); signed
-  out, with no account menu, it is in the app shell's bottom bar; the public footer has
-  its own. Never put it in the top bar. A press, Enter or Space turns it; the knob can
+  (`Regent.Account.menu`'s `theme` slot, words at the start, switch at the end) and
+  never also in the top bar. Signed out, with no account menu, the template has it in
+  the app shell's bottom bar and the public footer has its own; regents.sh, and the one
+  site built from it, has it in the header beside Sign in. A press, Enter or Space turns it; the knob can
   be dragged and settles on the nearer side, and the theme changes once, on release. The
   moon and the sun are pictures of tiny square blocks held once, in `Shell`'s
   `@theme_moon` and `@theme_sun` (equal block counts, square, outer ring clear); the
