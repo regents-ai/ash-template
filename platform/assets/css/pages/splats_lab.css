@@ -9,22 +9,11 @@
   align-content: start;
 }
 
-/* The tabs keep to one row. When they are wider than the page, as on a phone, the row
-   scrolls sideways on its own and the page never does. Inside the scrolling row a
-   focused tab draws its ring inside itself, where the row cannot cut it off. */
-.motion-lab--splats .splats-lab__tabs {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-
+/* On a wide screen the tabs wrap onto as many lines as they need. On a phone they keep
+   to one row, which scrolls sideways on its own while the page never does; inside that
+   row a focused tab draws its ring inside itself, where the row cannot cut it off. */
 .motion-lab--splats .splats-lab__tabs a {
   flex: none;
-}
-
-.motion-lab--splats .splats-lab__tabs a:focus-visible {
-  outline-offset: -2px;
 }
 
 .splats-lab {
@@ -32,6 +21,17 @@
 }
 
 @media (max-width: 36rem) {
+  .motion-lab--splats .splats-lab__tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .motion-lab--splats .splats-lab__tabs a:focus-visible {
+    outline-offset: -2px;
+  }
+
   .splats-lab {
     aspect-ratio: 1;
   }

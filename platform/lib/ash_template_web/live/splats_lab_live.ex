@@ -9,8 +9,9 @@ defmodule AshTemplateWeb.SplatsLabLive do
   pointer or the middle; Reset view, 0, a double-click or a double tap goes back to the
   opening view. The factory comes first, at the bare address; `?scene=<name>` shows
   another (`island`, or a numbered scene's name such as `fishing`), and any other value
-  shows the factory. On a narrow screen the tabs' row scrolls sideways on its own, and
-  the shared `MotionTravel` hook keeps the current tab in view there.
+  shows the factory. On a wide screen the tabs wrap onto as many lines as they need; on
+  a phone they keep to one row, which scrolls sideways on its own, and the shared
+  `MotionTravel` hook keeps the current tab in view there.
 
   Each scene is one baked file, `priv/static/splats/<scene>.bin` (laid out in
   `assets/js/splats/studio/FORMAT.md`), served gzipped and digested like the other
@@ -113,8 +114,8 @@ defmodule AshTemplateWeb.SplatsLabLive do
           shows those five side by side.
         </p>
       </header>
-      <%!-- Seven tabs, more than the shared tabs take; MotionTravel scrolls the
-      current one into view inside the row. --%>
+      <%!-- More tabs than the shared tabs take: they wrap on a wide screen, and on a
+      phone MotionTravel scrolls the current one into view inside the row. --%>
       <nav
         id="splats-tabs"
         class="flair-tabs splats-lab__tabs"

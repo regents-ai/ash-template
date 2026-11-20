@@ -13474,3 +13474,10 @@ For the template chief to release. No migration. No new package.
 - `make check` exit 0 by the chief on the exact commit. Live, signed out: each numbered
   scene's tab carries its number, rarity and 31 trait rows; Factory and Island carry
   none; the Scenes page still has its five folded tables.
+
+## 2026-11-20 — Splats tabs wrap on a wide screen
+
+- `/animations/splats`: on a wide screen the tabs now wrap onto as many lines as they
+  need, so every world's tab is in sight without scrolling. On a phone (36rem and
+  narrower) they keep to one row that scrolls sideways, with the current tab kept in
+  view, as before.
