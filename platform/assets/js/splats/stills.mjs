@@ -32,7 +32,11 @@ const priv = join(here, "../../../priv/static")
 /** Each shape: its stage in screen pixels, and the name of its full-size picture. */
 const SHAPES = [["wide", [1440, 960], "card"], ["square", [1080, 1080], "item"]]
 /** Every scene the site draws, by its baked file's name. */
-const SCENES = ["factory", "island", "campfire-stories", "trainer-battle", "missile-circus", "fishing", "meteor-strike"]
+const SCENES = [
+  "factory", "island", "campfire-stories", "trainer-battle", "missile-circus", "fishing", "meteor-strike",
+  "dice-owl", "robot-toad", "fishing-dragon", "reef-owl", "missile-dragon", "snow-toad", "striped-owl",
+  "chase", "boulder-run", "stargazing", "portal-opens",
+]
 
 /** The art-pixel picture `scale` times as wide and high, each art pixel a square of `scale` by `scale`. */
 const enlarge = (art, columns, rows, scale) => {

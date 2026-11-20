@@ -13491,3 +13491,22 @@ For the template chief to release. No migration. No new package.
   The Splats lede now reads: "Small worlds, turning slowly. … The numbered ones each list
   the traits they were dealt; Scenes shows them side by side." The Scenes lede reads:
   "Small worlds and their traits. …"
+
+## 2026-11-20 — Eleven more numbered scenes
+
+- `AshTemplateWeb.Scenes` gains scenes 6 Dice Owl, 7 Robot Toad, 10 Fishing Dragon,
+  11 Reef Owl, 12 Missile Dragon, 13 Snow Toad, 14 Striped Owl, 16 Chase, 17 Boulder Run,
+  19 Stargazing and 20 Portal Opens, each with its title, kind, line, rarity and all 31
+  traits, worked out from its deal by the collection's rule (444 over each trait's count)
+  and checked row by row against the trait tables. Numbers 8, 9, 15 and 18 are kept for
+  four scenes still being made; until then their addresses answer the site's 404.
+- Each scene's baked file is in `priv/static/splats/` and its four pictures (wide,
+  square, card and item) in `priv/static/images/animations/`, drawn by
+  `npm run stills:splats`, whose list now names every scene. Running it again left the
+  seven earlier scenes' 28 pictures byte for byte as they were.
+- The Splats page gives each a tab with its formats and traits, the Scenes page a card,
+  and each has its own page and trait file at `/scenes/<n>`. No page code changed: all of
+  them read the list in `AshTemplateWeb.Scenes`.
+- These scenes are put together outside this repository with tools the Regent team keeps
+  privately; only the baked files, pictures and trait data are here, and the studio
+  README says so (`assets/js/splats/studio/README.md`, Scenes made elsewhere).

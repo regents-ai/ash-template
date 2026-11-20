@@ -15,6 +15,14 @@ the baked files and never load it.
 To bake, keep a checkout of the toolkit at that commit anywhere outside this repository and point `INK_STUDIO` at it. Nothing else is
 installed: the toolkit runs on Node alone.
 
+## Scenes made elsewhere
+
+The numbered scenes from 6 on are put together from their trait lists (the lists their entries in `AshTemplateWeb.Scenes` carry) with
+tools kept privately by the Regent team, outside this repository. Only their baked files, their pictures and their trait data are here;
+their sources are not. `bake.cjs` and `verify.cjs` cover only the scenes whose source is in this folder. When one of these scenes is
+baked again, the design lane does it and the new file replaces the old one. What proves one is the private tools' own check (no
+faults, 48 colours, an eight-second loop) and the page's decoder reading the file.
+
 ## Files
 
 | File | What it is |
