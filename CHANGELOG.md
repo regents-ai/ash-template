@@ -13444,3 +13444,15 @@ For the template chief to release. No migration. No new package.
 - `npm run stills:splats` now draws the full-size card and item pictures for Factory and
   Island too; every earlier picture came out unchanged. The numbered scenes, their pages
   and trait files stay five.
+
+## 2026-11-20 — Traits on the Splats page
+
+- `/animations/splats`: for each of the five numbered scenes, a Traits section under
+  Formats shows the scene's number, whether it is Action or Chill, its rarity score and
+  every trait it was dealt (category, trait, tier and share), open. Factory and Island
+  show nothing there. The lede says five of the worlds are numbered, each with its
+  traits, and that Scenes shows those five side by side.
+- The number and kind, the rarity and the trait table are now one set of shared parts
+  (`SplatStage.meta/1`, `rarity/1` and `traits/1`, styled in
+  `assets/css/components/splat_stage.css`). The Scenes page uses them and looks as it
+  did, its table still folded away under Traits.

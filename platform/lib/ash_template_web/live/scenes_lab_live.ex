@@ -5,7 +5,8 @@ defmodule AshTemplateWeb.ScenesLabLive do
   tilts and zooms as the Splats page's does. Under each stage are the scene's title,
   its number and whether it is Action or Chill, Download GIF, five of its traits as
   tags (World, Ground, Resident, Landmark and Hour), every trait folded away under
-  Traits with the rarity score, and links that open the scene's own page and its trait
+  Traits with the rarity score (the number, kind, rarity and trait table are the
+  stage's shared parts, which the Splats page shows open), and links that open the scene's own page and its trait
   file in a new tab. One column on a phone, two on a wide screen. Each stage draws only
   while it is on screen. Nothing here reads or changes anything outside the page.
   """
@@ -40,10 +41,7 @@ defmodule AshTemplateWeb.ScenesLabLive do
       <div class="scenes-lab__body">
         <div class="scenes-lab__head">
           <h2 id={"#{@id}-title"}>{@scene.title}</h2>
-          <p class="scenes-lab__meta">
-            <span>Scene {@scene.number}</span>
-            <span class="scenes-lab__kind">{@scene.kind}</span>
-          </p>
+          <SplatStage.meta scene={@scene} class="scenes-lab__meta" />
           <SplatStage.gif for={@id} class="scenes-lab__gif" />
         </div>
         <ul class="scenes-lab__tags" aria-label="Highlights">
@@ -58,34 +56,9 @@ defmodule AshTemplateWeb.ScenesLabLive do
         >
           <summary>
             Traits <Regent.Icons.icon name="chevron-down" />
-            <span class="scenes-lab__rarity">Rarity <b>{@scene.rarity}</b></span>
+            <SplatStage.rarity scene={@scene} class="scenes-lab__rarity" />
           </summary>
-          <%!-- Wider than the narrowest phones, the table scrolls in its own box. --%>
-          <div
-            class="scenes-lab__table"
-            tabindex="0"
-            role="region"
-            aria-label={"#{@scene.title} traits"}
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Category</th>
-                  <th scope="col">Trait</th>
-                  <th scope="col">Tier</th>
-                  <th scope="col">Share</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr :for={trait <- @scene.traits}>
-                  <td>{trait.category}</td>
-                  <td>{trait.trait}</td>
-                  <td>{trait.tier}</td>
-                  <td>{trait.share}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <SplatStage.traits scene={@scene} />
         </details>
         <p class="splat-links scenes-lab__links">
           <a href={~p"/scenes/#{@scene.number}"} target="_blank" rel="noopener">

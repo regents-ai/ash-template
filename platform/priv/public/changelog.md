@@ -2,6 +2,11 @@
 
 Changes to Ash Template, newest first.
 
+## 20 November 2026
+
+- **Splats.** Each of the five numbered worlds shows every trait it was dealt under its
+  picture, with its number, whether it is Action or Chill, and its rarity.
+
 ## 19 November 2026
 
 - **Splats.** All seven worlds are on the Splats page now, each on its own tab. Under each

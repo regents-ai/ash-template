@@ -135,6 +135,90 @@
   color: var(--color-fg-muted);
 }
 
+/* A numbered scene's facts (`SplatStage.meta/1`, `rarity/1` and `traits/1`), on the
+   Scenes page and the Splats page. Its number, with Action or Chill as a small tag. */
+.splat-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-fg-muted);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  white-space: nowrap;
+}
+
+.splat-meta__kind {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border);
+  color: var(--color-fg);
+}
+
+.splat-rarity {
+  color: var(--color-fg-muted);
+  font-size: var(--type-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.splat-rarity b {
+  color: var(--color-fg);
+  font-weight: inherit;
+}
+
+/* Every trait, one to a row. The table scrolls in its own box when it is wider than
+   the page. Its first and last columns sit `--splat-traits-inset` in from the box's
+   edges, so a page can line them up with its own. */
+.splat-traits {
+  overflow-x: auto;
+}
+
+.splat-traits:focus-visible {
+  outline: var(--rg-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--rg-ring-width));
+}
+
+.splat-traits table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.splat-traits th,
+.splat-traits td {
+  padding: var(--space-1);
+  border-block-start: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+/* On a phone the columns sit closer, so the four fit across. */
+@media (max-width: 36rem) {
+  .splat-traits :is(th, td) {
+    padding-inline: var(--space-1) 0;
+  }
+}
+
+/* A tier and a share each stay on one line. */
+.splat-traits :is(th, td):nth-child(n + 3) {
+  white-space: nowrap;
+}
+
+.splat-traits th {
+  color: var(--color-fg-muted);
+  font-weight: 400;
+}
+
+.splat-traits :is(th, td):first-child {
+  padding-inline-start: var(--splat-traits-inset, 0);
+  color: var(--color-fg-muted);
+}
+
+.splat-traits :is(th, td):last-child {
+  padding-inline-end: var(--splat-traits-inset, 0);
+  text-align: end;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .splat-stage__live,
   .splat-zoom,
