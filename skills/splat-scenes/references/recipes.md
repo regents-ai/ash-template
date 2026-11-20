@@ -1,0 +1,190 @@
+# Recipes: sizes, budgets, backdrops, lettering, light, and what to build instead
+
+Short recipes for a rich, finished scene, each checked by baking a test scene with this kit against ink-studio `cf35ff8`, proving it
+(at most 0.026% of a view's art pixels differ) and looking at its still and GIF. The numbers below are what that run measured. The
+material fields they use are in references/ink-studio.md, 2.3.
+
+Contents: 1. The art grid and readable sizes. 2. Budgets: styles, motions, parts, and counting splats. 3. A far backdrop.
+4. Lettering. 5. Neon. 6. A glass case. 7. An interior lit by one sun and a fill. 8. What the file cannot carry, and what to build
+instead.
+
+## 1. The art grid and readable sizes
+
+The player's art pixel is q screen pixels square, from the stage height h, the finish's `detail` and the camera's `dist`
+(references/format.md, 5.2, at the opening view and the toolkit's 38-degree field of view):
+
+    q = clamp(round(h / (0.6887 × detail × dist)), 1, 18)        on a 960-high stage: q = round(1394 / (detail × dist))
+
+| detail × dist | q | Art pixels on a 1440 by 960 stage |
+| --- | --- | --- |
+| 558 to 929 | 2 | 720 by 480 |
+| 399 to 557 | 3 | 480 by 320 |
+| 310 to 398 | 4 | 360 by 240 |
+| 254 to 309 | 5 | 288 by 192 |
+| 215 to 253 | 6 | 240 by 160 |
+
+So detail × dist ≈ 465 (for example `detail: 31` at `dist: 15`) gives 480 by 320 art pixels of 3 screen pixels on a 1440 by 960
+stage; the kit's `still.png` of such a scene is 480 by 320 (checked).
+
+**Sizing something.** With H the grid's height in art pixels (320 above), a thing s world units across at distance D from the eye
+spans
+
+    s × H / (0.6887 × D) art pixels,    plus a pixel or two of splat edge
+
+At the target (D = dist) and q = 3 this is close to s × detail. Checked: a bar one world unit long at the target of a `detail: 31`,
+`dist: 15` scene measures 34 art pixels (31, plus its edges). To make something readable, choose its size in art pixels first and
+divide back:
+
+- **Capitals**: at least 6 art pixels tall, strokes at least one art pixel wide. Checked: single-stroke capitals 0.32 tall (about 10
+  art pixels) read cleanly; 0.18 tall (about 6) still read.
+- **A face**: about 20 art pixels across for two eyes and a mouth to read. Checked on three heads 0.5, 0.32 and 0.2 across (20, 14
+  and 10 art pixels): the first reads as a face, the second only just (one-pixel eyes), the third is two dots.
+- **Hand-placed splats** (`B.iso`, `B.disc`, `B.stick`) take standard deviations, not radii: a solid one (density 3) shows its crisp
+  edge about 1.9 sizes out, so a splat of size s is about 3.8 s across. An eye 2 to 3 art pixels wide on the 0.5 head is a disc of
+  size 0.02.
+
+Things nearer the camera than the target are larger in proportion. The player keeps the camera's distance as it turns, so a thing at
+the target keeps its size all the way round, while things off to one side come nearer and go farther.
+
+## 2. Budgets: styles, motions, parts, and counting splats
+
+A file holds at most **256 styles, 256 motions, 256 parts and 256 colours** (references/format.md, 1.1). The baker stops past any of
+them ("more than 256 styles or motions").
+
+- A **style** is one combination of density, kind and flags, and part. Every part multiplies the styles: the same ten densities in 30
+  rig parts are 300 styles, and the bake stops (checked). A density drawn at random for each splat (`B.rr(0.2, 0.9)`) is a style
+  each: 300 haze splats stopped the bake; rounded to quarters they made 6 styles in all (checked).
+- A **motion** is one combination of range and extra among moving splats. A random range for each of 300 swaying splats stopped the
+  bake; rounded to hundredths they made 5 motions (checked).
+- Each glyph of `K.typography`'s `T.extrude` is its own part (section 4), so a long extruded line eats parts and multiplies styles.
+
+So pick densities and ranges from a few values, and keep the parts to what really moves.
+
+**Counting splats per part.** Label solids with `objectId` in their options and hand-placed splats with `B.describeSplats(from, to,
+{ object })`, then count after the finish. Labels change no splat (checked: the same file with and without them). `objectId`, unlike
+`tag`, does not make a rig part.
+
+```js
+S.box([0, -0.2, 0], [3.2, 0.2, 2.2], ground, { objectId: 'island' });
+let n0 = B.count();
+// ... hand-placed splats ...
+B.describeSplats(n0, B.count(), { object: 'pool' });
+// after B.finish:
+const m = W.renderMetadata, n = {};
+for (let i = 0; i < W.count; i++) {
+  const name = m.objects[m.objectIds[i]] ?? 'unlabelled';
+  n[name] = (n[name] || 0) + 1;
+}
+console.error(JSON.stringify(n), W.count);
+```
+
+In the test scene this printed, for example, `"island": 7918, "sign": 7829, "backdrop": 21236, "unlabelled": 9` of 41,997: the far
+backdrop was half the scene, and eleven small capitals at a fine `res` cost as much as the ground.
+
+## 3. A far backdrop
+
+The file carries no sky, but a sky made of splats bakes like anything else. Depth is measured against the finish's `radius` R: a
+splat farther from the eye than dist + R has depth 1, so no outline and no contact shade is drawn between such splats. They are still
+drawn far to near, and fog reaches them fully unless they are fixed light (`em`). So plain splats well beyond the radius make a clean
+painted backdrop: sky bands, peaks, a sun, far water.
+
+```js
+for (let a = 0; a < 2 * Math.PI; a += 0.02) {
+  for (let e = 0; e < 0.7; e += 0.04) {                       // sky: bands by elevation on a circle of radius 60
+    const y = -2 + 60 * Math.tan(e), c = SKY_LOW + Math.min(3, Math.floor(e / 0.18));
+    B.stick(60 * Math.sin(a), y, 60 * Math.cos(a), [Math.cos(a), 0, -Math.sin(a)], 1.4, 1.4, B.P[c], 3, { em: 1 });
+  }
+  const h = 6 + 5 * B.n3(Math.cos(a) * 3, Math.sin(a) * 3, 1);  // peaks: a ring of discs at radius 45
+  for (let y = -2; y < h; y += 0.9)
+    B.disc(45 * Math.sin(a), y, 45 * Math.cos(a), [-Math.sin(a), 0, -Math.cos(a)], 0.9, 0.2, B.P[y > h - 1.5 ? SNOW : ROCK], 3, { em: 1 });
+  for (let r = 0.6; r < 44; r += 1.2)                         // far water, reaching right under the scene
+    B.disc(r * Math.sin(a), -2, r * Math.cos(a), B.UP, 0.7, 0.1, B.P[WATER], 3, { em: 1, nd: 1 });
+}
+B.disc(0, 14, -58, [0, 0, 1], 3, 0.3, B.P[SUN], 3, { em: 1 });
+```
+
+Checked, in a scene of radius 4 at `dist: 15`: the bands, peaks, sun and water draw with no lines between them. Two things learned:
+
+- Far ground that stops short of the scene leaves the background showing under it; bring it right in.
+- Where far ground passes inside the radius (under and in front of the scene), its rings drew dark lines between them; `nd: 1` (no
+  depth: it hides nothing and draws no outline) removed them.
+
+A full ring of sky costs splats: this one was 21,236. Coarser steps, or only the half the camera sees most, cost less.
+
+## 4. Lettering
+
+Three ways in ink-studio, all of which bake as solids:
+
+| Way | Letters | Use |
+| --- | --- | --- |
+| `K.poly2.text(str, size)` with `S.strokes(shape, centre, depth, material, options)` or `S.engrave(shape, { on, at, n, up, depth, mat, raise })` | Single-stroke capitals A to Z, 0 to 9 and `. , - ' ! ?` on a 4 by 6 grid; strokes size × 0.16 wide | Signs, plaques, carved names |
+| `K.typography`: `T.layout(text, { font: T.fonts.bitmap(), size, align })` then `T.extrude(B, S, run, { id, rig, material, position, depth, res })` | A 6 by 8 pixel font with real lowercase, digits and symbols | Mixed-case words, shop signs |
+| `S.stroke({ points, width, depth, pressure, taper }, mat)` and `S.fill({ rings, frame }, mat)` (README, Editable 3D drawing) | Anything drawn as a path or filled outline | Script, logos, hand-drawn letters |
+
+`K.typography`'s default font, Ink Sans, has capitals only: its lowercase are the capitals. The pixel font
+(`T.fonts.bitmap()`) has a true lowercase (checked: its "e" and "a" differ from "E" and "A"). `T.extrude` needs a rig and makes one
+rig part a glyph (section 2).
+
+- **Sampling.** Give letter solids a `res` at most half their stroke width (0.02 for 0.04 strokes, 0.015 for smaller): at the
+  default 0.09 the letters were blobs. That is what makes them costly (section 2).
+- **Size.** At least 6 art pixels tall (section 1).
+- **Which way it reads.** Lettering laid in the X–Y plane faces +Z and reads left to right from the opening view at yaw 0 (the
+  camera sits on +Z looking toward −Z). From behind it reads mirrored, and strokes standing on a board do not show at all (checked).
+  A sign that must read from both sides needs a second copy on its back, turned half a turn about the upright axis.
+
+## 5. Neon
+
+- **The tube**: a `S.tube` along the letter paths with a fixed-light material at its brightest place, `{ r: [dark, mid, bright], em:
+  true, v: 1 }`, `res` near half the tube's width. It reads well (checked).
+- **The glow**: soft haze round it (`B.iso` at density 0.25 with `em` and `nd`) snapped to grey speckle over a busy background, even
+  with in-between tones in the palette; a fatter tube behind in a dim tone fused into the stroke (both checked). So paint the glow
+  into the surroundings instead: a lamp at the sign (`S.lights.push({ p, r, s })`) before the solids around it are baked, and a `g`
+  ramp in their materials in the light's colours. The lamp's ramp only shows where the lamp outweighs the other light: it tinted
+  nothing in daylight and showed clearly round the lamp at night (checked on a test block, references/ink-studio.md, 2.3; a whole
+  neon sign at night was not drawn). Dark surfaces behind the tube make it read best.
+
+## 6. A glass case
+
+```js
+S.box([x, y, z], [0.25, 0.26, 0.25], K.look.glass([PALE], { a: 0.13 }), { ghost: true, res: 0.06 });
+```
+
+`K.look.glass(ramp, { a })` is `{ r, a, glass: true }`: a soft solid of density `a` that bends what is behind it (the finish's
+`refract`). `ghost: true` draws it on its own: it takes no part in the joins or the shadows (`src/sculpt.js`), so the case neither
+melts into what stands inside it nor shades it. How solid: 0.06 was almost invisible, 0.13 faint and read as glass, 0.3 clouded what
+was inside (checked side by side). Use 0.1 to 0.15, a pale palette colour, and a coarse `res`: the glass is a haze, not a surface.
+
+## 7. An interior lit by one sun and a fill
+
+Light is baked (references/ink-studio.md, 2.2), so a room's inside gets only what reaches it through its openings at bake time. A
+test room with an open front, mean ramp places (1 darkest to 7 lightest):
+
+| Light | Back wall | Floor | Roof, outside |
+| --- | --- | --- | --- |
+| Default sun | 2.00 | 3.27 | 5.95 |
+| Sun turned low into the opening | 3.38 | 4.03 | 4.73 |
+| `S.amb = 0.3` | 3.29 | 4.08 | 6.95 |
+| `S.sky = 0.5` | 2.81 | 4.49 | 6.95 |
+| One lamp inside, `{ p: [0, 1.4, 0], r: 2.6, s: 0.5 }` | 2.80 | 3.68 | 5.95 |
+
+So: keep the sun for the outside, and put one fill lamp inside, near the ceiling in the middle of the room, reaching about the room's
+size at half strength. It lifts only the inside. Raising `amb` or `sky` lifts the inside as much but washes out everything outside;
+turning the sun into the opening changes the whole scene. The lamp's `sh` and stronger contact shade (`S.aoK`) barely changed the
+inside (2.06 for `aoK` 0.8).
+
+## 8. What the file cannot carry, and what to build instead
+
+| Wanted | Why it does not travel | Build instead |
+| --- | --- | --- |
+| A real sky and sun (`skyEnvironment`, `celestialTracks`, `liveSun`) | Drawn by ink-studio's renderers, not stored as splats | Far splats and a fixed-light sun disc (section 3, checked); point `S.sun` toward the disc so the baked light agrees with it |
+| Lamp or flame light | Light is baked once; nothing lights the scene as it plays | A lamp in `S.lights` with `g` ramps for the light it casts, fixed light (`em`) on the source, `flame()` for the flame itself, and flicker or pulse on its splats (checked) |
+| Light that stays put while a part turns | A part's colours are baked onto its splats and turn with it (checked: a wheel's lit top comes round to its side) | Rock the part through a small swing so its dark side never comes round, or accept the dark side; or bake the lit side's colours into a material that does not depend on the sun (`em`, `tex`) |
+| Water reflections (`reflections`, `water`) | Live reflections are drawn per view | Paint them: short level sticks under the reflected thing, in its colours, swaying a little (kind 11) on a flat disc of water (checked) |
+| More than one cloth | The file stores one simulated cloth | Swaying shapes: sticks or discs with sway (kind 11), or a rigid part that swings with sin(2π k t / L) (checked) |
+| Limbs that bend (bones, puppets) | Bones bend splats; the file moves rigid parts only | Rigid parts on `K.rig`, each limb its own `tag`, hung on its parent with `rig.child` (checked, next row), with the joints overlapping so no gap opens as they turn |
+| Drifting clouds | A cloud that drifts away does not come back in the loop | A ring of identical clouds as one rig part that turns one cloud-spacing a loop: twelve clouds round the upright axis turning a twelfth of a turn in L seconds came round with no visible jump (checked). The bake then prints that part as 0.5 from where it began, since the ring itself is a twelfth of a turn on; the GIF's seam check is the test here (32,032 pixels changed at the seam, against 29,608 to 42,912 between neighbouring frames). Sway tied to position (kind 11) gives a wobble in place |
+| Orbit about anything but the world's upright axis | Kind 5 orbits the upright axis only | A rig part turned by `K.M.rot(axis, 2π k t / L)` about any axis and point (checked: a wheel on a level axis, with an arm hung on it by `rig.child`, came round to within 1e-11 and proved at 0.005%) |
+| Sways bound to a wind field (`windField`, flag 8192) | The format refuses the wind flag | Plain sway (kind 11); vegetation helpers already sway |
+| Particles: sparks, rain, snow, smoke | Pools are live | Hand-placed splats with fall, rise, blink, bob or flicker; `motes()` for drifting specks (references/format.md, 4) |
+| Per-pixel looks: tone, stipple, colour stacks, outlines by material | Drawn per pixel by ink-studio | Bake the colour choice into materials (`tex`, `rf`, `mod`, `by`), the finish's `dither`, `outline` and `ao` |
+| A camera of its own field of view (`cam.fov`) | The baker writes the toolkit's 38 degrees | Leave `fov` out; the proof fails if it is set (79% of a view's art pixels differed) |

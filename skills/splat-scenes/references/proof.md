@@ -77,6 +77,11 @@ differs.
 Headless Chromium with WebGPU: `--enable-unsafe-webgpu`, and on a Mac `--use-angle=metal`. Serve the player with
 `node player/serve.mjs <scene.bin> <still.png> [port]` and check:
 
+- **Stage size:** the player's stage follows the window. It is as wide as the smaller of the page less its 16 px padding each side
+  and (window height − 96 px) × 1.5, at 3 : 2, inside a 1 px border; the canvas fills it, and its drawing buffer is its own size at
+  one device pixel a CSS pixel. Measured in headless Chromium: a 1472 by 1056 window gives the 1440 by 960 stage the kit's pictures
+  assume (a 1438 by 958 canvas inside the border, the same art grid for `sculpt.js`); 1280 by 800 gives 1056 by 704; 1920 by 1200
+  gives 1656 by 1104. Set the viewport to 1472 by 1056 when screenshots should line up with the kit's stills.
 - **Draws:** the ready flag on `.stage` becomes `"true"` (a finished first frame), with no console errors or warnings (a vgpu
   error starts `VGPU-`; WebGPU warns of a draw of nothing).
 - **Plays:** two screenshots 2 s apart differ.

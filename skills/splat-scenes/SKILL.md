@@ -28,9 +28,9 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
    writes `dist/standalone.js` (several MB) inside it on first use and after any change to its sources. Check it with
    `node /abs/path/ink-studio/cli/ink-studio.js help`.
 
-   The notes in `references/` were written against commit `433ab1d` (put `433ab1d` in place of `HEAD` for exactly that copy). The
-   newest copy on 20 Nov 2026 (`b737660`) bakes ink-studio's examples to the same bytes, but has far more guides and examples than
-   references/ink-studio.md maps; for one not in the map, bake and the baker says whether it travels.
+   The notes in `references/` were checked against commit `cf35ff8` (`cf35ff83140164e33314d5293e1c3d87cd4ed7bf`, the newest on 20
+   Nov 2026); put that in place of `HEAD` for exactly that copy. references/ink-studio.md maps every README section, guide and
+   example of it, each marked with whether it survives the bake; for anything newer, bake it and the baker says whether it travels.
 2. **The player's packages:** `npm install --prefix /abs/path/splat-scenes/player` (vgpu 0.6.0 and @vgpu/wgsl 0.6.0, pinned exactly).
    npm may warn that two packages' install scripts did not run (vgpu's Node adapter); the browser player does not need them.
 3. **A browser with WebGPU:** desktop Chrome or Edge; headless Chromium with `--enable-unsafe-webgpu` (and `--use-angle=metal` on a
@@ -44,7 +44,8 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
 - **Script files for anything with variables, loops or `$(...)`**: write a small `.sh` file and run it, rather than typing them into a
   shell that may refuse or forget them.
 - **Out of the way:** `out/` in this folder is ignored by git; put bakes there or anywhere outside it.
-- **Scene files** are plain CommonJS (`.js` or `.cjs`) and can live anywhere; they reach the kit's loop helper by its path.
+- **Scene files** are plain CommonJS and can live anywhere; they reach the kit's loop helper by its path. Name them `.js`: the kit
+  takes `.cjs` too, but ink-studio's command line does not.
 
 ## From a blank file to a scene on a page
 
@@ -52,12 +53,15 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
    ball on top): bake, prove, stills, play (Commands, below; a few seconds in all). It is a pipeline check, not a model of what
    a scene should look like: a real scene has many more parts, its own palette of colour ramps, light set on purpose, and things that
    move. ink-studio's `examples/cloth.js` also bakes, and checks the moving path.
-2. **Write the scene file**: a module that takes the toolkit and returns `{ id, name, seed, build(seed) }`. Start from the skeleton
-   in references/ink-studio.md, 2.1, and follow its order: palette and builder, light, a rig if parts move, solids and `S.bake()`,
-   hand-placed splats, flames, motes, a cloth, then `B.finish({ cam, detail, radius, ... })` and the stage. 2.2 to 2.6 there cover
-   light, materials, hand-placed splats, things that move and the finish, and what of each the file carries.
-3. **Look while you sculpt**: ink-studio's `render`, `turn` and `stats` commands draw the scene with the same renderer the kit uses
-   (references/ink-studio.md, 2.7). Leave its look options off: the file does not carry them.
+2. **Write the scene file**: a module that takes the toolkit and returns `{ id, name, seed, build(seed) }`. Read the short list in
+   references/ink-studio.md, 1, start from the skeleton in 2.1, and follow its order: palette and builder, light, a rig if parts
+   move, solids and `S.bake()`, hand-placed splats, flames, motes, a cloth, then `B.finish({ cam, detail, radius, ... })` and the
+   stage. 2.2 to 2.6 there cover light, every material field, hand-placed splats, things that move and the finish, and what of each
+   the file carries; references/recipes.md has sizes, budgets, a far backdrop, lettering, neon, glass, interiors, and what to build
+   instead of what the file cannot carry.
+3. **Look while you sculpt** at the stage's size: ink-studio's `render --w 1440 --h 960`, `turn` and `stats` draw the scene with the
+   same renderer the kit uses, and `--px1` gives the picture the kit's still will be (references/ink-studio.md, 2.7). Leave its look
+   options off: the file does not carry them.
 4. **Make it loop** (The loop, below).
 5. **Bake** it. Read what the baker prints: splats, parts, frames, cloth dabs, the size raw and gzipped, how near every stored number
    is, and how far each part and the cloth are from where they began a loop on. When it refuses, it names the cause
@@ -83,11 +87,12 @@ From this folder, with `INK_STUDIO` named on each line. `scenes/my-scene.js` sta
 | Stills | `env INK_STUDIO=/abs/path/ink-studio node kit/stills.cjs out/my-scene/scene.bin out/my-scene` | `still.png`, `sheet.png`, `moments.png` |
 | GIF | `env INK_STUDIO=/abs/path/ink-studio node kit/gif.cjs out/my-scene/scene.bin out/my-scene/scene.gif` | One loop, once round, playing for ever |
 | Play | `node player/serve.mjs out/my-scene/scene.bin out/my-scene/still.png 4173` | The player at http://127.0.0.1:4173/ (stop it with Ctrl-C) |
-| Preview | `env INK_STUDIO=/abs/path/ink-studio node /abs/path/ink-studio/cli/ink-studio.js render scenes/my-scene.js --out /tmp/look.png` | ink-studio's own picture of the live scene |
+| Preview | `env INK_STUDIO=/abs/path/ink-studio node /abs/path/ink-studio/cli/ink-studio.js render scenes/my-scene.js --w 1440 --h 960 --out /tmp/look.png` | ink-studio's own picture of the live scene at stage size |
 
 What ink-studio's `sculpt.js` gives on a Mac: 4,027 splats, a 0.08 MB file (0.02 MB gzipped), baked in 0.1 s, proved in 0.6 s (at
-most 1 art pixel of 21,600 differs in any view), stills in 0.2 s, a GIF of 120 frames (0.41 MB) in about 2 s. Its `cloth.js`: 1,413
-splats and 396 cloth dabs, 0.89 MB (0.66 MB gzipped), baked in 2 s.
+most 1 art pixel of 21,600 differs in any view), stills in 0.2 s, a GIF of 120 frames (0.41 MB) in 2 to 4 s. Its `cloth.js`: 1,413
+splats and 396 cloth dabs, 0.89 MB (0.66 MB gzipped), baked in 2 s. A GIF takes about a second per thousand splats, more with big
+splats on screen (references/gif.md).
 
 In the player: it turns once every 30 seconds; drag to turn and tilt, flick to spin, arrow keys on the focused picture turn 20° and
 tilt 12°; a finger only turns, so the page still scrolls; with reduced motion it holds still until moved.
@@ -114,12 +119,30 @@ back where it started after L seconds.
 - **A cloth** is simulated: the bake runs it for 15 loops first so it settles, stores every frame of the 16th, and prints how far it
   ends from where it began. Gusty wind never comes round exactly; calm wind and a small seam (well under an art pixel) do not show.
 
+## The art grid
+
+The player draws in art pixels q screen pixels square. On a stage h screen pixels high, at the opening view:
+
+    q = round(h / (0.6887 × detail × dist)), kept within 1 to 18;   on a 960-high stage q = round(1394 / (detail × dist))
+
+`detail × dist` from 399 to 557 gives q = 3: 480 by 320 art pixels on a 1440 by 960 stage (465, as `detail: 31` at `dist: 15`, sits
+in the middle). Choose the grid first, then size things in art pixels: something s world units across at distance D from the eye is
+about s × H / (0.6887 × D) art pixels wide (H the grid's height, 320 here), close to s × detail at the camera's target, plus a pixel
+or two of splat edge. Readable needs at least 6 art pixels for a capital letter and about 20 for a face with eyes and a mouth. Worked
+sizes, the table for other grids and how they were measured: references/recipes.md, 1.
+
 ## What a file can hold
 
 Sculpted solids with baked light and their palette colours; glass; hand-placed splats; flames and motes; eight kinds of motion; rigid
 parts; one cloth; fog, outline, contact shade and dither. Not: per-pixel looks, skies, live lights, water, bones and puppets, particles,
-physics beyond one cloth, a camera that zooms. The baker stops on any of those and names it. Details: references/format.md, 9, and
-references/ink-studio.md, 2.5 and 2.6. A palette may have up to 256 colours (255 for a GIF).
+physics beyond one cloth, a camera that zooms or has its own field of view. The baker stops on any of those and names it, except the
+field of view: it writes the toolkit's 38 degrees, and only the proof shows the difference. Details:
+references/format.md, 9, and references/ink-studio.md, 2.5 and 2.6; what to build instead of each: references/recipes.md, 8.
+
+A file holds at most **256 colours** (255 for a GIF), **256 parts**, **256 styles** (each different density, kind and flags, and part)
+and **256 motions** (each different range and extra among moving splats). Every moving part multiplies the styles: ten densities in
+30 parts are 300 styles, and the bake stops. So pick densities and ranges from a few values, and keep parts to what really moves;
+references/recipes.md, 2, shows how to count splats per part.
 
 ## Folder
 
@@ -146,7 +169,8 @@ Each file's opening comment says what it owns.
 
 | Note | Read it for |
 | --- | --- |
-| references/ink-studio.md | Writing a scene: the skeleton and lifecycle, light, solids and materials, hand-placed splats, rigs and cloth, the finish, previewing; maps of ink-studio's README, every `docs/` guide and its examples, each marked with whether it survives the bake |
+| references/ink-studio.md | Writing a scene: what to read first, the skeleton and lifecycle, light, every material field, groups, hand-placed splats, rigs and cloth, the finish, previewing at stage size; maps of ink-studio's README, every guide and every example, grouped by what you are making and each marked with whether it survives the bake |
+| references/recipes.md | The art grid and readable sizes, budgets and counting splats per part, a far backdrop, lettering, neon, a glass case, an interior lit by one sun and a fill, and what to build instead of what the file cannot carry |
 | references/format.md | The baked file byte by byte, every kind of motion's maths, how to draw a picture from it, costs, accuracy, what the baker refuses, notes for writing a painter |
 | references/painter.md | How `player/painter.js` draws, the toolkit's rules a painter must follow, mistakes made and caught, performance |
 | references/hosting.md | vgpu (version, offline docs), the GPU island pattern for putting a scene in a site, serving and loading, orbit and touch |

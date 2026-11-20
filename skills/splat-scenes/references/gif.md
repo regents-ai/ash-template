@@ -7,7 +7,24 @@ env INK_STUDIO=/path/to/ink-studio node kit/gif.cjs out/scene/scene.bin out/scen
 ```
 
 It prints the frame count, the size, the length of a loop, how long it took, and the seam (below). On ink-studio's `sculpt.js` (an
-8-second loop): 120 frames of 865 x 580, 0.41 MB, made in about 2 s.
+8-second loop): 120 frames of 865 x 580, 0.41 MB, made in 2 to 4 s.
+
+**How long it takes.** The toolkit's CPU renderer draws all 120 frames one after another, so the time grows with the splats, and more
+when splats are large on screen. Measured on a Mac with 8-second loops:
+
+| Scene | Splats | Made in | GIF |
+| --- | --- | --- | --- |
+| ink-studio's `sculpt.js` | 4,027 | 2 to 4 s | 0.41 MB |
+| Test scene, small splats | 50,023 | 58 s | 2.20 MB |
+| Test scene, small splats | 100,000 | 100 s | 8.51 MB |
+| Test scene, small splats | 200,000 | 204 s | 8.13 MB |
+| A scene with a large far backdrop | 41,997 | 170 to 210 s | 1.60 MB |
+| A finished scene | about 388,000 | 374 s | 10.72 MB |
+
+So allow about a second per thousand splats, and four to five times that when much of the picture is big splats (a sky, far
+ground). It prints nothing until it is done. Meanwhile: run it in the background (or as the last step), and look at `stills.cjs`'s
+`sheet.png` and `moments.png`, which take seconds and show the same views and moments; the player itself plays the loop as soon as
+the scene is baked. Make the GIF once the scene is settled, not on every change.
 
 What it does:
 
