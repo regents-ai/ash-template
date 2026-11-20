@@ -40,7 +40,7 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/cells" => "A meter of twinkling cells",
     "/animations/icons" => "Small diagrams on slow loops",
     "/animations/splats" => "Pixel worlds you can turn",
-    "/animations/scenes" => "Five worlds and their traits"
+    "/animations/scenes" => "Numbered worlds and their traits"
   }
 
   def page(assigns) do

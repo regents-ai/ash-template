@@ -1,7 +1,7 @@
 # Baked splat scenes
 
-Each scene the page shows is one file in `platform/priv/static/splats/`, named for the scene: `island.bin`, `factory.bin`,
-`campfire-stories.bin`, `trainer-battle.bin`, `missile-circus.bin`, `fishing.bin` and `meteor-strike.bin`. A file
+Each scene the page shows is one file in `platform/priv/static/splats/`, named for the scene: `island.bin`, `factory.bin`
+and one for each numbered scene in `AshTemplateWeb.Scenes`, such as `fishing.bin`. A file
 holds every splat of the scene at rest, the tables its splats point into, how the scene moves over one loop, and the camera and look it
 is drawn with. This note says what every number is and how to draw a picture from them. `decode.cjs` is a working reader in plain
 JavaScript; `verify.cjs` shows it draws what the toolkit drew (see the end of this note).

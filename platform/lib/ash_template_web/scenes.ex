@@ -1,6 +1,6 @@
 defmodule AshTemplateWeb.Scenes do
   @moduledoc """
-  The five numbered scenes: each one's title, whether its action is Action or Chill,
+  The numbered scenes: each one's title, whether its action is Action or Chill,
   its line, its rarity score and every trait it was dealt (category, trait, tier and
   share), in the order its trait list gives them, with "None" and "Nothing" kept as
   dealt. The Scenes page (`AshTemplateWeb.ScenesLabLive`), each scene's own page and
@@ -8,10 +8,11 @@ defmodule AshTemplateWeb.Scenes do
 
   Each scene is baked into `priv/static/splats/<name>.bin`, and `npm run stills:splats`
   draws its pictures from it into `priv/static/images/animations/`. The stages show its
-  stills, `splats-<name>-wide.png` and `-square.png`, one pixel to an art pixel: 480 by
-  320 and 360 by 360, or 360 by 240 and 270 by 270 for fishing, whose art pixels are
-  bigger. Other sites scale a small picture up smoothly, which blurs pixel art, so they
-  get the same two at their stage's own size, every art pixel a hard-edged square:
+  stills, `splats-<name>-wide.png` and `-square.png`, one pixel to an art pixel, so
+  their size follows the size of the scene's art pixels: campfire-stories' are 480 by
+  320 and 360 by 360. Other sites scale a small picture up smoothly, which blurs pixel
+  art, so they get the same two at their stage's own size, every art pixel a hard-edged
+  square:
   `-card.png` (1440 by 960), the link preview of the scene's own page, and `-item.png`
   (1080 by 1080), the picture its trait file names.
 
@@ -261,10 +262,10 @@ defmodule AshTemplateWeb.Scenes do
                     )
                 })
 
-  @doc "Every scene, numbered 1 to 5, in order."
+  @doc "Every scene, in number order."
   def all, do: @scenes
 
-  @doc ~s(The scene an address numbers, "1" to "5"; any other answers the site's 404.)
+  @doc ~s(The scene an address numbers, such as "1"; any other answers the site's 404.)
   def fetch!(number) do
     Enum.find(@scenes, &(Integer.to_string(&1.number) == number)) || raise NotFoundError
   end

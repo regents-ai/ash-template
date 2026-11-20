@@ -11,7 +11,7 @@
 // art pixel a hard-edged square of whole pixels, as the stage shows it:
 // splats-<scene>-card.png (1440 by 960, from the wide one) and splats-<scene>-item.png
 // (1080 by 1080, from the square one). The Splats page offers both as Card and Picture;
-// for the five numbered scenes (AshTemplateWeb.Scenes) the card is also the link preview
+// for the numbered scenes (AshTemplateWeb.Scenes) the card is also the link preview
 // of the scene's own page and the item the picture its trait file names.
 //
 //   npm run stills:splats            (from platform/, after baking a scene again)

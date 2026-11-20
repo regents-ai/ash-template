@@ -135,10 +135,10 @@ defmodule AshTemplateWeb.PublicDocuments do
        "Fifty-six small diagrams, each one a word on its own slow loop, from merge and relay to stake, vote and the crown."},
     "/animations/splats" =>
       {"Splats",
-       "Seven small floating worlds in pixel art, from a solar robot factory at dusk to a meteor batted away, that turn slowly, turn and tilt as you drag them, and come closer as you pinch. Each comes as a picture, a card and a GIF, and the five numbered ones list every trait they were dealt."},
+       "Small floating worlds in pixel art, from a solar robot factory at dusk to a meteor batted away, that turn slowly, turn and tilt as you drag them, and come closer as you pinch. Each comes as a picture, a card and a GIF, and the numbered ones list every trait they were dealt."},
     "/animations/scenes" =>
       {"Scenes",
-       "Five numbered worlds in pixel art, each caught in one moment, with every trait it was dealt. Each turns slowly, turns and tilts as you drag it, and comes closer as you pinch."},
+       "Numbered worlds in pixel art, each caught in one moment, with every trait it was dealt. Each turns slowly, turns and tilts as you drag it, and comes closer as you pinch."},
     "/docs" =>
       {"Docs",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},

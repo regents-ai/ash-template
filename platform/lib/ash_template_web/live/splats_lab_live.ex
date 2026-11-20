@@ -2,8 +2,8 @@ defmodule AshTemplateWeb.SplatsLabLive do
   @moduledoc """
   Splats: every small world in pixel art the site draws, each a few hundred thousand 3D
   splats, turning once every thirty seconds while everything in it plays an eight-second
-  loop. One tab for each: the robot factory, the floating island at night, then the five
-  numbered scenes (`AshTemplateWeb.Scenes`) in number order under their titles. A drag
+  loop. One tab for each: the robot factory, the floating island at night, then every
+  numbered scene (`AshTemplateWeb.Scenes`) in number order under its title. A drag
   turns and tilts the scene, and a pinch, a wheel with Ctrl or Cmd held, the keys + and
   - or the box's Zoom in and Zoom out buttons bring it nearer, up to four times, at the
   pointer or the middle; Reset view, 0, a double-click or a double tap goes back to the
@@ -36,8 +36,8 @@ defmodule AshTemplateWeb.SplatsLabLive do
   Action or Chill (`SplatStage.meta/1`), its rarity score (`SplatStage.rarity/1`) and
   every trait it was dealt (`SplatStage.traits/1`), the same parts the Scenes page shows.
   The factory and the island have none, so nothing shows there. The lede links the
-  Scenes page, which shows the five side by side. Nothing here reads or changes anything
-  outside the page.
+  Scenes page, which shows the numbered scenes side by side. Nothing here reads or
+  changes anything outside the page.
   """
 
   use AshTemplateWeb, :live_view
@@ -107,11 +107,11 @@ defmodule AshTemplateWeb.SplatsLabLive do
         </p>
         <h1>Splats</h1>
         <p class="motion-lab__lede">
-          Seven small worlds, turning slowly. Drag one to turn it, or to look from above or below.
+          Small worlds, turning slowly. Drag one to turn it, or to look from above or below.
           Pinch, or use the buttons in its corner, to look closer.
-          Five of them are numbered, each with the traits it was dealt;
+          The numbered ones each list the traits they were dealt;
           <.link navigate={~p"/animations/scenes"}>Scenes</.link>
-          shows those five side by side.
+          shows them side by side.
         </p>
       </header>
       <%!-- More tabs than the shared tabs take: they wrap on a wide screen, and on a

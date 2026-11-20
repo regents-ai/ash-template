@@ -1,5 +1,5 @@
 @layer regents-product {
-/* The Scenes page (`/animations/scenes`, `AshTemplateWeb.ScenesLabLive`): the five
+/* The Scenes page (`/animations/scenes`, `AshTemplateWeb.ScenesLabLive`): the numbered
    scenes on cards, one column on a phone and two on a wide screen. Each card's stage
    is the shared one (`components/splat_stage.css`), three wide by two high at every
    width. Every box keeps its size in every state: Download GIF and the zoom buttons

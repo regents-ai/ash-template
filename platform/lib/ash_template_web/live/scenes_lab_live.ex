@@ -1,6 +1,6 @@
 defmodule AshTemplateWeb.ScenesLabLive do
   @moduledoc """
-  Scenes: the five numbered scenes (`AshTemplateWeb.Scenes`), each on a card with its
+  Scenes: every numbered scene (`AshTemplateWeb.Scenes`), each on a card with its
   own turning stage (`AshTemplateWeb.Components.SplatStage.stage/1`), which turns,
   tilts and zooms as the Splats page's does. Under each stage are the scene's title,
   its number and whether it is Action or Chill, Download GIF, five of its traits as
@@ -86,7 +86,7 @@ defmodule AshTemplateWeb.ScenesLabLive do
         </p>
         <h1>Scenes</h1>
         <p class="motion-lab__lede">
-          Five small worlds. Drag one to turn it, pinch to look closer, double-click to start again.
+          Small worlds and their traits. Drag one to turn it, pinch to look closer, double-click to start again.
         </p>
       </header>
       <div class="scenes-lab">

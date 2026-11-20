@@ -13481,3 +13481,13 @@ For the template chief to release. No migration. No new package.
   need, so every world's tab is in sight without scrolling. On a phone (36rem and
   narrower) they keep to one row that scrolls sideways, with the current tab kept in
   view, as before.
+
+## 2026-11-20 — Splats and Scenes wording without counts
+
+- The Splats and Scenes pages, their link-preview descriptions, the Design page's line
+  for Scenes and the notes in `AshTemplateWeb.Scenes`, the two pages, the stills script,
+  the Scenes stylesheet, the scene file format and the platform README no longer say how
+  many worlds or numbered scenes there are, so adding a scene needs no wording change.
+  The Splats lede now reads: "Small worlds, turning slowly. … The numbered ones each list
+  the traits they were dealt; Scenes shows them side by side." The Scenes lede reads:
+  "Small worlds and their traits. …"
