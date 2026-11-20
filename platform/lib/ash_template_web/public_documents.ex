@@ -135,7 +135,7 @@ defmodule AshTemplateWeb.PublicDocuments do
        "Fifty-six small diagrams, each one a word on its own slow loop, from merge and relay to stake, vote and the crown."},
     "/animations/splats" =>
       {"Splats",
-       "Two small floating worlds in pixel art, a solar robot factory at dusk and an island at night, that turn slowly, turn and tilt as you drag them, and come closer as you pinch."},
+       "Seven small floating worlds in pixel art, from a solar robot factory at dusk to a meteor batted away, that turn slowly, turn and tilt as you drag them, and come closer as you pinch. Each comes as a picture, a card and a GIF."},
     "/animations/scenes" =>
       {"Scenes",
        "Five numbered worlds in pixel art, each caught in one moment, with every trait it was dealt. Each turns slowly, turns and tilts as you drag it, and comes closer as you pinch."},

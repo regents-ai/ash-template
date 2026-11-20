@@ -1,29 +1,70 @@
 @layer regents-product {
 /* The splats page (`/animations/splats`, `AshTemplateWeb.SplatsLabLive`): one box
-   holding a small world in pixel art, the factory or the island, chosen by the tabs
-   above it. The box is the shared stage (`components/splat_stage.css`), three wide by
-   two high and here square on a phone, for either scene. The square still's
+   holding a small world in pixel art, chosen by the tabs above it, and under it the
+   world's formats. The box is the shared stage (`components/splat_stage.css`), three
+   wide by two high and here square on a phone, for every scene. The square still's
    `<source>` in `SplatStage` names the same width as the media query below. */
 .motion-lab--splats {
   width: 100%;
   align-content: start;
 }
 
-/* The tabs' row, with Download GIF at its end and the line that says it failed beside
-   it, or, on a narrow screen, in the gap between the row and the picture. The tabs keep
-   the row's full width and its rule; the control sits over the empty end of it. The
-   control keeps its place unseen until the scene has drawn, so it never moves the
-   picture. */
-.splats-lab__bar {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  column-gap: var(--space-3);
+/* The tabs keep to one row. When they are wider than the page, as on a phone, the row
+   scrolls sideways on its own and the page never does. Inside the scrolling row a
+   focused tab draws its ring inside itself, where the row cannot cut it off. */
+.motion-lab--splats .splats-lab__tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
 
-.splats-lab__bar > .flair-tabs {
-  grid-area: 1 / 1 / 2 / -1;
+.motion-lab--splats .splats-lab__tabs a {
+  flex: none;
+}
+
+.motion-lab--splats .splats-lab__tabs a:focus-visible {
+  outline-offset: -2px;
+}
+
+.splats-lab {
+  border: 1px solid var(--color-border);
+}
+
+@media (max-width: 36rem) {
+  .splats-lab {
+    aspect-ratio: 1;
+  }
+}
+
+/* Formats, under the box: the title, the links, then the line that says a GIF failed
+   and Download GIF at the far end. On a narrow screen the title and Download GIF share
+   the first line, the links take the second and the failed line the third. Download
+   GIF keeps its place unseen until the scene has drawn, and the failed line keeps its
+   own until a GIF fails, so nothing round them moves. */
+.splats-lab__formats {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "title links failed gif";
+  align-items: center;
+  column-gap: var(--space-4);
+  row-gap: var(--space-2);
+  padding-block-start: var(--space-3);
+}
+
+.splats-lab__formats-title {
+  grid-area: title;
+  color: var(--color-fg-muted);
+  font-family: inherit;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+.splats-lab__links {
+  grid-area: links;
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
 }
 
 .splats-lab__gif {
@@ -35,11 +76,13 @@
 }
 
 .splats-lab__gif .splat-gif__failed {
-  grid-area: 1 / 2;
+  grid-area: failed;
+  justify-self: end;
+  text-align: end;
 }
 
 .splats-lab__gif .splat-gif__button {
-  grid-area: 1 / 3;
+  grid-area: gif;
   opacity: 0;
 }
 
@@ -48,23 +91,14 @@
 }
 
 @media (max-width: 48rem) {
-  /* Placed against the whole row, under it. */
-  .splats-lab__gif .splat-gif__failed {
-    grid-area: 1 / 1 / 2 / -1;
-    position: absolute;
-    inset-block-start: 100%;
-    inset-inline: 0;
-    padding-block-start: var(--space-2);
+  .splats-lab__formats {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "title gif" "links links" "failed failed";
   }
-}
 
-.splats-lab {
-  border: 1px solid var(--color-border);
-}
-
-@media (max-width: 36rem) {
-  .splats-lab {
-    aspect-ratio: 1;
+  .splats-lab__gif .splat-gif__failed {
+    justify-self: start;
+    text-align: start;
   }
 }
 }

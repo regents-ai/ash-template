@@ -87,7 +87,7 @@ defmodule AshTemplateWeb.ScenesLabLive do
             </table>
           </div>
         </details>
-        <p class="scenes-lab__links">
+        <p class="splat-links scenes-lab__links">
           <a href={~p"/scenes/#{@scene.number}"} target="_blank" rel="noopener">
             Full view <Regent.Icons.icon name="arrow-up-right" />
           </a>

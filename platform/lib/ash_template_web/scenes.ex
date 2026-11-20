@@ -274,10 +274,16 @@ defmodule AshTemplateWeb.Scenes do
 
   defp trait(scene, category), do: Enum.find(scene.traits, &(&1.category == category))
 
-  @doc "A scene's baked file, on this site."
+  @doc """
+  A scene's baked file, on this site. It reads only the scene's `name`, so it serves
+  the Splats page's factory and island as well as the numbered scenes.
+  """
   def file(scene), do: Endpoint.static_path("/splats/#{scene.name}.bin")
 
-  @doc "A scene's still for a stage, `:wide` or `:square`, on this site."
+  @doc """
+  A scene's picture on this site: a still for a stage, `:wide` or `:square`, or one at
+  its stage's own size, `:card` or `:item`. Like `file/1`, it reads only the `name`.
+  """
   def still(scene, shape), do: Endpoint.static_path(still_path(scene, shape))
 
   @doc """

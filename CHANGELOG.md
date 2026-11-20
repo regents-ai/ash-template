@@ -13431,3 +13431,16 @@ For the template chief to release. No migration. No new package.
 - Rollback: v300 (`a350c33d`) image; nothing to undo.
 - `make check` exit 0 by the chief on the exact commit. Not proven: the three outcomes in
   a signed-in browser against Privy.
+
+## 2026-11-19 — Every world on the Splats page, in every format
+
+- `/animations/splats` has a tab for each of the seven worlds: Factory, Island, then the
+  five numbered scenes by title (Campfire Stories, Trainer Battle, Missile Circus,
+  Fishing, Meteor Strike). `?scene=<name>` picks one; the bare address and any unknown
+  name show the factory. On a phone the tabs scroll sideways inside their own row.
+- Under the picture, Formats offers each world as Picture (1080 by 1080) and Card (1440
+  by 960), each in a new tab, and Download GIF, which moved there from the tabs' row. The
+  numbered scenes also link Full view and Metadata, as on the Scenes page.
+- `npm run stills:splats` now draws the full-size card and item pictures for Factory and
+  Island too; every earlier picture came out unchanged. The numbered scenes, their pages
+  and trait files stay five.

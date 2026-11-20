@@ -6,12 +6,13 @@
 // the baked files the page draws (priv/static/splats/), painted by the page's own
 // painter as a 1440 by 960 stage and a 1080 by 1080 one would show them.
 //
-// The five numbered scenes (AshTemplateWeb.Scenes) are also shown off the site, where a
-// small picture is scaled up smoothly and blurs. So each also gets the same two pictures
-// at their stage's own size, every art pixel a hard-edged square of whole pixels, as the
-// stage shows it: splats-<scene>-card.png (1440 by 960, from the wide one), the link
-// preview of the scene's own page, and splats-<scene>-item.png (1080 by 1080, from the
-// square one), the picture its trait file names.
+// Every scene is also shown off the site, where a small picture is scaled up smoothly
+// and blurs. So each also gets the same two pictures at their stage's own size, every
+// art pixel a hard-edged square of whole pixels, as the stage shows it:
+// splats-<scene>-card.png (1440 by 960, from the wide one) and splats-<scene>-item.png
+// (1080 by 1080, from the square one). The Splats page offers both as Card and Picture;
+// for the five numbered scenes (AshTemplateWeb.Scenes) the card is also the link preview
+// of the scene's own page and the item the picture its trait file names.
 //
 //   npm run stills:splats            (from platform/, after baking a scene again)
 //
@@ -30,8 +31,8 @@ const here = dirname(fileURLToPath(import.meta.url))
 const priv = join(here, "../../../priv/static")
 /** Each shape: its stage in screen pixels, and the name of its full-size picture. */
 const SHAPES = [["wide", [1440, 960], "card"], ["square", [1080, 1080], "item"]]
-/** The numbered scenes, the ones that also get full-size pictures. */
-const NUMBERED = ["campfire-stories", "trainer-battle", "missile-circus", "fishing", "meteor-strike"]
+/** Every scene the site draws, by its baked file's name. */
+const SCENES = ["factory", "island", "campfire-stories", "trainer-battle", "missile-circus", "fishing", "meteor-strike"]
 
 /** The art-pixel picture `scale` times as wide and high, each art pixel a square of `scale` by `scale`. */
 const enlarge = (art, columns, rows, scale) => {
@@ -64,7 +65,7 @@ const save = async (out, rgba, width, height) => {
   console.log(out, `${width} x ${height}`)
 }
 
-for (const name of ["factory", "island", ...NUMBERED]) {
+for (const name of SCENES) {
   const file = readFileSync(join(priv, `splats/${name}.bin`))
   const scene = decodeScene(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength))
   const painter = createPainter(gpu, scene)
@@ -77,7 +78,7 @@ for (const name of ["factory", "island", ...NUMBERED]) {
     const pixels = await painter.picture.color.read({mipLevel: 0, region: "all"})
     const art = Buffer.from(pixels.buffer, pixels.byteOffset, columns * rows * 4)
     await save(`splats-${name}-${shape}.png`, art, columns, rows)
-    if (NUMBERED.includes(name)) await save(`splats-${name}-${full}.png`, enlarge(art, columns, rows, scale), columns * scale, rows * scale)
+    await save(`splats-${name}-${full}.png`, enlarge(art, columns, rows, scale), columns * scale, rows * scale)
   }
 }
 

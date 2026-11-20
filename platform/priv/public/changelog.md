@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 19 November 2026
 
+- **Splats.** All seven worlds are on the Splats page now, each on its own tab. Under each
+  one, Formats opens it as a picture or a card, or saves it as a GIF.
 - **Connected apps.** Allow now returns you to the app when the app sends your browser on
   to a second address, as ChatGPT does.
 - **SIWA.** A site's Setup links to the guide for adding SIWA to a website.

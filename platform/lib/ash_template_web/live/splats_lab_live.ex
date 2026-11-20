@@ -1,13 +1,16 @@
 defmodule AshTemplateWeb.SplatsLabLive do
   @moduledoc """
-  Splats: two small worlds in pixel art, a robot factory and a floating island, each a
-  few hundred thousand 3D splats, turning once every thirty seconds while everything in
-  them plays an eight-second loop. A drag turns and tilts the scene, and a pinch, a
-  wheel with Ctrl or Cmd held, the keys + and - or the box's Zoom in and Zoom out
-  buttons bring it nearer, up to four times, at the pointer or the middle; Reset view,
-  0, a double-click or a double tap goes back to the opening view. The robot factory
-  comes first; `?scene=island` shows the floating island at night instead, and any
-  other value shows the factory.
+  Splats: every small world in pixel art the site draws, each a few hundred thousand 3D
+  splats, turning once every thirty seconds while everything in it plays an eight-second
+  loop. One tab for each: the robot factory, the floating island at night, then the five
+  numbered scenes (`AshTemplateWeb.Scenes`) in number order under their titles. A drag
+  turns and tilts the scene, and a pinch, a wheel with Ctrl or Cmd held, the keys + and
+  - or the box's Zoom in and Zoom out buttons bring it nearer, up to four times, at the
+  pointer or the middle; Reset view, 0, a double-click or a double tap goes back to the
+  opening view. The factory comes first, at the bare address; `?scene=<name>` shows
+  another (`island`, or a numbered scene's name such as `fishing`), and any other value
+  shows the factory. On a narrow screen the tabs' row scrolls sideways on its own, and
+  the shared `MotionTravel` hook keeps the current tab in view there.
 
   Each scene is one baked file, `priv/static/splats/<scene>.bin` (laid out in
   `assets/js/splats/studio/FORMAT.md`), served gzipped and digested like the other
@@ -20,63 +23,77 @@ defmodule AshTemplateWeb.SplatsLabLive do
   WebGPU, the still stays. Each scene's box has its own id, so switching ends one
   scene's drawing before the next begins. Here the box turns square on a phone.
 
-  Download GIF, at the end of the tabs' row (`SplatStage.gif/1`), saves one seamless
-  loop of the scene showing as `regents-<scene>.gif`, drawn and encoded in the browser
-  (`assets/js/splats/gif.ts`). It is offered once the scene has drawn, so never without
-  WebGPU, and keeps its place on the row before then. The lede links the Scenes page.
-  Nothing here reads or changes anything outside the page.
+  Under the box, Formats offers the scene in every form it exists in: Picture
+  (`-item.png`, 1080 by 1080) and Card (`-card.png`, 1440 by 960), each in a new tab;
+  for a numbered scene also Full view (its own page) and Metadata (its trait file); and
+  Download GIF (`SplatStage.gif/1`), which saves one seamless loop of the scene as
+  `regents-<scene>.gif`, drawn and encoded in the browser (`assets/js/splats/gif.ts`).
+  Download GIF is offered once the scene has drawn, so never without WebGPU, and keeps
+  its place before then. The lede links the Scenes page for the numbered scenes'
+  traits. Nothing here reads or changes anything outside the page.
   """
 
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.Components.SplatStage
-  alias AshTemplateWeb.PublicDocuments
+  alias AshTemplateWeb.{PublicDocuments, Scenes}
 
-  @scenes [
-    %{id: "factory", name: "Factory"},
-    %{id: "island", name: "Island"}
+  # The two scenes that are not numbered; the numbered ones follow, from Scenes.
+  @unnumbered [
+    %{
+      name: "factory",
+      title: "Factory",
+      number: nil,
+      label:
+        "A solarpunk robot factory on a floating island at dusk: a workshop hall with a sawtooth roof of glass, plants and solar panels, a brick chimney, two wind turbines, a water wheel, robot arms over an assembly line and robots at work, with a brass engine underneath."
+    },
+    %{
+      name: "island",
+      title: "Island",
+      number: nil,
+      label:
+        "A floating island at night with a great tree, two pines, a cottage, a campfire and a pond whose stream falls off the edge, over glowing crystals."
+    }
   ]
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
-     socket |> assign(PublicDocuments.page(~p"/animations/splats")) |> assign(scenes: @scenes)}
+     socket |> assign(PublicDocuments.page(~p"/animations/splats")) |> assign(scenes: scenes())}
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
-    scene = scene(params["scene"])
-    {:noreply, assign(socket, scene: scene, stills: stills(scene))}
+    scenes = socket.assigns.scenes
+    scene = Enum.find(scenes, &(&1.name == params["scene"])) || hd(scenes)
+    {:noreply, assign(socket, scene: scene)}
   end
 
-  defp scene("island"), do: "island"
-  defp scene(_other), do: "factory"
+  defp scenes do
+    @unnumbered ++
+      for scene <- Scenes.all() do
+        %{
+          name: scene.name,
+          title: scene.title,
+          number: scene.number,
+          label: "#{scene.title}. #{scene.description}"
+        }
+      end
+  end
 
-  defp scene_path("factory"), do: ~p"/animations/splats"
-  defp scene_path(scene), do: ~p"/animations/splats?#{[scene: scene]}"
+  defp scene_path(%{name: "factory"}), do: ~p"/animations/splats"
+  defp scene_path(%{name: name}), do: ~p"/animations/splats?#{[scene: name]}"
 
-  defp scene_file("factory"), do: ~p"/splats/factory.bin"
-  defp scene_file("island"), do: ~p"/splats/island.bin"
-
-  defp stills("factory"),
-    do: %{
-      wide: ~p"/images/animations/splats-factory-wide.png",
-      square: ~p"/images/animations/splats-factory-square.png"
-    }
-
-  defp stills("island"),
-    do: %{
-      wide: ~p"/images/animations/splats-island-wide.png",
-      square: ~p"/images/animations/splats-island-square.png"
-    }
-
-  defp label("factory"),
+  # Each form the scene exists in besides the GIF, as {name, address}.
+  defp formats(scene),
     do:
-      "A solarpunk robot factory on a floating island at dusk: a workshop hall with a sawtooth roof of glass, plants and solar panels, a brick chimney, two wind turbines, a water wheel, robot arms over an assembly line and robots at work, with a brass engine underneath."
+      [{"Picture", Scenes.still(scene, :item)}, {"Card", Scenes.still(scene, :card)}] ++
+        pages(scene)
 
-  defp label("island"),
-    do:
-      "A floating island at night with a great tree, two pines, a cottage, a campfire and a pond whose stream falls off the edge, over glowing crystals."
+  defp pages(%{number: nil}), do: []
+
+  defp pages(%{number: number}),
+    do: [{"Full view", ~p"/scenes/#{number}"}, {"Metadata", ~p"/scenes/#{number}/metadata.json"}]
 
   @impl true
   def render(assigns) do
@@ -88,33 +105,48 @@ defmodule AshTemplateWeb.SplatsLabLive do
         </p>
         <h1>Splats</h1>
         <p class="motion-lab__lede">
-          Two small worlds, turning slowly. Drag one to turn it, or to look from above or below.
+          Seven small worlds, turning slowly. Drag one to turn it, or to look from above or below.
           Pinch, or use the buttons in its corner, to look closer.
-          Five more are on <.link navigate={~p"/animations/scenes"}>Scenes</.link>.
+          Traits for five of them are on <.link navigate={~p"/animations/scenes"}>Scenes</.link>.
         </p>
       </header>
-      <div class="splats-lab__bar">
-        <nav class="flair-tabs" aria-label="Scenes">
-          <.link
-            :for={scene <- @scenes}
-            patch={scene_path(scene.id)}
-            aria-current={scene.id == @scene && "page"}
-          >
-            {scene.name}
-          </.link>
-        </nav>
-        <SplatStage.gif for={"splats-#{@scene}"} class="splats-lab__gif" />
+      <%!-- Seven tabs, more than the shared tabs take; MotionTravel scrolls the
+      current one into view inside the row. --%>
+      <nav
+        id="splats-tabs"
+        class="flair-tabs splats-lab__tabs"
+        aria-label="Scenes"
+        phx-hook="MotionTravel"
+      >
+        <.link
+          :for={scene <- @scenes}
+          patch={scene_path(scene)}
+          aria-current={scene.name == @scene.name && "page"}
+        >
+          {scene.title}
+        </.link>
+      </nav>
+      <div class="splats-lab__view">
+        <%!-- The square still's width is the one at which splats_lab.css turns the box square. --%>
+        <SplatStage.stage
+          id={"splats-#{@scene.name}"}
+          class="splats-lab"
+          scene={@scene.name}
+          label={@scene.label}
+          file={Scenes.file(@scene)}
+          still={Scenes.still(@scene, :wide)}
+          square={Scenes.still(@scene, :square)}
+        />
+        <section class="splats-lab__formats" aria-labelledby="splats-formats-title">
+          <h2 id="splats-formats-title" class="splats-lab__formats-title">Formats</h2>
+          <p class="splat-links splats-lab__links">
+            <a :for={{name, href} <- formats(@scene)} href={href} target="_blank" rel="noopener">
+              {name} <Regent.Icons.icon name="arrow-up-right" />
+            </a>
+          </p>
+          <SplatStage.gif for={"splats-#{@scene.name}"} class="splats-lab__gif" />
+        </section>
       </div>
-      <%!-- The square still's width is the one at which splats_lab.css turns the box square. --%>
-      <SplatStage.stage
-        id={"splats-#{@scene}"}
-        class="splats-lab"
-        scene={@scene}
-        label={label(@scene)}
-        file={scene_file(@scene)}
-        still={@stills.wide}
-        square={@stills.square}
-      />
     </main>
     """
   end

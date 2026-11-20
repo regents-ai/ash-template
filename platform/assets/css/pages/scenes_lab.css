@@ -230,25 +230,9 @@
   text-align: end;
 }
 
-/* The scene's own page and its trait file, each in a new tab. */
+/* The scene's own page and its trait file, each in a new tab (`.splat-links`). */
 .scenes-lab__links {
-  display: flex;
-  gap: var(--space-4);
   padding-block-end: var(--space-3);
-  font-size: var(--type-label-size);
-}
-
-.scenes-lab__links a {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-fg);
-}
-
-.scenes-lab__links .rg-icon {
-  inline-size: 1rem;
-  block-size: 1rem;
-  color: var(--color-fg-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
