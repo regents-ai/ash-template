@@ -13465,3 +13465,12 @@ For the template chief to release. No migration. No new package.
   (`SplatStage.meta/1`, `rarity/1` and `traits/1`, styled in
   `assets/css/components/splat_stage.css`). The Scenes page uses them and looks as it
   did, its table still folded away under Traits.
+
+## 2026-11-20 — Released v303: traits on the Splats page
+
+- v303 on template.regents.sh carries one commit (head `26b9f20d`): the entry above. No
+  migration; library pin unchanged; no Points setting changed.
+- Rollback: v302 (`068e7fd4`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit. Live, signed out: each numbered
+  scene's tab carries its number, rarity and 31 trait rows; Factory and Island carry
+  none; the Scenes page still has its five folded tables.
