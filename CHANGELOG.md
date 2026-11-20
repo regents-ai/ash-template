@@ -13551,3 +13551,16 @@ For the template chief to release. No migration. No new package.
 - Rollback: v304 (`3d21fb5c`) image; nothing to undo.
 - `make check` exit 0 by the chief on the exact commit. Live, signed out: pages, scripts
   and the signed-out answers read as before.
+
+## 2026-11-20 — The splat-scenes skill, rebuilt
+
+- `skills/splat-scenes/` is replaced whole. A scene is now written straight against
+  ink-studio and the skill is the working knowledge for that in one place: a guide to
+  ink-studio, the baked file's layout, the painter, hosting on a site, the proof, stills
+  and a GIF, with the baker, decoder and standalone WebGPU player they point to. The
+  kinds, places, shares and example pieces of the first version are gone. `AGENTS.md`'s
+  line matches. It is still not one of the publicly served build skills, and the site
+  does not change.
+- Run by the chief from a fresh copy with ink-studio at `433ab1d`: its first example
+  bakes, proves (at most 1 art pixel of 21,600 differs in any view), and makes its stills
+  and GIF. Not proven by the chief: the player in a browser.
