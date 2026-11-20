@@ -13530,3 +13530,11 @@ For the template chief to release. No migration. No new package.
   20 Scenes cards, every scene's page, trait file, baked file, card and item picture
   answer; `/scenes/0` and `/scenes/21` are not found. Not proven by the chief: the
   turning worlds and Download GIF in a browser with WebGPU.
+
+## 2026-11-20 — The splat-scenes skill
+
+- `skills/splat-scenes/` is a self-contained skill for small looping pixel-art scenes of
+  Gaussian splats placed by code: a kit that composes, checks and bakes a scene with
+  ink-studio (downloaded at a named commit, never copied), eleven example pieces that
+  make one whole scene, a standalone WebGPU player and two references. `AGENTS.md` names
+  it. It is not one of the publicly served build skills, and the site does not change.
