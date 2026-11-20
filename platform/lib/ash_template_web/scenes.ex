@@ -611,7 +611,7 @@ defmodule AshTemplateWeb.Scenes do
       title: "Petal Storm",
       kind: "Action",
       description:
-        "A robot crew stands in a meadow of flowers while petals storm past and two small monsters square up.",
+        "A robot crew stands on a flowering reef while petals storm past and two small monsters square up.",
       rarity: 481.4,
       traits: [
         {"Action", "Trainer Battle", "Epic", "0.68%"},
