@@ -13543,3 +13543,11 @@ For the template chief to release. No migration. No new package.
 
 - `platform/mix.lock` moves `phoenix_live_view` from 1.2.13 to 1.2.14, the release of
   20 November. No other package moves.
+
+## 2026-11-20 — Released v305: Phoenix LiveView 1.2.14
+
+- v305 on template.regents.sh carries three commits (head `6ea6b5d5`): the two entries
+  above. No migration; library pin unchanged; no Points setting changed.
+- Rollback: v304 (`3d21fb5c`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit. Live, signed out: pages, scripts
+  and the signed-out answers read as before.
