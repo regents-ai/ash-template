@@ -18,7 +18,9 @@ a local site with its settings and stop it after, and that browsers are headless
 ## 2. In a headless browser
 
 Chromium launched by Playwright with `--enable-unsafe-webgpu` (and `--use-angle=metal` on a Mac), at a 1440 by 960 window unless a
-step says otherwise, on the local site.
+step says otherwise, on the local site. The box follows the page's layout, so its stage is smaller than the window (1086 by 723 on
+the Splats page at that width) and no step here depends on its size. The flags are for the browser's own WebGPU; the stills step
+needs none, because vgpu draws its pictures in Node.
 
 1. **It draws.** Open `/animations/splats?scene=<name>`. The box `#splats-<name>` reaches `data-splats-ready="true"` (wait for it:
    the first live frame can take some seconds), the zoom buttons show, Download GIF shows, and the console has no `VGPU-` errors and
