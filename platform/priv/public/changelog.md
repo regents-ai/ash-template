@@ -6,6 +6,8 @@ Changes to Ash Template, newest first.
 
 - **Splats.** A new world, Museum: a chalet museum on a floating island over a mountain
   lake, with knitted creatures of many colours and a queue of small visitors.
+- **Pairing.** A pairing code leaves the screen when its ten minutes are up, and the
+  message for your agent names the guide's "Pairing" steps.
 
 ## 20 November 2026
 

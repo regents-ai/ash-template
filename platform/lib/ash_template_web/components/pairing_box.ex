@@ -7,7 +7,8 @@ defmodule AshTemplateWeb.PairingBox do
   (`RegentAgents.Harness.hosted/0`, read at runtime), then the message to paste with
   its code in a short box with icons to copy it and make a new code. Each agent
   keeps its own code until it expires, so choosing another agent and coming back
-  shows the same message. Once the agent uses the code, the box names it, and this
+  shows the same message; a code that runs out while on screen gives way to the
+  box's words for no code. Once the agent uses the code, the box names it, and this
   site's own line for it, if it has one, is under the box
   (`AshTemplateWeb.AccountSite`).
 
@@ -36,6 +37,11 @@ defmodule AshTemplateWeb.PairingBox do
 
   @impl true
   def update(%{agents_changed: true}, socket), do: {:ok, after_pairing(socket)}
+
+  # A code's ten minutes are up (`issue/2` set the timer): it leaves the screen,
+  # unless an agent used it first.
+  def update(%{expired: code}, socket),
+    do: {:ok, assign(socket, codes: Map.new(socket.assigns.codes, &expired(&1, code)))}
 
   def update(%{account: account, id: id, lease: lease} = assigns, socket),
     do:
@@ -121,7 +127,9 @@ defmodule AshTemplateWeb.PairingBox do
   defp pairing(harness, {:paired, agent, _part}, _start),
     do: %{chosen: to_string(harness), outcome: {:paired, agent.name}}
 
-  defp pairing(harness, :unavailable, _start),
+  # No code to paste: none could be made, or its time ran out. The box asks for
+  # another either way.
+  defp pairing(harness, no_code, _start) when no_code in [:unavailable, :expired],
     do: %{chosen: to_string(harness), outcome: :unavailable}
 
   defp with_offered(socket, harness, then) do
@@ -144,7 +152,10 @@ defmodule AshTemplateWeb.PairingBox do
     do: DateTime.after?(expires_at, DateTime.utc_now())
 
   defp usable?({:paired, _agent, _part}), do: true
-  defp usable?(_missing_or_unavailable), do: false
+  defp usable?(_missing_expired_or_unavailable), do: false
+
+  defp expired({harness, %PairingCode.Issued{code: code}}, code), do: {harness, :expired}
+  defp expired(kept, _code), do: kept
 
   # Each code on screen gives way to the agent that used it, so a spent code is
   # never left there to send again, and an agent shows under its own code only.
@@ -172,6 +183,8 @@ defmodule AshTemplateWeb.PairingBox do
       case RegentAgents.issue_pairing_code(actor: socket.assigns.person) do
         {:ok, issued} ->
           VisitLog.step("pairing_code_shown", to_string(harness))
+          left = max(DateTime.diff(issued.expires_at, DateTime.utc_now(), :millisecond), 0)
+          send_update_after(socket.assigns.myself, %{expired: issued.code}, left)
           issued
 
         {:error, error} ->

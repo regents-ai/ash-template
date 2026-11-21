@@ -13613,3 +13613,14 @@ For the template chief to release. No migration. No new package.
   byte for byte the one handed over. In a signed-out browser with WebGPU the Museum's
   picture changes from one moment to the next and Download GIF saves a file. Not proven:
   Safari, Firefox, a phone.
+
+## 2026-11-21 — Pairing: an expired code leaves the screen; the message names "Pairing"
+
+- Sean's 19 a. The Pair New Agent window and the pairing page
+  (`AshTemplateWeb.PairingBox`) set one timer per code, for the moment it expires
+  (`send_update_after/3`). When it fires, a code no agent used gives way to the box's
+  "No code right now. Try again." with the new-code button beside it; choosing that agent
+  again makes a new code, as before.
+- elixir-utils moves from `6d98a113` to `fad85224`, one commit: the message a person
+  pastes says `Follow the "Pairing" steps at <site>/llms.txt`, the heading the guide has.
+- The rest of the pairing-window ideas wait for the one site.
