@@ -33,7 +33,7 @@ const priv = join(here, "../../../priv/static")
 const SHAPES = [["wide", [1440, 960], "card"], ["square", [1080, 1080], "item"]]
 /** Every scene the site draws, by its baked file's name. */
 const SCENES = [
-  "factory", "island", "gallery", "campfire-stories", "trainer-battle", "missile-circus", "fishing", "meteor-strike",
+  "factory", "island", "gallery", "museum", "campfire-stories", "trainer-battle", "missile-circus", "fishing", "meteor-strike",
   "dice-owl", "robot-toad", "drive-in", "black-slab", "fishing-dragon", "reef-owl", "missile-dragon",
   "snow-toad", "striped-owl", "petal-storm", "chase", "boulder-run", "nap", "stargazing", "portal-opens",
 ]

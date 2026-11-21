@@ -3,13 +3,13 @@ defmodule AshTemplateWeb.SplatsLabLive do
   Splats: every small world in pixel art the site draws, each a few hundred thousand 3D
   splats, turning once every thirty seconds while everything in it plays an eight-second
   loop. One tab for each: the robot factory, the floating island at night, the gallery
-  on its lawn, then every numbered scene (`AshTemplateWeb.Scenes`) in number order
+  on its lawn, the chalet museum, then every numbered scene (`AshTemplateWeb.Scenes`) in number order
   under its title. A drag
   turns and tilts the scene, and a pinch, a wheel with Ctrl or Cmd held, the keys + and
   - or the box's Zoom in and Zoom out buttons bring it nearer, up to four times, at the
   pointer or the middle; Reset view, 0, a double-click or a double tap goes back to the
   opening view. The factory comes first, at the bare address; `?scene=<name>` shows
-  another (`island`, `gallery`, or a numbered scene's name such as `fishing`), and any other value
+  another (`island`, `gallery`, `museum`, or a numbered scene's name such as `fishing`), and any other value
   shows the factory. On a wide screen the tabs wrap onto as many lines as they need; on
   a phone they keep to one row, which scrolls sideways on its own, and the shared
   `MotionTravel` hook keeps the current tab in view there.
@@ -46,7 +46,7 @@ defmodule AshTemplateWeb.SplatsLabLive do
   alias AshTemplateWeb.Components.SplatStage
   alias AshTemplateWeb.{PublicDocuments, Scenes}
 
-  # The three scenes that are not numbered; the numbered ones follow, from Scenes.
+  # The four scenes that are not numbered; the numbered ones follow, from Scenes.
   @unnumbered [
     %{
       name: "factory",
@@ -68,6 +68,13 @@ defmodule AshTemplateWeb.SplatsLabLive do
       number: nil,
       label:
         "A flat-roofed gallery of purple stone and warm wood on a floating lawn above morning cloud: portraits in its windows, a glass stairwell, a pond with a fish, a bench, a gentleman in a top hat saying GM and a sign reading M.o.B.A., while two small creatures fly round it together."
+    },
+    %{
+      name: "museum",
+      title: "Museum",
+      number: nil,
+      label:
+        "A chalet museum with a neon MoBA sign on a floating island over a mountain lake at dawn: knitted creatures of many colours on the roof, in the doorway, riding a tortoise and sitting on a rainbow heart, small shelled visitors queueing with plants on their heads, a gift box, a waterfall off the edge and snowy peaks behind."
     }
   ]
 

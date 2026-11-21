@@ -2,6 +2,11 @@
 
 Changes to Ash Template, newest first.
 
+## 21 November 2026
+
+- **Splats.** A new world, Museum: a chalet museum on a floating island over a mountain
+  lake, with knitted creatures of many colours and a queue of small visitors.
+
 ## 20 November 2026
 
 - **Splats.** A new world, Gallery: a flat-roofed gallery on a floating lawn, with

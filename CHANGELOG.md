@@ -13593,3 +13593,11 @@ For the template chief to release. No migration. No new package.
   every scene's page, baked file, card and item picture answer; the served Gallery file
   is byte for byte the one handed over. In a signed-out browser with WebGPU the Gallery
   turns and Download GIF saves a file. Not proven: Safari, Firefox, a phone.
+
+## 2026-11-21 — Museum on the Splats page
+
+- `/animations/splats` has a fourth unnumbered world, Museum (`?scene=museum`), after
+  Gallery: `platform/priv/static/splats/museum.bin` (about 8 MB, 403,136 splats, an
+  eight-second loop, 235 colours) and its four pictures, drawn by `npm run stills:splats`.
+  Like Gallery it was made with the `splat-scenes` skill and baked by that skill's kit;
+  its source is not in the repository. It has no number, traits or page of its own.
