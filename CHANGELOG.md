@@ -13629,3 +13629,13 @@ For the template chief to release. No migration. No new package.
 
 - Phoenix moves from 1.8.16 to 1.8.17, the release of 20 November. Nothing else in the
   lock moves.
+
+## 2026-11-21 — Released v308: pairing fixes, Phoenix 1.8.17
+
+- v308 on template.regents.sh carries two commits (head `243f344b`): the two entries
+  above. No migration; elixir-utils `6d98a113` to `fad85224`; no Points setting changed.
+- Rollback: v307 (`1f1aa708`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit; the library's own `mix check`
+  exit 0. Live, signed out: the site's pages and guides answer as before. Not proven: the
+  window signed in, since a live read never uses a person's sign-in; neither the new
+  message line nor the ten-minute change has been seen on the live site.
