@@ -13639,3 +13639,11 @@ For the template chief to release. No migration. No new package.
   exit 0. Live, signed out: the site's pages and guides answer as before. Not proven: the
   window signed in, since a live read never uses a person's sign-in; neither the new
   message line nor the ten-minute change has been seen on the live site.
+
+## 2026-11-21 — Museum: the rope hanger gone, new eyes
+
+- `platform/priv/static/splats/museum.bin` is replaced (409,268 splats, 48 moving parts,
+  an eight-second loop, 235 colours) and its four pictures redrawn by
+  `npm run stills:splats`. The creature on a rope below the island's left edge is gone,
+  and the eight knitted creatures have tall white cartoon eyes with black pupils. Name,
+  title, label and place are unchanged.
