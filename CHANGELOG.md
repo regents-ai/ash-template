@@ -13601,3 +13601,15 @@ For the template chief to release. No migration. No new package.
   eight-second loop, 235 colours) and its four pictures, drawn by `npm run stills:splats`.
   Like Gallery it was made with the `splat-scenes` skill and baked by that skill's kit;
   its source is not in the repository. It has no number, traits or page of its own.
+
+## 2026-11-21 — Released v307: Museum on the Splats page
+
+- v307 on template.regents.sh carries one commit (head `1f1aa708`): the entry above. No
+  migration; library pin unchanged; no Points setting changed. About 8 MB of new static
+  files.
+- Rollback: v306 (`a7718ad6`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit. Live, signed out: 24 Splats tabs,
+  every scene's page, baked file, card and item picture answer; the served Museum file is
+  byte for byte the one handed over. In a signed-out browser with WebGPU the Museum's
+  picture changes from one moment to the next and Download GIF saves a file. Not proven:
+  Safari, Firefox, a phone.
