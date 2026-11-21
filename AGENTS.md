@@ -34,10 +34,15 @@ site still replaces by hand; keep it outside this passage, which the rename drop
   one resource reacting to another's action. `animejs` covers Anime.js in
   LiveView hooks, `vgpu-island` every GPU picture (vgpu inside the shared canvas island), `onchain-buttons` wallet and on-chain buttons, and
   `chain-events` watching a chain and saving its events; load `ash-stack` and
-  `ash-frontend` before each. `splat-scenes` stands alone: Gaussian splat
-  scenes sculpted in code with ink-studio, baked into one file and played as
-  pixel art by its own WebGPU player, needing only Node and an ink-studio
-  download.
+  `ash-frontend` before each. `splat-scenes` stands alone, for any website:
+  Gaussian splat scenes sculpted in code with ink-studio, baked into one file
+  and played as pixel art by its own WebGPU player, needing only Node and an
+  ink-studio download. `splat-scenes-phoenix` takes a scene baked there onto
+  one of our Phoenix sites through the splat island (the `SplatStage`
+  component, the `SplatIsland` and `SplatGif` hooks, the stills step and the
+  scene files' serving): use `splat-scenes` to make the scene, then
+  `splat-scenes-phoenix` to put it on the site, loading `regent-workflow`,
+  `ash-stack`, `elixir-stack` and `vgpu-island` first.
   Change a shared skill in regents-ai/ash-template,
   never in a copy in another repository. The web app serves the `ash-*`, `animejs`,
   `onchain-buttons` and `chain-events` skills publicly as its build skills

@@ -1,14 +1,14 @@
 # Putting a scene on a page
 
-The player (`player/`) is a complete page for one scene and the reference for putting a scene into any site. This note covers vgpu,
-the shape of a GPU island in a site, serving the file, and how the scene turns under the pointer.
+The player (`player/`) is a complete page for one scene and the reference for putting a scene on any website: plain files, no build
+step, no framework. This note covers vgpu, the parts of the page, serving the file, and how the scene turns under the pointer.
 
-## 1. vgpu: version and documentation
+## 1. vgpu: version, documentation and rules
 
 - Pinned: `vgpu` **0.6.0** and `@vgpu/wgsl` **0.6.0**, exact versions (`player/package.json`). Upgrade both together. Before trusting
   a build, check that the installed copy matches the pin (`node_modules/vgpu/package.json`); a stale install builds against the wrong
   API.
-- The docs ship inside the installed package and work offline. Read them before writing or reviewing a renderer, and read the
+- The docs ship inside the installed package and work offline. Read them before writing or reviewing a painter, and read the
   migration guide before any upgrade. From `player/` after `npm install`:
 
   ```sh
@@ -27,64 +27,58 @@ the shape of a GPU island in a site, serving the file, and how the scene turns u
   older code.
 - The player runs without a bundler: an import map in `player/index.html` points `vgpu`, `@vgpu/core`, `@vgpu/wgsl` and
   `@vgpu/wgsl/prepare` at `player/node_modules`. A site with a bundler imports them by name instead.
+- Code that draws with vgpu 0.6 starts, draws and stops like this (the player's `main.js` and `painter.js` do):
 
-## 2. The three parts of a GPU island
+  ```js
+  import { prepareShader } from '@vgpu/wgsl/prepare';
+  import { effect, frame, init, surface } from 'vgpu';
 
-In a site, a GPU picture is an island: markup the server renders, a small controller that owns its lifecycle, and a renderer that
-draws with vgpu. The player has all three in plain modules (`index.html`, `main.js`, `painter.js`).
+  const gpu = await init();
+  let disposed = false;
+  gpu.lost.then(() => disposed || onDeviceLost()); // dispose also resolves it
+  const stage = surface(gpu, canvas, { autoResize: false, alphaMode: 'opaque', label: 'name' });
+  stage.resize([width, height]);                  // the page measured and capped the size
+  const shader = effect(gpu, prepareShader(wgsl, 'name.wgsl'), { label: 'name.pass' });
+  await shader.compile(stage);                    // pre-warm against the surface, before the first frame
+  // each frame: shader.set({...complete uniform struct...}); frame(gpu, f => f.pass(stage, shader))
+  // first frame: await gpu.settled()             // waits for submitted queue work too
+  // stop: if (disposed) return; disposed = true; stage.dispose(); gpu.dispose()
+  ```
 
-1. **Markup.** A root element, a still picture the server renders, and the canvas. The root carries a ready flag (`data-ready` on
-   the player's `.stage`): `"true"` once a first frame has really finished, `"false"` once the island knows it will not draw, absent
-   while that is open. CSS shows the canvas only under `[data-ready="true"]` (the player fades it in over 240 ms, none under reduced
-   motion) and the still otherwise. A framework that patches markup must leave the flag and the canvas alone (in Phoenix LiveView,
-   `phx-update="ignore"` on the canvas and `JS.ignore_attributes` for the flag); losing the flag hides a working canvas after the next
-   update. Text never sits under the shader.
-2. **Controller.** Mounts the renderer when the island is on screen, pauses it when hidden or off screen, resumes, and destroys it;
-   hands new state to the renderer when the page's state changes. Load the renderer with a dynamic `import()`, so vgpu never enters the
-   page's first bundle and is fetched only for an island that is visible. Something that moves by itself draws continuously; a
-   picture that changes only with state draws on demand, with no idle loop. Reduced motion keeps the still or holds the scene at its
-   opening view and moment (the player holds it and lets drags and keys move it). When a site has one shared controller for all its
-   islands, the frame loop, the on-screen observer, the visibility and reduced-motion listeners, the device-loss retry and the
-   device-pixel cap live there, once; a renderer never builds its own.
-3. **Renderer.** `resize`, `step`, `present`, `settled`, `dispose`, built from the vgpu 0.6 API:
+  - Pre-warm with `compile(stage)` once the surface exists: it reads the surface's real format, depth and sample count.
+    `compile({colors: [stage.format]})` is the older form, still valid in 0.6.
+  - `gpu.settled()` already waits for submitted queue work; an explicit `onSubmittedWorkDone()` before it is redundant.
+  - 0.6 rejects raw WGSL strings (`VGPU-SHADER-SOURCE-UNPREPARED`): pass a static `.wgsl` import from the build loader, or
+    `prepareShader(source, name)` once, outside frames. The painter prepares its shaders once, with the scene's numbers written in.
+  - Use `gpu.lost`, not the old `gpu.gpu.lost`. Loss disposes nothing. The player shows the still on loss.
+  - Frame callbacks are synchronous: no `await` inside `frame()`.
+  - The first `set()` of a uniform struct supplies every member with exact component counts.
+  - A `Surface` is only ever a render destination, never a binding.
+  - If construction throws after `init()`, call `gpu.dispose()` and rethrow (the player's `play()` does).
 
-   ```js
-   import { prepareShader } from '@vgpu/wgsl/prepare';
-   import { effect, frame, init, surface } from 'vgpu';
+## 2. The parts of the page
 
-   const gpu = await init();
-   let disposed = false;
-   gpu.lost.then(() => disposed || onDeviceLost()); // dispose also resolves it
-   const stage = surface(gpu, canvas, { autoResize: false, alphaMode: 'opaque', label: 'name' });
-   stage.resize([width, height]);                  // the controller measured and capped the size
-   const shader = effect(gpu, prepareShader(wgsl, 'name.wgsl'), { label: 'name.pass' });
-   await shader.compile(stage);                    // pre-warm against the surface, before the first frame
-   // present(): shader.set({...complete uniform struct...}); frame(gpu, f => f.pass(stage, shader))
-   // settled(): return gpu.settled()              // waits for submitted queue work too
-   // dispose(): if (disposed) return; disposed = true; stage.dispose(); gpu.dispose()
-   ```
+The player has three parts, in plain modules: the markup (`index.html`), the code that starts, runs and stops the GPU (`main.js`), and
+the painter that draws with vgpu (`painter.js`).
 
-   - Pre-warm with `compile(stage)` once the surface exists: it reads the surface's real format, depth and sample count.
-     `compile({colors: [stage.format]})` is the older form, still valid in 0.6.
-   - `gpu.settled()` already waits for submitted queue work; an explicit `onSubmittedWorkDone()` before it is redundant.
-   - 0.6 rejects raw WGSL strings (`VGPU-SHADER-SOURCE-UNPREPARED`): pass a static `.wgsl` import from the build loader, or
-     `prepareShader(source, name)` once, outside frames. The painter prepares its shaders once, with the scene's numbers written in.
-   - Use `gpu.lost`, not the old `gpu.gpu.lost`. Loss disposes nothing; a site's controller may ask for a new device (a few times)
-     and retire to the still after that. The player shows the still on loss.
-   - Frame callbacks are synchronous: no `await` inside `frame()`.
-   - The first `set()` of a uniform struct supplies every member with exact component counts.
-   - A `Surface` is only ever a render destination, never a binding.
-   - If construction throws after `init()`, call `gpu.dispose()` and rethrow (the player's `play()` does).
-   - Many small islands on one page can share one device: each joins it, hears of its loss, and gives back its own effect and surface
-     on `dispose`; the last to leave disposes the device.
+1. **Markup.** A stage element, a still picture in it from the first paint, and the canvas. The stage carries a ready flag
+   (`data-ready` on the player's `.stage`): `"true"` once a first frame has really finished, `"false"` once the page knows it will not
+   draw, absent while that is open. CSS shows the canvas only under `[data-ready="true"]` (the player fades it in over 240 ms, none
+   under reduced motion) and the still otherwise. If anything on the page rewrites the stage's markup later, it must leave the flag
+   and the canvas alone: losing the flag hides a working canvas. Text never sits under the scene.
+2. **Starting and stopping.** The standalone player is the whole page, so it starts at once. In a page with other content, start the
+   GPU when the stage comes on screen, stop drawing while the tab is hidden or the stage is off screen, and give the device back when
+   the stage goes; load the drawing code with a dynamic `import()`, so vgpu is fetched only for a stage that is visible and never
+   slows the page's first paint. A scene moves by itself, so it draws every frame while it is on screen. Reduced motion holds the
+   scene at its opening view and moment (the player holds it and lets drags and keys move it).
+3. **Painter.** Draws the file's splats on the art-pixel grid and scales the grid up to the canvas (references/painter.md).
 
-## 3. What an island guarantees
+## 3. What the page guarantees
 
-Work runs only while mounted, on screen, in a visible tab, allowed by the motion setting and not retired. The renderer's code is
-requested after the page's first paint. The backing store is capped (most islands at 1.5 device pixels a CSS pixel and 1.5 million
-pixels; a splat scene at 3, so its art pixels stay square and the scene has the same grid on any screen). The still stays until a
-first frame really finished on the GPU (`settled()`), not when a canvas or adapter merely exists. Without WebGPU the island never
-mounts and the server's picture remains.
+Work runs only while the stage is on screen, in a visible tab and allowed by the motion setting. The drawing code is requested after
+the page's first paint. The canvas's backing store is capped at 3 device pixels a CSS pixel, so the art pixels stay square and the
+scene has the same grid on any screen. The still stays until a first frame really finished on the GPU (`settled()`), not when a
+canvas or adapter merely exists. Without WebGPU the GPU is never started and the still remains.
 
 The standalone player keeps the parts that matter for one scene: the still until a settled first frame, the ready flag, reduced
 motion, the device-pixel cap of 3, the still on device loss or without WebGPU. `requestAnimationFrame` already stops in a hidden tab.
@@ -123,5 +117,5 @@ What `player/main.js` does, and what a site's scene should do:
   focus. `cursor: grab`, `grabbing` while held.
 - Less motion (`prefers-reduced-motion: reduce`): it holds still at the still's view and moment; drags and keys still move it and it
   stays where left.
-- One scene's GPU device at a time: when a site swaps scenes, end one device before the next begins.
+- One scene's GPU device at a time: when a page swaps scenes, end one device before the next begins.
 - The player has no zoom and no sound, and its loop is the one baked into the file.

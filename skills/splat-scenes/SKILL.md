@@ -1,6 +1,6 @@
 ---
 name: splat-scenes
-description: Sculpt 3D Gaussian splat scenes in code with ink-studio, bake each into one small file, and play it on a web page with a WebGPU pixel-art player (vgpu 0.6) that turns under drag, touch and keys, with stills, a GIF and a proof that the page draws what the toolkit draws. Use when making, changing or baking a splat scene, putting one on a page, exporting its stills or GIF, or when a splat picture shows holes, popping, a wrong order, a jump at the loop or colours outside its palette.
+description: Sculpt 3D Gaussian splat scenes in code with ink-studio, bake each into one small file, and play it on a web page with a WebGPU pixel-art player (vgpu 0.6) that turns under drag, touch and keys, with stills, a GIF and a proof that the page draws what the toolkit draws. Use when making, changing or baking a splat scene, putting one on a page, exporting its stills or GIF, or when a splat picture shows holes, popping, a wrong order, a jump at the loop or colours outside its palette. For an Elixir, Phoenix and LiveView site that shows scenes through its vgpu island, use the sibling skill splat-scenes-phoenix after baking here.
 ---
 
 # Splat scenes
@@ -72,8 +72,8 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
 7. **Stills**: `still.png` is the page's picture until the live scene's first frame and without WebGPU; `sheet.png` and `moments.png`
    are six views and eight moments to look at.
 8. **Play** it: serve the player and open it in a browser. A **GIF** of the loop comes from `gif.cjs`.
-9. **Put it on a site**: references/hosting.md (the island pattern, serving, loading, orbit and touch), and prove it with
-   references/proof.md.
+9. **Put it on a site**: references/hosting.md (the page's parts, static files and the import map, serving and loading, orbit and
+   touch), and prove it with references/proof.md.
 
 ## Commands
 
@@ -173,7 +173,7 @@ Each file's opening comment says what it owns.
 | references/recipes.md | The art grid and readable sizes, budgets and counting splats per part, a far backdrop, lettering, neon, a glass case, an interior lit by one sun and a fill, and what to build instead of what the file cannot carry |
 | references/format.md | The baked file byte by byte, every kind of motion's maths, how to draw a picture from it, costs, accuracy, what the baker refuses, notes for writing a painter |
 | references/painter.md | How `player/painter.js` draws, the toolkit's rules a painter must follow, mistakes made and caught, performance |
-| references/hosting.md | vgpu (version, offline docs), the GPU island pattern for putting a scene in a site, serving and loading, orbit and touch |
+| references/hosting.md | vgpu (version, offline docs, the 0.6 rules), putting the player on a website: its parts, the still, serving gzipped and loading, orbit, touch and less motion |
 | references/proof.md | Proving a file, proving a painter against the toolkit pixel for pixel, browser checks |
 | references/gif.md | The GIF from the command line, and a GIF button in a page |
 | references/splats.md | What "true" splats means here, what stays offline, baking again, sources |
