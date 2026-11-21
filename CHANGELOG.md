@@ -13624,3 +13624,8 @@ For the template chief to release. No migration. No new package.
 - elixir-utils moves from `6d98a113` to `fad85224`, one commit: the message a person
   pastes says `Follow the "Pairing" steps at <site>/llms.txt`, the heading the guide has.
 - The rest of the pairing-window ideas wait for the one site.
+
+## 2026-11-21 — Phoenix 1.8.17
+
+- Phoenix moves from 1.8.16 to 1.8.17, the release of 20 November. Nothing else in the
+  lock moves.
