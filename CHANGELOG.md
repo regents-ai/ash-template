@@ -13647,3 +13647,14 @@ For the template chief to release. No migration. No new package.
   `npm run stills:splats`. The creature on a rope below the island's left edge is gone,
   and the eight knitted creatures have tall white cartoon eyes with black pupils. Name,
   title, label and place are unchanged.
+
+## 2026-11-21 — Released v309: Museum, new eyes
+
+- v309 on template.regents.sh carries one commit: the entry above. No migration; library
+  pin unchanged; no Points setting changed.
+- Rollback: v308 (`243f344b`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit. Live, signed out: 24 Splats tabs,
+  every scene's page, baked file, card and item picture answer; the served Museum file is
+  byte for byte the one handed over. In a signed-out browser with WebGPU the Museum's
+  picture changes from one moment to the next and Download GIF saves a file. Not proven:
+  Safari, Firefox, a phone.
