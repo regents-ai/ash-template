@@ -28,8 +28,8 @@ by any site. Paths are from ash-template's root; the endpoint is `platform/lib/a
 
 - The Splats and Scenes pages are live routes, `live "/animations/splats", SplatsLabLive` and `live "/animations/scenes",
   ScenesLabLive`, in `live_session :motion_lab`, in a scope that pipes through `[:motion_lab, :browser]`
-  (`platform/lib/ash_template_web/router.ex`). `:motion_lab` is the motion lab's switch (`Showcase, :motion_lab`: public once the
-  site opens, unless the showcase is off); `:browser` is the site's usual pipeline and policy, `ContentSecurityPolicy.sign_in()`.
+  (`platform/lib/ash_template_web/router.ex`). `:motion_lab` is the motion lab's switch (`Showcase, :motion_lab`: public
+  unless the showcase is off); `:browser` is the site's usual pipeline and policy, `ContentSecurityPolicy.sign_in()`.
 - Nothing is added to the policy for scenes. The renderer's chunk is a script from the site (`script-src 'self'`), the scene file a
   fetch from the site (`connect-src 'self'`), the stills images from the site (`img-src 'self'`). WebGPU needs no directive.
 - A site whose scene pages are not lab pages keeps them under its own usual pipeline the same way; the policy does not change.

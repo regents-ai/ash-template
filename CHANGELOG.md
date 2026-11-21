@@ -13658,3 +13658,16 @@ For the template chief to release. No migration. No new package.
   byte for byte the one handed over. In a signed-out browser with WebGPU the Museum's
   picture changes from one moment to the next and Download GIF saves a file. Not proven:
   Safari, Firefox, a phone.
+
+## 2026-11-21 — The splat-scenes skill, in two
+
+- Sean, 21 Nov ("2 versions, one for elixir/phoenix / ash stack as we use it with the vgpu
+  island, and one for generic websites"). `skills/splat-scenes` is for any website: its
+  SKILL.md and `references/hosting.md` no longer assume a Phoenix site; kit and player are
+  unchanged. `skills/splat-scenes-phoenix` is new, pages only: putting a baked scene on
+  one of our Phoenix sites through the splat island, pointing at this repository's files
+  by path. `AGENTS.md` names both.
+- The chief read the new pages against the code and corrected four sentences (when a box
+  gives its device back, what runs without WebGPU, when the recovery count resets, when
+  the motion lab is public). Nobody has yet followed `references/checks.md` end to end.
+- No release: nothing the site serves changed.

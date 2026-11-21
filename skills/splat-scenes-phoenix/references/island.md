@@ -41,7 +41,7 @@ same box.
 What `createCanvasIsland` does for a box, in order. It owns all of this once for every GPU picture on the site, so the renderer builds
 none of it: no frame loop, observer, visibility or motion listener, device retry or size cap of its own (vgpu-island).
 
-1. **No WebGPU** (`navigator.gpu` missing): the flag is set to `"false"` at once and nothing else runs. The still stays, and the
+1. **No WebGPU** (`navigator.gpu` missing): the flag is set to `"false"` at once and nothing is drawn. The still stays, and the
    zoom buttons and Download GIF never show.
 2. **Watch first.** A `ResizeObserver` on the canvas, an `IntersectionObserver` on the box and the page's `visibilitychange`, before
    anything loads: a box nobody can see never fetches its code or its file.
@@ -56,7 +56,7 @@ none of it: no frame loop, observer, visibility or motion listener, device retry
    active it draws every frame (`continuous: true`): the scene turns and plays by itself.
 6. **Failure.** The code or the device does not come: the island retires, the flag is `"false"`, the still stays.
 7. **Device lost.** The renderer is dropped, the flag removed (the still shows again) and a new device asked for, up to
-   `DEVICE_RECOVERY_LIMIT` (3) times; a frame that lands gives the budget back. Past that it retires with `"false"`.
+   `DEVICE_RECOVERY_LIMIT` (3) times; a new device's first frame gives the budget back. Past that it retires with `"false"`.
 
 The markup and the stylesheet keep the still in place: the still and the canvas fill the same box (`object-fit: cover`,
 `image-rendering: pixelated`), the live layer fades in over it under `[data-splats-ready="true"]`, and nothing round the box moves
@@ -81,7 +81,7 @@ where it is left. The fade-in has no transition under reduced motion.
 ## 6. Devices
 
 - One device a box, opened by its renderer and given back on destroy. The Splats page shows one box at a time. The Scenes page has a
-  box a scene; each starts only once it comes on screen and keeps its device while it is off screen until the page lets it go. The
+  box a scene; each starts only once it comes on screen and keeps its device while it is off screen, until its box is destroyed. The
   splat island does not use the value cards' shared device (vgpu-island).
 - Download GIF draws on a device of its own while it works (`platform/assets/js/splats/gif.ts`), so the box carries on.
 - The renderer follows vgpu-island's renderer rules: the GPU and the file together, the device disposed if either fails or
