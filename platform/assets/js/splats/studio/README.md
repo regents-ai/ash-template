@@ -8,8 +8,8 @@ needs to draw them.
 
 The scenes are sculpted with ink-studio, an outside toolkit
 ([github.com/siliconjungle/shapeshift-labs-ink-studio](https://github.com/siliconjungle/shapeshift-labs-ink-studio)), at commit
-`0713810ca9a763a012fc0cea272a5620a6e853e9`. The toolkit is not in this repository and must never be copied into it: its package is
-marked unlicensed and private. These files only call it. It is needed only to bake the scenes again; the page and its painter read
+`0713810ca9a763a012fc0cea272a5620a6e853e9`. The toolkit is not in this repository: at that commit its package was marked unlicensed
+and private, and it has since become MIT licensed (`skills/splat-scenes/references/splats.md`). These files only call it. It is needed only to bake the scenes again; the page and its painter read
 the baked files and never load it.
 
 To bake, keep a checkout of the toolkit at that commit anywhere outside this repository and point `INK_STUDIO` at it. Nothing else is
