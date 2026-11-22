@@ -13705,9 +13705,9 @@ For the template chief to release. No migration. No new package.
 
 ## 2026-11-22 — Splats: Heroes, a sixth unnumbered scene
 
-- A new scene on the Splats page only, as the tab Heroes (`?scene=doomsday-heroes`), after
-  Lighthouse: `platform/priv/static/splats/doomsday-heroes.bin` (390,661 splats, 7.97 MB, an
-  8-second loop, 159 colours, six moving parts and one cloth, outline on), its four
+- A new scene on the Splats page only, as the tab Heroes (`?scene=heroes`), after
+  Lighthouse: `platform/priv/static/splats/heroes.bin` (390,661 splats, 7.97 MB, an
+  8-second loop, 159 colours, five moving parts and one cloth, outline on), its four
   pictures from `npm run stills:splats`, its entry in `@unnumbered` in
   `platform/lib/ash_template_web/live/splats_lab_live.ex` and its name in `SCENES` in
   `platform/assets/js/splats/stills.mjs`.
@@ -13716,8 +13716,8 @@ For the template chief to release. No migration. No new package.
 
 ## 2026-11-22 — Splats: Throne, a seventh unnumbered scene
 
-- A new scene on the Splats page only, as the tab Throne (`?scene=doomsday-throne`), after
-  Heroes: `platform/priv/static/splats/doomsday-throne.bin` (371,821 splats, 7.99 MB, an
+- A new scene on the Splats page only, as the tab Throne (`?scene=throne`), after
+  Heroes: `platform/priv/static/splats/throne.bin` (371,821 splats, 7.99 MB, an
   8-second loop, 109 colours, no fog, outline on), its four pictures from
   `npm run stills:splats`, its entry in `@unnumbered` in
   `platform/lib/ash_template_web/live/splats_lab_live.ex` and its name in `SCENES` in

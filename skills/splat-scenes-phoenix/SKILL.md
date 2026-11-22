@@ -43,8 +43,8 @@ address, and the drawing is the browser's (the canvas island). No database, no O
 - **Same layout.** The kit's `skills/splat-scenes/kit/format.cjs` and the site's `platform/assets/js/splats/studio/format.cjs`
   differ only in their opening comment: magic `RSPL`, `VERSION = 1`, the same header and blocks in the same order. The site's reader,
   `platform/assets/js/splats/scene.ts`, reads that layout, so a baked file is read unchanged by the site's renderer, GIF and stills
-  step. All 24 scene files on the template are `RSPL` version 1, two of them baked by the sibling skill's kit.
-- **No fog.** The kit stores the toolkit's fog as it is, and a scene without fog comes out with fog start 1 and strength 0 (both
+  step. All 27 scene files on the template are `RSPL` version 1, five of them baked by the sibling skill's kit.
+- **No fog.** The kit stores the toolkit's fog as it is, and a scene without fog comes out with fog start 1 and strength 0 (all five
   kit-baked files on the template). WGSL refuses a `smoothstep` whose two edges are the same constant, so the site's painter writes
   both as 0 unless `h.fogMax > 0 && h.fogStart < 1` (`platform/assets/js/splats/painter.ts`), the same rule as the kit's player;
   it came in with the first kit-baked scene. Any other painter that draws these files needs it too.
