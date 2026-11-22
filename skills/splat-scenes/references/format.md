@@ -357,6 +357,12 @@ baker stops, naming the cause, on anything else:
 
 - A world field the file does not carry: a look (`look`, per-pixel materials `pix`, `ramps`, `surfaces`, `fine`), a sky, aerial
   perspective, lights, water, atmosphere, reflections, back-facing splats, growth. These draw in the toolkit in ways the player cannot.
+  Among those ink-studio `e80d985` sets (each met in its examples): drawn splat outlines (`splatFootprints`, from a material's
+  `brush`, `footprint`, `engraving` or `screenPrint`, or the sculptor's `S.stipple`) and print passes (`engraving`); sprites and
+  pixel stamps (`spriteSurfaces`, `spriteAtlases`, `pixelStamps`); surface data and light (`surfaceData`, `surfaceLight`,
+  `materialAlbedo`, `materialPixelStyles`); shapes and shadows worked out as it draws (`renderSdfs`, `shadowReadability`,
+  `highlightCels`); curve splats (`curveSplats` and the other `curve...` fields); clouds (`cloudField`, `cloudRepresentation`);
+  weather (`weatherBinding`, `precipitation`, `rainImpacts`); `reflectionProbes`; a camera rig (`cameraRig`).
 - A stage that zooms, kicks or grades the camera.
 - A world moved by bones (`K.puppet`, `K.bones`; ink-studio's `examples/puppet.js` is refused): bones bend splats, which a rigid part
   cannot carry.

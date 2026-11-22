@@ -51,7 +51,7 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
    folder must be writable: the download carries no `dist/`, and loading the toolkit writes `dist/standalone.js` (several MB) inside
    it on first use and after any change to its sources. Check it with `node /abs/path/ink-studio/cli/ink-studio.js help`.
 
-   The notes in `references/` were last checked against commit `983d91f` (22 Nov 2026). A newer copy may add features they do not
+   The notes in `references/` were last checked against commit `e80d985` (22 Nov 2026). A newer copy may add features they do not
    name: bake one, and the baker says whether it travels.
 2. **The player's packages:** `npm install --prefix /abs/path/splat-scenes/player` (vgpu 0.6.0 and @vgpu/wgsl 0.6.0, pinned exactly).
    It installs about 99 MB, 68 MB of it the `webgpu` package behind vgpu's Node adapter. npm warns that two packages' install

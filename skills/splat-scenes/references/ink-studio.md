@@ -5,12 +5,14 @@ particles, physics, procedural tools, simulated worlds and two renderers (a CPU 
 browsers). It is MIT licensed (README, License) and needs Node 18 or later with no runtime dependencies. The kit calls it from the
 folder `INK_STUDIO` names and never copies it.
 
-The working knowledge (section 2) was last checked against commit `983d91f` (22 Nov 2026), the newest then: the 28 examples that
-bake give the same splat counts as at `cf35ff8` (20 Nov), five of six test bakes came out byte for byte the same (the sixth moved
-the shape of 4 splats), and the rig, cloth, sculptor and renderer rules used here are unchanged. The maps (sections 3 and 4) cover
-what `cf35ff8` had, all still there: 28 README sections, 185 guides in `docs/` and 385 files in `examples/`. `983d91f` added 3
-README sections (section 3), 89 guides and 264 example files, not mapped here. Its README and guides are the authority; this page
-says what to read first, what the kit's file carries, and where each guide and example stands.
+The working knowledge (section 2) was last checked against commit `e80d985` (22 Nov 2026), the newest then: the 28 examples that
+bake as they are give the same splat counts as at `cf35ff8` (20 Nov); `examples/sculpt.js`, `examples/cloth.js` and a 32,806-splat
+trial scene with rig parts and sways bake, prove and play with it; the solids table in 2.3 and the outline and print fields it
+lists as not carried (`brush` to `screenPrint`) were each built and baked with it. The maps (sections 3 and 4) cover all of
+`e80d985`: 31 README sections, 344 guides in `docs/` and 948 files in `examples/`, of which 159 guides and 563 example files are new
+since `cf35ff8`. Each new example was baked with this kit, and every older Bakes, Solids-only and No entry was baked again: 7 of
+those 211 moved (section 4 gives what each does now). Its README and guides are the authority; this page says what to read first,
+what the kit's file carries, and where each guide and example stands.
 
 Contents: 1. Read these first. 2. Working knowledge (scene file, light, solids and materials, hand-placed splats, things that move,
 the finish, previewing). 3. Map of the README. 4. Guides and examples by what you are making.
@@ -166,8 +168,10 @@ and the surface's light t (0 to 1) picks one. (Hand-placed splats take the build
 | `leaf`, `fur`, `sss`, `form`, `fat` | Leaves, fur strands, light through thin parts, a shading normal of your own, bigger dabs | Read from source, not run |
 
 Not carried, because they work per pixel or over time: `pixelStyle`, `surface`, `line`, `fine` and `optical` (looks drawn by
-ink-studio's renderers), `born` and `wet` (the bake refuses their flags). `983d91f` also reads `brush`, `stipple`, `footprint`,
-`engraving` and `screenPrint`; none was checked here, so bake one before relying on it.
+ink-studio's renderers), `born` and `wet` (the bake refuses their flags); and `brush`, `footprint`, `engraving` and `screenPrint`,
+with the sculptor's `S.stipple` (a material's `stipple: false` keeps it out), which give the splats drawn outlines
+(`splatFootprints`) and the last two a print pass (`engraving`): the bake names those and stops (each checked on one ball at
+`e80d985`, set as its guide sets it).
 
 `K.look.glass(ramp, { a })` is `{ r, a, glass: true }` (a 0.1 unless given); with `{ ghost: true }` on the solid it makes glass the
 format carries (references/recipes.md, 6). `K.look.wax`, `jelly` and `fur` exist too; the bake names anything it cannot carry.
@@ -340,19 +344,18 @@ the player will show. Each command below starts as the first one does (`...` sta
 | Reflections, ripples and atmosphere | Planar captures, ripples, fog volumes | No (the finish's simple `fog` is carried; references/recipes.md, 8) |
 | Embedding and custom scene collections | `bundle()`, `demos()`, `ink-studio.config.js` | No: for ink-studio's own browser use |
 | Browser renderer | The WebGL 2 `createRenderer` | No: the player is its own WebGPU painter |
-| WebGPU graphs and Gaussian splat import (`983d91f`) | GPU texture and geometry graphs; a viewer and `render --raw` for trained splat files (PLY, SPZ) | No: a separate output (not baked here) |
-| Live show control (`983d91f`) | Live audio, MIDI, timecode, projection and lighting control | No: a world run |
-| CLI patch tooling (`983d91f`) | `ink-studio patch`: typed graph ports and signals | No: a separate output |
+| WebGPU graphs and Gaussian splat import | GPU texture and geometry graphs; a viewer and `render --raw` for trained splat files (PLY, SPZ) | No: a separate output (not baked here) |
+| Live show control | Live audio, MIDI, timecode, projection and lighting control | No: a world run |
+| CLI patch tooling | `ink-studio patch`: typed graph ports and signals | No: a separate output |
 | Screen transitions | Full-screen WebGL transition presets | No |
 | Module reference | What each `src/` file holds | Where to read an API's opening comment |
 | Validation and development | `npm test`, `npm run lint`, `snap`, `check` | No |
-| License | MIT | The kit calls ink-studio, never copies it |
+| License | MIT; then notes on toolkit modules and links to the surface-mark guides (render grids, splat footprints, brush strokes, engraving, mosaics, screen print, stippling, contour ribbons, facets, cut paper, voxels, textiles, sprite reconstruction) | The kit calls ink-studio, never copies it; each mark guide's row is in section 4 |
 
 ## 4. Guides and examples by what you are making
 
-Every guide in `docs/` and every file in `examples/` as of `cf35ff8` (the 89 guides and 264 example files `983d91f` added are not
-here), grouped by what a scene-maker is after. Read the Travels column first: a feature that does not travel is still good for
-pictures made with ink-studio itself, but the player will not draw it.
+Every guide in `docs/` and every file in `examples/` as of `e80d985`, grouped by what a scene-maker is after. Read the Travels column
+first: a feature that does not travel is still good for pictures made with ink-studio itself, but the player will not draw it.
 
 **Travels** (the guide's feature):
 
@@ -360,19 +363,21 @@ pictures made with ink-studio itself, but the player will not draw it.
 - **At build**: it computes numbers, paths, patterns or colours while the scene builds; turn them into solids, splats, ramps or `tex`
   choices and those travel.
 - **No** with a reason: look (per-pixel), sky, renderer (drawn per view or live), bones, particles, physics, a world run (simulated
-  worlds, agents, sound), screen layer, export or browser (a separate output).
+  worlds, agents, sound), screen layer, sprites, flat splats, export or browser (a separate output).
 - **Tool**: works on scene files or pictures; nothing to bake. **Not run**: not tried for this map.
 
 **Examples** were each baked with this kit (an 8-second loop; two minutes at most), then again with the world fields the format does
 not carry deleted:
 
-- **Bakes** (splats): as it is. 28 examples.
-- **Solids only** (splats; what it loses): after the deletion. 112 examples; most lose only their per-pixel look.
+- **Bakes** (splats): as it is. 29 examples.
+- **Solids only** (splats; what it loses): after the deletion. 135 examples; most lose only their per-pixel look, and the
+  curve-splat scene files their curve splats. Five bake only once the kit's loop helper (`kit/loop.cjs`) rounds their speeds to
+  whole cycles of the loop, and say so.
 - **No** (reason): refused even then. Bones; live motion (splats redrawn or moved each frame by the example's own code, particles or
-  physics); off-palette colours; wind-field sways; growth; particles; flat splats; all look (nothing left once the look is gone); not
-  proven (over two minutes). 71 examples.
-- **Not a scene**: a command's input, a world run, a command script, or a script that needs its page. 143 files. **Page**: an HTML
-  page and its scripts for ink-studio's browser renderer. 31 files.
+  physics); off-palette colours; colour changes; wind-field sways; growth; particles; flat splats; kind 15; sprites it sets again
+  as it plays; needs its camera rig; all look (nothing left once the look is gone); not proven (over two minutes). 107 examples.
+- **Not a scene**: a command's input, a world run, a command script, or a script that needs its page. 616 files. **Page**: an HTML
+  page and its scripts for ink-studio's browser renderer. 61 files.
 
 **Most useful for a rich, dense, finished scene:**
 
@@ -388,6 +393,8 @@ not carry deleted:
   `motion-review.md` for loops that close.
 - Randomness: `randomness.md`.
 - Looking at work: `art-passes.md` (`passes`), `visual-sweeps.md` (one view across seeds and settings).
+- New since `cf35ff8`: none of the 159 guides travels as it is. Most are world runs and sound, per-pixel looks and marks, and
+  renderer features.
 
 ### Shape
 
@@ -395,63 +402,86 @@ not carry deleted:
 | --- | --- | --- | --- |
 | `adaptive-sculpt-sampling.md` | Fewer splats on broad faces, more on edges and tight curves | Yes | **Solids only:** `adaptive-lantern.js` (2,456; loses look) |
 | `adaptive-transport.md` | Flow across a graph, for tube widths and colours | At build | **No:** `adaptive-transport-studies.js` (live motion) |
+| `contour-ribbons.md` | Fields traced into ribbons of surface marks | No: flat splats | **Not a scene:** `contour-ribbons.js` (needs a host page). **Page:** `contour-ribbons.html` |
 | `curvature-lines.md` | Principal-direction traces for ornament, shingles and scales | At build | **No:** `curvature-ornament-studies.js` (live motion) |
 | `curve-analysis.md` | Nearest points and frames along curves | At build | **Not a scene:** `curve-analysis.js` (not a scene). **Page:** `curve-analysis.html` |
 | `curve-families.md` | Parametric curves for sweeps, routes, lettering and cameras | At build | **Solids only:** `rolling-curve-gallery.js` (30,046; loses look). **No:** `gear-lantern.js` (live motion). **Not a scene:** `curve-families.js` (not a scene). **Page:** `curve-families.html` |
+| `curve-splats.md` | Paths drawn as joined splat segments | No: renderer | **Solids only:** `curve-splat-bundles.js` (375; loses curve splats, look, live light), `curve-splat-caps.json` (221; loses curve splats, look), `curve-splat-edges.json` (72; loses curve splats, look), `curve-splat-profiles.json` (505; loses curve splats, look), `curve-splat-scene.json` (41; loses curve splats, look), `curve-splat-sections.json` (286; loses curve splats, look). **No:** `curve-mode-signal-coil.js` (off-palette colours), `curve-quality-harp.js` (bones), `curve-splat-bindings.js` (live motion), `curve-splat-materials.json` (off-palette colours), `surface-bound-strokes.js` (off-palette colours). **Not a scene:** `curve-depth-crossings.cjs` (command script), `curve-distance-simplification.cjs` (command script), `curve-splat-bindings.cjs` (command script), `curve-splat-bundles.cjs` (command script), `curve-splat-caps.cjs` (command script), `curve-splat-coverage.cjs` (command script), `curve-splat-edges.cjs` (command script), `curve-splat-gallery.cjs` (command script), `curve-splat-lighting.cjs` (command script), `curve-splat-materials.cjs` (command script), `curve-splat-minimum-width.cjs` (command script), `curve-splat-profiles.cjs` (command script), `curve-splat-sections.cjs` (command script), `curve-stable-pigment.cjs` (command script), `surface-bound-strokes.cjs` (command script), `timed-curve-trails.cjs` (command script) |
 | `depth-maps.md` | Depth images to splats, fields and meshes | At build, with palette colours | **No:** `depth-map.js` (off-palette colours) |
 | `differential-growth.md` | Curves and shells that grow and buckle | At build | **Solids only:** `differential-growth-studies.js` (23,961; loses look) |
+| `faceted-surfaces.md` | Surfaces rebuilt as flat facets | No: flat splats | **Not a scene:** `faceted-surfaces.js` (needs a host page). **Page:** `faceted-surfaces.html` |
 | `field-fabrication.md` | Fields turned into shells, ribs and cut-throughs | Not run | **No:** `field-fabrication-studies.js` (live motion) |
 | `field-visualization.md` | Geometry extracted from scalar and vector fields | Not run | none |
 | `four-dimensional.md` | 4D polytopes and slices | At build | **No:** `fourth-gate.js` (live motion) |
 | `fractal-forms.md` | Bounded 3D fractals for `S.implicitForm` | Yes | **Solids only:** `fractal-form-studies.js` (209,138; loses look) |
-| `headless-authoring.md` | Typed procedural graphs | What it makes as solids | **Bakes:** `editable-passage.js` (7,900). **Solids only:** `flooded-shrine.js` (17,675; loses look, sky and air, its saved snapshot). **No:** `graph-study.js` (bones). **Not a scene:** `drawing-layout.cjs` (command script), `graph-3d-rig.cjs` (command script), `pixel-effects.cjs` (command script), `procedural-generation.cjs` (command script), `raster-composition.cjs` (command script), `raster-palette.cjs` (command script), `raster-simulations.cjs` (command script), `raster-warps.cjs` (command script) |
+| `headless-authoring.md` | Typed procedural graphs | What it makes as solids | **Bakes:** `editable-passage.js` (7,900). **Solids only:** `flooded-shrine.js` (17,675; loses look, sky and air, its saved snapshot). **No:** `graph-study.js` (bones), `mesh-index-scramble.js` (sprites it sets again as it plays), `stale-instance-transforms.js` (live motion). **Not a scene:** `bitplane-corruption.cjs` (command script), `block-substitution.cjs` (command script), `broadcast-patterns.cjs` (command script), `camera-motion-compensation.cjs` (command script), `cross-bank-tile-bleed.cjs` (command script), `dense-optical-flow.cjs` (command script), `drawing-layout.cjs` (command script), `graph-3d-rig.cjs` (command script), `indexed-plasma.cjs` (command script), `layer-clocks.cjs` (command script), `local-palette-fault.cjs` (command script), `masked-time-maps.cjs` (command script), `motion-driven-deformation.cjs` (command script), `palette-cycling.cjs` (command script), `persistent-region-tracking.cjs` (command script), `pixel-effects.cjs` (command script), `procedural-generation.cjs` (command script), `raster-composition.cjs` (command script), `raster-palette.cjs` (command script), `raster-simulations.cjs` (command script), `raster-warps.cjs` (command script), `region-lineage-events.cjs` (command script), `scanline-deformation.cjs` (command script), `scanline-repeat-dropout.cjs` (command script), `signal-recovery.cjs` (command script), `sprite-fragment-desync.cjs` (command script), `texture-addressing.cjs` (command script), `tile-address-scrambling.cjs` (command script), `tile-stride-slip.cjs` (command script), `tracked-drawing-anchors.cjs` (command script) |
 | `hyperbolic-mosaics.md` | Poincare-disk tilings and circle packing | Yes | **Solids only:** `disk-studies.js` (13,254; loses look) |
 | `iterated-function-systems.md` | Fractal flames as points or density | At build | **Solids only:** `iterated-flame-studies.js` (47,378; loses look) |
+| `mosaic-surfaces.md` | Surfaces rebuilt as mosaic or stained-glass pieces | No: look | **Not a scene:** `mosaic-surfaces.js` (needs a host page). **Page:** `mosaic-surfaces.html` |
 | `orbit-attractors.md` | Attractor orbits as paths or density | At build | **Solids only:** `orbit-attractor-studies.js` (16,643; loses look) |
+| `paper-relief.md` | Layered cut-paper sheets with thickness | No: flat splats | **Not a scene:** `paper-relief.js` (needs a host page). **Page:** `paper-relief.html` |
 | `procedural.md` | Every procedural primitive: fields, sampling, terrain, routes, buildings, growth, fracture | Geometry and placement | **Bakes:** `adaptive-surface.js` (8,564), `branching-networks.js` (14,544), `colony-patterns.js` (67,178), `composed-fields.js` (9,446), `constraint-tiles.js` (46,483), `dual-surface-studies.js` (5,836), `flow-wake.js` (21,895), `fluid-grids.js` (27,173), `fracture-studies.js` (24,702), `persistent-weather.js` (27,867), `pinned-facade.js` (30,158), `poisson-patches.js` (7,353), `river-processes.js` (15,444), `rooms-and-caves.js` (23,554), `route-fields.js` (14,595), `sampling-detail.js` (6,815), `sculptural-fields.js` (37,407), `socket-walkway.js` (48,812), `street-layouts.js` (21,848), `terrain-route.js` (20,615), `texture-synthesis.js` (29,607), `vegetation-growth.js` (25,732), `watershed.js` (15,782), `weighted-roof.js` (82,361). **Solids only:** `contact-masks.js` (18,892; loses look), `material-masks.js` (21,634; loses look). **No:** `preview-lod.js` (off-palette colours), `surface-advection.js` (off-palette colours), `transport-morph.js` (off-palette colours). **Not a scene:** `biome-flood.js` (needs a host page), `biome-recipes.js` (needs a host page), `biome-world.js` (needs a host page), `procedural/build.js` (not a scene), `streamed-places.js` (needs a host page) |
 | `proportional-layout.md` | Golden-ratio subdivision for facades, trim and shots | At build | **Solids only:** `proportional-facade.js` (31,138; loses look). **No:** `proportional-shots.js` (not proven, over two minutes) |
 | `quasiperiodic-tilings.md` | Penrose and Ammann-Beenker pavements | Yes | **Solids only:** `quasiperiodic-plazas.js` (35,982; loses look) |
 | `recursive-curves.md` | Koch, dragon, Hilbert and Peano curves | At build | **Solids only:** `recursive-curve-studies.js` (19,185; loses look) |
 | `shared-field-outputs.md` | Named field samples shared between generators | At build | **No:** `shared-field-outputs.js` (off-palette colours) |
 | `surface-phyllotaxis.md` | Golden-angle placements on spheres and charts | At build | **No:** `surface-phyllotaxis.js` (growth) |
+| `textile-rendering.md` | Raised yarn, stitches and weaves | No: look | **Not a scene:** `thread-studies.js` (needs a host page). **Page:** `thread-studies.html` |
 | `topological-surfaces.md` | Mobius, Klein and minimal surfaces | Not run | **No:** `topological-surface-studies.js` (live motion) |
 | `typography.md` | Lettering as solids, sprites or strokes (references/recipes.md, Lettering) | As solids | **Not a scene:** `typography.js` (not a scene). **Page:** `typography.html` |
+| `voxel-surface.md` | Surfaces as voxel faces | No: look | **Not a scene:** `voxel-surface.js` (needs a host page). **Page:** `voxel-surface.html` |
 | `weaving-braiding.md` | Strands with over-under crossings | At build | **No:** `interlacing-studies.js` (live motion) |
 
 ### Surface
 
 | Guide | What it gives a scene | Travels | Examples |
 | --- | --- | --- | --- |
+| `boundary-cels.md` | Drawn cels along the seam between materials | No: look | **Not a scene:** `frost-boundaries.cjs` (not a scene) |
 | `boundary-potential-fields.md` | A solved potential as pigment, contours or flow | At build | **No:** `boundary-potential-studies.js` (not proven, over two minutes) |
+| `caused-marks.md` | Drips, scuffs and lichen baked as paint layers | No: look | **Solids only:** `caused-marks.js` (75,901; loses look, sky and air). **Not a scene:** `event-surface-marks.js` (not a scene) |
 | `cellular-lattices.md` | Cellular automata on lines, grids and voxels | At build | **Solids only:** `cellular-lattice-studies.js` (12,220; loses look) |
 | `competitive-growth.md` | Growth fronts claiming a grid, with seams | At build | **Solids only:** `competitive-growth-studies.js` (23,612; loses look) |
 | `complex-plane-fields.md` | Mandelbrot, Julia and Newton patterns | At build | **Solids only:** `complex-plane-studies.js` (16,650; loses look) |
+| `contact-marks.md` | Drawn pixel effects at contact points | No: look | **No:** `contact-mark-studies.js` (all `look`) |
 | `continuous-cellular.md` | Lenia and SmoothLife fields | At build | **No:** `continuous-cellular-studies.js` (live motion) |
-| `continuous-splat-coverage.md` | Opaque surfaces joined without gaps | No: look | **No:** `splat-surface-coverage.js` (flat splats) |
-| `coupled-phase-changes.md` | Ice, liquid and pigment reactions on a grid | At build | **No:** `phase-change-studies.js` (live motion) |
+| `continuous-splat-coverage.md` | Opaque surfaces joined without gaps | No: look | **Solids only:** `splat-surface-coverage.js` (8,760; loses look) |
+| `coupled-phase-changes.md` | Ice, liquid and pigment reactions on a grid | At build | **No:** `phase-change-studies.js` (live motion). **Not a scene:** `spillway-phase.cjs` (not a scene) |
 | `deformation-materials.md` | Ink, wear and wetness kept in a rest chart | Not run | none |
 | `edge-filter.md` | Coverage-filtered edges | No: look | **Solids only:** `selective-edge-filter.js` (6,350; loses look) |
-| `glyph-grids.md` | Glyph grids and letterforms from cell rules | At build | **No:** `glyph-grid.js` (live motion) |
+| `engraving.md` | Hatching, cross engraving and woodcut shading | No: look | **Not a scene:** `engraving.js` (needs a host page). **Page:** `engraving.html` |
+| `glyph-grids.md` | Glyph grids and letterforms from cell rules | At build | **No:** `glyph-grid.js` (live motion), `signal-fall.js` (all `look`) |
 | `graph-automata.md` | Cell rules on connected objects | At build | **No:** `graph-automata-studies.js` (live motion) |
 | `learned-cellular-growth.md` | A small neural cell rule growing ornament | At build | **No:** `learned-cellular-growth.js` (live motion) |
 | `material-controls.md` | Roughness, metal, refraction and coatings | No: renderer | **Not a scene:** `material-controls.js` (not a scene). **Page:** `material-controls.html` |
 | `math-fields.md` | Complex charts, vector fields and chaotic maps for materials and shapes | At build | **Not a scene:** `math-fields.js` (not a scene). **Page:** `math-fields.html` |
 | `moire-gratings.md` | Line, dot and polar interference patterns | At build | **Solids only:** `moire-grating-studies.js` (26,328; loses look) |
+| `motional-coverage.md` | Thin splats kept steady as they cross pixels | No: look | **Solids only:** `motional-coverage.js` (12,406; loses look) |
 | `persistent-spatial-fields.md` | Deposits kept in a chart or volume | At build | **No:** `persistent-spatial-fields.js` (live motion) |
 | `pixel-look.md` | Tone, stipple, remaps, colour tables and stacks | No: look | **Solids only:** `authorized-dither-pairs.js` (43,398; loses look, sky and air), `look-blending.js` (48,865; loses look), `palette-constraints.js` (44,091; loses look), `palette-material-matching.js` (35,317; loses look, sky and air), `palette-placement.js` (44,101; loses look, sky and air), `protected-swatches.js` (37,558; loses look, sky and air), `provenance-relays.js` (56,042; loses look), `rgb-lut.js` (28,609; loses look), `shared-look-selectors.js` (24,533; loses look), `wet-spillway.js` (48,865; loses look) |
+| `pixel-stamps.md` | Indexed pixel drawing and animated stamps | No: sprites | **Solids only:** `red-spring.js` (16,867; loses look), `starfall-window.js` (1,222; loses look). **No:** `glitter-burst-reel.js` (all `look`), `pixel-effect-presets.js` (all `look`). **Page:** `pixel-stamp-editor.html`, `pixel-stamp-editor.mjs` |
+| `pixel-tiles.md` | Animated pixel tiles along a grid | No: sprites | **No:** `reconnecting-grids.js` (all `look`), `tile-pulse-studies.js` (all `look`) |
 | `projected-effects.md` | Animated rasters and patterns on surfaces | No: look | **Solids only:** `palette-cycling.js` (56,006; loses look, sky and air). **No:** `banded-pigment.js` (live motion), `surface-effects.js` (live motion). **Not a scene:** `edge-shedding.js` (needs a host page) |
 | `reaction-diffusion-brushing.md` | Gray-Scott patterns painted on charts | At build | **No:** `reaction-diffusion-brushing.js` (live motion) |
 | `recursive-coordinate-transforms.md` | Mobius maps, inversion and Droste recursion | At build | **Solids only:** `recursive-coordinate-studies.js` (13,126; loses look) |
+| `render-grids.md` | The picture as hexagon, triangle or diamond cells | No: look | **Not a scene:** `render-grid.js` (needs a host page). **Page:** `render-grid.html` |
+| `rule-board.md` | Copper tracks and glyphs run as a cell rule | No: sprites | **Not a scene:** `rule-board.cjs` (not a scene) |
 | `sandpiles-excitable.md` | Sandpiles and excitable media | At build | **No:** `sandpiles-excitable-studies.js` (live motion) |
 | `scalar-wave.md` | Waves diffracting through gaps | At build | **Solids only:** `wave-propagation-studies.js` (33,126; loses look) |
+| `screen-print.md` | Halftone and screen-printed plates | No: look | **Not a scene:** `screen-print.js` (needs a host page). **Page:** `screen-print.html` |
 | `sdf-assist.md` | Tracing sculpted surfaces at render time | No: renderer | **Solids only:** `sdf-gatehouse.js` (15,314; loses look, sky and air, live light) |
 | `shared-domains.md` | One cell rule on images, charts, graphs and voxels | At build | **No:** `shared-domain-studies.js` (live motion) |
 | `spectral-fields.md` | Fourier fields and membrane modes | At build | **No:** `spectral-wave-studies.js` (live motion) |
+| `splat-footprints.md` | Square, star, chipped or painted splat outlines | No: look | **Not a scene:** `splat-footprints.js` (needs a host page). **Page:** `splat-footprints.html` |
 | `stable-detail.md` | Fine detail eased in and out by size | No: look | **Solids only:** `stable-detail.js` (3,290; loses look) |
-| `stable-dithering.md` | Screen, world or object dither | No: look | **Solids only:** `palette-dither-scale.js` (42,304; loses look, sky and air, camera rig), `palette-dither-spaces.js` (42,304; loses look, sky and air), `stable-dithering.js` (88,073; loses look, sky and air) |
+| `stable-dithering.md` | Screen, world or object dither | No: look | **Solids only:** `palette-dither-scale.js` (42,304; loses look, sky and air, camera rig), `palette-dither-spaces.js` (42,304; loses look, sky and air), `stable-dithering.js` (88,073; loses look, sky and air), `view-direction-dithering.js` (46,069; loses look, sky and air) |
+| `stippling.md` | Adaptive stipple and pointillist marks | No: look | **Not a scene:** `stippling.js` (needs a host page). **Page:** `stippling.html` |
+| `surface-brush.md` | Brush strokes that follow the form | No: look | **Not a scene:** `surface-brush.js` (needs a host page). **Page:** `surface-brush.html` |
+| `surface-brushwork.md` | A paint layer of strokes over a sculpt | No: look | **Solids only:** `surface-brushwork.js` (43,405; loses look, sky and air) |
 | `surface-materials.md` | View-dependent finishes | No: renderer | **Solids only:** `color-curves.js` (41,906; loses look), `material-bevel-highlights.js` (35,065; loses look), `material-lighting-ramps.js` (26,328; loses look), `surface-detail-courtyard.js` (34,177; loses look, sky and air, live light), `surface-gallery.js` (27,053; loses look), `thin-transmission.js` (31,625; loses look, sky and air, live light) |
-| `textured-surfaces.md` | Optional pixel-textured patches | No: sprites | **Solids only:** `textured-surfaces.js` (6,580; loses look) |
+| `textured-surfaces.md` | Optional pixel-textured patches | No: sprites | **Solids only:** `textured-surfaces.js` (6,580; loses look). **No:** `material-projection.js` (all `look`), `uv-atlas-slip.js` (all `look`). **Not a scene:** `palette-resampling.cjs` (command script) |
+| `tile-attributes.md` | Two-colour tiles from a palette map | No: look | **Not a scene:** `tile-attributes.cjs` (not a scene) |
 | `trail-sensing-agents.md` | Agents that lay and follow trails | At build | **Solids only:** `trail-sensing-studies.js` (23,263; loses look) |
+| `translucent-silhouettes.md` | Own coverage for steam, glass rims and foliage | No: look | **Solids only:** `translucent-silhouettes.js` (6,178; loses look) |
 | `vector-field-painting.md` | Line integral convolution grain | At build | **No:** `vector-field-painting-studies.js` (not proven, over two minutes) |
 | `wallpaper-frieze.md` | A motif repeated as pigment, relief or tiles | At build | **Solids only:** `wallpaper-frieze.js` (14,434; loses look) |
 
@@ -462,20 +492,26 @@ not carry deleted:
 | `area-lights.md` | Rectangle and disc lights with soft shadows | No: renderer | **Solids only:** `shaped-lights.js` (15,083; loses look, live light) |
 | `bounce-probes.md` | Local colour bleeding at render time (baked bounce, `INK_BOUNCE`, does travel) | No: renderer | **Solids only:** `bounce-probes.js` (27,882; loses look, sky and air, live light) |
 | `contact-shadows.md` | Short contact shadows at render time (the finish's `ao` travels) | No: look | **Solids only:** `local-contact-shadows.js` (13,193; loses look) |
+| `emission-bands.md` | Travelling bands of glow from a distance field | No: look | **No:** `tuning-gate.js` (all `look`) |
 | `fog-lighting.md` | Spot and point lights in fog | No: renderer | **Solids only:** `light-cookies.js` (39,441; loses look, sky and air), `lighthouse-mist.js` (100,171; loses look, sky and air) |
 | `geometric-caustics.md` | Coloured light through authored glass | No: renderer | **Solids only:** `geometric-caustic-studies.js` (31,379; loses look, sky and air, live light) |
+| `highlight-cels.md` | Drawn highlights chosen by a light and the camera | No: look | **No:** `highlight-cel-bench.js` (live motion) |
 | `light-emitters.md` | Line lights, cookies and shaped emitters | No: renderer | **Solids only:** `light-emitters.js` (38,051; loses look, sky and air, live light). **Page:** `light-emitters.html` |
 | `live-sun.md` | A sun relit at render time (bake light with `S.sun`) | No: renderer | **Solids only:** `beacon-pool.js` (19,774; loses look, sky and air, live light), `bounce-light.js` (17,193; loses look, live light), `live-sun.js` (26,722; loses look, live light) |
+| `painted-cutout-shadows.md` | Shadows cast through painted cutouts | No: renderer | **No:** `painted-cutout-shadows.js` (live motion), `painted-shadow-shells.js` (live motion) |
 | `scene-exposure.md` | Indoor and outdoor exposure zones | No: world field | **No:** `sheltered-arch.js` (wind-field sways) |
-| `scene-optics.md` | Index of reflections, ripples and optics | No: renderer | **Solids only:** `cliff-depth-bands.js` (129,910; loses sky and air), `layered-transparency.js` (8,229; loses look, sky and air, live light, weather), `local-reflection-workshop.js` (48,958; loses look, sky and air, live light), `optical-look-bindings.js` (41,967; loses look, sky and air, live light), `water-garden.js` (32,252; loses look, live light). **Page:** `water-garden.html` |
+| `scene-optics.md` | Index of reflections, ripples and optics | No: renderer | **Solids only:** `cliff-depth-bands.js` (129,910; loses sky and air), `layered-transparency.js` (8,229 with the kit's loop helper; loses look, sky and air, live light, weather), `local-reflection-workshop.js` (48,958; loses look, sky and air, live light), `optical-look-bindings.js` (41,967; loses look, sky and air, live light), `reflection-detail.js` (48,958; loses look, sky and air, live light), `water-garden.js` (32,252; loses look, live light). **Page:** `water-garden.html` |
+| `shadow-band-paint.md` | Painted shifts of where shadow starts | No: look | **No:** `painted-shadow-bands.js` (live motion). **Page:** `painted-shadow-bands.html` |
+| `shot-lighting.md` | A shaped key, fill and rim light for a shot | No: renderer | **Solids only:** `courier-shot-lighting.js` (43,848; loses look, sky and air, live light) |
 
 ### Colour and palette
 
 | Guide | What it gives a scene | Travels | Examples |
 | --- | --- | --- | --- |
+| `cluster-coherence.md` | Highlight and shadow clusters kept steady through a shot | No: look | **Not a scene:** `cluster-coherence.cjs` (command script), `shot-correction.cjs` (not a scene) |
 | `effect-palettes.md` | Own ramps for fog, clouds, sky and glow | No: look | **Solids only:** `atmosphere-palette-fields.js` (100,171; loses look, sky and air), `effect-palettes-night-watch.js` (158,069; loses look, sky and air), `palette-composition.js` (47,900; loses look, sky and air, live light) |
 | `paint-mixing.md` | Spectral paint mixing into ramps | At build | **Not a scene:** `paint-mixing.js` (needs a host page). **Page:** `paint-mixing.html` |
-| `palette-recipes.md` | OKLab palette recipes, ramps and paths | At build | **Solids only:** `animated-palette-fields.js` (49,891; loses look, sky and air), `authored-lighting-ramps.js` (41,745; loses look, sky and air), `chroma-glazes.js` (45,563; loses look, sky and air), `grayscale-ramp-reliefs.js` (53,070; loses look, sky and air), `hue-brightness.js` (63,002; loses look, sky and air), `palette-chart-archive.js` (176,463; loses look, sky and air), `palette-coverage.js` (58,397; loses look, sky and air), `palette-field-weather.js` (56,810; loses look, sky and air, weather), `palette-space-plots.js` (30,583; loses look, sky and air), `polar-colour.js` (40,833; loses look, sky and air), `render-stages.js` (24,533; loses look), `spectrum-ramps.js` (103,467; loses look, sky and air), `surface-palette-roles.js` (41,224; loses look, sky and air). **Not a scene:** `palette-recipes.js` (not a scene). **Page:** `palette-recipes.html` |
+| `palette-recipes.md` | OKLab palette recipes, ramps and paths | At build | **Solids only:** `animated-palette-fields.js` (49,891; loses look, sky and air), `authored-lighting-ramps.js` (41,745; loses look, sky and air), `chroma-glazes.js` (45,563; loses look, sky and air), `grayscale-ramp-reliefs.js` (53,070; loses look, sky and air), `hue-brightness.js` (63,002; loses look, sky and air), `palette-chart-archive.js` (176,463; loses look, sky and air), `palette-coverage.js` (58,397; loses look, sky and air), `palette-field-weather.js` (56,810; loses look, sky and air, weather), `palette-space-plots.js` (30,583; loses look, sky and air), `polar-colour.js` (40,833; loses look, sky and air), `render-stages.js` (24,533; loses look), `shadow-readability.js` (51,673; loses look, sky and air), `spectrum-ramps.js` (103,467; loses look, sky and air), `surface-palette-roles.js` (41,224; loses look, sky and air). **Not a scene:** `palette-recipes.js` (not a scene). **Page:** `palette-recipes.html` |
 
 ### Motion and loops
 
@@ -486,9 +522,11 @@ not carry deleted:
 | `destruction.md` | Existing splats broken into rubble | No: physics | **No:** `destruction.js` (particles). **Page:** `destruction.html` |
 | `field-particle-coupling.md` | Particles and a fluid grid moving each other | No: particles | **Solids only:** `field-particle-studies.js` (22,171; loses look) |
 | `geometry-morphs.md` | Splat morphs between poses | No: morph | **No:** `geometry-morph-studies.js` (live motion) |
+| `jointed-sprite-chains.md` | Drawn pixel stamps on spring chains | No: sprites | **No:** `jointed-sprite-chains.js` (all `look`) |
 | `loop-authoring.md` | Finding repeats and fitting tracks to a loop | Tool | **No:** `loop-authoring-studies.js` (live motion) |
 | `materialisation.md` | Splats detaching, flowing and rejoining | No: live motion | **No:** `materialisation.js` (live motion). **Page:** `materialisation.html` |
-| `motion-afterimages.md` | Trails of past poses | No: look | none |
+| `motion-afterimages.md` | Trails of past poses | No: look | **Not a scene:** `subject-feedback.cjs` (command script) |
+| `pixel-scanner.md` | Surfaces scanned by a moving emitter, kept as splats | No: live motion | **No:** `flooded-station-scan.js` (live motion) |
 | `route-followers.md` | Vehicle poses along a path (they can drive rig parts) | Through rig parts | **No:** `route-followers.js` (live motion) |
 | `shared-time-domains.md` | Separate simulation, animation and camera clocks | No: renderer | **Not a scene:** `shared-time-domains.js` (not a scene). **Page:** `shared-time-domains.html` |
 
@@ -506,6 +544,7 @@ not carry deleted:
 | `motion-retarget.md` | Clips moved to another puppet | No: bones | **No:** `retarget-courier.js` (bones), `retarget-guard.js` (bones) |
 | `motion-review.md` | Loop pops, spacing and arcs (a good habit for rig parts too) | No: bones | **No:** `motion-review.js` (bones). **Page:** `motion-review.html` |
 | `pose-blocking.md` | Pose shelf and blocking | No: bones | **No:** `pose-blocking.js` (bones). **Page:** `pose-blocking.html` |
+| `silhouette-tracks.md` | Drawn exposures for a scarf, brim or sleeve | No: sprites | **No:** `silhouette-tracks.js` (all `look`). **Not a scene:** `sprite-cel-preview.cjs` (not a scene) |
 | `traversal-links.md` | Rails, boosts and flows for a character | No: a world run | **Not a scene:** `traversal-links.js` (not a scene) |
 
 ### Weather and air
@@ -516,7 +555,7 @@ not carry deleted:
 | `atmosphere-emitters.md` | Smoke, steam and spray from a socket | No: particles | **Solids only:** `atmosphere-railway.js` (135,453; loses look, sky and air, weather) |
 | `celestial-tracks.md` | Suns, moons and stars on paths | No: sky | **Solids only:** `celestial-estuary.js` (241,557; loses look, sky and air) |
 | `cloud-recipes.md` | Procedural cloud fields | No: sky | **Solids only:** `cloud-recipe-coast.js` (122,554; loses look, sky and air, live light) |
-| `cloud-representations.md` | Clouds as cards and impostors by distance | No: sky | **No:** `cloud-flythrough.js` (particles) |
+| `cloud-representations.md` | Clouds as cards and impostors by distance | No: sky | **Solids only:** `beacon-cloud-self-shadows.js` (26,722; loses look, sky and air, live light, weather). **No:** `cloud-flythrough.js` (particles) |
 | `cloud-shadows.md` | Moving cloud coverage and shadows | No: sky | **Solids only:** `cloud-shadows.js` (122,554; loses look, sky and air, live light) |
 | `conditional-weather.md` | Weather changes on cues | No: sky | none |
 | `environment-packs.md` | Reusable sky and weather presets | No: sky | none |
@@ -524,9 +563,11 @@ not carry deleted:
 | `interruptible-sky.md` | Sky transitions started mid-way | No: sky | **No:** `interruptible-sky.js` (wind-field sways) |
 | `layered-horizon.md` | A painted far vista on cylinders (references/recipes.md has a far backdrop that travels) | No: world field | **Solids only:** `layered-horizon.js` (38,447; loses look, sky and air) |
 | `lightning.md` | Timed lightning flashes | No: world field | **Solids only:** `lightning-headland.js` (120,602; loses look, sky and air) |
-| `rain-impacts.md` | Rain hitting planes | No: weather | **Solids only:** `rain-cistern.js` (93,913; loses look, sky and air, live light, weather) |
+| `material-histories.md` | Wear and weathering kept on surfaces | No: weather | **Solids only:** `material-histories.js` (61,436; loses look, sky and air, weather) |
+| `rain-impacts.md` | Rain hitting planes | No: weather | **Solids only:** `rain-cistern.js` (93,913 with the kit's loop helper; loses look, sky and air, live light, weather) |
 | `retained-weather.md` | Wetness, snow and frost that stay | No: weather | **Solids only:** `wet-stone-finish.js` (41,173; loses look, sky and air, weather). **No:** `weather-traces.js` (kind 15) |
 | `shared-sky-reflections.md` | One sky for backdrop and reflections | No: sky | **Solids only:** `shared-sky-reflections.js` (41,061; loses look, sky and air, live light) |
+| `shore-foam.md` | Drawn foam along water edges | No: sprites | none |
 | `volume-cutouts.md` | Clear pockets in fog and cloud | No: sky | **No:** `volume-cutout-gate.js` (bones) |
 | `weather-binding.md` | Weather profiles across systems | No: sky | **No:** `weather-courtyard.js` (wind-field sways) |
 | `weather-fronts.md` | Fronts moving over the world | No: weather | none |
@@ -538,21 +579,33 @@ not carry deleted:
 | Guide | What it gives a scene | Travels | Examples |
 | --- | --- | --- | --- |
 | `art-direction.md` | Look profiles (painted, storm, dawn) | No: look | **Solids only:** `art-direction-estuary.js` (241,557; loses look, sky and air). **No:** `motion-cadence.js` (wind-field sways) |
-| `camera-atlas.md` | Several cameras into overlays and panels | No: renderer | **Solids only:** `camera-atlas.js` (16,722; loses look) |
+| `camera-atlas.md` | Several cameras into overlays and panels | No: renderer | **Solids only:** `camera-atlas.js` (16,722; loses look; its bake took 139 s). **No:** `composite-video.js` (all `look`) |
 | `camera-impulses.md` | Camera shake and handheld motion | No: camera | **No:** `directional-camera-impulses.js` (particles). **Page:** `directional-camera-impulses.html` |
 | `camera-rigs.md` | Camera rigs and shot blends | No: camera | **Solids only:** `camera-staging.js` (38,025; loses look, sky and air, camera rig). **No:** `cinematic-camera.js` (colour changes). **Page:** `cinematic-camera.html` |
 | `cutaways.md` | Clipping planes and depth windows | No: renderer | none |
 | `data-bound-marks.md` | Marks drawn from data records | No: world field | none |
-| `drawing-primitives.md` | Drawing over the finished picture | No: screen layer | none |
-| `impostor-atlases.md` | Camera-facing cards and directional sprites | No: sprites | **Solids only:** `lantern-catch.js` (18,336; loses look, live light), `painted-scenery.js` (13,167; loses look, sky and air, live light), `relightable-impostor.js` (77,572; loses look, sky and air, live light) |
+| `direction-drawing.md` | Editable paths drawn through the camera | No: screen layer | **Not a scene:** `direction-drawing.cjs` (command script) |
+| `drawing-primitives.md` | Drawing over the finished picture | No: screen layer | **Not a scene:** `drawing-falloff-studies.cjs` (command script) |
+| `drawing-ray-fan.md` | Fans of fine rays in a drawing layer | No: screen layer | none |
+| `drawing-registration-grid.md` | Registration guides and crosses | No: screen layer | none |
+| `heightmap-flyover.md` | Terrain drawn column by column from height maps | No: renderer | **No:** `heightmap-flyover.js` (all `look`) |
+| `impostor-atlases.md` | Camera-facing cards and directional sprites | No: sprites | **Solids only:** `lantern-catch.js` (18,336; loses look, live light), `painted-scenery.js` (13,167; loses look, sky and air, live light), `relightable-impostor.js` (77,572; loses look, sky and air, live light). **No:** `face-transition-cels.js` (all `look`), `sprite-overlay-masks.js` (all `look`), `tidekeeper-fringe.js` (all `look`) |
 | `live-scene-hierarchy.md` | One hierarchy for geometry, lights and anchors (rig parts travel) | No: scene graph | **Not a scene:** `live-scene-hierarchy.js` (not a scene). **Page:** `live-scene-hierarchy.html` |
 | `mixed-resolution.md` | Layers at their own resolutions | No: look | none |
 | `parameter-bindings.md` | Shared controls and bindings | No: world field | none |
-| `render-graph.md` | An editable graph of render passes | No: look | **Solids only:** `raster-millrace.js` (85,530; loses look, sky and air, live light). **No:** `raster-tidal-flats.js` (all `look`), `render-feedback.js` (all `look`). **Not a scene:** `render-effects.js` (not a scene). **Page:** `render-effects.html` |
+| `projected-routes.md` | Painted ribbons and props along a path | No: renderer | **No:** `projected-routes.js` (all `look`) |
+| `projected-stage.md` | Painted stage layers under one camera | No: renderer | **No:** `projected-stage.js` (all `look`) |
+| `render-graph.md` | An editable graph of render passes | No: look | **Solids only:** `raster-millrace.js` (85,530; loses look, sky and air, live light). **No:** `frame-age-mask.js` (not proven, over two minutes), `motion-smear.js` (all `look`), `raster-tidal-flats.js` (all `look`), `render-feedback.js` (all `look`), `tracked-source-windows.js` (all `look`). **Not a scene:** `block-video-corruption.cjs` (command script), `datamosh.cjs` (command script), `frame-banks.cjs` (command script), `programmable-exposure.cjs` (command script), `raster-schedule.cjs` (command script), `render-effects.js` (not a scene), `render-graph-bridge.cjs` (not a scene). **Page:** `render-effects.html` |
+| `render-outputs.md` | One small render shared by atlases, monitors and graphs | No: renderer | **Solids only:** `shared-render-outputs.js` (24,907; loses look). **Not a scene:** `shared-render-inspector.cjs` (command script) |
 | `scale-aware-previews.md` | Detail chosen by what the camera resolves | No: world field | **No:** `scale-aware-previews.js` (all `look`) |
-| `scene-timeline.md` | One timeline for a diorama | No: world field | none |
-| `silhouette-protection.md` | Fog and contrast kept off a chosen actor | No: look | **Solids only:** `market-shot-focus.js` (45,721; loses look, sky and air, live light, weather), `silhouette-protection.js` (69,389; loses look, sky and air) |
+| `scene-timeline.md` | One timeline for a diorama | No: world field | **Not a scene:** `beat-phrase-timing.cjs` (command script) |
+| `sector-raycaster.md` | A floor plan drawn as rooms from inside | No: renderer | **Not a scene:** `sector-raycaster.cjs` (command script) |
+| `silhouette-protection.md` | Fog and contrast kept off a chosen actor | No: look | **Solids only:** `market-shot-focus.js` (45,721 with the kit's loop helper; loses look, sky and air, live light, weather), `silhouette-protection.js` (69,389; loses look, sky and air) |
+| `sprite-reconstruction.md` | Distant copies drawn from a directional atlas | No: sprites | **Not a scene:** `bake-sprite-reconstruction.cjs` (command script), `sprite-reconstruction.js` (needs a host page). **Page:** `sprite-reconstruction.html` |
+| `sprite-scanline-budgets.md` | Sprite rows dropped past a per-row budget | No: look | **Not a scene:** `sprite-scanline-budget.cjs` (command script) |
 | `target-inspection.md` | Brackets, labels and magnifiers over a target | No: screen layer | **Not a scene:** `target-inspection.js` (not a scene). **Page:** `target-inspection.html` |
+| `tideline-looks.md` | Four looks over one lighthouse shot | No: look | **No:** `tideline-looks.js` (needs its camera rig). **Not a scene:** `render-tideline-looks.cjs` (command script) |
+| `tile-raycaster.md` | A tile map drawn as a view from inside | No: renderer | **No:** `tile-raycaster.js` (all `look`). **Not a scene:** `tile-raycaster-preview.cjs` (command script) |
 | `view-annotations.md` | Legends and labels in output pixels | No: screen layer | none |
 | `world-reconstruction.md` | Reveal and rebuild tracks | No: look | none |
 
@@ -566,12 +619,14 @@ not carry deleted:
 
 | Guide | What it gives a scene | Travels | Examples |
 | --- | --- | --- | --- |
-| `art-passes.md` | Depth, normal and emission passes on the art grid | Tool | **Solids only:** `art-effects.js` (590; loses look), `art-pipeline.js` (19,774; loses look, sky and air, live light), `emissive-finishes.js` (43,410; loses look, sky and air, live light), `selective-ink.js` (38,025; loses look, sky and air). **No:** `weather-front.js` (wind-field sways) |
+| `art-passes.md` | Depth, normal and emission passes on the art grid | Tool | **Solids only:** `art-effects.js` (590 with the kit's loop helper; loses look), `art-pipeline.js` (19,774; loses look, sky and air, live light), `edge-hierarchy.js` (53,322; loses look, sky and air), `emissive-finishes.js` (43,410; loses look, sky and air, live light), `harbor-compositing.js` (11,418; loses look, live light), `part-motion.js` (12,013; loses look), `selective-ink.js` (38,025; loses look, sky and air). **No:** `strand-inspection.js` (bones), `weather-front.js` (wind-field sways). **Not a scene:** `deep-composite.cjs` (command script) |
 | `comparison-views.md` | Two sources at one camera and time | Tool | none |
 | `environment-inspector.md` | Explains the sky and weather at a point | Tool | none |
-| `environment-review-shots.md` | Three review shots of a sky | Tool | **Solids only:** `review-beacon.js` (26,722; loses look, sky and air, live light, weather), `review-cliff-path.js` (129,910; loses sky and air), `review-sheltered-market.js` (45,721; loses look, sky and air, live light, weather) |
+| `environment-review-shots.md` | Three review shots of a sky | Tool | **Solids only:** `review-beacon.js` (26,722; loses look, sky and air, live light, weather), `review-cliff-path.js` (129,910; loses sky and air), `review-sheltered-market.js` (45,721 with the kit's loop helper; loses look, sky and air, live light, weather) |
 | `reel.md` | Captures in one offline page | Tool | none |
+| `shot-approval.md` | Approval checks over a shot | Tool | none |
 | `shot-recipes.md` | Saved inputs behind a review render | Tool | none |
+| `surface-probe.md` | Probes that light named points on a pose | No: look | **No:** `hadal-surface-probe.js` (all `look`) |
 | `transition-review.md` | A shot checked at export size | Tool | **No:** `transition-review.js` (wind-field sways) |
 | `visual-sweeps.md` | One view across settings and seeds | Tool | **No:** `visual-sweep-attractor.js` (live motion) |
 
@@ -587,37 +642,140 @@ not carry deleted:
 | `agent-orders.md` | Agent orders and tasks | No: a world run | none |
 | `agent-storage.md` | Agent rosters, births and removals | No: a world run | none |
 | `aggregate-simulation.md` | Coarser simulation far away | No: a world run | none |
+| `aligned-simulation-review.md` | Two simulation outputs compared over one take | Tool | **Not a scene:** `aligned-simulation-review/demo.cjs` (command script) |
+| `atmosphere-arranger.md` | Ambient sound layers placed around a score | No: a world run | none |
+| `audio-editorial.md` | Recordings spotted to picture, events or the score | No: a world run | **Not a scene:** `music-production/editorial-workshop.cjs` (command script) |
+| `audio-mixer.md` | Offline mixer routing and automation | No: a world run | **Not a scene:** `music-production/mixer-routing-workshop.cjs` (command script) |
+| `audio-prints.md` | Graph audio printed to WAV and reused | No: a world run | **Not a scene:** `music-production/print-workshop.cjs` (command script) |
+| `audio-racks.md` | Mixer graphs packaged as racks | No: a world run | **Not a scene:** `audio-racks/clap-smoke.cjs` (command script), `audio-racks/faust-probe.cjs` (command script), `audio-racks/workshop.cjs` (command script) |
+| `audio-warp.md` | Recordings warped and repitched | No: a world run | **Not a scene:** `music-production/warp-workshop.cjs` (command script) |
+| `audiovisual-takes.md` | Picture driven by an audio take | No: a world run | **Not a scene:** `audiovisual-take/demo.cjs` (command script) |
 | `batch-spatial-queries.md` | Proximity and occupancy queries | No: a world run | none |
 | `boarding.md` | Seats on carts and ferries | No: a world run | **Not a scene:** `boarding-traversal.js` (not a scene) |
+| `boundary-conditions.md` | Shared simulation boundaries and sources | No: a world run | **Not a scene:** `simulation-boundary-conditions/demo.cjs` (command script) |
+| `branched-domains.md` | Branched geometry for simulation models | No: a world run | **Not a scene:** `simulation-branched-domains/demo.cjs` (command script) |
 | `budgeted-route-requests.md` | Route requests per tick | No: a world run | none |
 | `carry.md` | Carrying objects between places | No: a world run | **Not a scene:** `carry-workshop.js` (not a scene) |
+| `clap-instruments-and-handoff.md` | Plug-in instruments and handoff to a music program | No: a world run | **Not a scene:** `clap-instrument/handoff.cjs` (command script) |
 | `contact-effects.md` | Measured contacts with surfaces | No: a world run | none |
+| `contact-exciters.md` | Contact forces at audio rate | No: a world run | **Not a scene:** `simulation-contact-exciters/demo.cjs` (command script) |
+| `controllers-inverse-targets.md` | Controllers and inverse fits to targets | No: a world run | **Not a scene:** `controller-tools/demo.cjs` (command script), `controller-tools/evaluators.cjs` (not a scene) |
 | `crowds-and-bottlenecks.md` | Walkers avoiding each other | No: a world run | none |
+| `dialogue-repair.md` | Speech recordings repaired | No: a world run | **Not a scene:** `music-production/dialogue-repair-workshop.cjs` (command script) |
+| `discretization.md` | Solver cells and boundary faces | No: a world run | **Not a scene:** `simulation-discretization/demo.cjs` (command script) |
+| `distributed-waves.md` | Pressure and flow waves in tubes | No: a world run | **Not a scene:** `simulation-wave-networks/demo.cjs` (command script) |
 | `ecology.md` | Habitat channels, fire and recovery | No: a world run | **No:** `ecology.js` (colour changes). **Page:** `ecology.html` |
 | `editable-simulation-inputs.md` | Pins, brushes and injections on a timeline | No: a world run | **No:** `editable-simulation-inputs.js` (live motion) |
-| `event-actions.md` | Timeline cues to commands | No: a world run | none |
+| `event-actions.md` | Timeline cues to commands | No: a world run | **Not a scene:** `audio-world-events.cjs` (command script) |
 | `faction-perception.md` | What a faction has seen | No: a world run | none |
 | `first-divergence.md` | Where two world runs first differ | Tool | **Not a scene:** `world-worker-estate.js` (world run) |
+| `foley-perspective.md` | Foley spotted from world events | No: a world run | **Not a scene:** `music-production/foley-workshop.cjs` (command script) |
 | `gameplay-state.md` | Timers, objectives and state graphs | No: a world run | none |
+| `gesture-bank.md` | A searchable bank of recorded gestures | No: a world run | **Not a scene:** `music-production/gesture-bank-workshop.cjs` (command script) |
+| `gesture-scores.md` | Scores that drive named controls on one clock | No: a world run | **Not a scene:** `gesture-scores/demo.cjs` (command script) |
+| `graph-media.md` | Audio files, analysis and recorded input in graphs | No: a world run | **Not a scene:** `editable-musical-events.cjs` (command script), `graph-audio-automation.cjs` (command script), `live-modulation.cjs` (command script), `per-stem-controls.cjs` (command script) |
+| `grid-operators.md` | Grid and mesh operators for solvers | No: a world run | **Not a scene:** `simulation-grid-operators/demo.cjs` (command script) |
 | `group-formations.md` | Groups of agents sharing a destination | No: a world run | none |
 | `headless-worlds.md` | Declarative simulated worlds, queries and replay | No: a world run | **Bakes:** `conservative-transfer.js` (44,413). **No:** `spatial-field-wind.js` (live motion). **Not a scene:** `canal-traversal.js` (not a scene), `interactable-locks.js` (needs a host page), `spatial-rebuild.js` (not a scene) |
+| `input-compilers.md` | Text, MIDI and cues compiled into editable events | No: a world run | **Not a scene:** `input-compilers/demo.cjs` (command script) |
+| `inspection-links.md` | Links to committed events in a run | No: a world run | **Not a scene:** `shared-inspection-links/demo.cjs` (command script) |
 | `interaction-components.md` | Reusable controls for interactables | No: a world run | none |
 | `job-reservations.md` | Shared jobs and capacity | No: a world run | none |
+| `lumped-networks.md` | Networks of storage, resistance and sources | No: a world run | **Not a scene:** `simulation-lumped-networks/demo.cjs` (command script) |
+| `mass-properties.md` | Mass and inertia of assemblies | No: a world run | **Bakes:** `simulation-mass-properties/instrument.json` (10). **Not a scene:** `simulation-mass-properties/demo.cjs` (command script) |
+| `material-conversion.md` | Material cells lifted into rigid bodies and back | No: physics | **Not a scene:** `material-conversion.cjs` (not a scene), `staged-fracture.cjs` (not a scene) |
+| `mixing-essentials.md` | Mixer inserts | No: a world run | **Not a scene:** `music-production/mixing-essentials-workshop.cjs` (command script) |
+| `model-reduction.md` | Detailed simulations baked into small models | No: a world run | **Not a scene:** `simulation-reduction/demo.cjs` (command script) |
+| `motion-sound.md` | Sound automation from motion and render data | No: a world run | **Not a scene:** `motion-sound/demo.cjs` (command script) |
+| `moving-boundaries.md` | Valves and seals with moving surfaces | No: a world run | **Not a scene:** `simulation-moving-boundaries/demo.cjs` (command script) |
+| `music-adaptive-rehearsal.md` | An adaptive score rehearsed along paths | No: a world run | **Not a scene:** `music-production/listening-regression.cjs` (command script) |
+| `music-composition-search.md` | Searching for passages to replace | No: a world run | none |
+| `music-critique-audio.md` | Listening to a production and trying fixes | No: a world run | **Not a scene:** `music-production/audio-critique-diagnosis.cjs` (command script) |
+| `music-critique.md` | Blind listening and votes on a passage | No: a world run | none |
+| `music-cue-map.md` | How a whole cue unfolds | No: a world run | **Not a scene:** `music-production/cue-map-workshop.cjs` (command script) |
+| `music-edit-session.md` | Takes and performances in one edit | No: a world run | **Not a scene:** `music-production/performance-accompaniment.cjs` (command script), `music-production/phrase-performance.cjs` (command script) |
+| `music-foreground-mix.md` | A mix built around the foreground part | No: a world run | none |
+| `music-gestures.md` | Phrases shaped by patch gestures | No: a world run | **Not a scene:** `music-production/phrase-gestures.cjs` (command script) |
+| `music-instrument-graphs.md` | Modular instruments | No: a world run | none |
+| `music-instrument-performance.md` | How notes start, join and end | No: a world run | none |
+| `music-listening-preferences.md` | Listening choices carried to another cue | No: a world run | none |
+| `music-locked-arrangement.md` | Arrangement search with locked passages | No: a world run | none |
+| `music-persistent-performers.md` | Instruments that carry across score changes | No: a world run | **Not a scene:** `music-production/persistent-performers.cjs` (command script) |
+| `music-playable-instruments.md` | Stock playable instruments | No: a world run | none |
+| `music-producer.md` | Producer auditions | No: a world run | **Not a scene:** `music-production/night-signal.cjs` (command script) |
+| `music-production.md` | A score with instruments, timing and mix | No: a world run | **Not a scene:** `music-production/split-reed.cjs` (not a scene) |
+| `music-session-experiments.md` | Many musical choices auditioned together | No: a world run | **Not a scene:** `music-production/performance-ballot.cjs` (command script), `music-production/session-experiment.cjs` (command script) |
+| `music-themes.md` | One theme across a production | No: a world run | **Not a scene:** `music-production/harbor-theme.cjs` (command script) |
+| `music-voice-leading.md` | Inner voices searched around melody and bass | No: a world run | **Not a scene:** `music-production/voice-leading-workshop.cjs` (command script) |
+| `music-whole-piece.md` | Whole pieces composed from a brief | No: a world run | none |
+| `music-world-score.md` | Scene sound arranged with the score | No: a world run | **Not a scene:** `music-production/pressure-relay.cjs` (command script) |
 | `navigation-flow.md` | Shared destination fields | No: a world run | none |
 | `navigation-tiles.md` | Walking routes on tiles | No: a world run | none |
+| `numerical-solvers.md` | Linear and nonlinear solvers | No: a world run | **Not a scene:** `simulation-numerical-solvers/demo.cjs` (command script) |
+| `pad-patterns.md` | Beat patterns for a sample kit | No: a world run | **Not a scene:** `music-production/pad-pattern-workshop.cjs` (command script) |
+| `parameter-fitting.md` | Simulation settings fitted to reference data | No: a world run | **Not a scene:** `parameter-fitting/demo.cjs` (command script) |
+| `path-sections.md` | Section profiles along ducts and channels | No: a world run | **Not a scene:** `simulation-path-sections/demo.cjs` (command script), `simulation-path-sections/duct-field.cjs` (not a scene) |
+| `performance-groove.md` | Groove taken from a performance | No: a world run | **Not a scene:** `music-production/performance-groove-workshop.cjs` (command script) |
+| `phrase-composer.md` | Motifs developed into arranged phrases | No: a world run | none |
+| `physical-audio.md` | Simulated physical signals into audio | No: a world run | **Not a scene:** `physical-audio/demo.cjs` (command script) |
+| `physical-ports.md` | Physical units on graph ports | No: a world run | **Not a scene:** `physical-ports/demo.cjs` (command script) |
 | `physical-work.md` | Stock, labour and construction | No: a world run | none |
+| `playable-sound-workshop.md` | Playable instruments built from a sound | No: a world run | **Not a scene:** `music-production/playable-sound-workshop.cjs` (command script), `music-production/sound-discovery.cjs` (command script) |
 | `population.md` | Households and residents | No: a world run | none |
-| `portals.md` | Travel between named places | No: a world run | **Not a scene:** `place-portals.js` (needs a host page), `portable-workshop.js` (not a scene) |
+| `portable-story-packs.md` | Story definitions and recorded runs packed | No: a world run | **Not a scene:** `portable-story-packs/demo.cjs` (command script) |
+| `portals.md` | Travel between named places | No: a world run | **Not a scene:** `painted-portals.cjs` (needs a host page), `place-portals.js` (needs a host page), `portable-workshop.js` (not a scene) |
 | `prefab-upgrades.md` | Moving placed assemblies to new revisions | No: a world run | **Not a scene:** `world-prefab-upgrade.js` (world run) |
+| `procedural-score.md` | Audiovisual scores from motifs | No: a world run | **Not a scene:** `after-the-fifth.cjs` (command script) |
 | `public-influence.md` | Public priorities and rewards | No: a world run | none |
 | `puzzles.md` | Inputs combined into doors and gates | No: a world run | none |
+| `recording-instrument-fit.md` | Instruments fitted to a recording | No: a world run | none |
+| `reference-experiments.md` | Physics experiments checked against known answers | No: a world run | **Not a scene:** `reference-experiments/demo.cjs` (command script) |
 | `region-revisions.md` | Region-scoped state per tick | No: a world run | none |
-| `simulation-checkpoints.md` | Snapshots, forks and resets | No: a world run | **Not a scene:** `world-checkpoint-branch.js` (world run) |
+| `resampling-jam.md` | Pad phrases resampled through racks | No: a world run | **Not a scene:** `music-production/resampling-jam-workshop.cjs` (command script) |
+| `resonant-modes.md` | Resonators as baked mode assets | No: a world run | **Not a scene:** `simulation-resonant-modes/demo.cjs` (command script) |
+| `sample-capture.md` | Audio captured and catalogued | No: a world run | **Not a scene:** `music-production/captured-strike.cjs` (command script) |
+| `sample-edit.md` | Samples sliced and edited | No: a world run | **Not a scene:** `music-production/cut-metal.cjs` (command script) |
+| `sample-instrument-builder.md` | Pitched instruments from recorded gestures | No: a world run | **Not a scene:** `music-production/sample-instrument-workshop.cjs` (command script) |
+| `sample-kits.md` | Sample kits on pads | No: a world run | **Not a scene:** `music-production/kit-workshop.cjs` (command script) |
+| `sample-motif.md` | One recording auditioned in four roles | No: a world run | none |
+| `simulation-block-independence.md` | Results that do not depend on block size | Tool | **Not a scene:** `simulation-block-independence/demo.cjs` (command script), `simulation-block-independence/ink-studio.config.js` (not a scene). **Page:** `simulation-block-independence/playback.html` |
+| `simulation-blocks.md` | Simulation blocks at audio rate | No: a world run | **Not a scene:** `simulation-blocks/demo.cjs` (command script), `simulation-blocks/ink-studio.config.js` (not a scene), `simulation-blocks/resonator.cjs` (not a scene) |
+| `simulation-checkpoints.md` | Snapshots, forks and resets | No: a world run | **Not a scene:** `committed-events/demo.cjs` (command script), `simulation-fixtures/demo.cjs` (command script), `world-checkpoint-branch.js` (world run) |
 | `simulation-chunks.md` | Systems owned by chunks | No: a world run | none |
+| `simulation-diagnostics.md` | Stability and conservation checks | Tool | **Not a scene:** `simulation-diagnostics/demo.cjs` (command script) |
+| `simulation-execution-plan.md` | How a simulation will run | Tool | **Not a scene:** `simulation-execution-plan/demo.cjs` (command script), `simulation-execution-plan/ink-studio.config.js` (not a scene) |
+| `simulation-experiment-bundles.md` | Simulation experiments packed to reproduce | No: a world run | **Not a scene:** `simulation-experiment-bundles/demo.cjs` (command script) |
+| `simulation-fast-checkpoints.md` | Checkpoints of fast simulation state | No: a world run | **Not a scene:** `simulation-fast-checkpoints/demo.cjs` (command script), `simulation-fast-checkpoints/ink-studio.config.js` (not a scene) |
+| `simulation-forecasts.md` | Two copies of a run compared ahead | No: a world run | **Not a scene:** `simulation-forecast.cjs` (command script) |
+| `simulation-kernels.md` | Simulation kernels of your own | No: a world run | **Not a scene:** `simulation-kernels/damped-spring.cjs` (not a scene), `simulation-kernels/demo.cjs` (command script), `simulation-kernels/ink-studio.config.js` (not a scene) |
+| `simulation-measurements.md` | Named measurements and assertions | Tool | **Not a scene:** `simulation-measurements/demo.cjs` (command script) |
+| `simulation-model-changes.md` | A model changed while it plays | No: a world run | **Not a scene:** `simulation-model-changes/demo.cjs` (command script), `simulation-model-changes/ink-studio.config.js` (not a scene) |
+| `simulation-models.md` | Versioned simulation models | No: a world run | none |
+| `simulation-modules.md` | Simulation models reused as modules | No: a world run | **Not a scene:** `simulation-modules/demo.cjs` (command script) |
+| `simulation-output-adapters.md` | Solver results into rendering, analysis and audio | No: a world run | **Not a scene:** `live-snapshot-cursor/demo.cjs` (command script), `live-snapshot-cursor/dock.world.cjs` (not a scene), `live-snapshot-cursor/ink-studio.config.js` (not a scene), `output-adapters/demo.cjs` (command script), `world-graph-ports/demo.cjs` (command script) |
+| `simulation-performance-budgets.md` | Measured simulation timing budgets | Tool | **Not a scene:** `simulation-performance-budgets/demo.cjs` (command script), `simulation-performance-budgets/ink-studio.config.js` (not a scene), `simulation-performance-budgets/stories.cjs` (command script) |
+| `simulation-prepared-processing.md` | A kernel prepared once for playback | No: a world run | **Not a scene:** `simulation-prepared/demo.cjs` (command script), `simulation-prepared/ink-studio.config.js` (not a scene), `simulation-prepared/vent-network.js` (not a scene). **Page:** `simulation-prepared/playback.html` |
+| `simulation-rate-crossings.md` | Signals between different rates | No: a world run | **Not a scene:** `simulation-rate-crossings/demo.cjs` (command script), `simulation-rate-crossings/ink-studio.config.js` (not a scene) |
 | `simulation-scrubbing.md` | Scrubbing a world run | No: a world run | none |
+| `simulation-signal-comparison.md` | Two estimates of one signal compared | Tool | **Not a scene:** `simulation-signal-comparison/demo.cjs` (command script) |
+| `simulation-timed-events.md` | Events inside a time step | No: a world run | **Not a scene:** `simulation-timed-events/demo.cjs` (command script), `simulation-timed-events/ink-studio.config.js` (not a scene) |
+| `simulation-transfer-coupling.md` | Two-way coupling of transfers | No: a world run | **Not a scene:** `simulation-transfer-coupling/demo.cjs` (command script), `simulation-transfer-coupling/ink-studio.config.js` (not a scene) |
 | `simulation-workers.md` | World runs on worker threads | No: a world run | none |
+| `slice-composition.md` | Phrases written with recorded slices | No: a world run | **Not a scene:** `music-production/slice-composition-workshop.cjs` (command script) |
+| `sound-design-effects.md` | Sound design inserts | No: a world run | **Not a scene:** `music-production/sound-design-workshop.cjs` (command script) |
 | `spatial-audio.md` | A spatial sound mix | No: a world run | none |
+| `state-integrators.md` | Continuous state advanced in time | No: a world run | **Not a scene:** `simulation-integrators/bounce.cjs` (not a scene), `simulation-integrators/demo.cjs` (command script) |
+| `state-remap.md` | State moved to a new grid or shape | No: a world run | **Not a scene:** `simulation-state-remap/demo.cjs` (command script) |
+| `story-documents.md` | Incidents, questlets and arcs as documents | No: a world run | **Not a scene:** `presentation-cues/demo.cjs` (command script), `story-documents/bench-inspection.host.cjs` (not a scene) |
+| `story-integration-inputs.md` | Committed runs driving picture and sound | No: a world run | **Not a scene:** `read-only-story-integrations/demo.cjs` (command script) |
+| `story-scene-timeline.md` | Scene markers from a committed run | No: a world run | **Not a scene:** `story-scene-timeline/demo.cjs` (command script) |
+| `subtractive-synth.md` | Subtractive synth voices | No: a world run | **Not a scene:** `music-production/subtractive-workshop.cjs` (command script) |
+| `take-clock.md` | One clock for picture and take audio | No: a world run | **Not a scene:** `clock-mapping/demo.cjs` (command script) |
 | `targeted-interactions.md` | Verbs agents perform on targets | No: a world run | none |
+| `timbre-composition.md` | Pitch and rhythm taken from a recording | No: a world run | none |
+| `timbre-evolution.md` | One recording's attack, body and decay across players | No: a world run | none |
+| `virtual-sensors.md` | Virtual instruments and sensors on a run | No: a world run | **Not a scene:** `virtual-sensors/demo.cjs` (command script) |
+| `world-access.md` | Views of a run for different audiences | No: a world run | **Not a scene:** `world-access/demo.cjs` (command script) |
 | `world-scaling.md` | Indexing large worlds | No: a world run | none |
 
 ### Tools and output
@@ -625,22 +783,30 @@ not carry deleted:
 | Guide | What it gives a scene | Travels | Examples |
 | --- | --- | --- | --- |
 | `asset-interchange.md` | glTF, GLB and atlas round trips | No: export | none |
+| `audio-delivery.md` | A soundtrack printed with stems and a cue sheet | No: export | **Not a scene:** `music-production/delivery-workshop.cjs` (command script) |
 | `browser-renderer.md` | ink-studio's WebGL 2 renderer | No: browser | **Solids only:** `coverage-aware-glass.js` (27,925; loses look), `environment-test-scene.js` (13,338; loses sky and air). **Page:** `water-bodies.html` |
+| `build-profiles.md` | Builds of the toolkit for authoring and playback | Tool | none |
+| `graph-clips.md` | Graph outputs exported as clips | No: export | **Not a scene:** `visual-resampling.cjs` (command script) |
 | `linked-views.md` | Charts, maps and scenes on one clock | No: browser | none |
+| `patch-tooling.md` | Graph wiring edited from the terminal | Tool | **Not a scene:** `patch-tooling/demo.cjs` (command script), `patch-tooling/footage.cjs` (command script) |
 | `project-bundles.md` | A JSON scene and its assets in one file | No: export | none |
+| `scene-audio.md` | A scene soundtrack exported with stems | No: export | none |
 | `scene-editor.md` | Editing JSON dioramas without a page | Tool | none |
 | `scene-publishing.md` | Publishing a scene to a folder | No: export | none |
-| `transitions.md` | Full-screen WebGL transitions | No: browser | **Page:** `transitions/index.html` |
+| `show-control.md` | Live audio, timecode, projection and lighting | No: browser | none |
+| `stable-asset-references.md` | Asset ids with exact revisions | Tool | **Not a scene:** `stable-asset-references/demo.cjs` (command script) |
+| `transitions.md` | Full-screen WebGL transitions | No: browser | **Not a scene:** `column-melt.mjs` (command script). **Page:** `transitions/index.html` |
 | `typed-data-inputs.md` | Typed datasets for scenes and worlds | No: world field | none |
 | `viewer-input.md` | Remappable browser input | No: browser | none |
+| `webgpu-graphs.md` | GPU texture and geometry graphs | No: browser | **Not a scene:** `webgpu-graphs/kernels.mjs` (command script), `webgpu-graphs/sample.mjs` (command script). **Page:** `live-gaussian/demo.mjs`, `live-gaussian/index.html`, `live-gaussian/turntable.mjs`, `webgpu-graphs/demo.mjs`, `webgpu-graphs/index.html`, `webgpu-graphs/style.css` |
 
 ### Other examples
 
 | Kind | Files |
 | --- | --- |
-| Inputs to commands and tools | `atmosphere-depth-bands.json`, `blue-shadow.cube`, `coastal-environment-pack.json`, `coastal-pack-beacon.json`, `coastal-pack-jetty.json`, `complementary-field.json`, `copperwind-looks.json`, `curve-family.json`, `desaturation-field.json`, `driven-look-forge-actions.json`, `driven-look-forge.json`, `editable-passage.edits.json`, `environment-review-camera.js`, `grayscale-ramp.json`, `half-gain-legal.cube`, `headless-array-graph.json`, `headless-array-sweep.json`, `headless-graph-group.json`, `headless-graph.json`, `hue-brightness-field.json`, `lantern-dusk.json`, `learned-harbor-mark.json`, `lighting-ramp-palette.json`, `look-assets.json`, `look-prefabs.json`, `ornament-pattern.json`, `paint-mixture.json`, `palette-charts.json`, `palette-check-courier.json`, `palette-coverage-field.json`, `palette-dither-fit.json`, `palette-recipe.json`, `palette-space-plot.json`, `palette-weather-beacon.json`, `physical-materials.pack.json`, `polar-colour-field.json`, `primary-ramp.json`, `procedural/authoring-example.js`, `procedural/gallery.js`, `readability-courier.json`, `relay-look-pack.json`, `shared-sky-profiles.json`, `spatial-bed-edit.json`, `spatial-wind-transect.json`, `spatial-yard-queries.json`, `spectrum-ramp.json`, `train-neural-cellular.py`, `visual-sweep-attractor.plan.json` |
-| Scenes and pages | **Bakes:** `cloth.js` (1,413), `sculpt.js` (4,027). **Solids only:** `breakable-parts.json` (24,342; loses breakable parts), `color-runoff.js` (10,759; loses look), `copperwind-crossing.json` (81,122; loses look), `palette-remap.json` (21,028; loses look), `signal-observatory.json` (35,566; loses look, timeline), `stipple.json` (12,390; loses look). **No:** `particles.js` (live motion), `puppet.js` (bones), `scene.json` (particles), `splat-effects.js` (live motion). **Page:** `procedural/gallery.html`, `transitions/gallery.css`, `transitions/gallery.mjs`, `transitions/scenes.mjs` |
-| World runs (input to the world commands) | `world-acoustic-hatch.json`, `world-adaptive-music.json`, `world-agent-orders.json`, `world-agent-roster.json`, `world-aggregate-estuary.json`, `world-causal-mill.json`, `world-cellar-flood.json`, `world-conditional-weather.json`, `world-construction-bridge.json`, `world-contact-effects.json`, `world-continuous-colliders.json`, `world-crossing.json`, `world-crowd-bridge.json`, `world-deformable-yard.commands.json`, `world-deformable-yard.json`, `world-estuary-households.json`, `world-expedition-formation.json`, `world-flow-ford.json`, `world-ford-shift.json`, `world-harvest-logistics.json`, `world-hydraulic-yard.commands.json`, `world-hydraulic-yard.json`, `world-influence-yard.json`, `world-interaction-yard.json`, `world-lightwell-workshop.json`, `world-live-volumes.json`, `world-lookout-memory.json`, `world-material-fatigue.commands.json`, `world-material-fatigue.json`, `world-multi-rate.json`, `world-persistent-valley.json`, `world-physical-materials.json`, `world-physical-work.json`, `world-pocket-moon.json`, `world-prefab-upgrade.migration.json`, `world-puzzle-gate.actions.json`, `world-puzzle-gate.json`, `world-region-revisions.json`, `world-resident-shelter.json`, `world-rotating-dock.json`, `world-route-queue.json`, `world-routed-workshop.commands.json`, `world-routed-workshop.json`, `world-sediment-ford.json`, `world-sediment-gate.json`, `world-shelter-reservations.json`, `world-spatial-fields.json`, `world-spatial-yard.json`, `world-storm-canopy.json`, `world-surface-state.json`, `world-thawing-ford.json`, `world-tiled-ford.json`, `world-transfers.json`, `world-ventilated-shelter.json`, `world-watershed.json`, `world-windmill-workshop.json` |
+| Inputs to commands and tools | `atmosphere-depth-bands.json`, `audio-racks/clap-fixture.cpp`, `audio-racks/pocket-repeater.json`, `audio-racks/porcelain-room.json`, `audio-racks/signalsmith-gesture-probe.cpp`, `audio-racks/signalsmith-probe.cpp`, `audio-racks/steel-bus.json`, `block-video-corruption.html.template`, `blue-shadow.cube`, `caused-marks.recipe.json`, `clap-instrument/glass-reed.cpp`, `coastal-environment-pack.json`, `coastal-pack-beacon.json`, `coastal-pack-jetty.json`, `complementary-field.json`, `copperwind-color-clusters.json`, `copperwind-looks.json`, `courier-shot-lighting.json`, `curve-family.json`, `desaturation-field.json`, `driven-look-forge-actions.json`, `driven-look-forge.json`, `editable-passage.edits.json`, `environment-review-camera.js`, `faceted-surfaces.json`, `frost-boundaries.html.template`, `grayscale-ramp.json`, `half-gain-legal.cube`, `harbor-compositing.json`, `headless-array-graph.json`, `headless-array-sweep.json`, `headless-graph-group.json`, `headless-graph.json`, `hue-brightness-field.json`, `lantern-dusk.json`, `learned-harbor-mark.json`, `lighting-ramp-palette.json`, `live-snapshot-cursor/dock.patch.json`, `live-snapshot-cursor/dock.queries.json`, `lock-signal-audition.json`, `look-assets.json`, `look-prefabs.json`, `market-color-clusters.json`, `material-conversion.html.template`, `millrace-aesthetics.json`, `music-production/gesture-palettes.json`, `music-production/relay-glass-timeline.json`, `music-production/relay-glass.json`, `music-production/samples/CREDITS.md`, `music-production/samples/hat-closed-alt.wav`, `music-production/samples/hat-closed.wav`, `music-production/samples/hat-open.wav`, `music-production/samples/metal-alt.wav`, `music-production/samples/metal-hit.wav`, `music-production/samples/metal-soft.wav`, `music-production/samples/snare-alt.wav`, `music-production/samples/snare-ghost.wav`, `music-production/samples/snare-main.wav`, `music-production/samples/snare-rim.wav`, `ornament-pattern.json`, `paint-mixture.json`, `painted-portals.html.template`, `palette-charts.json`, `palette-check-courier.json`, `palette-coverage-field.json`, `palette-dither-fit.json`, `palette-recipe.json`, `palette-space-plot.json`, `palette-weather-beacon.json`, `paper-relief.json`, `patch-tooling/ripple.wgsl`, `patch-tooling/show.cues.json`, `physical-materials.pack.json`, `physical-ports/pressure.graph.json`, `polar-colour-field.json`, `primary-ramp.json`, `procedural/authoring-example.js`, `procedural/gallery.js`, `readability-courier.json`, `reference-experiments/recipes/closed-tube.wave.json`, `reference-experiments/recipes/damped-oscillator.network.json`, `reference-experiments/recipes/damped-oscillator.run.json`, `reference-experiments/recipes/heat-slab.domain.json`, `reference-experiments/recipes/heat-slab.transport.json`, `reference-experiments/recipes/membrane.bake.json`, `reference-experiments/recipes/membrane.obj`, `reference-experiments/recipes/open-tube.wave.json`, `reference-experiments/recipes/suite.json`, `reference-experiments/recipes/tube.network.json`, `relay-look-pack.json`, `rule-board.html.template`, `sector-raycaster.html.template`, `shared-sky-profiles.json`, `shot-correction.html.template`, `signal-courier-approval.json`, `simulation-block-independence/review.json`, `simulation-block-independence/vent.model.json`, `simulation-blocks/resonator.model.json`, `simulation-branched-domains/bench.domain.json`, `simulation-discretization/channel.plan.json`, `simulation-execution-plan/drive.csv`, `simulation-fast-checkpoints/bench.take.json`, `simulation-fast-checkpoints/voice.model.json`, `simulation-forecast.html.template`, `simulation-integrators/bounce.plan.json`, `simulation-kernels/spring.model.json`, `simulation-mass-properties/arm.obj`, `simulation-mass-properties/balance.pack.json`, `simulation-mass-properties/balance.plan.json`, `simulation-model-changes/chamber.model.json`, `simulation-model-changes/fork.model.json`, `simulation-model-changes/tube.changes.json`, `simulation-model-changes/tube.model.json`, `simulation-models/sluice.graph.json`, `simulation-models/sluice.json`, `simulation-models/sluice.take.json`, `simulation-modules/reservoir.json`, `simulation-modules/valve.json`, `simulation-path-sections/channel.plan.json`, `simulation-prepared/vent.model.json`, `simulation-timed-events/note.model.json`, `spatial-bed-edit.json`, `spatial-wind-transect.json`, `spatial-yard-queries.json`, `spectrum-ramp.json`, `spillway-phase.html.template`, `sprite-scanline-budget.html.template`, `staged-fracture.html.template`, `starter-recipes/README.md`, `starter-recipes/audio-driven-sign/beat.wav`, `starter-recipes/audio-driven-sign/graph.json`, `starter-recipes/audio-driven-sign/take.json`, `starter-recipes/layered-vista/graph.json`, `starter-recipes/layered-vista/take.json`, `starter-recipes/looping-spell/graph.json`, `starter-recipes/looping-spell/take.json`, `starter-recipes/relightable-sprite/graph.json`, `starter-recipes/relightable-sprite/right-light.json`, `starter-recipes/relightable-sprite/take.json`, `starter-recipes/weathered-tiles/graph.json`, `starter-recipes/weathered-tiles/stone.group.json`, `starter-recipes/weathered-tiles/take.json`, `story-documents/beacon-casting.query.json`, `story-documents/beacon-clearance.query.json`, `story-documents/beacon-dispatch.actions.json`, `story-documents/beacon-dispatch.json`, `story-documents/beacon-shift.actions.json`, `story-documents/bench-inspection.imported.events.json`, `story-documents/bench-inspection.json`, `story-documents/breakwater-draft.json`, `story-documents/breakwater-survey.json`, `story-documents/breakwater-watch.fork-compare.json`, `story-documents/breakwater-watch.intervene.actions.json`, `story-documents/breakwater-watch.json`, `story-documents/breakwater-watch.pause.actions.json`, `story-documents/bridge-credit.json`, `story-documents/bridge-credit.payment.actions.json`, `story-documents/burned-mill.json`, `story-documents/canal-camp-permanent.actions.json`, `story-documents/canal-camp-withdraw.actions.json`, `story-documents/canal-camp.json`, `story-documents/canal-caravan.json`, `story-documents/canal-inspection.json`, `story-documents/canal-kit.asset-pack.json`, `story-documents/canal-support.json`, `story-documents/channel-beliefs.evidence.actions.json`, `story-documents/channel-beliefs.json`, `story-documents/dispatch-rehearsal.json`, `story-documents/dispatch-rehearsal.stocked.condition.json`, `story-documents/dock-dispatch.actions.json`, `story-documents/dock-dispatch.template.json`, `story-documents/glass-coast.json`, `story-documents/harbor-catalog.welcome.actions.json`, `story-documents/harbor-encounters.json`, `story-documents/harbor-pressures.json`, `story-documents/harbor-recovery.json`, `story-documents/harbor-recovery.overlap.actions.json`, `story-documents/harbor-rotation.json`, `story-documents/harbor-watch-at-cutoff.actions.json`, `story-documents/harbor-watch-on-time.actions.json`, `story-documents/harbor-watch.json`, `story-documents/highwater-beacon-breach.actions.json`, `story-documents/highwater-beacon-ridge.actions.json`, `story-documents/highwater-beacon.json`, `story-documents/inspect.graph.json`, `story-documents/landing-selection.json`, `story-documents/lantern-ferry.json`, `story-documents/lantern-ferry.seed-matrix.json`, `story-documents/lantern-pass-ford.actions.json`, `story-documents/lantern-pass-ridge.actions.json`, `story-documents/lantern-pass.json`, `story-documents/live-passage.actions.json`, `story-documents/live-passage.json`, `story-documents/lock-knowledge.json`, `story-documents/lock-knowledge.relay.actions.json`, `story-documents/low-bank-sluice.commitment.actions.json`, `story-documents/low-bank-sluice.hint.actions.json`, `story-documents/low-bank-sluice.json`, `story-documents/low-bank.fork-compare.json`, `story-documents/low-bank.json`, `story-documents/low-bank.late-salvage.actions.json`, `story-documents/low-bank.salvaged.actions.json`, `story-documents/observatory.json`, `story-documents/pier-facts.full.actions.json`, `story-documents/pier-facts.json`, `story-documents/pier-facts.partial.actions.json`, `story-documents/pressure-shifts.json`, `story-documents/quay-candidates.actions.json`, `story-documents/quay-candidates.berth.actions.json`, `story-documents/quay-followups.json`, `story-documents/quay-opportunities.json`, `story-documents/quay-relay.actions.json`, `story-documents/quay-relay.fork-compare.json`, `story-documents/quay-relay.json`, `story-documents/relief-charter.actions.json`, `story-documents/relief-charter.json`, `story-documents/relief-crossing.json`, `story-documents/ridge-ford.json`, `story-documents/ridge-ford.mark.actions.json`, `story-documents/ridge-ford.reinforce.actions.json`, `story-documents/river-callbacks.broken.actions.json`, `story-documents/river-callbacks.casting.json`, `story-documents/river-callbacks.honored.actions.json`, `story-documents/river-callbacks.json`, `story-documents/river-memories.json`, `story-documents/river-memories.rescue.actions.json`, `story-documents/signal-contract.actions.json`, `story-documents/signal-contract.json`, `story-documents/signal-vault-lower.actions.json`, `story-documents/signal-vault-upper.actions.json`, `story-documents/signal-vault.json`, `story-documents/sluice-relief.actions.json`, `story-documents/sluice-relief.json`, `story-documents/sluice-relief.seed-matrix.json`, `story-documents/supply-dispatch.actions.json`, `story-documents/supply-dispatch.template.json`, `story-documents/survey-seal.json`, `story-documents/survey-seal.recovery.actions.json`, `story-documents/tide-calendar.early-signal.actions.json`, `story-documents/tide-calendar.json`, `story-documents/tide-calendar.late-signal.actions.json`, `story-documents/tide-calendar.missed-bell.actions.json`, `story-documents/winter-crossing.json`, `thread-studies.json`, `tideline-looks.json`, `tile-attributes.html.template`, `train-neural-cellular.py`, `transitions/column-melt.html.template`, `visual-sweep-attractor.plan.json`, `voxel-surface.json`, `world-access/harbor.access.json`, `world-access/harbor.queries.json`, `world-graph-ports/dock.graph.json` |
+| Scenes and pages | **Bakes:** `cloth.js` (1,413), `sculpt.js` (4,027). **Solids only:** `breakable-parts.json` (24,342; loses breakable parts), `color-runoff.js` (10,759; loses look), `copperwind-crossing.json` (81,122; loses look), `palette-remap.json` (21,028; loses look), `signal-observatory.json` (35,566; loses look, timeline), `stipple.json` (12,390; loses look). **No:** `particles.js` (live motion), `puppet.js` (bones), `scene.json` (particles), `splat-effects.js` (live motion). **Not a scene:** `live-show/signals.mjs` (command script), `pixel-stamp-studies.js` (not a scene). **Page:** `live-show/demo.mjs`, `live-show/index.html`, `live-show/sample-capture-demo.mjs`, `live-show/sample-capture.html`, `live-show/style.css`, `painted-shadow-bands-workshop.mjs`, `procedural/gallery.html`, `transitions/gallery.css`, `transitions/gallery.mjs`, `transitions/scenes.mjs` |
+| World runs (input to the world commands) | `physical-ports/pump.world.json`, `reference-experiments/recipes/tank-drain.world.json`, `reference-experiments/recipes/two-body-impact.world.json`, `simulation-blocks/bench.world.json`, `simulation-branched-domains/bench.world.json`, `simulation-execution-plan/bench.world.json`, `simulation-fast-checkpoints/bench.world.json`, `simulation-models/sluice.world.json`, `simulation-modules/bench.world.json`, `simulation-moving-boundaries/bench.world.json`, `simulation-rate-crossings/bench.world.json`, `simulation-timed-events/bench.world.json`, `simulation-transfer-coupling/reed.world.json`, `story-documents/beacon-casting.world.json`, `story-documents/bench-inspection.world.json`, `story-documents/breakwater-survey.world.json`, `story-documents/breakwater-watch.world.json`, `story-documents/bridge-credit.world.json`, `story-documents/burned-mill.world.json`, `story-documents/canal-camp.world.json`, `story-documents/canal-caravan.world.json`, `story-documents/canal-inspection.world.json`, `story-documents/channel-beliefs.world.json`, `story-documents/dispatch-rehearsal.world.json`, `story-documents/dock-dispatch.world.json`, `story-documents/glass-coast.world.json`, `story-documents/harbor-catalog.world.json`, `story-documents/harbor-recovery.world.json`, `story-documents/harbor-rotation.world.json`, `story-documents/harbor-watch.world.json`, `story-documents/highwater-beacon.world.json`, `story-documents/landing-selection.world.json`, `story-documents/lantern-ferry.world.json`, `story-documents/lantern-pass.world.json`, `story-documents/live-passage.world.json`, `story-documents/lock-knowledge.world.json`, `story-documents/low-bank-sluice.world.json`, `story-documents/low-bank.world.json`, `story-documents/observatory.world.json`, `story-documents/pier-facts.world.json`, `story-documents/pressure-shifts.world.json`, `story-documents/quay-candidates.world.json`, `story-documents/quay-relay.world.json`, `story-documents/relief-charter-quay.world.json`, `story-documents/relief-charter-ridge.world.json`, `story-documents/relief-crossing.world.json`, `story-documents/ridge-ford.world.json`, `story-documents/river-callbacks.world.json`, `story-documents/river-memories.world.json`, `story-documents/signal-contract.world.json`, `story-documents/signal-vault.world.json`, `story-documents/sluice-relief.world.json`, `story-documents/supply-dispatch.world.json`, `story-documents/survey-seal.world.json`, `story-documents/tide-calendar.world.json`, `story-documents/winter-crossing.world.json`, `world-access/harbor.world.json`, `world-acoustic-hatch.json`, `world-adaptive-music.json`, `world-agent-orders.json`, `world-agent-roster.json`, `world-aggregate-estuary.json`, `world-causal-mill.json`, `world-cellar-flood.json`, `world-conditional-weather.json`, `world-construction-bridge.json`, `world-contact-effects.json`, `world-continuous-colliders.json`, `world-crossing.json`, `world-crowd-bridge.json`, `world-deformable-yard.commands.json`, `world-deformable-yard.json`, `world-estuary-households.json`, `world-expedition-formation.json`, `world-flow-ford.json`, `world-ford-shift.json`, `world-graph-ports/dock.world.json`, `world-harvest-logistics.json`, `world-hydraulic-yard.commands.json`, `world-hydraulic-yard.json`, `world-influence-yard.json`, `world-interaction-yard.json`, `world-lightwell-workshop.json`, `world-live-volumes.json`, `world-lookout-memory.json`, `world-material-fatigue.commands.json`, `world-material-fatigue.json`, `world-multi-rate.json`, `world-persistent-valley.json`, `world-physical-materials.json`, `world-physical-work.json`, `world-pocket-moon.json`, `world-prefab-upgrade.migration.json`, `world-puzzle-gate.actions.json`, `world-puzzle-gate.json`, `world-region-revisions.json`, `world-resident-shelter.json`, `world-rotating-dock.json`, `world-route-queue.json`, `world-routed-workshop.commands.json`, `world-routed-workshop.json`, `world-sediment-ford.json`, `world-sediment-gate.json`, `world-shelter-reservations.json`, `world-spatial-fields.json`, `world-spatial-yard.json`, `world-storm-canopy.json`, `world-surface-state.json`, `world-thawing-ford.json`, `world-tiled-ford.json`, `world-transfers.json`, `world-ventilated-shelter.json`, `world-watershed.json`, `world-windmill-workshop.json` |
 
 Each example's first lines say what it shows; `ink-studio catalog <words>` searches every feature the toolkit has and points at its
 source.

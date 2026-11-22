@@ -83,7 +83,7 @@ In the test scene this printed, for example, `"island": 7918, "sign": 7829, "bac
 backdrop was half the scene, and eleven small capitals at a fine `res` cost as much as the ground.
 
 Solids become splats only at `S.bake()`, so `B.count()` taken before and after a solid's line reads no change: label solids with
-`objectId`, and use `B.count()` marks for hand-placed splats only (checked against `983d91f`).
+`objectId`, and use `B.count()` marks for hand-placed splats only (checked against `983d91f`, and again at `e80d985`).
 
 What the baker's and `stats`' counts mean: the bake's "N splats (M moving by their kind)" counts the splats that carry a kind of
 motion, the number `stats` calls "shader-animated"; `stats`' "animation N splats in the moving span" counts every splat from the
@@ -119,7 +119,8 @@ Checked, in a scene of radius 4 at `dist: 15`: the bands, peaks, sun and water d
 
 A full ring of sky costs splats: this one was 21,236. Coarser steps, or only the half the camera sees most, cost less.
 
-Limits, from the kit and the camera (checked against `983d91f` on a throne-hall scene and a mansion-grounds scene):
+Limits, from the kit and the camera (checked against `983d91f` on a throne-hall scene and a mansion-grounds scene; the first again
+at `e80d985`):
 
 - **Nothing below y = −30.** The bake stops on any splat lower ("a hidden splat": the toolkit parks unused splats there; one disc
   at y −31 stopped it). A sky dome of radius 74 reaching 0.4 rad below level (y −28.8) baked.
