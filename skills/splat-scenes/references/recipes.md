@@ -97,30 +97,38 @@ drawn far to near, and fog reaches them fully unless they are fixed light (`em`)
 painted backdrop: sky bands, peaks, a sun, far water.
 
 ```js
+// FOOT: below the lowest eye (the limits below). Here the camera's target is at y 1 and dist is 15, so the lowest eye is
+// 1 - 15 × sin 86° = -13.96, and the foot goes at -16.
+const FOOT = -16;
 for (let a = 0; a < 2 * Math.PI; a += 0.02) {
   for (let e = 0; e < 0.7; e += 0.04) {                       // sky: bands by elevation on a circle of radius 60
-    const y = -2 + 60 * Math.tan(e), c = SKY_LOW + Math.min(3, Math.floor(e / 0.18));
+    const y = FOOT + 60 * Math.tan(e), c = SKY_LOW + Math.min(3, Math.floor(e / 0.18));
     B.stick(60 * Math.sin(a), y, 60 * Math.cos(a), [Math.cos(a), 0, -Math.sin(a)], 1.4, 1.4, B.P[c], 3, { em: 1 });
   }
   const h = 6 + 5 * B.n3(Math.cos(a) * 3, Math.sin(a) * 3, 1);  // peaks: a ring of discs at radius 45
-  for (let y = -2; y < h; y += 0.9)
+  for (let y = FOOT; y < h; y += 0.9)
     B.disc(45 * Math.sin(a), y, 45 * Math.cos(a), [-Math.sin(a), 0, -Math.cos(a)], 0.9, 0.2, B.P[y > h - 1.5 ? SNOW : ROCK], 3, { em: 1 });
   for (let r = 0.6; r < 44; r += 1.2)                         // far water, reaching right under the scene
-    B.disc(r * Math.sin(a), -2, r * Math.cos(a), B.UP, 0.7, 0.1, B.P[WATER], 3, { em: 1, nd: 1 });
+    B.disc(r * Math.sin(a), FOOT, r * Math.cos(a), B.UP, 0.7, 0.1, B.P[WATER], 3, { em: 1, nd: 1 });
 }
 B.disc(0, 14, -58, [0, 0, 1], 3, 0.3, B.P[SUN], 3, { em: 1 });
 ```
 
-Checked, in a scene of radius 4 at `dist: 15`: the bands, peaks, sun and water draw with no lines between them. Two things learned:
+Checked, round a scene of radius 4 (a ground disc, a box and a ball) with its camera's target at y 1 and `dist: 15`: the bands,
+peaks, sun and water draw with no lines between them; at the opening view the backdrop fills every pixel round the scene. From
+straight below (the player's 86° tilt), nothing of the backdrop is in the way: the scene's own ground shows from underneath, against
+the page's background. The same backdrop with its foot at y −2 instead, above that eye, covered the whole picture with water from
+below. Two more things learned:
 
 - Far ground that stops short of the scene leaves the background showing under it; bring it right in.
 - Where far ground passes inside the radius (under and in front of the scene), its rings drew dark lines between them; `nd: 1` (no
   depth: it hides nothing and draws no outline) removed them.
 
-A full ring of sky costs splats: this one was 21,236. Coarser steps, or only the half the camera sees most, cost less.
+A full ring of sky costs splats: this one was 26,101 (21,172 with its foot at −2; the difference is the peaks' discs below that).
+Coarser steps, or only the half the camera sees most, cost less.
 
 Limits, from the kit and the camera (checked against `983d91f` on a throne-hall scene and a mansion-grounds scene; the first again
-at `e80d985`):
+at `e80d985`; the lowest eye again at `e8cef0c` with the example above):
 
 - **Nothing below y = −30.** The bake stops on any splat lower ("a hidden splat": the toolkit parks unused splats there; one disc
   at y −31 stopped it). A sky dome of radius 74 reaching 0.4 rad below level (y −28.8) baked.
@@ -129,7 +137,8 @@ at `e80d985`):
   lower than that; the sky above still shows when a visitor tilts the view up from below.
 - **Far ground must lie below the lowest eye.** The player tilts to 86° either way, so the eye comes as low as about
   target_y − dist × sin 86° (−13.8 for target y 2.2 at `dist: 16`). Flat far ground above that covers the scene from below: a cloud
-  sea at y −9 under a scene whose lowest eye is −13.5 hid it at full tilt; mist at −16 under the −13.8 eye did not.
+  sea at y −9 under a scene whose lowest eye is −13.5 hid it at full tilt; mist at −16 under the −13.8 eye did not. With
+  everything below the lowest eye, a view from straight below sees the scene's underside against the page's background.
 - **Rows of hand-placed splats scallop unless each splat is long.** Lay sticks along the row with a half-length longer than the
   spacing between them (the sky above: half-length 1.4 every 1.2 units round); round discs in a row show a wavy edge.
 

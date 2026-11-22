@@ -26,19 +26,48 @@ The last line gives the most any view differs, as a percentage of its art pixels
   run 2. A large scene with a painted backdrop or thin water seen edge-on reads higher. Three trial scenes of 260,000 to 390,000
   splats gave 0.115% (a throne-hall scene), 0.346% (a lighthouse scene) and 0.14% to 0.53% (a mansion-grounds scene): the
   differences were lone pixels, scattered mostly over the far sky, the sea's glitter and colour edges, with no run or patch on the
-  subject (the lighthouse scene's front view: 495 differing, 356 of them lone).
-- **Lone pixels or a fault.** Read each view's numbers. Most of the differing pixels lone and the longest run 1 or 2 is a splat
-  tipped between two near shades here and there: nothing to fix. Few of them lone, a long run, or one view far above the others
-  means the file and the scene disagree there, and a row line well above the others names the field. For scale, the same scenes
-  drawn at the wrong moment, which is what a disagreement looks like: the trial scene 984 differing, 272 lone, longest run 5, all on
-  its swaying grass; `cloth.js` 913 of 21,600, none lone, a run of 29. To see where they fall: `still.png` (from `kit/stills.cjs`)
-  is the baked file at the opening view and the start of the loop, and the reference picture named for the opening view at time 0
-  (yaw and pitch in degrees, such as `my-scene_yaw28.6_pitch9.2_t0.00.png`) is the live scene at the same view and size.
+  subject (the lighthouse scene's front view: 495 differing, 356 of them lone). A trial scene of 213,405 splats with a painted
+  backdrop, thin water, rig parts and a cloth gave at most 622 of 153,600 (0.405%), 71% to 96% of them lone.
+- **The difference picture.** Beside each of the toolkit's pictures the proof writes `<the same name>_differ.png`, blown up as a
+  stage shows it: the toolkit's picture faded to a dark grey, with every art pixel that differs in magenta. Open the view with the
+  most differing pixels first. Magenta specks scattered one by one, even thick over fine repeated detail, and short lines along
+  the edge between two flat colours, are the harmless kind; a solid magenta clump or a cluster of lines on the subject is where
+  the file and the scene disagree.
+- **Lone pixels or a fault.** Read in this order. Each step was checked on a trial scene of 213,405 splats (480 by 320 art pixels,
+  153,600 a view) by changing one thing in scratch copies of its scene file and proving each copy against the file baked before
+  the change. The lone share is the lone count over the differing count, per view; a clump is differing pixels touching up, down
+  or sideways in the difference picture.
+  1. **The row lines.** On a file baked from this scene, every moment's line gives 0 differing densities, colours, kinds and
+     motion numbers, positions within about 1e-3 world units, and a shape figure: the most any splat's covariance differs, as a
+     share of its size. Without a cloth it is the bake's `whole shape` (about 0.1%, up to 0.3% with flat splats); with one, 1.16%
+     to 1.35% (here 1.35%), because each dab's facing is stored in two bytes a frame, within about 0.94° (references/format.md,
+     7). Differing colours or kinds, a position error of whole units, or `NaN`, mean the file is not this scene's: bake again. A
+     crate moved 0.02 units gave `rows within 1.42e+2 world units` and 16,269 differing colours, while its pixels (at most 643
+     differing a view, 66% to 80% lone, longest runs up to 8, the biggest clump 22) looked like a harmless run's. The rows catch a
+     changed solid; the pixels may not.
+  2. **Harmless runs** lie on flat colour, one row deep: along the edge between two bands of the far backdrop, or a cloud's edge.
+     On the trial scene's own file: 71% to 96% lone, specks over the whole picture and thickest on fine repeated detail (a grid of
+     panels), longest runs up to 8; its runs of 4 or more and its biggest clump (16) all lay on the backdrop. Length alone does
+     not decide: runs of 7 and 8 were harmless there.
+  3. **A fault** lies on the subject and clumps. A tank moved 0.04 units gave 27% to 50% lone in the five views that see it (72%
+     to 75% in the one that does not), a longest run of 14 in the view from above (2 for the scene's own file), and solid clumps
+     of 35 to 100 pixels on the tank. A clump of dozens of pixels on the subject is a fault; the difference picture shows where.
+  4. **A finish that differs** (contact shade, dither, fog or outline changed since the bake) leaves the rows as they were, since
+     they hold no finish. The two tried raised the count in every view at about the same lone share, with no bigger clump:
+     contact shade's range 0.50 to 0.52 gave at most 1,018 differing (0.663%), 77% to 95% lone; dither 0.30 to 0.32 at most 1,478
+     (0.962%), 83% to 98% lone, against 622 for the scene's own file. A count well above the last proof's with nothing new on the
+     subject: bake again and prove; it drops back when the file was stale.
+
+  For scale, scenes drawn at the wrong moment: a trial scene of 32,806 splats 984 differing, 272 lone, longest run 5, all on its
+  swaying grass; `cloth.js` 913 of 21,600, none lone, a run of 29. `still.png` (from `kit/stills.cjs`) is the baked file at the
+  opening view and the start of the loop, and the reference picture named for the opening view at time 0 (yaw and pitch in degrees,
+  such as `my-scene_yaw28.6_pitch9.2_t0.00.png`) is the live scene at the same view and size.
 - **The live scene is walked frame by frame** to each moment, as the bake walked it: a cloth remembers every step, so a different walk
   would leave it a hair elsewhere.
 - **The reference.** It keeps ink-studio's pictures of the live scene: each at its art-pixel size (`<id>_yaw.._pitch.._t...png`) and
   blown up as a stage shows it (`..._x<px>.png`), with `reference.json` giving the canvas, the field of view, and each picture's yaw,
-  pitch, distance, target, art pixel, grid and loop time. That folder is what a painter is checked against.
+  pitch, distance, target, art pixel, grid, loop time and difference picture (`..._differ.png`). That folder is what a painter is
+  checked against.
 
 ## 2. A painter against the toolkit (the match)
 
@@ -103,20 +132,30 @@ It starts the server on that port, opens the page in headless Chromium with WebG
 1440 by 960 stage, waits for the ready flag, checks that two pictures of the stage a second apart differ, saves a screenshot of the
 page, prints the page's console errors and warnings, stops the server and confirms the port is free. It exits 0 only when the flag
 is `"true"`, the pictures differ, nothing was printed to the console and the port is free. On ink-studio's `sculpt.js` and
-`cloth.js`, and a trial scene of 32,806 splats: ready within 0.3 s, a 1438 by 958 canvas, playing, no errors.
+`cloth.js`, and a trial scene of 32,806 splats: ready within 0.3 s, a 1438 by 958 canvas, playing, no errors; a trial scene of
+213,405 splats with a cloth the same, ready in 0.9 s.
 
-**Playwright for it.** It is not one of the player's packages, so the pinned install stays as it is; add it to a copy of the player
-you can write to (Setup, 2), then its Chromium:
+**Playwright for it.** It is not one of the player's packages. Add it to the player folder you installed the packages into (SKILL.md,
+Setup, 2: in place when this folder is yours to write in; your copy when it is shared or read-only), then its Chromium:
 
 ```sh
-npm install --prefix /abs/path/player --no-save playwright@1.64.1
-/abs/path/player/node_modules/.bin/playwright install chromium
+npm install --prefix /abs/path/splat-scenes/player --no-save playwright@1.64.1
+/abs/path/splat-scenes/player/node_modules/.bin/playwright install chromium
 ```
 
-Playwright 1.64 needs Node 20 or later; any version with Chromium's WebGPU will do. The packages are about 18 MB; the browser is a
-download into Playwright's own cache, about 570 MB on disk once unpacked on a Mac (Chrome for Testing and its headless shell),
-and nothing when that version's Chromium is already there. Run `check.mjs` from that copy (`node /abs/path/player/check.mjs ...`):
-it finds Playwright in the folder it sits in.
+With a copy, put its path in place of `/abs/path/splat-scenes/player`. `--no-save` leaves `package.json` and `package-lock.json` as
+they were, so the pinned install stays as it is. Playwright 1.64 needs Node 20 or later; any version with Chromium's WebGPU will do.
+The packages are about 18 MB. The browser goes into Playwright's own cache (`~/Library/Caches/ms-playwright` on a Mac): a download
+of about 300 MB on a Mac (Chrome for Testing 195 MB, its headless shell 104 MB, FFmpeg 1.4 MB), about 570 MB on disk once unpacked,
+and nothing when that version's Chromium is already there. To see what it would fetch first:
+
+```sh
+/abs/path/splat-scenes/player/node_modules/.bin/playwright install --dry-run chromium
+```
+
+It prints each browser's install folder and download address, downloads nothing and exits 0; when those folders already exist, the
+browser is there. Run `check.mjs` from the folder Playwright went into (`node /abs/path/splat-scenes/player/check.mjs ...`): it finds
+Playwright in the folder it sits in.
 
 Check, with it or by hand:
 

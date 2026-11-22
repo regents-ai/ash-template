@@ -1,7 +1,8 @@
 /* Proves a baked file draws what the toolkit draws. It builds the live scene with the toolkit, reads the baked file back with
    decode.cjs, and has the toolkit's own renderer draw both from six views (four quarter turns, nearly straight above, nearly straight
    below) at three moments of the loop, then counts the art pixels that differ. The toolkit's pictures are kept as the reference a
-   painter is checked against, at their art-pixel size and blown up as a stage shows them, with reference.json beside them.
+   painter is checked against, at their art-pixel size and blown up as a stage shows them, with reference.json beside them. Beside each
+   view is a third picture, _differ.png: the toolkit's picture faded to a dark grey with every art pixel that differs in magenta.
 
      env INK_STUDIO=<ink-studio folder> node kit/verify.cjs <scene file> <baked .bin> <reference folder> */
 const fs = require('node:fs');
@@ -59,7 +60,16 @@ const differing = (a, b) => {
       run = Math.max(run, along);
       if (d[i] && !(x && d[i - 1]) && !(x < w - 1 && d[i + 1]) && !(y && d[i - w]) && !(y < h - 1 && d[i + w])) lone++;
     }
-  return { n, lone, run };
+  return { n, lone, run, d };
+};
+
+// the toolkit's picture faded to a dark grey, with every differing art pixel in magenta, blown up as a stage shows it
+const marked = (a, d) => {
+  const rgb = new Uint8Array(a.w * a.h * 3);
+  for (let i = 0, p = 0; i < a.w * a.h; i++, p += 3)
+    if (d[i]) (rgb[p] = 255), (rgb[p + 2] = 255);
+    else rgb[p] = rgb[p + 1] = rgb[p + 2] = (0.299 * a.rgb[p] + 0.587 * a.rgb[p + 1] + 0.114 * a.rgb[p + 2]) / 3;
+  return kit.render.upscale({ w: a.w, h: a.h, rgb }, a.px);
 };
 
 const live = kit.build(sceneFile),
@@ -89,15 +99,18 @@ for (const fraction of MOMENTS) {
     const o = Object.assign({ yaw, pitch }, CANVAS),
       a = kit.render.render(live, Object.assign({ t: live.clock }, o)),
       b = kit.render.render(dec, Object.assign({ t: dec.clock }, o)),
-      { n: diff, lone, run } = differing(a, b),
+      { n: diff, lone, run, d } = differing(a, b),
       name = `${id}_yaw${deg(yaw)}_pitch${deg(pitch)}_t${tau.toFixed(2)}`,
-      big = kit.render.upscale(a, a.px);
+      big = kit.render.upscale(a, a.px),
+      differ = marked(a, d);
     worst = Math.max(worst, diff / (a.w * a.h));
     kit.png.write(path.join(out, name + '.png'), a.w, a.h, a.rgb);
     kit.png.write(path.join(out, `${name}_x${a.px}.png`), big.w, big.h, big.rgb);
+    kit.png.write(path.join(out, `${name}_differ.png`), differ.w, differ.h, differ.rgb);
     entry.pictures.push({
       native: name + '.png',
       upscaled: `${name}_x${a.px}.png`,
+      differ: `${name}_differ.png`,
       yaw,
       pitch,
       dist: cam.dist,

@@ -318,15 +318,22 @@ is 1 / detail world units at the scene's own distance, 0.071 at detail 14):
 | Centre | 16 bits within its run's box | about 5e-5 world units (0.0007 of an art pixel); a wide-spread run reaches about 1e-3 |
 | Size | 16-bit logarithm | under 0.003% |
 | Turn of the axes | three 10-bit parts | about 0.14 degrees |
-| Whole covariance | (both of the above) | about 0.2% (0.1% on average) |
+| Whole covariance | (both of the above) | about 0.1% for round splats; 0.31% for one 4.5 times longer than thick, which takes the turn's error harder (the bake's `whole shape`) |
 | Density, kind, flags, part | style table, 32-bit float | exact |
 | Colour | palette place | exact |
 | Speed, range, extra | whole cycles, 32-bit floats | exact |
 | Phase | 16 bits of a turn | under 5e-5 radians; under 1e-5 of a cycle |
 | Part matrices | 32-bit floats, every frame | exact |
 | Cloth centre | 16 bits within the cloth box | about 1.5e-5 world units |
-| Cloth facing | two bytes | under 1 degree (a dab's covariance within 1.5%) |
+| Cloth facing | two bytes | under 1 degree (about 0.94); a flat dab tilted that much moves its covariance by 1.16% to 1.35% (the proof's shape figure on a scene with a cloth) |
 | Cloth colour, disc size | palette place; header | exact |
+
+The two shape figures measure the same thing at different times: how far a splat's covariance is from the toolkit's, as a share of
+its size. The bake's `whole shape` compares every splat at rest with its stored sizes and turn, and a cloth's dabs at their first
+frame: `sculpt.js` 0.12%, `cloth.js` 0.19% (its dabs; its other splats 0.11%), a trial scene of 213,405 splats 0.31%. The proof's
+`of shape` compares the live scene with the decoded file at each of its three moments, so a cloth's dabs count with the facing
+stored for that frame: the same as the bake's for every other splat, and 1.16% (`cloth.js`) to 1.35% (that trial scene) for the
+dabs.
 
 The turn of the axes is most of what is left. Fifteen bits a part would take a turn 6 bytes instead of 4 and roughly halve the pixels
 that differ (section 8); 32-bit floats for every centre and covariance (38 bytes a splat) would remove the difference entirely. Neither
@@ -340,7 +347,8 @@ moments of the loop (5/16 and 11/16 of it besides the start). Its row check repo
 extra that differs (there should be none), and its last line gives the most art pixels that differ in any view.
 
 What it measured: ink-studio's `examples/sculpt.js` 0 or 1 art pixels of 21,600 a view; `examples/cloth.js` at most 0.023% and a scene
-with a turning part, a flame and motes at most 0.019%. On scenes of a few hundred thousand splats the same format measures 0.06% to 0.16%: a blob a hair
+with a turning part, a flame and motes at most 0.019%. On scenes of a few hundred thousand splats the same format measures 0.115% to 0.53%
+(references/proof.md, 1): a blob a hair
 bigger or turned a fraction of a degree tips a pixel whose blend sat right on the line between two palette colours. Most differing
 pixels have no differing neighbour, and most swap one shade for a near one.
 

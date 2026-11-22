@@ -56,6 +56,9 @@ What it does:
   its cloud ring printed 1.27 off and its cloth 0.004 units off; the lighthouse scene and the throne-hall scene came inside their
   ranges. A real jump stands far above the range, as `cloth.js` does at nearly twice its top; then read the bake's seams to find
   what does not come round.
+- **A seam inside the range is not proof of a closed loop** when the scene moves a lot from frame to frame. A flag that ended its
+  loop 0.34 units (over ten art pixels) from where it began gave 3,364 against 1,280 to 3,688; the bake's `cloth:` line is the one to
+  read (SKILL.md, The loop).
 
 ## 2. In a page
 
