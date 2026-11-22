@@ -6,16 +6,20 @@
 env INK_STUDIO=/path/to/ink-studio node kit/gif.cjs out/scene/scene.bin out/scene/scene.gif
 ```
 
-An 8-second loop makes **120 frames on an 864 by 576 stage** (15 a second; the size is a few pixels off when the art pixel does not
-divide it), and a finished scene makes **5 to 11 MB**. It prints the frame count, the size, the length of a loop, how long it took,
-and the seam (below). On ink-studio's `sculpt.js`: 120 frames of 865 x 580, 0.41 MB, made in 2 to 4 s.
+An 8-second loop makes **120 frames for an 864 by 576 stage** (15 a second), and a finished scene makes **5 to 11 MB**. The frames
+are the art grid blown up, so they come out 864 by 576 only when the art pixel divides both: the renderer picks the art pixel q for
+that stage, the grid is 864 / q by 576 / q each rounded up, and the frame is the grid times q, so up to q − 1 pixels over in each
+direction (`sculpt.js`, q 5: 865 by 580; a trial scene with q 4: 864 by 576). It prints the frame count, the size, the length of a
+loop, how long it took, and the seam (below). On ink-studio's `sculpt.js`: 120 frames of 865 x 580, 0.41 MB, made in 2 to 8 s.
 
 **How long it takes.** The toolkit's CPU renderer draws all 120 frames one after another, so the time grows with the splats, and more
 when splats are large on screen. Measured on a Mac with 8-second loops:
 
 | Scene | Splats | Made in | GIF |
 | --- | --- | --- | --- |
-| ink-studio's `sculpt.js` | 4,027 | 2 to 4 s | 0.41 MB |
+| ink-studio's `sculpt.js` | 4,027 | 2 to 8 s (the longer on a busy machine) | 0.41 MB |
+| ink-studio's `cloth.js` | 1,413 and 396 cloth dabs | 2.4 to 2.6 s | 0.37 MB |
+| A trial scene with stars and grass | 32,806 | 82 s (on a busy machine) | 3.08 MB |
 | Test scene, small splats | 50,023 | 58 s | 2.20 MB |
 | Test scene, small splats | 100,000 | 100 s | 8.51 MB |
 | Test scene, small splats | 200,000 | 204 s | 8.13 MB |
@@ -33,8 +37,8 @@ What it does:
 
 - **One loop, once round.** The camera goes once round at the resting tilt (yaw = camYaw - 2π f / frames, the file's pitch) while
   every motion plays its loop once, so the last frame runs on into the first. Every second stored frame is drawn: 15 a second.
-- **The toolkit draws it.** ink-studio's own renderer draws the decoded file on an 864 by 576 stage, each art pixel blown up to a
-  square of screen pixels (so the size is the grid times the art pixel, a few pixels off 864 x 576).
+- **The toolkit draws it.** ink-studio's own renderer draws the decoded file for an 864 by 576 stage, each art pixel blown up to a
+  square of screen pixels (so the size is the grid times the art pixel: at most an art pixel less one over 864 by 576).
 - **Palette exact.** Every pixel the renderer draws is one palette colour, so the GIF's single colour table is the palette as it is,
   plus one entry for "unchanged since the frame before" (see-through, each frame left in place under the next: dispose 1). Nothing is
   matched to a colour again and nothing is dithered by the encoder; a pixel off the palette stops it with an error naming the frame
@@ -71,8 +75,8 @@ picture as the toolkit within a few art pixels (references/painter.md). The play
   `Uint8Array` and a `Blob`); gifenc (pin an exact version, 1.0.3 was used before)
   works too: it writes no frame offsets, so mark unchanged pixels with the see-through index and dispose 1, and set
   `colorDepth` = ceil(log2(palette + 1)). Blow each art pixel up to a square with `fill` per pixel and `copyWithin` per row.
-- **Sizes to expect.** A scene of a few hundred thousand splats, 160 frames at 5 hundredths (8 s, 20 a second), 864 x 576: about 8 to
-  9 MB, 4 to 5 s to make in headless Chromium on a Mac. ink-studio's examples come out well under 1 MB.
+- **Sizes to expect.** A scene of a few hundred thousand splats, 160 frames at 5 hundredths (8 s, 20 a second), for an 864 by 576
+  stage: about 8 to 9 MB, 4 to 5 s to make in headless Chromium on a Mac. ink-studio's examples come out well under 1 MB.
 - **The button.** Offer it only once the scene has drawn (so never without WebGPU), in a place held for it so nothing moves when it
   appears. Keep its width fixed while it works: stack the idle label and a "Making 40%" label in one grid cell, with tabular figures.
   Mark it `aria-busy` and `aria-disabled` while it works, announce progress politely every quarter, and hold room beside it for a

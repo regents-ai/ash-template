@@ -371,7 +371,7 @@ function bake(sceneFile, L, file) {
     mb = n => (n / 1e6).toFixed(2) + ' MB',
     deg = r => ((r * 180) / Math.PI).toFixed(3) + ' degrees';
   console.log(
-    `${id}: ${N} splats (${Mv} moving by their kind), ${S.length} styles, ${Q.length} motions, ${P} parts, ${frames} frames, ` +
+    `${id}: ${N} splats (${Mv} moving by their kind), ${world.pal.length} colours, ${S.length} styles, ${Q.length} motions, ${P} parts, ${frames} frames, ` +
       `${C} cloth dabs; built in ${(world.buildMs / 1000).toFixed(1)} s, baked in ${((Date.now() - t0) / 1000).toFixed(1)} s`
   );
   console.log(`  ${file}: ${mb(buf.length)} raw, ${mb(zlib.gzipSync(buf, { level: 9 }).length)} gzipped`);

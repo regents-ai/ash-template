@@ -96,12 +96,29 @@ sun and a fill: references/recipes.md, 7.
 
 The core sculptor has `ball`, `box`, `lathe`, `torus`, `tube`, `rock`, `ground` and vegetation helpers; the extended one adds joins,
 folds, warps, shells, extrusion, revolution, strokes and fills, text and grid operations (README, Geometry and materials; Editable 3D
-drawing). `S.box` takes half-extents. Join kinds: `union`, `cut`, `common`, `round`, `chamfer`, `stairs`, `columns`, `pipe`,
-`engrave`, `groove`, `tongue`. Each helper's inputs are in the comment just above it in `src/sculpt.js` (search for `S.tree =`):
-read that before using one. `S.tree(x, y, z, { h, r, lean, nb, spread, cr, bark, leaf, leaves, roots, res })` and
-`S.crown(clusters, mat, count, { scale })` (clusters `{ p, r: [rx, ry, rz] }`) size their leaves for a full tree, up to half a unit
-at `scale` 1 (read from source), so a small tree or hedge comes out in large blobs: pass `scale` below 1 (a mansion-grounds scene's
-hedges: 0.55).
+drawing). Join kinds: `union`, `cut`, `common`, `round`, `chamfer`, `stairs`, `columns`, `pipe`, `engrave`, `groove`, `tongue`.
+Each helper's inputs are in the comment just above it in `src/sculpt.js` (search for `S.tree =`); the ones these notes use, read
+from the source at `e80d985` and each built and baked once with exactly the call shown (`stone` and `moss` ramps, `res` as given):
+
+| Solid | Inputs | Built once |
+| --- | --- | --- |
+| `S.ball(c, r, mat, o)` | c the centre; r a radius, or `[rx, ry, rz]` for an egg or a squashed ball | `S.ball([0, 1, 0], 0.6, stone, { res: 0.08 })`: 919 splats; with `[0.9, 0.5, 0.6]`: 1,116 |
+| `S.box(c, h, mat, o)` | c the centre, h the half-sizes `[hx, hy, hz]`; `o.rd` rounds the edges to that radius | `S.box([0, 0.6, 0], [0.8, 0.6, 0.5], stone, { rd: 0.15, res: 0.08 })`: 1,486 |
+| `S.lathe(c, h, rf, mat, o)` | A turned solid: c the centre of its base, h its height, rf its radius: a number, `[bottom, top]`, or a function of 0 (bottom) to 1 (top) | `S.lathe([0, 0, 0], 1.6, [0.6, 0.2], stone, { res: 0.08 })`: 996; with 0.4: 962; with `t => 0.3 + 0.2 * Math.sin(t * Math.PI)`: 946 |
+| `S.torus(c, R, r, mat, o)` | A ring lying flat: R from the centre to the middle of the rim, r the rim's own radius; `ax` stands it up | `S.torus([0, 0.3, 0], 0.8, 0.2, stone, { res: 0.06 })`: 2,205, and the same standing with `ax: S.AZ` |
+| `S.tube(pts, r0, r1, mat, o)` | A limb or branch through a list of points, radius r0 at the first to r1 at the last; or r0 a function of 0 to 1 (r1 then unused) | `S.tube([[0, 0, 0], [0.3, 1, 0], [0, 2, 0.2]], 0.25, 0.1, stone, { res: 0.06 })`: 958 |
+| `S.ground(mat, o)` | Flat at `o.y`, or a height `o.h(x, z)`; only a ragged disc is drawn, radius `o.rad` (8 unless given) about `o.cx`, `o.cz`, squashed front to back by `o.zs` | `S.ground(moss, { y: 0, rad: 3, res: 0.12 })`: 1,660, and the same with an `h` |
+| `S.rock(c, r, mat, o)` | A ball with a bumped surface; a radius r is made `[1.15 r, 0.8 r, r]`, or give three | `S.rock([0, 0.4, 0], 0.6, stone, { res: 0.06 })`: 2,459 |
+| `S.tree(x, y, z, o)` | `{ h, r, lean, nb, spread, cr, bark, leaf, leaves, roots, res }`: trunk height and radius, lean `[x, z]`, limbs, their reach, leaf-cluster size, the two materials, leaf count, roots | `S.tree(0, 0, 0, { h: 3, bark: stone, leaf: moss, res: 0.06 })`: 7,735, 1,779 of them swaying leaves |
+| `S.crown(clusters, mat, count, o)` | Leaves filling clusters `{ p, r: [rx, ry, rz] }`; `o.scale` sizes the leaves | `S.crown([{ p: [0, 1.5, 0], r: [0.8, 0.6, 0.8] }], moss, 400, { scale: 0.6 })`: 400, all swaying |
+| `S.strokes(shape, c, depth, mat, o)` | Lettering: shape from `K.poly2.text(str, size)` (references/recipes.md, 4) | `S.strokes(K.poly2.text('AB', 0.6), [0, 1, 0], 0.08, stone, { res: 0.03 })`: 3,934 |
+| `S.stroke(mark, mat, o)` | README, Editable 3D drawing: `points`, `width`, `depth`, `pressure`, `taper` | `S.stroke({ points: [[-0.8, 0.5, 0], [0, 1.4, 0], [0.8, 0.5, 0]], width: 0.2, depth: 0.1, taper: [1, 0.3] }, stone)`: 295 |
+| `S.fill(mark, mat, o)` | The same section: `rings` (the outside, then holes) in a `frame` of `origin`, `u` and `v`; `depth` | `S.fill({ rings: [[[-0.6, 0], [0.6, 0], [0.6, 1.2], [-0.6, 1.2]]], frame: { origin: [0, 0.2, 0], u: [1, 0, 0], v: [0, 1, 0] }, depth: 0.1 }, stone)`: 530 |
+| `S.implicitForm(source, mat, o)` | Any field: source `{ sd(x, y, z), bounds: { min, max } }`, negative inside; `o.res`, `o.cell` (`docs/fractal-forms.md`) | A ball of radius 0.6 given as a field, `{ res: 0.06 }`: 3,246 |
+
+A tree's and a crown's leaves sway (kind 11), so a scene with them ends `build` with the kit's loop helper, or the bake refuses
+their speeds. `S.tree` and `S.crown` size their leaves for a full tree, up to half a unit at `scale` 1 (read from source), so a small
+tree or hedge comes out in large blobs: pass `scale` below 1 (a mansion-grounds scene's hedges: 0.55).
 
 **Options** (the last argument of a solid):
 
@@ -270,18 +287,26 @@ the player will show. Each command below starts as the first one does (`...` sta
 | Look | Command | Checked on a test scene of about 41,000 splats |
 | --- | --- | --- |
 | The opening view at stage size | `env INK_STUDIO=/abs/path/ink-studio node /abs/path/ink-studio/cli/ink-studio.js render scene.js --w 1440 --h 960 --out /abs/stage.png` | 1440 by 960 |
-| The same, one pixel an art pixel | `... render scene.js --w 1440 --h 960 --px1 --out /abs/native.png` | 480 by 320; the kit's `still.png` of the baked file differs in under 0.1% of pixels |
+| The same, one pixel an art pixel, at the kit's moment | `... render scene.js --w 1440 --h 960 --px1 --t 120 --out /abs/native.png` | 480 by 320; `--t 120` is 15 loops of 8 s (below) |
 | Another angle, another moment | `... render scene.js --w 1440 --h 960 --yaw 2.4 --pitch 0.5 --t 3 --out /abs/angle.png` | Radians and seconds |
 | All round | `... turn scene.js --n 4 --w 720 --h 480 --out /abs/turn.png` | Four views in one strip, 2880 by 480 |
-| Closer, about one spot | `... render scene.js --w 1440 --h 960 --zoom 3 --target x,y,z --out /abs/zoom.png` | A finer grid than the player's: it shows detail the player will not |
-| Counts and palette use | `... stats scene.js` | |
+| Closer, about one spot | `... render scene.js --w 1440 --h 960 --zoom 3 --target x,y,z --out /abs/zoom.png` | A finer grid than the player's: it shows detail the player will not. The picture is whole art pixels of the finer grid, so it can come out a few pixels over the size asked (1442 by 966 at `--zoom 3`) |
+| Counts and palette use | `... stats scene.js` | Its `picture` line is for its own 900 by 620 frame, not the stage |
 
+- **The kit's clock.** The bake walks the scene 15 loops before it stores a frame (so a cloth settles), and the kit's still, the
+  proof's pictures and the GIF are drawn at that clock: 120 s for the start of an 8 s loop, 120 plus the time into the loop for any
+  other moment. ink-studio's command line starts at 0, so pass `--t 120` (or 120 plus the moment) to see what the kit will show.
+  Rigid parts and whole cycles of a kind look the same either way; a sway's second motion and a cloth do not. Measured against the
+  kit's `still.png`: a trial scene (32,806 splats, swaying grass) differs in 55 of 86,400 art pixels at `--t 120`,
+  51 of them lone, as the proof's own opening view does, and in 984 at the default 0, in runs on the grass; ink-studio's `cloth.js`
+  in 4 of 21,600 at `--t 120` and 913 at 0, its cloth not yet settled; `sculpt.js` in none either way.
+- **The preview is for looking; the proof is the test.** `kit/verify.cjs` is what says the baked file draws what the scene draws.
 - **Zoomed crops at the player's grid**: crop the `--px1` picture and enlarge it by a whole number with nearest-neighbour scaling, in
   any image tool (with Pillow: `Image.open(p).crop(box).resize((w * 8, h * 8), Image.NEAREST)`). That is how letter, face and glass
   sizes in references/recipes.md were judged.
-- **Side by side with the kit**: the `--px1` picture and the kit's `still.png` (from `kit/stills.cjs`, after a bake) are the same
-  size; put them next to each other, or count the pixels that differ. ink-studio's own `compare <scene> <ref.png>` draws the scene
-  beside a reference, but at its own frame size, not the stage's, so it does not line up with the kit's still (checked).
+- **Side by side with the kit**: the `--px1 --t 120` picture and the kit's `still.png` (from `kit/stills.cjs`, after a bake) are the
+  same size; put them next to each other, or count the pixels that differ. ink-studio's own `compare <scene> <ref.png>` draws the
+  scene beside a reference, but at its own frame size, not the stage's, so it does not line up with the kit's still (checked).
 - Leave out `--colored`, `--fine`, `--clean`, `--tone`, `--follow` and the other look options when previewing a scene for the player:
   they change the picture in ways the baked file does not carry. `crisp`, `lint`, `values` and `ramps` measure pixel-art faults
   (isolated pixels, jaggies, banding, ramps that do not read) and are worth running on the plain render; `passes --channels

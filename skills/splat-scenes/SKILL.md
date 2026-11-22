@@ -16,6 +16,26 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
 
 ## Setup
 
+0. **This folder**, if you do not have it yet. Either way gives the same files, about 0.3 MB:
+
+   - **One script** (Node 18 or later; no git, no sign-in; 2 to 3 s):
+
+     ```sh
+     curl -sLO https://raw.githubusercontent.com/regents-ai/ash-template/main/skills/splat-scenes/get.mjs
+     node get.mjs /abs/path/splat-scenes
+     ```
+
+     It asks GitHub once for the repository's file list, keeps the files under `skills/splat-scenes/` (none of the sibling
+     `skills/splat-scenes-phoenix`), downloads each into the folder named and prints how many it wrote.
+   - **The repository archive**, unpacked to just this folder: an 83 MB download for those 0.3 MB.
+
+     ```sh
+     mkdir -p /abs/path/splat-scenes
+     curl -sL -o /abs/path/ash-template.tar.gz https://github.com/regents-ai/ash-template/archive/refs/heads/main.tar.gz
+     tar xzf /abs/path/ash-template.tar.gz -C /abs/path/splat-scenes --strip-components 3 '*/skills/splat-scenes/*'
+     ```
+
+     Tested with the Mac's own tar (bsdtar 3.5); the slash after `splat-scenes` keeps out the sibling folder.
 1. **ink-studio, in a folder you can write to.** The kit calls it from there and never copies it. Download the newest, read which
    commit it is, and unpack it:
 
@@ -26,14 +46,17 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
    tar xzf /abs/path/ink-studio.tar.gz -C /abs/path/ink-studio --strip-components 1
    ```
 
-   The third line prints the commit (`package.json` says 0.1.0 in every copy). The folder must be writable: the download carries no
-   `dist/`, and loading the toolkit writes `dist/standalone.js` (several MB) inside it on first use and after any change to its
-   sources. Check it with `node /abs/path/ink-studio/cli/ink-studio.js help`.
+   The third line prints the commit (`package.json` says 0.1.0 in every copy); without git,
+   `gzip -dc /abs/path/ink-studio.tar.gz | head -c 2048 | grep -a -o "comment=[0-9a-f]*"` prints it as `comment=<commit>`. The
+   folder must be writable: the download carries no `dist/`, and loading the toolkit writes `dist/standalone.js` (several MB) inside
+   it on first use and after any change to its sources. Check it with `node /abs/path/ink-studio/cli/ink-studio.js help`.
 
    The notes in `references/` were last checked against commit `983d91f` (22 Nov 2026). A newer copy may add features they do not
    name: bake one, and the baker says whether it travels.
 2. **The player's packages:** `npm install --prefix /abs/path/splat-scenes/player` (vgpu 0.6.0 and @vgpu/wgsl 0.6.0, pinned exactly).
-   npm may warn that two packages' install scripts did not run (vgpu's Node adapter); the browser player does not need them. When
+   It installs about 99 MB, 68 MB of it the `webgpu` package behind vgpu's Node adapter. npm warns that two packages' install
+   scripts did not run (that adapter and `webgpu`) and reports high-severity vulnerabilities in `@modelcontextprotocol/server`, which
+   vgpu's own command line uses to serve its docs; the browser player loads none of them. When
    this folder is shared or read-only (a link into a repository, say), copy the player out, `cp -R /abs/path/splat-scenes/player
    /abs/path/player`, then install into and serve from that copy (`--prefix /abs/path/player`, `node /abs/path/player/serve.mjs`).
 3. **A browser with WebGPU:** desktop Chrome or Edge; headless Chromium with `--enable-unsafe-webgpu` (and `--use-angle=metal` on a
@@ -63,21 +86,26 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
    the file carries; references/recipes.md has sizes, budgets, a far backdrop, lettering, neon, glass, interiors, and what to build
    instead of what the file cannot carry.
 3. **Look while you sculpt** at the stage's size: ink-studio's `render --w 1440 --h 960`, `turn` and `stats` draw the scene with the
-   same renderer the kit uses, `--px1` gives the picture the kit's still will be, and `--zoom`, `--target`, `--yaw`, `--pitch` and
-   `--t` give close looks at any angle and moment (Commands, below; references/ink-studio.md, 2.7). Leave its look options off: the
-   file does not carry them.
+   same renderer the kit uses, `--px1 --t 120` gives the picture the kit's still will be (for an 8 s loop: the kit draws 15 loops
+   in), and `--zoom`, `--target`, `--yaw`, `--pitch` and `--t` give close looks at any angle and moment (Commands, below;
+   references/ink-studio.md, 2.7). Leave its look options off: the file does not carry them. These are for looking; the proof
+   (step 6) is the test.
 4. **Make it loop** (The loop, below).
-5. **Bake** it. Read what the baker prints: splats, parts, frames, cloth dabs, the size raw and gzipped, how near every stored number
-   is, and how far each part and the cloth are from where they began a loop on. When it refuses, it names the cause
+5. **Bake** it. Read what the baker prints: on its first line splats, colours (at most 256; 255 for a GIF), styles, motions, parts,
+   frames and cloth dabs; then the size raw and gzipped, how near every stored number is, and how far each part and the cloth are
+   from where they began a loop on. When it refuses, it names the cause
    (references/format.md, 9): take that feature out or rebuild it from what the file carries.
-6. **Prove** the file draws what the scene draws (`verify.cjs`): expect 0 or 1 art pixels of 21,600 a view for a still scene and a
-   few hundredths of a percent with motion (ink-studio's `cloth.js`: 0.023%). A large scene with a painted backdrop or thin water
-   reads higher, up to about half a percent (three trial scenes: 0.115%, 0.346%, 0.14% to 0.53%), as lone pixels scattered
-   mostly over the far backdrop; references/proof.md, 1, says how to tell that from a fault. It keeps the toolkit's pictures as
-   the reference for any painter.
+6. **Prove** the file draws what the scene draws (`verify.cjs`). For each view it prints the art pixels that differ, how many of
+   them are lone and the longest run of them on a row. Expect 0 or 1 of 21,600 a view for a still scene and a few hundredths of a
+   percent with motion (ink-studio's `cloth.js`: 0.023%). A small moving scene with stars, dust or swaying grass reads about 0.1%
+   (a trial scene of 32,806 splats: at most 79 of 86,400, 0.091%; its opening view 55, 51 of them lone, longest run 2). A large
+   scene with a painted backdrop or thin water reads higher, up to about half a percent (three trial scenes: 0.115%, 0.346%, 0.14%
+   to 0.53%), as lone pixels scattered mostly over the far backdrop; references/proof.md, 1, says how to tell that from a fault.
+   It keeps the toolkit's pictures as the reference for any painter.
 7. **Stills**: `still.png` is the page's picture until the live scene's first frame and without WebGPU; `sheet.png` and `moments.png`
    are six views and eight moments to look at.
-8. **Play** it: serve the player and open it in a browser. A **GIF** of the loop comes from `gif.cjs`.
+8. **Play** it: serve the player and open it in a browser, or let `player/check.mjs` open it in a browser with no window and
+   check it draws and plays. A **GIF** of the loop comes from `gif.cjs`.
 9. **Put it on a site**: references/hosting.md (the page's parts, static files and the import map, serving and loading, orbit and
    touch), and prove it with references/proof.md.
 
@@ -89,17 +117,19 @@ From this folder, with `INK_STUDIO` named on each line. `scenes/my-scene.js` sta
 | Step | Command | Makes |
 | --- | --- | --- |
 | Bake | `env INK_STUDIO=/abs/path/ink-studio node kit/bake.cjs scenes/my-scene.js 8 out/my-scene/scene.bin` | The file; `8` is the loop in seconds (a whole number of thirtieths) |
-| Prove | `env INK_STUDIO=/abs/path/ink-studio node kit/verify.cjs scenes/my-scene.js out/my-scene/scene.bin out/my-scene/reference` | The toolkit's pictures and `reference.json`; prints the art pixels that differ |
+| Prove | `env INK_STUDIO=/abs/path/ink-studio node kit/verify.cjs scenes/my-scene.js out/my-scene/scene.bin out/my-scene/reference` | The toolkit's pictures and `reference.json`; prints per view the art pixels that differ, how many are lone, the longest run |
 | Stills | `env INK_STUDIO=/abs/path/ink-studio node kit/stills.cjs out/my-scene/scene.bin out/my-scene` | `still.png`, `sheet.png`, `moments.png` |
-| GIF | `env INK_STUDIO=/abs/path/ink-studio node kit/gif.cjs out/my-scene/scene.bin out/my-scene/scene.gif` | One loop, once round, playing for ever: 120 frames of 864 by 576 |
-| Play | `node player/serve.mjs out/my-scene/scene.bin out/my-scene/still.png 4173` | The player at http://127.0.0.1:4173/ (stop it with Ctrl-C) |
+| GIF | `env INK_STUDIO=/abs/path/ink-studio node kit/gif.cjs out/my-scene/scene.bin out/my-scene/scene.gif` | One loop, once round, playing for ever: 120 frames for an 864 by 576 stage, the grid's whole art pixels, so up to an art pixel less one over in each direction (`sculpt.js`: 865 by 580) |
+| Play | `node player/serve.mjs out/my-scene/scene.bin out/my-scene/still.png 4173` | The player at http://127.0.0.1:4173/; stop it with Ctrl-C, or with the `kill` and process number it prints |
+| Browser check | `node player/check.mjs out/my-scene/scene.bin out/my-scene/still.png out/my-scene/browser.png 4173` | Serves the player, opens it in headless Chromium with WebGPU, checks it draws and plays with no console errors, saves a screenshot, stops the server; needs Playwright in the player folder (references/proof.md, 3) |
 | Opening picture | `env INK_STUDIO=/abs/path/ink-studio node /abs/path/ink-studio/cli/ink-studio.js render scenes/my-scene.js --w 1440 --h 960 --out /abs/path/out/my-scene/opening.png` | ink-studio's picture of the live scene at the opening view, 1440 by 960 |
-| Close look | `env INK_STUDIO=/abs/path/ink-studio node /abs/path/ink-studio/cli/ink-studio.js render scenes/my-scene.js --w 1440 --h 960 --zoom 3 --target 0,1,0 --t 2 --out /abs/path/out/my-scene/close.png` | Three times nearer, aimed at a point, 2 s into the loop; add `--yaw` and `--pitch` (radians) for another side |
+| Close look | `env INK_STUDIO=/abs/path/ink-studio node /abs/path/ink-studio/cli/ink-studio.js render scenes/my-scene.js --w 1440 --h 960 --zoom 3 --target 0,1,0 --t 2 --out /abs/path/out/my-scene/close.png` | Three times nearer, aimed at a point, 2 s in; add `--yaw` and `--pitch` (radians) for another side. The picture is whole art pixels, so it can come out a few pixels over the size asked (1442 by 966 here) |
 
-What ink-studio's `sculpt.js` gives on a Mac: 4,027 splats, a 0.08 MB file (0.02 MB gzipped), baked in 0.1 s, proved in 0.6 s (at
-most 1 art pixel of 21,600 differs in any view), stills in 0.2 s, a GIF of 120 frames (0.41 MB) in 2 to 4 s. Its `cloth.js`: 1,413
-splats and 396 cloth dabs, 0.89 MB (0.66 MB gzipped), baked in 2 s. Finished scenes of 260,000 to 390,000 splats took 4 to 9
-minutes for a GIF and made 5 to 11 MB (references/gif.md, 1).
+What ink-studio's `sculpt.js` gives on a Mac: 4,027 splats in 7 colours, a 0.08 MB file (0.02 MB gzipped), at most 1 art pixel of
+21,600 differing in any view, a GIF of 120 frames of 865 by 580 (0.41 MB). Each step takes a few seconds: baked in 0.1 to 0.4 s,
+proved in 0.6 to 2.3 s, stills in 0.2 to 0.9 s, the GIF in 2 to 8 s (the longer times on a busy machine). Its `cloth.js`: 1,413
+splats and 396 cloth dabs, 0.89 MB (0.66 MB gzipped), baked in 2 to 2.4 s. Finished scenes of 260,000 to 390,000 splats took 4 to
+9 minutes for a GIF and made 5 to 11 MB (references/gif.md, 1).
 
 In the player: it turns once every 30 seconds; drag to turn and tilt, flick to spin, arrow keys on the focused picture turn 20° and
 tilt 12°; a finger only turns, so the page still scrolls. With reduced motion it holds the still's view and moment, and a drag or
@@ -154,18 +184,20 @@ A file holds at most **256 colours** (255 for a GIF), **256 parts**, **256 style
 and **256 motions** (each different range and extra among moving splats). Every moving part multiplies the styles: ten densities in
 30 parts are 300 styles, and the bake stops. So pick densities and ranges from a few values, and keep parts to what really moves;
 references/recipes.md, 2, shows how to count what each solid and section costs. ink-studio's `stats` warns past 150,000 splats
-("heavy on a phone") and 48 colours ("the page can only use 48"): that is advice for its own pages. The limits here are the ones that
-hold for this kit's file and player.
+("heavy on a phone") and 48 colours ("the page can only use 48"): that is advice for its own pages. Its `picture` line gives the
+grid of its own 900 by 620 frame, not the stage's (the trial scene: 300 by 207 art pixels of 3 there, 360 by 240 of 4 on the
+stage). The limits here are the ones that hold for this kit's file and player.
 
 ## Folder
 
 | Path | What it is |
 | --- | --- |
+| `get.mjs` | Fetches this folder from GitHub (Setup, 0) |
 | `kit/toolkit.cjs` | Loads ink-studio from `INK_STUDIO`, builds a scene file, walks its world through time |
-| `kit/bake.cjs` | Scene file to baked file; prints cost and accuracy; refuses what the file cannot carry |
+| `kit/bake.cjs` | Scene file to baked file; prints cost, colours and accuracy; refuses what the file cannot carry |
 | `kit/format.cjs` | The file's layout and codecs, shared by the baker and the decoder |
 | `kit/decode.cjs` | Reads a baked file back into ink-studio's rows at any frame |
-| `kit/verify.cjs` | The proof: live scene against decoded file, drawn by ink-studio, plus the reference pictures |
+| `kit/verify.cjs` | The proof: live scene against decoded file, drawn by ink-studio; per view the art pixels that differ, how many lone, the longest run; plus the reference pictures |
 | `kit/stills.cjs` | `still.png`, `sheet.png`, `moments.png` |
 | `kit/gif.cjs` | The loop as a GIF, palette exact |
 | `kit/loop.cjs` | `loopable(world, seconds)`: every kind's speed made whole cycles a loop |
@@ -173,7 +205,8 @@ hold for this kit's file and player.
 | `player/main.js` | Starting the GPU, cruise, drag, flick, keys, touch, reduced motion, device loss |
 | `player/painter.js` | The WebGPU painter (vgpu): three passes a frame |
 | `player/scene.js`, `camera.js`, `motion.js`, `order.js` | Reading the file, the camera and grid, motion on the processor, the far-to-near order |
-| `player/serve.mjs` | Serves the player with one scene on 127.0.0.1 |
+| `player/serve.mjs` | Serves the player with one scene on 127.0.0.1, and prints how to stop it |
+| `player/check.mjs` | The browser check: serves, opens headless Chromium with WebGPU, checks it draws and plays, screenshots, stops the server; needs Playwright installed into the player folder |
 | `references/` | The topic notes below |
 
 Each file's opening comment says what it owns.
@@ -187,7 +220,7 @@ Each file's opening comment says what it owns.
 | references/format.md | The baked file byte by byte, every kind of motion's maths, how to draw a picture from it, costs, accuracy, what the baker refuses, notes for writing a painter |
 | references/painter.md | How `player/painter.js` draws, the toolkit's rules a painter must follow, mistakes made and caught, performance |
 | references/hosting.md | vgpu (version, offline docs, the 0.6 rules), putting the player on a website: its parts, the still, serving gzipped and loading, orbit, touch and less motion |
-| references/proof.md | Proving a file, proving a painter against the toolkit pixel for pixel, browser checks |
+| references/proof.md | Proving a file and reading its lone pixels and runs, proving a painter against the toolkit pixel for pixel, browser checks, `player/check.mjs` and getting Playwright for it |
 | references/gif.md | The GIF from the command line, and a GIF button in a page |
 | references/splats.md | What "true" splats means here, what stays offline, baking again, sources |
 | references/random-scenes.md | Optional: a different scene for each seed |

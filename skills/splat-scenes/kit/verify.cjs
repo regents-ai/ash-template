@@ -42,10 +42,24 @@ function compareRows(live, dec, order, moving) {
   return r;
 }
 
+// the art pixels that differ; how many of them are lone (no differing neighbour above, below or to either side); the longest run of
+// them on one row
 const differing = (a, b) => {
-  let n = 0;
-  for (let p = 0; p < a.length; p += 3) if (a[p] !== b[p] || a[p + 1] !== b[p + 1] || a[p + 2] !== b[p + 2]) n++;
-  return n;
+  const { w, h } = a,
+    d = new Uint8Array(w * h);
+  let n = 0,
+    lone = 0,
+    run = 0;
+  for (let i = 0, p = 0; i < w * h; i++, p += 3)
+    if (a.rgb[p] !== b.rgb[p] || a.rgb[p + 1] !== b.rgb[p + 1] || a.rgb[p + 2] !== b.rgb[p + 2]) (d[i] = 1), n++;
+  for (let y = 0; y < h; y++)
+    for (let x = 0, along = 0; x < w; x++) {
+      const i = y * w + x;
+      along = d[i] ? along + 1 : 0;
+      run = Math.max(run, along);
+      if (d[i] && !(x && d[i - 1]) && !(x < w - 1 && d[i + 1]) && !(y && d[i - w]) && !(y < h - 1 && d[i + w])) lone++;
+    }
+  return { n, lone, run };
 };
 
 const live = kit.build(sceneFile),
@@ -75,7 +89,7 @@ for (const fraction of MOMENTS) {
     const o = Object.assign({ yaw, pitch }, CANVAS),
       a = kit.render.render(live, Object.assign({ t: live.clock }, o)),
       b = kit.render.render(dec, Object.assign({ t: dec.clock }, o)),
-      diff = differing(a.rgb, b.rgb),
+      { n: diff, lone, run } = differing(a, b),
       name = `${id}_yaw${deg(yaw)}_pitch${deg(pitch)}_t${tau.toFixed(2)}`,
       big = kit.render.upscale(a, a.px);
     worst = Math.max(worst, diff / (a.w * a.h));
@@ -94,7 +108,7 @@ for (const fraction of MOMENTS) {
       clock: live.clock,
       differingPixels: diff
     });
-    console.log(`  ${name}: ${a.w}x${a.h} art pixels of ${a.px}, ${diff} differ`);
+    console.log(`  ${name}: ${a.w}x${a.h} art pixels of ${a.px}, ${diff} differ, ${lone} lone, longest run on a row ${run}`);
   }
 }
 fs.writeFileSync(

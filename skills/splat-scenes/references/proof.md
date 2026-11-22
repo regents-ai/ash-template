@@ -14,19 +14,26 @@ It builds the live scene with ink-studio, reads the baked file back with `kit/de
 from six views (the opening view and the other three quarter turns, nearly straight above, nearly straight below) at three moments of
 the loop (0, 5/16 and 11/16 of it), on a 1440 by 960 stage. For each moment it prints how far the decoded splats are from the live
 ones (position, shape, phase; how many densities, colours, kinds and motion numbers differ) and for each picture how many art pixels
-differ. The last line gives the most any view differs, as a percentage of its art pixels.
+differ, how many of those are lone (no differing neighbour above, below or to either side) and the longest run of them on one row:
+
+    night-stall_yaw28.6_pitch10.3_t0.00: 360x240 art pixels of 4, 55 differ, 51 lone, longest run on a row 2
+
+The last line gives the most any view differs, as a percentage of its art pixels.
 
 - **Expect:** on ink-studio's `sculpt.js` (nothing moves) 0 to 1 art pixels of 21,600 a view; with parts or a cloth, a few
-  hundredths of a percent (`cloth.js` 0.023%). A large scene with a painted backdrop or thin water seen edge-on reads higher. Three
-  trial scenes of 260,000 to 390,000 splats gave 0.115% (a throne-hall scene), 0.346% (a lighthouse scene) and 0.14% to 0.53% (a
-  mansion-grounds scene): the differences were lone pixels, scattered mostly over the far sky, the sea's glitter and colour edges,
-  with no run or patch on the subject (the lighthouse scene's front view: 495 differing, 356 of them lone).
-- **Lone pixels or a fault.** `still.png` (from `kit/stills.cjs`) is the baked file at the opening view and the start of the loop;
-  the reference picture named for the opening view at time 0 (yaw and pitch in degrees, such as
-  `my-scene_yaw28.6_pitch9.2_t0.00.png`) is the live scene at the same view and size. Mark where the two differ, in any image tool.
-  Lone pixels (no differing neighbour up, down, left or right) scattered over the far backdrop are a splat tipped between two near
-  shades. A run or patch of differing pixels on the subject, or a row line well above the others, means the file and the scene
-  disagree: the row line names the field.
+  hundredths of a percent (`cloth.js` 0.023%, every differing pixel lone). A small moving scene with stars, dust or swaying grass
+  reads about 0.1%: a trial scene of 32,806 splats gave at most 79 of 86,400 (0.091%), its opening view 55, 51 of them lone, longest
+  run 2. A large scene with a painted backdrop or thin water seen edge-on reads higher. Three trial scenes of 260,000 to 390,000
+  splats gave 0.115% (a throne-hall scene), 0.346% (a lighthouse scene) and 0.14% to 0.53% (a mansion-grounds scene): the
+  differences were lone pixels, scattered mostly over the far sky, the sea's glitter and colour edges, with no run or patch on the
+  subject (the lighthouse scene's front view: 495 differing, 356 of them lone).
+- **Lone pixels or a fault.** Read each view's numbers. Most of the differing pixels lone and the longest run 1 or 2 is a splat
+  tipped between two near shades here and there: nothing to fix. Few of them lone, a long run, or one view far above the others
+  means the file and the scene disagree there, and a row line well above the others names the field. For scale, the same scenes
+  drawn at the wrong moment, which is what a disagreement looks like: the trial scene 984 differing, 272 lone, longest run 5, all on
+  its swaying grass; `cloth.js` 913 of 21,600, none lone, a run of 29. To see where they fall: `still.png` (from `kit/stills.cjs`)
+  is the baked file at the opening view and the start of the loop, and the reference picture named for the opening view at time 0
+  (yaw and pitch in degrees, such as `my-scene_yaw28.6_pitch9.2_t0.00.png`) is the live scene at the same view and size.
 - **The live scene is walked frame by frame** to each moment, as the bake walked it: a cloth remembers every step, so a different walk
   would leave it a hair elsewhere.
 - **The reference.** It keeps ink-studio's pictures of the live scene: each at its art-pixel size (`<id>_yaw.._pitch.._t...png`) and
@@ -83,7 +90,35 @@ differs.
 ## 3. The page in a browser
 
 Headless Chromium with WebGPU: `--enable-unsafe-webgpu`, and on a Mac `--use-angle=metal`. Serve the player with
-`node player/serve.mjs <scene.bin> <still.png> [port]` and check:
+`node player/serve.mjs <scene.bin> <still.png> [port]`; it prints its process number, so `kill <that number>` stops it from another
+shell when no keyboard can send Ctrl-C.
+
+**The quick check** does the first three below in one command:
+
+```sh
+node player/check.mjs out/my-scene/scene.bin out/my-scene/still.png out/my-scene/browser.png 4173
+```
+
+It starts the server on that port, opens the page in headless Chromium with WebGPU at the 1472 by 1056 window that gives the kit's
+1440 by 960 stage, waits for the ready flag, checks that two pictures of the stage a second apart differ, saves a screenshot of the
+page, prints the page's console errors and warnings, stops the server and confirms the port is free. It exits 0 only when the flag
+is `"true"`, the pictures differ, nothing was printed to the console and the port is free. On ink-studio's `sculpt.js` and
+`cloth.js`, and a trial scene of 32,806 splats: ready within 0.3 s, a 1438 by 958 canvas, playing, no errors.
+
+**Playwright for it.** It is not one of the player's packages, so the pinned install stays as it is; add it to a copy of the player
+you can write to (Setup, 2), then its Chromium:
+
+```sh
+npm install --prefix /abs/path/player --no-save playwright@1.64.1
+/abs/path/player/node_modules/.bin/playwright install chromium
+```
+
+Playwright 1.64 needs Node 20 or later; any version with Chromium's WebGPU will do. The packages are about 18 MB; the browser is a
+download into Playwright's own cache, about 570 MB on disk once unpacked on a Mac (Chrome for Testing and its headless shell),
+and nothing when that version's Chromium is already there. Run `check.mjs` from that copy (`node /abs/path/player/check.mjs ...`):
+it finds Playwright in the folder it sits in.
+
+Check, with it or by hand:
 
 - **Stage size:** the player's stage follows the window. It is as wide as the smaller of the page less its 16 px padding each side
   and (window height − 96 px) × 1.5, at 3 : 2, inside a 1 px border; the canvas fills it, and its drawing buffer is its own size at

@@ -38,4 +38,4 @@ createServer((request, response) => {
   }
   response.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream', 'content-length': size, 'cache-control': 'no-store' });
   createReadStream(file).pipe(response);
-}).listen(Number(port), '127.0.0.1', () => console.log(`open http://127.0.0.1:${port}/`));
+}).listen(Number(port), '127.0.0.1', () => console.log(`open http://127.0.0.1:${port}/ (stop it with Ctrl-C or kill ${process.pid})`));
