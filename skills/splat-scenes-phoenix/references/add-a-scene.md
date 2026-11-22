@@ -43,7 +43,7 @@ q is the art pixel's side in screen pixels. On the wide stage q = round(1394 / (
 q = round(1157 / (detail × dist)), kept within 1 to 18 (`gridFor` at the opening zoom, with the toolkit's 38-degree view). So
 detail × dist from 463 to 771 gives a square q of 2, 331 to 462 gives 3, and 258 to 330 gives 4. The grid is the stage's sides
 divided by q, rounded up, and the card and item are that grid times q: exactly 1440 by 960 and 1080 by 1080 when q divides the sides,
-as for every scene on the template, a few pixels larger when it does not. These sizes match all 96 pictures on the template. The
+as for every scene on the template, a few pixels larger when it does not. These sizes match all 108 pictures on the template. The
 `width` and `height` the stage puts on the still (480 by 320, and 360 by 360 for the square) only give its shape before it loads;
 the stylesheet sets its size.
 
@@ -61,9 +61,10 @@ the stylesheet sets its size.
   it compiles (the backdrop's palette place at byte 56, its colour at byte 284 plus four times that place, with the file as an
   `@external_resource`), so the file must be in place before the site compiles.
 - **Other places that name scenes**, for an unnumbered one: in `splats_lab_live.ex`, the comment above `@unnumbered` counts them
-  ("The four scenes that are not numbered"), and the `@moduledoc` lists the unnumbered tabs and, later, the ones with no traits
-  ("The factory and the island have none"); bring all three up to date. In `platform/assets/js/splats/studio/README.md`, "Scenes
-  made elsewhere" names every scene made with the sibling skill, with its colours and whether it has fog: add the new one.
+  ("The seven scenes that are not numbered"), and the `@moduledoc` lists the unnumbered tabs and their `?scene=` names; bring all
+  three up to date. Its later line on traits, "The unnumbered scenes have none", needs no change. In
+  `platform/assets/js/splats/studio/README.md`, "Scenes made elsewhere" names every scene made with the sibling skill, with its
+  colours and whether it has fog: add the new one.
 
 ## 5. The words
 

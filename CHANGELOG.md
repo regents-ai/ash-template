@@ -13691,3 +13691,36 @@ For the template chief to release. No migration. No new package.
   pictures of Black Slab and Dice Owl are byte for byte the redrawn ones. Not proven by
   the chief: the two scenes drawn live in a browser (the design chief looks after the
   release), Safari, Firefox, a phone.
+
+## 2026-11-22 — Lighthouse on the Splats page
+
+- `/animations/splats` has a fifth unnumbered world, Lighthouse (`?scene=lighthouse`),
+  after Museum: `platform/priv/static/splats/lighthouse.bin` (about 5 MB, 2.2 MB gzipped,
+  259,070 splats, an eight-second loop in which the lamp turns once, 70 colours) and its
+  four pictures, drawn by `npm run stills:splats`. It was made with the `splat-scenes`
+  skill and baked by that skill's kit, then put on the page by following
+  `splat-scenes-phoenix`; its source is not in the repository. It has no number, traits
+  or page of its own.
+- Its outline edge is 0.35, so the site's painter draws its outline, as the kit does.
+
+## 2026-11-22 — Splats: Heroes, a sixth unnumbered scene
+
+- A new scene on the Splats page only, as the tab Heroes (`?scene=heroes`), after
+  Lighthouse: `platform/priv/static/splats/heroes.bin` (390,661 splats, 7.97 MB, an
+  8-second loop, 159 colours, five moving parts and one cloth, outline on), its four
+  pictures from `npm run stills:splats`, its entry in `@unnumbered` in
+  `platform/lib/ash_template_web/live/splats_lab_live.ex` and its name in `SCENES` in
+  `platform/assets/js/splats/stills.mjs`.
+- Made with the `splat-scenes` and `splat-scenes-phoenix` skills alone, as their first
+  trial.
+
+## 2026-11-22 — Splats: Throne, a seventh unnumbered scene
+
+- A new scene on the Splats page only, as the tab Throne (`?scene=throne`), after
+  Heroes: `platform/priv/static/splats/throne.bin` (371,821 splats, 7.99 MB, an
+  8-second loop, 109 colours, no fog, outline on), its four pictures from
+  `npm run stills:splats`, its entry in `@unnumbered` in
+  `platform/lib/ash_template_web/live/splats_lab_live.ex` and its name in `SCENES` in
+  `platform/assets/js/splats/stills.mjs`. It was made with the `splat-scenes` skill and
+  baked by that skill's kit; its source is not in the repository. It has no number,
+  traits or page of its own.
