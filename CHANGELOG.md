@@ -13680,3 +13680,14 @@ For the template chief to release. No migration. No new package.
   Owl are the two files with `outlineEdge` 0: they are drawn without an outline, and
   their eight pictures are redrawn by `npm run stills:splats`. No other scene's picture
   changed.
+
+## 2026-11-22 — Released v310: outline only where a scene asks
+
+- v310 on template.regents.sh carries one commit: the entry above. No migration; library
+  pin unchanged; no Points setting changed.
+- Rollback: v309 (`b99874f2`) image; nothing to undo.
+- `make check` exit 0 by the chief on the exact commit. Live, signed out: 24 Splats tabs,
+  every scene's page, baked file, card and item picture answer, and the served card
+  pictures of Black Slab and Dice Owl are byte for byte the redrawn ones. Not proven by
+  the chief: the two scenes drawn live in a browser (the design chief looks after the
+  release), Safari, Firefox, a phone.
