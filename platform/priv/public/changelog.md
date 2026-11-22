@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 22 November 2026
 
+- **Splats.** A new world, Heroes: a ruined mansion on a floating island at dusk, where
+  five figures gather under a clock running toward midnight.
 - **Splats.** A new world, Lighthouse: a red and white lighthouse on a rock at dusk, its
   beam sweeping over the sea while a small boat rocks by the jetty.
 - **Splats.** Black Slab and Dice Owl are drawn cleanly, without the dark speckle that

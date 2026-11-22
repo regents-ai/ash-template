@@ -23,10 +23,10 @@ their sources are not. `bake.cjs` and `verify.cjs` cover only the scenes whose s
 baked again, the design lane does it and the new file replaces the old one. What proves one is the private tools' own check (no
 faults, 48 colours, an eight-second loop) and the page's decoder reading the file.
 
-The unnumbered Gallery (`gallery.bin`), Museum (`museum.bin`) and Lighthouse (`lighthouse.bin`) are also made elsewhere: written
-straight against ink-studio with the `splat-scenes` skill (`skills/splat-scenes/` at the repository's root) and baked by that skill's
-kit, whose file layout is this folder's. Gallery has 178 colours and no fog; Museum has 235 colours; Lighthouse has 70 colours and no
-fog.
+The unnumbered Gallery (`gallery.bin`), Museum (`museum.bin`), Lighthouse (`lighthouse.bin`) and Heroes (`doomsday-heroes.bin`) are
+also made elsewhere: written straight against ink-studio with the `splat-scenes` skill (`skills/splat-scenes/` at the repository's
+root) and baked by that skill's kit, whose file layout is this folder's. Gallery has 178 colours and no fog; Museum has 235 colours;
+Lighthouse has 70 colours and no fog; Heroes has 159 colours and no fog.
 
 ## Files
 

@@ -13702,3 +13702,14 @@ For the template chief to release. No migration. No new package.
   `splat-scenes-phoenix`; its source is not in the repository. It has no number, traits
   or page of its own.
 - Its outline edge is 0.35, so the site's painter draws its outline, as the kit does.
+
+## 2026-11-22 — Splats: Heroes, a sixth unnumbered scene
+
+- A new scene on the Splats page only, as the tab Heroes (`?scene=doomsday-heroes`), after
+  Lighthouse: `platform/priv/static/splats/doomsday-heroes.bin` (390,661 splats, 7.97 MB, an
+  8-second loop, 159 colours, six moving parts and one cloth, outline on), its four
+  pictures from `npm run stills:splats`, its entry in `@unnumbered` in
+  `platform/lib/ash_template_web/live/splats_lab_live.ex` and its name in `SCENES` in
+  `platform/assets/js/splats/stills.mjs`.
+- Made with the `splat-scenes` and `splat-scenes-phoenix` skills alone, as their first
+  trial.

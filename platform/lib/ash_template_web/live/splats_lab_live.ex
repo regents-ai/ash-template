@@ -3,18 +3,18 @@ defmodule AshTemplateWeb.SplatsLabLive do
   Splats: every small world in pixel art the site draws, each a few hundred thousand 3D
   splats, turning once every thirty seconds while everything in it plays an eight-second
   loop. One tab for each: the robot factory, the floating island at night, the gallery
-  on its lawn, the chalet museum, the lighthouse at dusk, then every numbered scene
-  (`AshTemplateWeb.Scenes`) in number order
+  on its lawn, the chalet museum, the lighthouse at dusk, the heroes at the ruined
+  mansion at dusk, then every numbered scene (`AshTemplateWeb.Scenes`) in number order
   under its title. A drag
   turns and tilts the scene, and a pinch, a wheel with Ctrl or Cmd held, the keys + and
   - or the box's Zoom in and Zoom out buttons bring it nearer, up to four times, at the
   pointer or the middle; Reset view, 0, a double-click or a double tap goes back to the
   opening view. The factory comes first, at the bare address; `?scene=<name>` shows
-  another (`island`, `gallery`, `museum`, `lighthouse`, or a numbered scene's name such as
-  `fishing`), and any other value
-  shows the factory. On a wide screen the tabs wrap onto as many lines as they need; on
-  a phone they keep to one row, which scrolls sideways on its own, and the shared
-  `MotionTravel` hook keeps the current tab in view there.
+  another (`island`, `gallery`, `museum`, `lighthouse`, `doomsday-heroes`, or a numbered
+  scene's name such as `fishing`), and any other value shows the factory. On a wide
+  screen the tabs wrap onto as many lines as they need; on a phone they keep to one row,
+  which scrolls sideways on its own, and the shared `MotionTravel` hook keeps the current
+  tab in view there.
 
   Each scene is one baked file, `priv/static/splats/<scene>.bin` (laid out in
   `assets/js/splats/studio/FORMAT.md`), served gzipped and digested like the other
@@ -48,7 +48,7 @@ defmodule AshTemplateWeb.SplatsLabLive do
   alias AshTemplateWeb.Components.SplatStage
   alias AshTemplateWeb.{PublicDocuments, Scenes}
 
-  # The five scenes that are not numbered; the numbered ones follow, from Scenes.
+  # The six scenes that are not numbered; the numbered ones follow, from Scenes.
   @unnumbered [
     %{
       name: "factory",
@@ -84,6 +84,13 @@ defmodule AshTemplateWeb.SplatsLabLive do
       number: nil,
       label:
         "A red and white lighthouse on a rock at dusk, its lamp turning and its beam sweeping over the sea: a keeper's cottage with smoke from its chimney, a jetty with a rocking boat, gulls circling and the sun setting over glittering water."
+    },
+    %{
+      name: "doomsday-heroes",
+      title: "Heroes",
+      number: nil,
+      label:
+        "A ruined brick mansion on a floating island at dusk, its gable clock running toward midnight: a figure in a visor fires a red beam across the sky, an old man waits in a hovering chair in the doorway, a soldier with a round star shield stands beside his motorcycle, a rock-skinned giant raises a fist next to a fallen robot's head, and a caped figure lifts an axe toward a castle glowing green on the horizon."
     }
   ]
 
