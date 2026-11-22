@@ -2,6 +2,11 @@
 
 Changes to Ash Template, newest first.
 
+## 22 November 2026
+
+- **Splats.** A new world, Lighthouse: a red and white lighthouse on a rock at dusk, its
+  beam sweeping over the sea while a small boat rocks by the jetty.
+
 ## 21 November 2026
 
 - **Splats.** A new world, Museum: a chalet museum on a floating island over a mountain

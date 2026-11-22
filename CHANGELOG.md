@@ -13671,3 +13671,16 @@ For the template chief to release. No migration. No new package.
   gives its device back, what runs without WebGPU, when the recovery count resets, when
   the motion lab is public). Nobody has yet followed `references/checks.md` end to end.
 - No release: nothing the site serves changed.
+
+## 2026-11-22 — Lighthouse on the Splats page
+
+- `/animations/splats` has a fifth unnumbered world, Lighthouse (`?scene=lighthouse`),
+  after Museum: `platform/priv/static/splats/lighthouse.bin` (about 5 MB, 2.2 MB gzipped,
+  259,070 splats, an eight-second loop in which the lamp turns once, 70 colours) and its
+  four pictures, drawn by `npm run stills:splats`. It was made with the `splat-scenes`
+  skill and baked by that skill's kit, then put on the page by following
+  `splat-scenes-phoenix`; its source is not in the repository. It has no number, traits
+  or page of its own.
+- The site's painter still draws an outline round everything when a scene's outline edge
+  is 0, where the kit draws none; Black Slab and Dice Owl rely on that look, so the
+  painter is unchanged and the lighthouse sets an outline edge of 0.35.
