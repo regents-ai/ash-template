@@ -17,8 +17,16 @@ ones (position, shape, phase; how many densities, colours, kinds and motion numb
 differ. The last line gives the most any view differs, as a percentage of its art pixels.
 
 - **Expect:** on ink-studio's `sculpt.js` (nothing moves) 0 to 1 art pixels of 21,600 a view; with parts or a cloth, a few
-  hundredths of a percent (`cloth.js` 0.023%).
-  More than a fraction of a percent means the file and the scene disagree: read the row lines to see which field.
+  hundredths of a percent (`cloth.js` 0.023%). A large scene with a painted backdrop or thin water seen edge-on reads higher. Three
+  trial scenes of 260,000 to 390,000 splats gave 0.115% (a throne-hall scene), 0.346% (a lighthouse scene) and 0.14% to 0.53% (a
+  mansion-grounds scene): the differences were lone pixels, scattered mostly over the far sky, the sea's glitter and colour edges,
+  with no run or patch on the subject (the lighthouse scene's front view: 495 differing, 356 of them lone).
+- **Lone pixels or a fault.** `still.png` (from `kit/stills.cjs`) is the baked file at the opening view and the start of the loop;
+  the reference picture named for the opening view at time 0 (yaw and pitch in degrees, such as
+  `my-scene_yaw28.6_pitch9.2_t0.00.png`) is the live scene at the same view and size. Mark where the two differ, in any image tool.
+  Lone pixels (no differing neighbour up, down, left or right) scattered over the far backdrop are a splat tipped between two near
+  shades. A run or patch of differing pixels on the subject, or a row line well above the others, means the file and the scene
+  disagree: the row line names the field.
 - **The live scene is walked frame by frame** to each moment, as the bake walked it: a cloth remembers every step, so a different walk
   would leave it a hair elsewhere.
 - **The reference.** It keeps ink-studio's pictures of the live scene: each at its art-pixel size (`<id>_yaw.._pitch.._t...png`) and
@@ -85,10 +93,11 @@ Headless Chromium with WebGPU: `--enable-unsafe-webgpu`, and on a Mac `--use-ang
 - **Draws:** the ready flag on `.stage` becomes `"true"` (a finished first frame), with no console errors or warnings (a vgpu
   error starts `VGPU-`; WebGPU warns of a draw of nothing).
 - **Plays:** two screenshots 2 s apart differ.
-- **Drag:** a mouse drag across the canvas changes the picture while held.
-- **Keys:** focus the canvas, press an arrow key: the picture changes.
-- **Less motion** (`reducedMotion: 'reduce'` on the browser context): two screenshots 1.5 s apart are the same; a drag changes it and
-  it stays where left.
+- **Held still** (`reducedMotion: 'reduce'` on the browser context): the player holds the opening view at the start of the loop,
+  the view and moment of `still.png`, so a screenshot can be set beside it; two screenshots 1.5 s apart are the same. Prove the drag
+  and the keys here: while the scene turns by itself, a changed picture proves nothing.
+- **Drag:** on the held scene, a mouse drag across the canvas changes the picture, and it stays where left.
+- **Keys:** on the held scene, focus the canvas and press an arrow key: the picture changes and stays.
 - **A finger** (a phone context with touch, 390 wide, three device pixels a CSS pixel): send touches through the DevTools protocol's
   `Input.dispatchTouchEvent`, and hold the finger still 300 ms before lifting, or the page flings and screenshots differ. An upright
   swipe leaves the picture alone (the page scrolls); a sideways swipe turns it. Check 390 and 320 wide for sideways overflow.

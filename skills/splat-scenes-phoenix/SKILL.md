@@ -11,8 +11,13 @@ LiveView hook on the shared canvas island, and a vgpu renderer that draws the ba
 the site unchanged.
 
 **Load first:** regent-workflow, ash-stack and elixir-stack (who decides, the house rules, wording, checks and release, and the design
-check), and vgpu-island for any change to the renderer or to another GPU picture. All four are in ash-template's `skills/`; this skill
-points to them and does not repeat them.
+check); for any change to the renderer or to another GPU picture, vgpu-island and the two it asks for, ash-frontend and animejs; and
+the sibling splat-scenes. All are in ash-template's `skills/` (read them from main: `git show origin/main:skills/<name>/SKILL.md`);
+in the Regent workspace each is `.agents/skills/<name>/` at the workspace's root, a link into its ash-template checkout's `skills/`.
+This skill points to them and does not repeat them.
+
+**Tools run through mise.** The plain shell's `mix`, `elixir` and `node` may not be the versions ash-template pins
+(`platform/.tool-versions`): run them as `mise exec -- mix ...` and `mise exec -- npm run ...` from `platform/`.
 
 **One source of truth.** The island's files live in ash-template. Read them from its main, never from a checkout that may be behind:
 `git fetch origin main`, then `git show origin/main:<path>`. Take them from there into another site; never paste them into a skill.
@@ -29,8 +34,9 @@ address, and the drawing is the browser's (the canvas island). No database, no O
    stills (`kit/stills.cjs`). Every scene on the template is an 8-second loop, and Download GIF plays 160 frames of 5 hundredths:
    8 seconds. The sibling's player and GIF are optional here; the site has its own.
 2. **Add it to the site**: references/add-a-scene.md (where the file goes, its name, the stills step and its four pictures, the list
-   entry, the page text).
-3. **Check it** in a headless browser and with `make check`: references/checks.md. Release as regent-workflow says.
+   entry, every other place that lists scenes, the page text, where the source lives, a local side branch).
+3. **Check it** with `make check`, the site's still against the kit's, and a headless browser on the local site:
+   references/checks.md. Release as regent-workflow says, or hand a side branch to the site's chief.
 
 ## The kit and the site share one file
 
@@ -42,6 +48,9 @@ address, and the drawing is the browser's (the canvas island). No database, no O
   kit-baked files on the template). WGSL refuses a `smoothstep` whose two edges are the same constant, so the site's painter writes
   both as 0 unless `h.fogMax > 0 && h.fogStart < 1` (`platform/assets/js/splats/painter.ts`), the same rule as the kit's player;
   it came in with the first kit-baked scene. Any other painter that draws these files needs it too.
+- **An outline only where the scene asks.** Since 22 Nov 2026 the site's painter, like the kit's player, draws the outline only when
+  the file's outline edge is above 0 (`OUTLINE_EDGE > 0.0` in `painter.ts`; the studio's `FORMAT.md`, 5.4, step 3). When the site's
+  still and the kit's disagree (references/checks.md, 1), look at the outline first: the measured figures are there.
 
 ## References
 

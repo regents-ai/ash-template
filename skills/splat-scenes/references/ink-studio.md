@@ -5,10 +5,12 @@ particles, physics, procedural tools, simulated worlds and two renderers (a CPU 
 browsers). It is MIT licensed (README, License) and needs Node 18 or later with no runtime dependencies. The kit calls it from the
 folder `INK_STUDIO` names and never copies it.
 
-Everything below was checked against commit `cf35ff8` (`cf35ff83140164e33314d5293e1c3d87cd4ed7bf`, the newest on 20 Nov 2026): its
-28 README sections, 185 guides in `docs/` and 385 files in `examples/`. Its README and guides are the authority; this page says what
-to read first, what the kit's file carries, and where each guide and example stands. For exactly that copy, put the full commit in
-place of `HEAD` in SKILL.md's download.
+The working knowledge (section 2) was last checked against commit `983d91f` (22 Nov 2026), the newest then: the 28 examples that
+bake give the same splat counts as at `cf35ff8` (20 Nov), five of six test bakes came out byte for byte the same (the sixth moved
+the shape of 4 splats), and the rig, cloth, sculptor and renderer rules used here are unchanged. The maps (sections 3 and 4) cover
+what `cf35ff8` had, all still there: 28 README sections, 185 guides in `docs/` and 385 files in `examples/`. `983d91f` added 3
+README sections (section 3), 89 guides and 264 example files, not mapped here. Its README and guides are the authority; this page
+says what to read first, what the kit's file carries, and where each guide and example stands.
 
 Contents: 1. Read these first. 2. Working knowledge (scene file, light, solids and materials, hand-placed splats, things that move,
 the finish, previewing). 3. Map of the README. 4. Guides and examples by what you are making.
@@ -46,7 +48,8 @@ module.exports = ({ makeBuilder, makeSculpt, KIT: K, flame, motes }) => ({
   build(seed) {
     const B = makeBuilder(seed, PALETTE);    // PALETTE: an array of 0xRRGGBB, index 0 the empty background
     const S = K.sculpt(makeSculpt(B));      // the extended sculptor
-    // light, a rig and tags before the solids they must catch (2.2, 2.5)
+    const rig = K.rig(B, S);                // only if parts move (2.5)
+    // light, and tags before the solids they must catch (2.2, 2.5)
     // solids, then S.bake() (2.3)
     // hand-placed splats, flames, motes, a cloth (2.4, 2.5)
     const W = B.finish({ cam: { target: [0, 1, 0], dist: 12, pitch: 0.2, yaw: 0.45 }, detail: 14, radius: 5, dither: 0.25 });
@@ -94,7 +97,11 @@ sun and a fill: references/recipes.md, 7.
 The core sculptor has `ball`, `box`, `lathe`, `torus`, `tube`, `rock`, `ground` and vegetation helpers; the extended one adds joins,
 folds, warps, shells, extrusion, revolution, strokes and fills, text and grid operations (README, Geometry and materials; Editable 3D
 drawing). `S.box` takes half-extents. Join kinds: `union`, `cut`, `common`, `round`, `chamfer`, `stairs`, `columns`, `pipe`,
-`engrave`, `groove`, `tongue`.
+`engrave`, `groove`, `tongue`. Each helper's inputs are in the comment just above it in `src/sculpt.js` (search for `S.tree =`):
+read that before using one. `S.tree(x, y, z, { h, r, lean, nb, spread, cr, bark, leaf, leaves, roots, res })` and
+`S.crown(clusters, mat, count, { scale })` (clusters `{ p, r: [rx, ry, rz] }`) size their leaves for a full tree, up to half a unit
+at `scale` 1 (read from source), so a small tree or hedge comes out in large blobs: pass `scale` below 1 (a mansion-grounds scene's
+hedges: 0.55).
 
 **Options** (the last argument of a solid):
 
@@ -142,7 +149,8 @@ and the surface's light t (0 to 1) picks one. (Hand-placed splats take the build
 | `leaf`, `fur`, `sss`, `form`, `fat` | Leaves, fur strands, light through thin parts, a shading normal of your own, bigger dabs | Read from source, not run |
 
 Not carried, because they work per pixel or over time: `pixelStyle`, `surface`, `line`, `fine` and `optical` (looks drawn by
-ink-studio's renderers), `born` and `wet` (the bake refuses their flags).
+ink-studio's renderers), `born` and `wet` (the bake refuses their flags). `983d91f` also reads `brush`, `stipple`, `footprint`,
+`engraving` and `screenPrint`; none was checked here, so bake one before relying on it.
 
 `K.look.glass(ramp, { a })` is `{ r, a, glass: true }` (a 0.1 unless given); with `{ ghost: true }` on the solid it makes glass the
 format carries (references/recipes.md, 6). `K.look.wax`, `jelly` and `fur` exist too; the bake names anything it cannot carry.
@@ -182,7 +190,9 @@ orbit, 6 bob, 7 pulse and 11 sway; references/format.md, section 4, gives each o
 values (references/recipes.md, 2).
 
 `flame(B, x, y, z, size, [outer, inner, core])` and `motes(B, count, [x0, x1, y0, y1, z0, z1], colours, size)` are `load()` exports:
-a flickering flame with a soft glow (bob and pulse) and drifting bright specks (bob). Both bake.
+a flickering flame with a soft glow (bob and pulse) and drifting bright specks (bob). Both bake, but `motes` gives every speck its
+own random range, so each is one of the file's 256 motions: 300 specks stopped the bake. For more, place your own bobbing specks
+with ranges from a few values (references/recipes.md, 2).
 
 ### 2.5 Things that move
 
@@ -191,8 +201,9 @@ section 9).
 
 1. **Kinds of motion** on single splats (2.4): worked by the player from the clock, so they cost 4 bytes a splat and nothing a frame.
    Vegetation helpers and grass blades already sway (kind 11).
-2. **Rigid parts** with `K.rig`. Make the rig before baking the solids it must catch; a solid's `tag` names its part, or wrap code in
-   `rig.own(name, () => { ... })` to give a part everything built inside, hand-placed splats included. After the finish:
+2. **Rigid parts** with `K.rig`. Make the rig with the builder and the sculptor, `const rig = K.rig(B, S);`, before baking the solids
+   it must catch; a solid's `tag` names its part, or wrap code in `rig.own(name, () => { ... })` to give a part everything built
+   inside, hand-placed splats included. After the finish:
 
    ```js
    const st = K.stage(W);
@@ -210,9 +221,20 @@ section 9).
    round exactly and proved at 0.005%). `K.M` has `id`, `rot(axis, angle)`, `mul`, `app`, `tr`, `aim`. A part's motion must be a
    function of t that comes back in the loop; the bake prints how far each part is from where it began a loop on. Parts count
    against the file's 256 and multiply its styles (references/recipes.md, 2).
-3. **One cloth**, `K.cloth(B, { at, u, v, nu, nv, pins, wind, pattern, sdf })` before the finish and `K.stage(W).add(cloth)` after
-   (README, Physics and persistent effects). Every frame of it is stored, 9 bytes a dab a frame. Gusty wind does not come round in a
-   loop; the bake prints the seam.
+3. **One cloth**, `K.cloth(B, { at, u, v, nu, nv, pins, wind, pattern, sdf, sun })` before the finish and `K.stage(W).add(cloth)`
+   after (README, Physics and persistent effects; every option is in the opening comment of `src/kit/ks-xpbd.js`). Every frame of it
+   is stored, 9 bytes a dab a frame. A worked cape: references/recipes.md, 12.
+   - **Shape**: `pattern(u, v)`, with u and v from 0 to 1 across and down, returns the ramp for the cloth there, or `null` to leave
+     that part out: a cape narrow at the shoulder and ragged at the hem is a rectangle with `null` outside its outline.
+   - **Shading**: each dab takes the colour at floor(l × ramp length) of its ramp, l = `amb` + `sunK` × how squarely it faces `sun`
+     (0.3 and 0.75 unless given). Square to the sun, l passes 1 and the top colour shows: end the ramp at the brightest colour you
+     want, or repeat its middle colours (a cape whose ramp ended in a pale tone came out skin-pale).
+   - **Loop**: the wind must repeat every loop, built from sines of 2π k t / L with whole k; `K.xpbd.gust` never repeats. The bake
+     prints how far the cloth is from where it began a loop on and does not stop on it. Measured on one cloak (20 by 12 points),
+     with an art pixel about 0.035 units, at `damp` 0.6 (the default) and 4.5: at `density` 0.3 (the default is 0.25) it closed to
+     0.006 and 0.003; at 0.6 it missed by 0.16 and 0.23; at 1.0 by 0.48 and 0.05. Keep the cloth light.
+   - **Outlines**: its dabs draw no depth (`nd`), so the outline and contact shade of whatever is behind show through it, here and in
+     ink-studio's own pictures. No setting changes that: hang it before a plain surface, or keep the outline off.
 
 Not carried: bones and puppets (`K.puppet`, `K.bones`, `K.creature`, `K.character`, clips that bend splats), particles and pools
 (`K.pool`, `K.particles`), splats redrawn each frame (`K.frameSplats`) or moved by a stage system of the scene's own, physics
@@ -293,6 +315,9 @@ the player will show. Each command below starts as the first one does (`...` sta
 | Reflections, ripples and atmosphere | Planar captures, ripples, fog volumes | No (the finish's simple `fog` is carried; references/recipes.md, 8) |
 | Embedding and custom scene collections | `bundle()`, `demos()`, `ink-studio.config.js` | No: for ink-studio's own browser use |
 | Browser renderer | The WebGL 2 `createRenderer` | No: the player is its own WebGPU painter |
+| WebGPU graphs and Gaussian splat import (`983d91f`) | GPU texture and geometry graphs; a viewer and `render --raw` for trained splat files (PLY, SPZ) | No: a separate output (not baked here) |
+| Live show control (`983d91f`) | Live audio, MIDI, timecode, projection and lighting control | No: a world run |
+| CLI patch tooling (`983d91f`) | `ink-studio patch`: typed graph ports and signals | No: a separate output |
 | Screen transitions | Full-screen WebGL transition presets | No |
 | Module reference | What each `src/` file holds | Where to read an API's opening comment |
 | Validation and development | `npm test`, `npm run lint`, `snap`, `check` | No |
@@ -300,8 +325,9 @@ the player will show. Each command below starts as the first one does (`...` sta
 
 ## 4. Guides and examples by what you are making
 
-Every guide in `docs/` and every file in `examples/`, grouped by what a scene-maker is after. Read the Travels column first: a feature
-that does not travel is still good for pictures made with ink-studio itself, but the player will not draw it.
+Every guide in `docs/` and every file in `examples/` as of `cf35ff8` (the 89 guides and 264 example files `983d91f` added are not
+here), grouped by what a scene-maker is after. Read the Travels column first: a feature that does not travel is still good for
+pictures made with ink-studio itself, but the player will not draw it.
 
 **Travels** (the guide's feature):
 

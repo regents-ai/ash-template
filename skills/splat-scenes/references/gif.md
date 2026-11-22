@@ -6,8 +6,9 @@
 env INK_STUDIO=/path/to/ink-studio node kit/gif.cjs out/scene/scene.bin out/scene/scene.gif
 ```
 
-It prints the frame count, the size, the length of a loop, how long it took, and the seam (below). On ink-studio's `sculpt.js` (an
-8-second loop): 120 frames of 865 x 580, 0.41 MB, made in 2 to 4 s.
+An 8-second loop makes **120 frames on an 864 by 576 stage** (15 a second; the size is a few pixels off when the art pixel does not
+divide it), and a finished scene makes **5 to 11 MB**. It prints the frame count, the size, the length of a loop, how long it took,
+and the seam (below). On ink-studio's `sculpt.js`: 120 frames of 865 x 580, 0.41 MB, made in 2 to 4 s.
 
 **How long it takes.** The toolkit's CPU renderer draws all 120 frames one after another, so the time grows with the splats, and more
 when splats are large on screen. Measured on a Mac with 8-second loops:
@@ -19,12 +20,14 @@ when splats are large on screen. Measured on a Mac with 8-second loops:
 | Test scene, small splats | 100,000 | 100 s | 8.51 MB |
 | Test scene, small splats | 200,000 | 204 s | 8.13 MB |
 | A scene with a large far backdrop | 41,997 | 170 to 210 s | 1.60 MB |
-| A finished scene | about 388,000 | 374 s | 10.72 MB |
+| A lighthouse scene | 259,070 | 251 s | 4.82 MB |
+| A throne-hall scene | 371,821 | 406 s (about 7 minutes on its first run) | 10.74 MB |
+| A mansion-grounds scene | 390,661 | 497 s (510 s on its first run) | 9.55 MB |
 
-So allow about a second per thousand splats, and four to five times that when much of the picture is big splats (a sky, far
-ground). It prints nothing until it is done. Meanwhile: run it in the background (or as the last step), and look at `stills.cjs`'s
-`sheet.png` and `moments.png`, which take seconds and show the same views and moments; the player itself plays the loop as soon as
-the scene is baked. Make the GIF once the scene is settled, not on every change.
+So allow about a second per thousand splats, more when much of the picture is big splats (a sky, far ground): 4 to 9 minutes for
+a finished scene. It prints nothing until it is done. Meanwhile: run it in the background (or as the last step), and look at
+`stills.cjs`'s `sheet.png` and `moments.png`, which take seconds and show the same views and moments; the player itself plays the
+loop as soon as the scene is baked. Make the GIF once the scene is settled, not on every change.
 
 What it does:
 
@@ -43,6 +46,12 @@ What it does:
   frames. A seam inside that range does not show; one far above it means something in the scene does not come round in the loop
   (SKILL.md, The loop). `sculpt.js`: 5,600 against 4,975 to 9,725. `cloth.js`: 13,575 against 4,225 to 7,275, because its gusty wind
   leaves the cloth 0.61 world units from where it began (the bake prints that seam too).
+- **A seam just above the range** is one more ordinary step when the bake's own seams are small or explained (parts about 1e-11, or
+  a ring of like clouds turned one place as in recipes.md, 8; a cloth well under an art pixel): the step from the last frame to the
+  first is one more sample beside the 119 others. The mansion-grounds scene gave 223,328 against 167,704 to 221,788, 0.7% over, with
+  its cloud ring printed 1.27 off and its cloth 0.004 units off; the lighthouse scene and the throne-hall scene came inside their
+  ranges. A real jump stands far above the range, as `cloth.js` does at nearly twice its top; then read the bake's seams to find
+  what does not come round.
 
 ## 2. In a page
 

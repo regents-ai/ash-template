@@ -35,7 +35,8 @@ working copies. Keep a file under about 9 MB raw (3 to 5 MB on the wire); refere
 
 ## 4. Sources
 
-- ink-studio: https://github.com/siliconjungle/shapeshift-labs-ink-studio (MIT). This kit was checked against commit `cf35ff8`.
+- ink-studio: https://github.com/siliconjungle/shapeshift-labs-ink-studio (MIT). SKILL.md, Setup, names the commit this kit was
+  last checked against.
 - Kerbl, Kopanas, Leimkühler, Drettakis, "3D Gaussian Splatting for Real-Time Radiance Field Rendering", SIGGRAPH 2023 (the footprint
   through the Jacobian, the 1.3 clamp, 3σ). Code: https://github.com/graphdeco-inria/diff-gaussian-rasterization
 - Shi Yan, "WebGPU Unleashed", 5.8 Gaussian Splatting: https://shi-yan.github.io/webgpuunleashed/Advanced/gaussian_splatting.html

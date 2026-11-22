@@ -24,12 +24,13 @@ every scene file on the site. It names everything else: the four pictures, the S
 Add `<name>` to `SCENES` in `platform/assets/js/splats/stills.mjs`, then from `platform/` run:
 
 ```sh
-npm run stills:splats
+mise exec -- npm run stills:splats
 ```
 
-It needs Node 22.18 or newer and the site's packages installed: vgpu draws each picture on this machine's GPU (`vgpu/node`) with the
-site's own painter, and Playwright's headless Chromium only packs the pixels as PNG. It draws every scene in `SCENES` again, not only
-the new one, at the view and moment the live scene opens on, into `platform/priv/static/images/animations/`:
+It needs Node 22.18 or newer (the Node that `platform/.tool-versions` pins is, hence `mise exec`) and the site's packages
+installed: vgpu draws each picture on this machine's GPU (`vgpu/node`) with the site's own painter, and Playwright's headless
+Chromium only packs the pixels as PNG. It draws every scene in `SCENES` again, not only the new one, at the view and moment the live
+scene opens on, into `platform/priv/static/images/animations/`:
 
 | Picture | What it is | Size |
 | --- | --- | --- |
@@ -59,6 +60,10 @@ the stylesheet sets its size.
   Resident, Landmark and Hour, so a numbered scene carries all five. The module reads each numbered scene's sky from its file while
   it compiles (the backdrop's palette place at byte 56, its colour at byte 284 plus four times that place, with the file as an
   `@external_resource`), so the file must be in place before the site compiles.
+- **Other places that name scenes**, for an unnumbered one: in `splats_lab_live.ex`, the comment above `@unnumbered` counts them
+  ("The four scenes that are not numbered"), and the `@moduledoc` lists the unnumbered tabs and, later, the ones with no traits
+  ("The factory and the island have none"); bring all three up to date. In `platform/assets/js/splats/studio/README.md`, "Scenes
+  made elsewhere" names every scene made with the sibling skill, with its colours and whether it has fog: add the new one.
 
 ## 5. The words
 
@@ -71,5 +76,9 @@ the stylesheet sets its size.
 
 ## 6. Note it and check it
 
-Note the scene in `CHANGELOG.md` and `platform/priv/public/changelog.md` in the same commit, then check it (references/checks.md) and
-release as regent-workflow says.
+- **The source stays out of the site.** The site's repository carries the baked file and its pictures only. Keep the scene file
+  with the team's scene sources, and name that place in the commit message.
+- **The notes:** the scene in `CHANGELOG.md` and `platform/priv/public/changelog.md`, in the same commit.
+- **A side branch**, for a scene not yet meant for release (a trial, say): commit on a local branch, check it there on the local
+  site (references/checks.md) and hand the branch to the site's chief. regent-workflow treats a side branch as a handoff only:
+  nothing ships from it. Otherwise check it and release as regent-workflow says.
