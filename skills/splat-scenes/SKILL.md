@@ -46,14 +46,14 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
    tar xzf /abs/path/ink-studio.tar.gz -C /abs/path/ink-studio --strip-components 1
    ```
 
-   The download is about 9 MB and unpacks to about 35 MB. The third line prints the commit (`package.json` says 0.1.0 in every
+   The download is about 13 MB and unpacks to about 40 MB. The third line prints the commit (`package.json` says 0.1.0 in every
    copy); without git, `gzip -dc /abs/path/ink-studio.tar.gz | head -c 2048 | grep -a -o "comment=[0-9a-f]*"` prints it as
    `comment=<commit>`. The folder must be writable: the download carries no `dist/`, and loading the toolkit writes
    `dist/standalone.js` (about 11 MB) inside it on first use and after any change to its sources. Check it with
    `node /abs/path/ink-studio/cli/ink-studio.js stats /abs/path/ink-studio/examples/sculpt.js`: a pass builds the toolkit's first
-   example, prints its counts (`splats 4027` among them), ends with `no warnings` and exits 0, in about a second.
+   example, prints its counts (the `splats` line reads 4027), ends with `no warnings` and exits 0, in about a second.
 
-   references/ink-studio.md was last checked against commit `e8cef0c` (22 Nov 2026). A newer copy may add features the notes do
+   references/ink-studio.md was last checked against commit `22c23d8` (22 Nov 2026). A newer copy may add features the notes do
    not name: bake one, and the baker says whether it travels.
 2. **The player's packages** (vgpu 0.6.0 and @vgpu/wgsl 0.6.0, pinned exactly). Install in place when this folder is yours to
    write in:
@@ -93,7 +93,9 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
    move, solids and `S.bake()`, hand-placed splats, flames, motes, a cloth, then `B.finish({ cam, detail, radius, ... })` and the
    stage. 2.2 to 2.6 there cover light, every material field, hand-placed splats, things that move and the finish, and what of each
    the file carries; references/recipes.md has sizes, budgets, a far backdrop, lettering, neon, glass, interiors, and what to build
-   instead of what the file cannot carry.
+   instead of what the file cannot carry. The tables are the common parts; for a shape or effect they do not cover, first find the
+   toolkit's own guide or example in the map in references/ink-studio.md, 4, and read it, then read the source file named there,
+   then bake a small test and let the baker say whether it travels.
 3. **Look while you sculpt** at the stage's size: ink-studio's `render --w 1440 --h 960`, `turn` and `stats` draw the scene with the
    same renderer the kit uses, `--px1 --t 120` gives the picture the kit's still will be (for an 8 s loop: the kit draws 15 loops
    in), and `--zoom`, `--target`, `--yaw`, `--pitch` and `--t` give close looks at any angle and moment (Commands, below;
@@ -108,17 +110,19 @@ This folder is complete on its own: copy it anywhere. It needs Node 18 or later,
    their first frame (`cloth.js`: 0.19%). When it refuses, it names the cause (references/format.md, 9): take that feature out or
    rebuild it from what the file carries.
 6. **Prove** the file draws what the scene draws (`verify.cjs`). For each view it prints the art pixels that differ, how many of
-   them are lone and the longest run of them on a row. Expect 0 or 1 of 21,600 a view for a still scene and a few hundredths of a
-   percent with motion (ink-studio's `cloth.js`: 0.023%). A small moving scene with stars, dust or swaying grass reads about 0.1%
-   (a trial scene of 32,806 splats: at most 79 of 86,400, 0.091%; its opening view 55, 51 of them lone, longest run 2). A large
-   scene with a painted backdrop or thin water reads higher, up to about half a percent (four trial scenes: 0.115%, 0.346%, 0.14%
-   to 0.53%, and 0.405% for one of 213,405 splats), as lone pixels scattered mostly over the far backdrop. Beside each of the
-   toolkit's pictures it writes a `_differ.png`: that picture faded to a dark grey with every differing art pixel in magenta, so
-   specks on the backdrop and a patch on the subject show at a glance; references/proof.md, 1, says how to tell the harmless kind
-   from a fault. Each moment's row line gives the same shape figure as the bake, for the live scene against the decoded file at that
-   moment: the bake's own for ordinary splats, but 1.16% to 1.35% with a cloth (`cloth.js` and the trial scene of 213,405 splats),
-   because each dab's facing is stored in two bytes a frame, within about 0.94°. It keeps the toolkit's pictures as the reference
-   for any painter.
+   them are lone, the longest run of them on a row and the biggest clump (differing art pixels joined edge to edge). Expect 0 or 1
+   of 21,600 a view for a still scene and a few hundredths of a percent with motion (ink-studio's `cloth.js`: 0.023%). A small
+   moving scene with stars, dust or swaying grass reads about 0.1% (a trial scene of 32,806 splats: at most 79 of 86,400, 0.091%;
+   its opening view 55, 51 of them lone, longest run 2, biggest clump 2). A large scene with a painted backdrop, thin water or snow
+   reads higher, up to about three quarters of a percent (0.115%, 0.346%, 0.14% to 0.53%, 0.405% for a trial scene of 213,405
+   splats, 0.768% for one of 344,697), as lone pixels and small clumps over the far backdrop and along its bands' edges. Beside each
+   of the toolkit's pictures it writes a `_differ.png`: that picture faded to a dark grey with every differing art pixel in magenta,
+   so specks on the backdrop and a patch on the subject show at a glance. references/proof.md, 1, says how to tell the harmless kind
+   from a fault: the row lines first, then where the clumps sit and how big they are; the share that is lone never decides it on
+   its own. Each moment's row line gives the same shape figure as the bake, for the live scene against the decoded file at that
+   moment: the bake's own for ordinary splats, but 0.96% to 1.38% with a cloth (`cloth.js` and three larger scenes), because each
+   dab's facing is stored in two bytes a frame, within about 0.94°. It keeps the toolkit's pictures as the reference for any
+   painter.
 7. **Stills**: `still.png` is the page's picture until the live scene's first frame and without WebGPU; `sheet.png` and `moments.png`
    are six views and eight moments to look at.
 8. **Play** it: serve the player and open it in a browser, or let `player/check.mjs` open it in a browser with no window and
@@ -134,7 +138,7 @@ From this folder, with `INK_STUDIO` named on each line. `scenes/my-scene.js` sta
 | Step | Command | Makes |
 | --- | --- | --- |
 | Bake | `env INK_STUDIO=/abs/path/ink-studio node kit/bake.cjs scenes/my-scene.js 8 out/my-scene/scene.bin` | The file; `8` is the loop in seconds (a whole number of thirtieths) |
-| Prove | `env INK_STUDIO=/abs/path/ink-studio node kit/verify.cjs scenes/my-scene.js out/my-scene/scene.bin out/my-scene/reference` | The toolkit's pictures, a `_differ.png` beside each, and `reference.json`; prints per view the art pixels that differ, how many are lone, the longest run |
+| Prove | `env INK_STUDIO=/abs/path/ink-studio node kit/verify.cjs scenes/my-scene.js out/my-scene/scene.bin out/my-scene/reference` | The toolkit's pictures, a `_differ.png` beside each, and `reference.json`; prints per view the art pixels that differ, how many are lone, the longest run, the biggest clump |
 | Stills | `env INK_STUDIO=/abs/path/ink-studio node kit/stills.cjs out/my-scene/scene.bin out/my-scene` | `still.png`, `sheet.png`, `moments.png` |
 | GIF | `env INK_STUDIO=/abs/path/ink-studio node kit/gif.cjs out/my-scene/scene.bin out/my-scene/scene.gif` | One loop, once round, playing for ever: 120 frames for an 864 by 576 stage, the grid's whole art pixels, so up to an art pixel less one over in each direction (`sculpt.js`: 865 by 580) |
 | Play | `node player/serve.mjs out/my-scene/scene.bin out/my-scene/still.png 4173` | The player at http://127.0.0.1:4173/; stop it with Ctrl-C, or with the `kill` and process number it prints |
@@ -146,8 +150,10 @@ What ink-studio's `sculpt.js` gives on a Mac: 4,027 splats in 7 colours, a 0.08 
 21,600 differing in any view, a GIF of 120 frames of 865 by 580 (0.41 MB). Each step takes a few seconds: baked in 0.1 to 0.4 s,
 proved in 0.6 to 2.3 s, stills in 0.2 to 1.1 s, the GIF in 2 to 8 s (the longer times on a busy machine). Its `cloth.js`: 1,413
 splats and 396 cloth dabs, 0.89 MB (0.66 MB gzipped), baked in 2 to 2.4 s. A trial scene of 213,405 splats with a cloth: baked in
-8 s, proved in 84 s, stills in 24 s, the GIF in 4 minutes. Finished scenes of 260,000 to 390,000 splats took 4 to 9 minutes for a
-GIF and made 5 to 11 MB (references/gif.md, 1).
+8 s, proved in 84 s, stills in 25 s, the GIF in 4 minutes; one of 344,697 with a cloth and falling snow: 9 s, 122 s, 87 s and 6
+minutes. For a large scene, time the GIF from the proof: the proof took about a third as long as the GIF on three large scenes, and
+the stills a tenth (a quarter on the 344,697 one). Finished scenes of 260,000 to 390,000 splats took 4 to 9 minutes for a GIF and
+made 5 to 11 MB (references/gif.md, 1).
 
 In the player: it turns once every 30 seconds; drag to turn and tilt, flick to spin, arrow keys on the focused picture turn 20° and
 tilt 12°; a finger only turns, so the page still scrolls. With reduced motion it holds the still's view and moment, and a drag or
@@ -175,11 +181,16 @@ back where it started after L seconds.
   can see means a period that does not divide L.
 - **A cloth** is simulated: the bake runs it for 15 loops first so it settles, stores every frame of the 16th, and does not stop on
   how far it ends from where it began. Read its `cloth:` line: it ends `a whole loop on, it is 0.0000 world units from where it
-  began` when the loop has closed. A number near an art pixel (1 / detail world units at the camera's target) or above is a jump at
-  the loop's end, in the player and the GIF alike, and the GIF's own seam check can miss it (a flag 0.34 units out, over ten art pixels,
-  gave a GIF seam inside its frames' range). To close it, build the wind from sines of 2π k t / L with whole k, so it repeats
-  every loop (`K.xpbd.gust` never does), keep the cloth light and the wind gentle, then raise the cloth's `damp` (how fast its
-  motion dies away, 0.6 a second unless given) and bake a few values: the seam does not shrink steadily with any of them. A flag
+  began` when the loop has closed exactly. **It passes under half an art pixel**: an art pixel is 1 / detail world units at the
+  camera's target, so the mark is 0.5 / detail (0.016 units at `detail: 31`). Checked by eye on a flag at `detail: 31`, drawn as
+  the GIF draws its frames but with the camera held still, the last frames and the first side by side: no jump at 0.037 units (1.2
+  art pixels) on a flag barely stirring, where a jump shows most, nor at 0.089 and 0.135 (2.8 and 4.2) in a stronger wind; the tip
+  jumped at 0.341 (10.6). Half an art pixel is under the smallest of those by more than twice; the cloths of a throne-hall scene and
+  the trial scene of 344,697 splats closed to 0.0030 and 0.0036 (about a tenth). A seam that large is a jump in the player and the
+  GIF alike, and the GIF's own seam check can miss it (a flag 0.34 units out gave a GIF seam inside its frames' range). To close
+  it, build the wind from sines of 2π k t / L with whole k, so it repeats every loop (`K.xpbd.gust` never does), keep the cloth
+  light and the wind gentle, then raise the cloth's `damp` (how fast its motion dies away, 0.6 a second unless given) and bake a
+  few values: the seam does not shrink steadily with any of them. A flag
   in a gentle wind missed by 0.015 to 0.030 units up to `damp: 4.5`, 0.007 at 6 and 0.0000 at 8; in twice that wind by 0.13 to
   0.40 at every `damp` from 0.6 to 8 but 3. A trial scene of 213,405 splats went from 0.118 at the default to 0.0000 at 4.5.
   references/ink-studio.md, 2.5, has the measurements and every cloth option.
@@ -221,7 +232,7 @@ stage). The limits here are the ones that hold for this kit's file and player.
 | `kit/bake.cjs` | Scene file to baked file; prints cost, colours and accuracy; refuses what the file cannot carry |
 | `kit/format.cjs` | The file's layout and codecs, shared by the baker and the decoder |
 | `kit/decode.cjs` | Reads a baked file back into ink-studio's rows at any frame |
-| `kit/verify.cjs` | The proof: live scene against decoded file, drawn by ink-studio; per view the art pixels that differ, how many lone, the longest run; plus the reference pictures and a difference picture for each view |
+| `kit/verify.cjs` | The proof: live scene against decoded file, drawn by ink-studio; per view the art pixels that differ, how many lone, the longest run, the biggest clump; plus the reference pictures and a difference picture for each view |
 | `kit/stills.cjs` | `still.png`, `sheet.png`, `moments.png` |
 | `kit/gif.cjs` | The loop as a GIF, palette exact |
 | `kit/loop.cjs` | `loopable(world, seconds)`: every kind's speed made whole cycles a loop |

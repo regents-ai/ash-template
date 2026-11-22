@@ -24,14 +24,19 @@ when splats are large on screen. Measured on a Mac with 8-second loops:
 | Test scene, small splats | 100,000 | 100 s | 8.51 MB |
 | Test scene, small splats | 200,000 | 204 s | 8.13 MB |
 | A scene with a large far backdrop | 41,997 | 170 to 210 s | 1.60 MB |
+| A trial scene with a cloth | 213,405 | 237 s | 5.94 MB |
 | A lighthouse scene | 259,070 | 251 s | 4.82 MB |
+| A trial scene with a cloth and falling snow | 344,697 | 354 s | 7.62 MB |
 | A throne-hall scene | 371,821 | 406 s (about 7 minutes on its first run) | 10.74 MB |
 | A mansion-grounds scene | 390,661 | 497 s (510 s on its first run) | 9.55 MB |
 
 So allow about a second per thousand splats, more when much of the picture is big splats (a sky, far ground): 4 to 9 minutes for
-a finished scene. It prints nothing until it is done. Meanwhile: run it in the background (or as the last step), and look at
-`stills.cjs`'s `sheet.png` and `moments.png`, which take seconds and show the same views and moments; the player itself plays the
-loop as soon as the scene is baked. Make the GIF once the scene is settled, not on every change.
+a finished scene. The proof and the stills draw the same scene, so they tell you the GIF's time in advance: on the scenes above of
+213,405, 344,697 and 371,821 splats the proof took about a third as long as the GIF (84 s against 237, 122 against 354, 158
+against 406) and the stills a tenth (25 s, 45 s) to a quarter (87 s, on the 344,697). The GIF prints nothing until it is done.
+Meanwhile: run it in the background (or as the last step), and look at `stills.cjs`'s `sheet.png` and `moments.png`, which show
+the same views and moments; the player itself plays the loop as soon as the scene is baked. Make the GIF once the scene is
+settled, not on every change.
 
 What it does:
 
@@ -51,11 +56,11 @@ What it does:
   (SKILL.md, The loop). `sculpt.js`: 5,600 against 4,975 to 9,725. `cloth.js`: 13,575 against 4,225 to 7,275, because its gusty wind
   leaves the cloth 0.61 world units from where it began (the bake prints that seam too).
 - **A seam just above the range** is one more ordinary step when the bake's own seams are small or explained (parts about 1e-11, or
-  a ring of like clouds turned one place as in recipes.md, 8; a cloth well under an art pixel): the step from the last frame to the
-  first is one more sample beside the 119 others. The mansion-grounds scene gave 223,328 against 167,704 to 221,788, 0.7% over, with
-  its cloud ring printed 1.27 off and its cloth 0.004 units off; the lighthouse scene and the throne-hall scene came inside their
-  ranges. A real jump stands far above the range, as `cloth.js` does at nearly twice its top; then read the bake's seams to find
-  what does not come round.
+  a ring of like clouds turned one place as in recipes.md, 8; a cloth under half an art pixel, SKILL.md, The loop): the step
+  from the last frame to the first is one more sample beside the 119 others. The mansion-grounds scene gave 223,328 against
+  167,704 to 221,788, 0.7% over, with its cloud ring printed 1.27 off and its cloth 0.004 units off; the lighthouse scene and the
+  throne-hall scene came inside their ranges. A real jump stands far above the range, as `cloth.js` does at nearly twice its top;
+  then read the bake's seams to find what does not come round.
 - **A seam inside the range is not proof of a closed loop** when the scene moves a lot from frame to frame. A flag that ended its
   loop 0.34 units (over ten art pixels) from where it began gave 3,364 against 1,280 to 3,688; the bake's `cloth:` line is the one to
   read (SKILL.md, The loop).

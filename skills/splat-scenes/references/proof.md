@@ -14,9 +14,10 @@ It builds the live scene with ink-studio, reads the baked file back with `kit/de
 from six views (the opening view and the other three quarter turns, nearly straight above, nearly straight below) at three moments of
 the loop (0, 5/16 and 11/16 of it), on a 1440 by 960 stage. For each moment it prints how far the decoded splats are from the live
 ones (position, shape, phase; how many densities, colours, kinds and motion numbers differ) and for each picture how many art pixels
-differ, how many of those are lone (no differing neighbour above, below or to either side) and the longest run of them on one row:
+differ, how many of those are lone (no differing neighbour above, below or to either side), the longest run of them on one row, and
+the biggest clump (differing art pixels joined edge to edge):
 
-    night-stall_yaw28.6_pitch10.3_t0.00: 360x240 art pixels of 4, 55 differ, 51 lone, longest run on a row 2
+    night-stall_yaw28.6_pitch10.3_t0.00: 360x240 art pixels of 4, 55 differ, 51 lone, longest run on a row 2, biggest clump 2
 
 The last line gives the most any view differs, as a percentage of its art pixels.
 
@@ -27,36 +28,43 @@ The last line gives the most any view differs, as a percentage of its art pixels
   splats gave 0.115% (a throne-hall scene), 0.346% (a lighthouse scene) and 0.14% to 0.53% (a mansion-grounds scene): the
   differences were lone pixels, scattered mostly over the far sky, the sea's glitter and colour edges, with no run or patch on the
   subject (the lighthouse scene's front view: 495 differing, 356 of them lone). A trial scene of 213,405 splats with a painted
-  backdrop, thin water, rig parts and a cloth gave at most 622 of 153,600 (0.405%), 71% to 96% of them lone.
+  backdrop, thin water, rig parts and a cloth gave at most 622 of 153,600 (0.405%), 71% to 96% of them lone. A trial scene of
+  344,697 splats whose backdrop is many flat colour bands gave the most yet, all harmless: 1,180 of 153,600 (0.768%) in its
+  opening view, 64% to 96% lone over its views, longest run 5, biggest clump 9, the differing pixels in dotted lines along the
+  band edges.
 - **The difference picture.** Beside each of the toolkit's pictures the proof writes `<the same name>_differ.png`, blown up as a
   stage shows it: the toolkit's picture faded to a dark grey, with every art pixel that differs in magenta. Open the view with the
   most differing pixels first. Magenta specks scattered one by one, even thick over fine repeated detail, and short lines along
   the edge between two flat colours, are the harmless kind; a solid magenta clump or a cluster of lines on the subject is where
   the file and the scene disagree.
-- **Lone pixels or a fault.** Read in this order. Each step was checked on a trial scene of 213,405 splats (480 by 320 art pixels,
-  153,600 a view) by changing one thing in scratch copies of its scene file and proving each copy against the file baked before
-  the change. The lone share is the lone count over the differing count, per view; a clump is differing pixels touching up, down
-  or sideways in the difference picture.
+- **Lone pixels or a fault.** The lone share (lone over differing, per view) never decides on its own: harmless files gave 64% to
+  97% lone and real faults 27% to 98%. Read the row lines first, then where the clumps sit and how big. Checked on three harmless
+  files (trial scenes of 213,405 and 344,697 splats and a throne-hall scene of 371,821, each proved against its own bake; 480 by
+  320 art pixels, 153,600 a view) and on four faults made by changing one thing in scratch copies of the 213,405-splat scene and
+  proving each copy against the file baked before the change.
   1. **The row lines.** On a file baked from this scene, every moment's line gives 0 differing densities, colours, kinds and
      motion numbers, positions within about 1e-3 world units, and a shape figure: the most any splat's covariance differs, as a
-     share of its size. Without a cloth it is the bake's `whole shape` (about 0.1%, up to 0.3% with flat splats); with one, 1.16%
-     to 1.35% (here 1.35%), because each dab's facing is stored in two bytes a frame, within about 0.94° (references/format.md,
-     7). Differing colours or kinds, a position error of whole units, or `NaN`, mean the file is not this scene's: bake again. A
-     crate moved 0.02 units gave `rows within 1.42e+2 world units` and 16,269 differing colours, while its pixels (at most 643
-     differing a view, 66% to 80% lone, longest runs up to 8, the biggest clump 22) looked like a harmless run's. The rows catch a
-     changed solid; the pixels may not.
-  2. **Harmless runs** lie on flat colour, one row deep: along the edge between two bands of the far backdrop, or a cloud's edge.
-     On the trial scene's own file: 71% to 96% lone, specks over the whole picture and thickest on fine repeated detail (a grid of
-     panels), longest runs up to 8; its runs of 4 or more and its biggest clump (16) all lay on the backdrop. Length alone does
-     not decide: runs of 7 and 8 were harmless there.
-  3. **A fault** lies on the subject and clumps. A tank moved 0.04 units gave 27% to 50% lone in the five views that see it (72%
-     to 75% in the one that does not), a longest run of 14 in the view from above (2 for the scene's own file), and solid clumps
-     of 35 to 100 pixels on the tank. A clump of dozens of pixels on the subject is a fault; the difference picture shows where.
-  4. **A finish that differs** (contact shade, dither, fog or outline changed since the bake) leaves the rows as they were, since
-     they hold no finish. The two tried raised the count in every view at about the same lone share, with no bigger clump:
-     contact shade's range 0.50 to 0.52 gave at most 1,018 differing (0.663%), 77% to 95% lone; dither 0.30 to 0.32 at most 1,478
-     (0.962%), 83% to 98% lone, against 622 for the scene's own file. A count well above the last proof's with nothing new on the
-     subject: bake again and prove; it drops back when the file was stale.
+     share of its size. Without a cloth it is the bake's `whole shape` (about 0.1%, up to 0.3% with flat splats); with one, 0.96%
+     to 1.38%, because each dab's facing is stored in two bytes a frame, within about 0.94° (references/format.md, 7). Differing
+     colours or kinds, a position error of whole units, or `NaN`, mean the file is not this scene's: bake again. Both moved solids
+     were caught here: a crate moved 0.02 units gave `rows within 1.42e+2 world units` and 16,269 differing colours, a tank moved
+     0.04 `rows within NaN` and 15,136. The crate's pixels (at most 643 differing a view, 66% to 80% lone, longest run 8) looked
+     almost like a harmless file's: the rows catch a changed solid; the pixels may not.
+  2. **Where the clumps sit and how big.** With clean rows, open the difference picture of the view with the biggest clump. On the
+     three harmless files the biggest clump in any view was 16, 9 and 4 art pixels, and every clump of more than a few lay on flat
+     colour: in dotted lines along the edges between bands of a far backdrop or a cloud's edge, or a ring round a snowflake; their
+     longest runs (8, 5 and 2) lay on the same edges, so run length alone does not decide. Specks spread over the whole picture,
+     thickest on fine repeated detail (a grid of panels). The moved tank gave clumps of 35 to 100 art pixels on the tank in the
+     five views that see it (4 in the one that does not) and a run of 14 seen from above; the moved crate a clump of 22 on the
+     crate seen from above. A clump over 16, or a clump of any size that sits on the subject, is where the file and the scene
+     disagree.
+  3. **A count well above the last proof's**, with clean rows and no bigger clump, is a finish that differs (contact shade,
+     dither, fog or outline changed since the bake): the rows hold no finish. The two tried raised the count in every view with
+     the same biggest clump (16, on the backdrop): contact shade's range 0.50 to 0.52 gave at most 1,018 differing (0.663%), 77% to
+     95% lone; dither 0.30 to 0.32 at most 1,478 (0.962%), 83% to 98% lone, against 622 for the scene's own file. Bake again and
+     prove; it drops back when the file was stale.
+  4. **Otherwise it is harmless**, whatever its lone share: the trial scene of 344,697 splats read 1,180 differing in its opening
+     view, 64% to 65% lone, with clean rows and its biggest clump 9 on a band edge.
 
   For scale, scenes drawn at the wrong moment: a trial scene of 32,806 splats 984 differing, 272 lone, longest run 5, all on its
   swaying grass; `cloth.js` 913 of 21,600, none lone, a run of 29. `still.png` (from `kit/stills.cjs`) is the baked file at the

@@ -1,6 +1,7 @@
 /* Proves a baked file draws what the toolkit draws. It builds the live scene with the toolkit, reads the baked file back with
    decode.cjs, and has the toolkit's own renderer draw both from six views (four quarter turns, nearly straight above, nearly straight
-   below) at three moments of the loop, then counts the art pixels that differ. The toolkit's pictures are kept as the reference a
+   below) at three moments of the loop, then counts the art pixels that differ, how many of them are lone, their longest run on a row
+   and their biggest clump. The toolkit's pictures are kept as the reference a
    painter is checked against, at their art-pixel size and blown up as a stage shows them, with reference.json beside them. Beside each
    view is a third picture, _differ.png: the toolkit's picture faded to a dark grey with every art pixel that differs in magenta.
 
@@ -44,13 +45,15 @@ function compareRows(live, dec, order, moving) {
 }
 
 // the art pixels that differ; how many of them are lone (no differing neighbour above, below or to either side); the longest run of
-// them on one row
+// them on one row; the biggest clump (differing art pixels joined edge to edge)
 const differing = (a, b) => {
   const { w, h } = a,
-    d = new Uint8Array(w * h);
+    d = new Uint8Array(w * h),
+    seen = new Uint8Array(w * h);
   let n = 0,
     lone = 0,
-    run = 0;
+    run = 0,
+    clump = 0;
   for (let i = 0, p = 0; i < w * h; i++, p += 3)
     if (a.rgb[p] !== b.rgb[p] || a.rgb[p + 1] !== b.rgb[p + 1] || a.rgb[p + 2] !== b.rgb[p + 2]) (d[i] = 1), n++;
   for (let y = 0; y < h; y++)
@@ -60,7 +63,21 @@ const differing = (a, b) => {
       run = Math.max(run, along);
       if (d[i] && !(x && d[i - 1]) && !(x < w - 1 && d[i + 1]) && !(y && d[i - w]) && !(y < h - 1 && d[i + w])) lone++;
     }
-  return { n, lone, run, d };
+  for (let s = 0; s < w * h; s++) {
+    if (!d[s] || seen[s]) continue;
+    const stack = [s];
+    let size = 0;
+    seen[s] = 1;
+    while (stack.length) {
+      const i = stack.pop(),
+        x = i % w;
+      size++;
+      for (const j of [x ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w])
+        if (j >= 0 && j < w * h && d[j] && !seen[j]) (seen[j] = 1), stack.push(j);
+    }
+    clump = Math.max(clump, size);
+  }
+  return { n, lone, run, clump, d };
 };
 
 // the toolkit's picture faded to a dark grey, with every differing art pixel in magenta, blown up as a stage shows it
@@ -99,7 +116,7 @@ for (const fraction of MOMENTS) {
     const o = Object.assign({ yaw, pitch }, CANVAS),
       a = kit.render.render(live, Object.assign({ t: live.clock }, o)),
       b = kit.render.render(dec, Object.assign({ t: dec.clock }, o)),
-      { n: diff, lone, run, d } = differing(a, b),
+      { n: diff, lone, run, clump, d } = differing(a, b),
       name = `${id}_yaw${deg(yaw)}_pitch${deg(pitch)}_t${tau.toFixed(2)}`,
       big = kit.render.upscale(a, a.px),
       differ = marked(a, d);
@@ -121,7 +138,9 @@ for (const fraction of MOMENTS) {
       clock: live.clock,
       differingPixels: diff
     });
-    console.log(`  ${name}: ${a.w}x${a.h} art pixels of ${a.px}, ${diff} differ, ${lone} lone, longest run on a row ${run}`);
+    console.log(
+      `  ${name}: ${a.w}x${a.h} art pixels of ${a.px}, ${diff} differ, ${lone} lone, longest run on a row ${run}, biggest clump ${clump}`
+    );
   }
 }
 fs.writeFileSync(
