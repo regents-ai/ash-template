@@ -3,13 +3,15 @@ defmodule AshTemplateWeb.SplatsLabLive do
   Splats: every small world in pixel art the site draws, each a few hundred thousand 3D
   splats, turning once every thirty seconds while everything in it plays an eight-second
   loop. One tab for each: the robot factory, the floating island at night, the gallery
-  on its lawn, the chalet museum, then every numbered scene (`AshTemplateWeb.Scenes`) in number order
+  on its lawn, the chalet museum, the lighthouse at dusk, then every numbered scene
+  (`AshTemplateWeb.Scenes`) in number order
   under its title. A drag
   turns and tilts the scene, and a pinch, a wheel with Ctrl or Cmd held, the keys + and
   - or the box's Zoom in and Zoom out buttons bring it nearer, up to four times, at the
   pointer or the middle; Reset view, 0, a double-click or a double tap goes back to the
   opening view. The factory comes first, at the bare address; `?scene=<name>` shows
-  another (`island`, `gallery`, `museum`, or a numbered scene's name such as `fishing`), and any other value
+  another (`island`, `gallery`, `museum`, `lighthouse`, or a numbered scene's name such as
+  `fishing`), and any other value
   shows the factory. On a wide screen the tabs wrap onto as many lines as they need; on
   a phone they keep to one row, which scrolls sideways on its own, and the shared
   `MotionTravel` hook keeps the current tab in view there.
@@ -36,7 +38,7 @@ defmodule AshTemplateWeb.SplatsLabLive do
   Under Formats, a numbered scene shows its traits, open: its number and whether it is
   Action or Chill (`SplatStage.meta/1`), its rarity score (`SplatStage.rarity/1`) and
   every trait it was dealt (`SplatStage.traits/1`), the same parts the Scenes page shows.
-  The factory and the island have none, so nothing shows there. The lede links the
+  The unnumbered scenes have none, so nothing shows there. The lede links the
   Scenes page, which shows the numbered scenes side by side. Nothing here reads or
   changes anything outside the page.
   """
@@ -46,7 +48,7 @@ defmodule AshTemplateWeb.SplatsLabLive do
   alias AshTemplateWeb.Components.SplatStage
   alias AshTemplateWeb.{PublicDocuments, Scenes}
 
-  # The four scenes that are not numbered; the numbered ones follow, from Scenes.
+  # The five scenes that are not numbered; the numbered ones follow, from Scenes.
   @unnumbered [
     %{
       name: "factory",
@@ -75,6 +77,13 @@ defmodule AshTemplateWeb.SplatsLabLive do
       number: nil,
       label:
         "A chalet museum with a neon MoBA sign on a floating island over a mountain lake at dawn: knitted creatures of many colours on the roof, in the doorway, riding a tortoise and sitting on a rainbow heart, small shelled visitors queueing with plants on their heads, a gift box, a waterfall off the edge and snowy peaks behind."
+    },
+    %{
+      name: "lighthouse",
+      title: "Lighthouse",
+      number: nil,
+      label:
+        "A red and white lighthouse on a rock at dusk, its lamp turning and its beam sweeping over the sea: a keeper's cottage with smoke from its chimney, a jetty with a rocking boat, gulls circling and the sun setting over glittering water."
     }
   ]
 

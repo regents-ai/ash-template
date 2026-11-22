@@ -13691,3 +13691,14 @@ For the template chief to release. No migration. No new package.
   pictures of Black Slab and Dice Owl are byte for byte the redrawn ones. Not proven by
   the chief: the two scenes drawn live in a browser (the design chief looks after the
   release), Safari, Firefox, a phone.
+
+## 2026-11-22 — Lighthouse on the Splats page
+
+- `/animations/splats` has a fifth unnumbered world, Lighthouse (`?scene=lighthouse`),
+  after Museum: `platform/priv/static/splats/lighthouse.bin` (about 5 MB, 2.2 MB gzipped,
+  259,070 splats, an eight-second loop in which the lamp turns once, 70 colours) and its
+  four pictures, drawn by `npm run stills:splats`. It was made with the `splat-scenes`
+  skill and baked by that skill's kit, then put on the page by following
+  `splat-scenes-phoenix`; its source is not in the repository. It has no number, traits
+  or page of its own.
+- Its outline edge is 0.35, so the site's painter draws its outline, as the kit does.
