@@ -6,8 +6,7 @@ a local site with its settings and stop it after, and that browsers are headless
 
 ## 1. Before the browser
 
-- `make check` from ash-template's root, through mise so its tools are the pinned ones:
-  `mise -C <checkout>/platform exec -- make -C <checkout> check`. It runs warnings as errors, the design system's style check, format,
+- `make check`, through mise so its tools are the pinned ones: from `platform/`, `mise exec -- make -C .. check`. It runs warnings as errors, the design system's style check, format,
   Credo and the TypeScript typecheck against the installed vgpu (check `platform/node_modules/vgpu/package.json` matches the pin
   first, as vgpu-island says).
 - The scene file is in `platform/priv/static/splats/<name>.bin`, unchanged from the bake.
