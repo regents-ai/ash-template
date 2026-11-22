@@ -26,9 +26,11 @@ a local site with its settings and stop it after, and that browsers are headless
 
 **The local site.** From the working copy's `platform/`, start it with its settings loaded the repository's way (regent-workflow,
 Local sites): `direnv exec <main checkout>/platform env PORT=<port> mise exec -- mix phx.server`. Never read a settings file. The
-site then uses this machine's own development database unless its settings name the remote cluster, in which case it runs no jobs
-and listens on this machine alone (`AshTemplate.DatabaseConfig`, `config/runtime.exs`); either way create, drop, reset and migrate
-nothing for these checks. After the start, check that the home page's `privy-app-id` meta is non-empty by its length, never its
+site then uses this machine's own development database, `ash_template_dev` (`AshTemplate.DatabaseConfig`). If the settings name the
+remote cluster (`AshTemplate.DatabaseConfig.remote?/0`), that is the live database: do not run a working copy on it for these
+checks; stop and tell the site's chief. Where this machine has no development database, give the site one of its own: add
+`ASH_TEMPLATE_DEV_PARTITION=<letters>` to the start line (the database `ash_template<letters>_dev`), set it up first as
+`platform/README.md` does, and drop that one database after. Create, drop, reset and migrate no other. After the start, check that the home page's `privy-app-id` meta is non-empty by its length, never its
 value; stop the server after, as regent-workflow says. The Splats page is public: every step here runs signed out.
 
 Chromium launched by Playwright with `--enable-unsafe-webgpu` (and `--use-angle=metal` on a Mac), at a 1440 by 960 window unless a
