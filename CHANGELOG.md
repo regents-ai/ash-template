@@ -13713,3 +13713,14 @@ For the template chief to release. No migration. No new package.
   `platform/assets/js/splats/stills.mjs`.
 - Made with the `splat-scenes` and `splat-scenes-phoenix` skills alone, as their first
   trial.
+
+## 2026-11-22 — Splats: Throne, a seventh unnumbered scene
+
+- A new scene on the Splats page only, as the tab Throne (`?scene=doomsday-throne`), after
+  Heroes: `platform/priv/static/splats/doomsday-throne.bin` (371,821 splats, 7.99 MB, an
+  8-second loop, 109 colours, no fog, outline on), its four pictures from
+  `npm run stills:splats`, its entry in `@unnumbered` in
+  `platform/lib/ash_template_web/live/splats_lab_live.ex` and its name in `SCENES` in
+  `platform/assets/js/splats/stills.mjs`. It was made with the `splat-scenes` skill and
+  baked by that skill's kit; its source is not in the repository. It has no number,
+  traits or page of its own.
