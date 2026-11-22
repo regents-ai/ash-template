@@ -2,6 +2,11 @@
 
 Changes to Ash Template, newest first.
 
+## 22 November 2026
+
+- **Splats.** Black Slab and Dice Owl are drawn cleanly, without the dark speckle that
+  covered them.
+
 ## 21 November 2026
 
 - **Splats.** A new world, Museum: a chalet museum on a floating island over a mountain

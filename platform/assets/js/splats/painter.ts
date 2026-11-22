@@ -489,9 +489,9 @@ fn nearest(c: vec3f) -> vec3f {
   }
   colour *= 1.0 - SHADE_STRENGTH * min(1.0, shut / 4.0);
 
-  // 3. The outline, where depth steps.
+  // 3. The outline, where depth steps; a scene whose edge is 0 has none.
   let step = max(2.0 * depth - depthAt(x - 1, y) - depthAt(x + 1, y), 2.0 * depth - depthAt(x, y - 1) - depthAt(x, y + 1));
-  if (step > OUTLINE_EDGE / (2.0 * RADIUS)) {
+  if (OUTLINE_EDGE > 0.0 && step > OUTLINE_EDGE / (2.0 * RADIUS)) {
     return vec4f(paletteColour(OUTLINE_INDEX), 1.0);
   }
 

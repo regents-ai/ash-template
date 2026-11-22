@@ -278,7 +278,7 @@ Reads outside the grid take the nearest pixel inside it. For the art pixel (x, y
    (x + round(glassBend gx), y + round(glassBend gy)).
 2. Contact shade: for the eight neighbours at (±2, 0), (0, ±2) and (±1, ±1), let δ = (D(x, y) − D(neighbour)) / (shadeRange / 2R); each
    with 0.08 < δ < 3 adds min(1, δ) to an occlusion o. C ← C (1 − shadeStrength min(1, o / 4)).
-3. Outline: if max(2D(x,y) − D(x−1,y) − D(x+1,y), 2D(x,y) − D(x,y−1) − D(x,y+1)) > outlineEdge / 2R, the pixel is
+3. Outline, only when outlineEdge > 0: if max(2D(x,y) − D(x−1,y) − D(x+1,y), 2D(x,y) − D(x,y−1) − D(x,y+1)) > outlineEdge / 2R, the pixel is
    `palette[outlineIndex]`, and step 4 is skipped.
 4. Dither: with the 4 x 4 table B = 0 8 2 10 / 12 4 14 6 / 3 11 1 9 / 15 7 13 5 (rows by y mod 4, columns by x mod 4, y counted from
    the bottom), add (B + 0.5)/16 − 0.5 times 0.105 dither to each channel, then clamp each to 0 to 1. (0.105 = 0.35 x 0.3, the

@@ -13671,3 +13671,12 @@ For the template chief to release. No migration. No new package.
   gives its device back, what runs without WebGPU, when the recovery count resets, when
   the motion lab is public). Nobody has yet followed `references/checks.md` end to end.
 - No release: nothing the site serves changed.
+
+## 2026-11-22 — Splats: an outline only where a scene asks
+
+- `platform/assets/js/splats/painter.ts` draws the outline only when the scene's
+  `outlineEdge` is above 0, as the format's finish step 3 and the `splat-scenes` skill's
+  player do; `platform/assets/js/splats/studio/FORMAT.md` says so. Black Slab and Dice
+  Owl are the two files with `outlineEdge` 0: they are drawn without an outline, and
+  their eight pictures are redrawn by `npm run stills:splats`. No other scene's picture
+  changed.
