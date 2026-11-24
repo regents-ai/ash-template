@@ -55,9 +55,8 @@ defmodule AshTemplate.DatabaseConfig do
   def notifications_config!(environment) do
     environment
     |> runtime_config!()
-    |> Keyword.drop([:pool_size, :max_lifetime, :parameters, :prepare])
+    |> Keyword.drop([:pool_size, :max_lifetime, :parameters])
     |> connection_keys()
-    |> direct_fly_mpg_options()
     |> Keyword.merge(auto_reconnect: true, parameters: [application_name: "ash-template-listen"])
   end
 
@@ -71,25 +70,7 @@ defmodule AshTemplate.DatabaseConfig do
 
   def release_config! do
     _role = deployment_role!()
-    first_env!(["DATABASE_DIRECT_URL", "DATABASE_URL"]) |> database_url!(direct?: true)
-  end
-
-  defp direct_fly_mpg_options(options) do
-    case Keyword.get(options, :hostname) do
-      "pgbouncer." <> rest = host ->
-        if fly_mpg_host?(host) do
-          direct = "direct." <> rest
-
-          options
-          |> Keyword.put(:hostname, direct)
-          |> Keyword.put(:ssl, tls_options(direct)[:ssl])
-        else
-          options
-        end
-
-      _other ->
-        options
-    end
+    first_env!(["DATABASE_DIRECT_URL", "DATABASE_URL"]) |> database_url!()
   end
 
   defp serving(options) do
@@ -136,14 +117,13 @@ defmodule AshTemplate.DatabaseConfig do
     end) || raise("#{Enum.join(variables, " or ")} is required")
   end
 
-  defp database_url!({variable, value}, opts \\ []) do
+  defp database_url!({variable, value}) do
     admitted_hosts = allowed_hosts()
 
     with {:ok, %URI{scheme: scheme, host: host, path: "/" <> database, userinfo: userinfo} = uri}
          when scheme in ["postgres", "postgresql"] <- URI.new(value),
          true <- present?(host) and present?(database) and valid_userinfo?(userinfo),
-         {:ok, normalized_uri, admitted_host} <-
-           admit(normalize_uri(uri, opts[:direct?] == true), admitted_hosts),
+         {:ok, normalized_uri, admitted_host} <- admit(normalize_uri(uri), admitted_hosts),
          url = URI.to_string(normalized_uri),
          true <- valid_ecto_url?(url) do
       connection_options(url, admitted_host)
@@ -152,15 +132,19 @@ defmodule AshTemplate.DatabaseConfig do
     end
   end
 
-  defp normalize_uri(%URI{host: host} = uri, direct?) do
+  # Fly Managed Postgres's PgBouncer endpoint rejects startup parameters
+  # (`statement_timeout`, `lock_timeout`, `idle_in_transaction_session_timeout`)
+  # and does not support LISTEN/NOTIFY. Rewrite `pgbouncer.<id>.flympg.net` to
+  # `direct.<id>.flympg.net` and strip URL query params so explicit verify_peer
+  # TLS options govern cleanly.
+  defp normalize_uri(%URI{host: host} = uri) do
     lower_host = String.downcase(host)
 
     upgraded_host =
-      if direct? and fly_mpg_host?(lower_host) and String.starts_with?(lower_host, "pgbouncer."),
+      if fly_mpg_host?(lower_host) and String.starts_with?(lower_host, "pgbouncer."),
         do: String.replace_prefix(lower_host, "pgbouncer.", "direct."),
         else: lower_host
 
-    # Strip Fly MPG query params (e.g. ?sslmode=require) so explicit verify_peer TLS options govern cleanly.
     query = if fly_mpg_host?(upgraded_host), do: nil, else: uri.query
     %{uri | host: upgraded_host, query: query}
   end
@@ -193,11 +177,7 @@ defmodule AshTemplate.DatabaseConfig do
 
   defp connection_options(url, host) do
     socket_options = if ipv6?(host), do: [:inet6], else: []
-    pgbouncer? = fly_mpg_host?(host) and String.starts_with?(host, "pgbouncer.")
-
-    options =
-      [url: url, port: URI.parse(url).port || 5432, socket_options: socket_options] ++
-        if(pgbouncer?, do: [prepare: :unnamed], else: [])
+    options = [url: url, port: URI.parse(url).port || 5432, socket_options: socket_options]
 
     if fly_mpg_host?(host) or System.get_env("DATABASE_SSL") in ~w(true 1),
       do: tls_options(host) ++ options,
