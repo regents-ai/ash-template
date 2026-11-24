@@ -55,8 +55,9 @@ defmodule AshTemplate.DatabaseConfig do
   def notifications_config!(environment) do
     environment
     |> runtime_config!()
-    |> Keyword.drop([:pool_size, :max_lifetime, :parameters])
+    |> Keyword.drop([:pool_size, :max_lifetime, :parameters, :prepare])
     |> connection_keys()
+    |> direct_fly_mpg_options()
     |> Keyword.merge(auto_reconnect: true, parameters: [application_name: "ash-template-listen"])
   end
 
@@ -70,7 +71,25 @@ defmodule AshTemplate.DatabaseConfig do
 
   def release_config! do
     _role = deployment_role!()
-    first_env!(["DATABASE_DIRECT_URL", "DATABASE_URL"]) |> database_url!()
+    first_env!(["DATABASE_DIRECT_URL", "DATABASE_URL"]) |> database_url!(direct?: true)
+  end
+
+  defp direct_fly_mpg_options(options) do
+    case Keyword.get(options, :hostname) do
+      "pgbouncer." <> rest = host ->
+        if fly_mpg_host?(host) do
+          direct = "direct." <> rest
+
+          options
+          |> Keyword.put(:hostname, direct)
+          |> Keyword.put(:ssl, tls_options(direct)[:ssl])
+        else
+          options
+        end
+
+      _other ->
+        options
+    end
   end
 
   defp serving(options) do
@@ -117,18 +136,33 @@ defmodule AshTemplate.DatabaseConfig do
     end) || raise("#{Enum.join(variables, " or ")} is required")
   end
 
-  defp database_url!({variable, value}) do
+  defp database_url!({variable, value}, opts \\ []) do
     admitted_hosts = allowed_hosts()
 
     with {:ok, %URI{scheme: scheme, host: host, path: "/" <> database, userinfo: userinfo} = uri}
          when scheme in ["postgres", "postgresql"] <- URI.new(value),
          true <- present?(host) and present?(database) and valid_userinfo?(userinfo),
-         {:ok, url, admitted_host} <- admit(value, uri, admitted_hosts),
-         true <- fixed_endpoint?(uri) and valid_ecto_url?(value) do
+         {:ok, normalized_uri, admitted_host} <-
+           admit(normalize_uri(uri, opts[:direct?] == true), admitted_hosts),
+         url = URI.to_string(normalized_uri),
+         true <- valid_ecto_url?(url) do
       connection_options(url, admitted_host)
     else
       _ -> raise "#{variable} must be a valid PostgreSQL URL"
     end
+  end
+
+  defp normalize_uri(%URI{host: host} = uri, direct?) do
+    lower_host = String.downcase(host)
+
+    upgraded_host =
+      if direct? and fly_mpg_host?(lower_host) and String.starts_with?(lower_host, "pgbouncer."),
+        do: String.replace_prefix(lower_host, "pgbouncer.", "direct."),
+        else: lower_host
+
+    # Strip Fly MPG query params (e.g. ?sslmode=require) so explicit verify_peer TLS options govern cleanly.
+    query = if fly_mpg_host?(upgraded_host), do: nil, else: uri.query
+    %{uri | host: upgraded_host, query: query}
   end
 
   defp allowed_hosts do
@@ -144,14 +178,10 @@ defmodule AshTemplate.DatabaseConfig do
     end
   end
 
-  defp admit(value, %URI{host: host}, nil), do: {:ok, value, String.downcase(host)}
+  defp admit(%URI{host: host} = uri, nil), do: {:ok, uri, host}
 
-  defp admit(_value, %URI{host: host} = uri, admitted_hosts) do
-    admitted_host = String.downcase(host)
-
-    if admitted_host in admitted_hosts,
-      do: {:ok, URI.to_string(%{uri | host: admitted_host}), admitted_host},
-      else: :error
+  defp admit(%URI{host: host} = uri, admitted_hosts) do
+    if host in admitted_hosts, do: {:ok, uri, host}, else: :error
   end
 
   defp valid_ecto_url?(value) do
@@ -161,18 +191,25 @@ defmodule AshTemplate.DatabaseConfig do
     _error -> false
   end
 
-  # Managed Fly Postgres hosts are fixed by hostname alone without URL query overrides.
-  defp fixed_endpoint?(%URI{host: host, port: port, query: query}) do
-    not fly_mpg_host?(host) or (port in [nil, 5432] and query in [nil, ""])
-  end
-
   defp connection_options(url, host) do
-    socket_options = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
-    options = [url: url, port: URI.parse(url).port || 5432, socket_options: socket_options]
+    socket_options = if ipv6?(host), do: [:inet6], else: []
+    pgbouncer? = fly_mpg_host?(host) and String.starts_with?(host, "pgbouncer.")
+
+    options =
+      [url: url, port: URI.parse(url).port || 5432, socket_options: socket_options] ++
+        if(pgbouncer?, do: [prepare: :unnamed], else: [])
 
     if fly_mpg_host?(host) or System.get_env("DATABASE_SSL") in ~w(true 1),
       do: tls_options(host) ++ options,
       else: options
+  end
+
+  defp ipv6?(host) do
+    case System.get_env("ECTO_IPV6") do
+      value when value in ~w(false 0) -> false
+      value when value in ~w(true 1) -> true
+      _unset -> fly_mpg_host?(host)
+    end
   end
 
   defp tls_options(host) do

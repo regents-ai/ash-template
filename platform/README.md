@@ -202,6 +202,7 @@ production.
 | `DATABASE_POOLED_URL` | Yes in production (or `DATABASE_URL`) | PostgreSQL connection string the running site uses (`DATABASE_URL` is accepted as a fallback). |
 | `DATABASE_DIRECT_URL` | Only when migrating (or `DATABASE_URL`) | Direct PostgreSQL connection string used by the migration release command (`DATABASE_URL` is accepted as a fallback). |
 | `ASH_TEMPLATE_ALLOWED_DB_HOSTS` | No | Optional comma-separated allowlist of PostgreSQL hostnames accepted at boot. |
+| `ASH_TEMPLATE_STANDALONE_DB` | For standalone fresh DBs | Set to `true` so `/app/bin/migrate` automatically creates the idempotent shared tables/schemas and runs shared library migrations on an isolated Postgres database. |
 | `ASH_TEMPLATE_REMOTE_DB` | No | Set to `true` in development to connect to `DATABASE_POOLED_URL`/`DATABASE_URL` with Oban queues disabled and loopback-only binding. |
 | `POOL_SIZE` | No | Optional production Ecto pool size override (defaults to `5`). |
 | `DATABASE_SSL` | No | Set to `true` to force verified TLS (`CAStore`) for non-Fly Postgres hosts (`*.flympg.net` always uses verified TLS). |

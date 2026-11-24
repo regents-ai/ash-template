@@ -13758,3 +13758,12 @@ For the template chief to release. No migration. No new package.
 - Patched Hex security advisories in `platform/mix.lock`: `ash` `3.37.7` -> `3.38.1`
   (`EEF-CVE-2026-124283`, `EEF-CVE-2026-120299`) and `db_connection` `2.10.2` -> `2.10.3`
   (`EEF-CVE-2026-133555`).
+
+## 2026-11-24 — Standalone isolated database bootstrap support
+
+- Added `ASH_TEMPLATE_STANDALONE_DB=true` support in `AshTemplate.Release.migrate/0` so
+  a fresh isolated Postgres database automatically creates idempotent shared tables and
+  runs shared library migrations before `ash_template_app` migrations.
+- Defaulted `:inet6` socket options for `*.flympg.net` hosts in `AshTemplate.DatabaseConfig`
+  (overridable via `ECTO_IPV6`) and added `EEF-CVE-2026-124283` and `EEF-CVE-2026-133555`
+  to `security/required-fixes.json`.

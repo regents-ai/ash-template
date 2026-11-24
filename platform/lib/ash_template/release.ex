@@ -24,21 +24,28 @@ defmodule AshTemplate.Release do
 
   def migrate do
     with_release_repo(fn repo ->
-      # Read-only release prerequisites; shared migrations require separate
-      # founder authority (`migrate_shared/0`). The shared code this release
-      # carries reads tables and columns from every migration its pinned library
-      # ships, so each must already be in that schema's own ledger. Every missing
-      # version is named at once.
-      unapplied = unapplied_shared_migrations(repo)
-
-      if unapplied != [] do
-        raise "These separately approved shared migrations must be applied before deployment: " <>
-                Enum.join(unapplied, ", ")
-      end
-
-      RegentAgents.Migrator.require_pairing_history!(repo)
-      repo.migrate!(migrations_path())
+      if System.get_env("ASH_TEMPLATE_STANDALONE_DB") in ~w(true 1),
+        do: migrate_standalone!(repo),
+        else: migrate_shared_db!(repo)
     end)
+  end
+
+  defp migrate_standalone!(repo) do
+    AshTemplate.LocalDatabaseFixture.create_shared_tables!()
+    apply_shared(repo)
+    repo.migrate!(migrations_path())
+  end
+
+  defp migrate_shared_db!(repo) do
+    unapplied = unapplied_shared_migrations(repo)
+
+    if unapplied != [] do
+      raise "These separately approved shared migrations must be applied before deployment: " <>
+              Enum.join(unapplied, ", ")
+    end
+
+    RegentAgents.Migrator.require_pairing_history!(repo)
+    repo.migrate!(migrations_path())
   end
 
   @doc """
