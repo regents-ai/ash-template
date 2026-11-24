@@ -28,16 +28,11 @@ commit: `regent_identity` names `regent_privy` (see `mix.exs`),
 `{:siwa, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "siwa/siwa-elixir/apps/siwa", override: true}`.
 `ens_elixir` also needs Req 0.7.
 
-`../security/required-fixes.json` lists every shared library with its one
-repository and folder, and the security fixes every Regent site must carry.
-`make check-required-fixes` fetches that list and `scripts/check_required_fixes.exs`
-from regents-ai/ash-template's `main` on GitHub and runs the script, printing the
-revision it used. It fails when a shared library loads from a local folder or a
-vendored copy, names another URL or folder, is not pinned to a full commit, has
-no fetched history, or lacks a listed fix, and when a Hex package's locked version
-is outside a listed fix's requirement. Library pins never change by themselves; only the list does.
-`mix hex.audit` in `mix precommit` stops on a Hex package that is retired or has
-a published security advisory (Hex 2.5 reads both).
+`../security/required-fixes.json` lists every shared library with its repository
+and folder, and the security fixes the template carries. `make check-required-fixes`
+checks `platform/mix.lock` and `platform/mix.exs` against that local list without
+requiring GitHub authentication. `mix hex.audit` in `mix precommit` stops on a Hex
+package that is retired or has a published security advisory (Hex 2.5 reads both).
 
 ### MCP events
 
@@ -165,14 +160,13 @@ mix ash_template.setup_local_auth
 mix phx.server
 ```
 
-The site is then at `http://localhost:4000`. Sign-in needs real Privy
-credentials; [docs/local-privy-auth.md](docs/local-privy-auth.md) says where
-they come from. Put real values only in the ignored `.env.local`, never in
-`.env.example`, and commit none of the three.
-
-Without `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` the site refuses to start. A
-worktree has no settings files of its own, so start it from the worktree's
-`platform` folder with `direnv exec <main checkout>/platform mix phx.server`.
+The site is then at `http://localhost:4000`. In development, Privy credentials
+(`PRIVY_APP_ID`, `PRIVY_VERIFICATION_KEY`) are optional: without them the server
+starts with a warning and serves public pages, docs, `/showcase`, `/animations`,
+and public APIs normally, while browser sign-in stays disabled until you add real
+credentials to an ignored `.env.local` (see
+[docs/local-privy-auth.md](docs/local-privy-auth.md)). Never commit `.env` or
+`.env.local`.
 
 The local server keeps its data in one loopback PostgreSQL database,
 `ash_template_dev`, on `127.0.0.1`. It leaves the machine to verify sign-in with
@@ -204,12 +198,14 @@ production.
 | `SECRET_KEY_BASE` | Yes in production | Session signing secret; at least 64 bytes. |
 | `PORT` | No | HTTP port. Defaults to `4000`. |
 | `REGENT_CREDITS_ADMINS` | No | Comma-separated Privy user ids of the site's admins (`config :ash_template, :admins`). Only they can open the saved errors at `/admin/errors` or remove an agent's picture; anyone else gets the not-found page. |
-| `ASH_TEMPLATE_DEPLOYMENT_ROLE` | Yes in production | `production` or `staging`. There is no default; each role admits only its own database hosts. |
-| `DATABASE_POOLED_URL` | Yes in production | PostgreSQL connection string the running site uses, for an approved host. Production admits only the database's direct address, `direct.dzx6qo6xqzvojpv5.flympg.net`. |
-| `DATABASE_DIRECT_URL` | Only when migrating | Direct PostgreSQL connection string used by the migration release command. |
-| `ASH_TEMPLATE_DATABASE_TARGET_MODE` | Only when migrating | Must be `production` for the production migration command. |
-| `ASH_TEMPLATE_DATABASE_CLUSTER_ID` | For a remote target | Must match the approved cluster. Set neither this nor the name to stay on the loopback database. On the remote database a development server runs no job queue and no Oban plugin, so the serving machines alone run the site's jobs, and starts only while it listens on 127.0.0.1 alone. |
-| `ASH_TEMPLATE_DATABASE_CLUSTER_NAME` | For a remote target | Must match the approved cluster name. |
+| `ASH_TEMPLATE_DEPLOYMENT_ROLE` | Yes in production | `production` or `staging`. |
+| `DATABASE_POOLED_URL` | Yes in production (or `DATABASE_URL`) | PostgreSQL connection string the running site uses (`DATABASE_URL` is accepted as a fallback). |
+| `DATABASE_DIRECT_URL` | Only when migrating (or `DATABASE_URL`) | Direct PostgreSQL connection string used by the migration release command (`DATABASE_URL` is accepted as a fallback). |
+| `ASH_TEMPLATE_ALLOWED_DB_HOSTS` | No | Optional comma-separated allowlist of PostgreSQL hostnames accepted at boot. |
+| `ASH_TEMPLATE_REMOTE_DB` | No | Set to `true` in development to connect to `DATABASE_POOLED_URL`/`DATABASE_URL` with Oban queues disabled and loopback-only binding. |
+| `POOL_SIZE` | No | Optional production Ecto pool size override (defaults to `5`). |
+| `DATABASE_SSL` | No | Set to `true` to force verified TLS (`CAStore`) for non-Fly Postgres hosts (`*.flympg.net` always uses verified TLS). |
+| `ECTO_IPV6` | No | Set to `true` to enable `:inet6` socket options for IPv6 database hosts. |
 | `ASH_TEMPLATE_RELEASE_COMMAND` | Set by the release | `migrate` switches the boot into migration mode. |
 
 ### Two database logins

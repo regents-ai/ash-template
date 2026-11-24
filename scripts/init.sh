@@ -70,21 +70,10 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 65
 fi
 
-# Left as written, names and contents: the shared Regent skills, which every site
-# carries as the template's text, and the dated plans and the changelog, which are
-# records.
+# Left as written, names and contents: the engineering skills, dated plans, and changelog.
 as_written=(skills 'docs/*-plan.md' CHANGELOG.md)
-# The template's own scripts, which a new product has no use for: the reports that
-# compare Regent's sites with the template, their file lists, the instructions of
-# the daily jobs that read them, and scripts/regent-ui-update, which moves the five
-# Regent sites onto one design-system commit. They are removed below.
-removed=(
-  scripts/drift.sh scripts/pins.sh scripts/github.sh scripts/shared-files.sh scripts/harvest.sh
-  scripts/stale-prs.sh automation/harvest.md automation/spread.md
-  scripts/regent-ui-update
-)
-# Every tracked file the rename reads: all but this script and the two lists above.
-renaming=(':!scripts/init.sh' "${as_written[@]/#/:!}" "${removed[@]/#/:!}")
+# Every tracked file the rename reads: all but this script and the list above.
+renaming=(':!scripts/init.sh' "${as_written[@]/#/:!}")
 
 renamed() {
   local name="$1"
@@ -162,7 +151,7 @@ cat >> CHANGELOG.md <<EOF
   as written. \`AGENTS.md\`'s "New site" lists what is left to replace by hand.
 EOF
 
-git rm -q -- scripts/init.sh "${removed[@]}"
+git rm -q -- scripts/init.sh
 cat <<EOF
 Renamed Ash Template to $display ($snake / $module) at $host.
 Review with: git status

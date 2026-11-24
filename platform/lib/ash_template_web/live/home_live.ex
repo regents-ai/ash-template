@@ -1,11 +1,8 @@
 defmodule AshTemplateWeb.HomeLive do
   @moduledoc """
-  The homepage, which tracks regents.sh's: the datascape filling the window, one
-  glass panel over it that holds the header, the name and its line, the actions
-  and, at its foot, the product tabs, and the copyright at the window's foot,
-  in regents.sh's words. When regents.sh's homepage changes, this page changes with
-  it (`scripts/drift.sh` compares the two). Only the name and the header's own
-  links are this site's.
+  The public homepage: the interactive datascape canvas with a frosted glass
+  overlay holding the header, title, primary actions, guided tour trigger, and
+  product tabs.
   """
 
   use AshTemplateWeb, :live_view
@@ -263,8 +260,7 @@ defmodule AshTemplateWeb.HomeLive do
       ]
   end
 
-  # The four products, in the tabs' order, in regents.sh's words: each one's cube
-  # face, its line and its three panes.
+  # The four products on regents.sh, in the tabs' order.
   defp products do
     [
       %{
@@ -272,7 +268,7 @@ defmodule AshTemplateWeb.HomeLive do
         name: "Autolaunch",
         line:
           "Invest in stablecoin-generating agents on Base. Earn when they earn. Or — Launch memestocks on Base and Robinhood.",
-        site: "https://autolaunch.sh",
+        site: "https://regents.sh/autolaunch",
         cards: [
           %{
             title: "Fair auctions.",
@@ -294,7 +290,7 @@ defmodule AshTemplateWeb.HomeLive do
         name: "Techtree",
         line:
           "Uplift your harness, Skills, or environments with the latest frontier stack from Prime Intellect and Nvidia",
-        site: "https://techtree.sh",
+        site: "https://regents.sh/techtree",
         cards: [
           %{
             title: "Prime Intellect evaluations.",
@@ -317,7 +313,7 @@ defmodule AshTemplateWeb.HomeLive do
         face: 2,
         name: "Patchbay",
         line: "The fastest way for an agent to get unstuck without waking you",
-        site: "https://patchbay.help",
+        site: "https://regents.sh/patchbay",
         cards: [
           %{
             title: "Find a working answer.",
@@ -340,7 +336,7 @@ defmodule AshTemplateWeb.HomeLive do
         name: "Keyfleet",
         line:
           "Add your personal agent to a fleet with a shared treasury and no top-down orchestration",
-        site: "https://keyfleet.ai",
+        site: "https://regents.sh/keyfleet",
         cards: [
           %{
             title: "A Key is a seat.",

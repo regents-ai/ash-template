@@ -6,15 +6,20 @@ config :ash_template, :privy,
   app_id: System.get_env("PRIVY_APP_ID"),
   verification_key: System.get_env("PRIVY_VERIFICATION_KEY")
 
-# Without its Privy settings a local server answers every page while nobody can
-# sign in, so it refuses to start. A worktree holds no settings files of its own.
-# Other mix tasks, such as migrations and code generation, run without them.
+# In development, allow booting without Privy credentials so contributors can
+# explore public pages, docs, showcase, motion lab, and APIs with Postgres alone.
+# Browser sign-in stays disabled until PRIVY_APP_ID and PRIVY_VERIFICATION_KEY are set.
 if config_env() == :dev and Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint) do
-  for name <- ~w(PRIVY_APP_ID PRIVY_VERIFICATION_KEY), System.get_env(name, "") == "" do
-    raise """
-    #{name} is not set, so nobody could sign in. Start the site with its settings loaded:
-    direnv exec <main checkout>/platform mix phx.server
-    """
+  missing_privy =
+    for name <- ~w(PRIVY_APP_ID PRIVY_VERIFICATION_KEY),
+        System.get_env(name, "") == "",
+        do: name
+
+  if missing_privy != [] do
+    Logger.warning(
+      "#{Enum.join(missing_privy, " and ")} not set; starting without Privy browser sign-in. " <>
+        "Public pages, docs, showcase, and APIs work normally; see platform/docs/local-privy-auth.md to enable sign-in."
+    )
   end
 end
 

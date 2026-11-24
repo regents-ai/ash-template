@@ -1,103 +1,70 @@
 # Ash Template
 
-The Ash Template monorepo: a public website with sign-in and a small
-account area, a public HTTP API, a command-line tool, and room for contracts
-and runtime plugins.
+[![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+[![Elixir 1.20](https://img.shields.io/badge/elixir-1.20-lightgrey)](https://elixir-lang.org)
+[![Phoenix 1.8](https://img.shields.io/badge/phoenix-1.8-lightgrey)](https://www.phoenixframework.org)
+[![Ash 3.37](https://img.shields.io/badge/ash-3.37-lightgrey)](https://ash-hq.org)
 
-<!-- template-only -->
-This is a product template, cut from the Regents product and stripped back to
-the parts every product starts with. The placeholder product is called
-**Ash Template**; run the rename script before building anything on it:
+**Ash Template** is Regents Labs' open-source starter and reference architecture for building production web applications with **Elixir, Phoenix LiveView 1.2, Ash Framework 3.x, and first-class AI agent interfaces**.
+
+Regents Labs' own products now run in the unified [`regents.sh`](https://regents.sh) monorepo; this repository is maintained as a clean, standalone MIT-licensed showcase of our opinionated stack so anyone in the Ash and Elixir ecosystem can fork, inspect, or bootstrap a new application from it.
+
+## What's in the stack
+
+- **Ash Framework 3.x + AshPostgres + AshOban:** Declarative domains, resources, policies, keyset pagination, idempotent operations, background jobs, and signals (`AshSignals`).
+- **Phoenix 1.8 + LiveView 1.2:** Persistent shell navigation, streams, live notifications (`Postgrex.Notifications`), Peep Prometheus metrics on a private port, structured JSON logs, and `ErrorTracker`.
+- **Agent-ready by default:**
+  - **Hosted MCP (`/mcp`)** via `AshAi` + **OAuth 2.1** connector support (`/.well-known/oauth-*`).
+  - **WebMCP** browser tools (`navigator.modelContext`) and live tool catalog (`/capabilities.json`).
+  - **SIWA (Sign-In With Agent)** cryptographic HTTP signatures (RFC 9421), pairing codes, and Hello Cards.
+  - **Discovery & Markdown negotiation:** `/llms.txt`, `/openapi.json`, `/api-contract.openapiv3.yaml`, `Accept: text/markdown` on public pages, and **Agent Skills Discovery v0.2.0** (`/.well-known/agent-skills/index.json`).
+- **Design system, Motion & WebGPU:** Shared `regent_ui` component kit (`/showcase`), Anime.js v4 LiveView motion hooks (`/animations`), and WebGPU / Gaussian splat islands (`/animations/splats`).
+- **Optional Web3 & Payments:** Privy wallet sign-in, ENS resolution, Base / Ethereum chain reads, and x402 USDC payment verification.
+- **16 Reusable Engineering Skills (`skills/`):** Curated AI coding skills covering Ash domains, LiveView, Postgres concurrency, security, WebMCP, Anime.js, WebGPU islands, and Gaussian splat scenes.
+
+## Quickstart
+
+You need Erlang, Elixir, Node, and PostgreSQL at the versions pinned in `platform/.tool-versions`.
+
+```sh
+cd platform
+mix setup
+mix ecto.create
+mix ecto.migrate
+mix phx.server
+```
+
+Open `http://localhost:4000` (and `/showcase`, `/animations`, `/docs`, `/llms.txt`).
+
+Privy credentials (`PRIVY_APP_ID`, `PRIVY_VERIFICATION_KEY`) are **optional in development** — the server boots with Postgres alone so you can explore the UI, docs, showcase, motion lab, and public APIs immediately. See [platform/docs/local-privy-auth.md](platform/docs/local-privy-auth.md) when you are ready to enable browser wallet sign-in.
+
+## Rename for your own app
+
+Run `scripts/init.sh` once on a clean checkout to rename `ash_template` / `AshTemplate` / `ash-template` and the default hostname across the repository:
 
 ```sh
 scripts/init.sh night_owl NightOwl night-owl.example "Night Owl"
 ```
 
-`scripts/init.sh <snake_name> <ModuleName> <host> ["Display Name"]` replaces the
-OTP application `ash_template`, the Elixir modules `AshTemplate`, the
-camel-case name `ashTemplate`, the kebab-case name `ash-template`, the
-environment prefix `ASH_TEMPLATE_`, the display name "Ash Template" and its
-capitalised form "ASH TEMPLATE" everywhere they name the product, including the
-CLI package and command names, and the template's address `template.regents.sh`
-with the new site's own (`<host>`, such as `night-owl.example`). Where they name
-the template itself they stay as written: the shared skills in `skills/` (every
-site carries the template's text), the dated plans `docs/*-plan.md` and the
-changelog's history, the review rules in `AGENTS.md`, `ash-template` in the
-`Makefile` and `platform/scripts/check_required_fixes.exs`, which read the
-template's required fixes, and `regents-ai/ash-template` wherever it is written.
-It drops the passages that describe the template itself and removes the
-template's own scripts (its reports on Regent's sites, their daily jobs'
-instructions and `scripts/regent-ui-update`), records the rename in the
-changelog and removes itself, then prints the follow-up commands: format the
-renamed code, regenerate the route catalog digest, run the gate. What it leaves to
-replace by hand is listed in [AGENTS.md](AGENTS.md#new-site), which the new site
-keeps.
-<!-- /template-only -->
+See [AGENTS.md](AGENTS.md#new-site) for the remaining manual items (brand artwork, legal copy, Fly app name, and WebMCP origin trial token).
 
-## Components
+## Repository layout
 
-| Component | What it holds | Check |
+| Folder | What it holds | Check |
 | --- | --- | --- |
-| [platform/](platform/README.md) | The Phoenix/Ash web application: home page, Privy sign-in, the signed-in Overview and Account pages, public pages, health and metrics, and the served API. | `make check-platform` |
-| [cli/](cli/README.md) | `commands.json`, the description of every `regents ash-template` command: the pattern each site copies for its own commands, run by [regents-cli](https://github.com/regents-ai/regents-cli), which carries a pinned copy. | `make check-cli`, `make check-siwa-latest` |
-| [contracts/](contracts/README.md) | An optional Foundry workspace. Empty until the product needs contracts. | `make check-contracts` |
-| [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |
-| [skills/](skills/) | Every shared agent skill Regent writes, as regents-ai/ash-template keeps them; change them there. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, WebMCP and signals skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, `chain-events` watching a chain and saving its events, and `payments` taking USDC payments through the shared Regents library. The web app serves all of them except `regent-workflow`, `regent-notion` and `checkpoint` as its [build skills](platform/README.md#showcase). | None |
-| [skills/third-party/](skills/third-party/README.md) | Other authors' Skills for local work (design, motion, interface review, debugging, Oban), unmodified copies under their own licences; not Regent's work, and never served. Its README lists each source, commit and licence, plus Skills worth installing yourself. | None |
+| [platform/](platform/README.md) | Phoenix + Ash web app: homepage, account shell, notes/rooms/chat reference domains, `/mcp`, `/llms.txt`, `/showcase`, and `/animations`. | `make check-platform` |
+| [cli/](cli/README.md) | `COMMANDS.md` and `commands.json` schema pattern for paired CLI commands. | `make check-cli` |
+| [contracts/](contracts/README.md) | Optional Foundry workspace (empty until contracts are added). | `make check-contracts` |
+| [plugins/](plugins/README.md) | Optional standalone runtime plugin packages. | — |
+| [skills/](skills/) | 16 public engineering skills (`ash-*`, `elixir-stack`, `animejs`, `vgpu-island`, `splat-scenes*`, `onchain-buttons`, `chain-events`, `payments`, `discussions`). | Served at `/.well-known/agent-skills/` |
+| [skills/third-party/](skills/third-party/README.md) | Unmodified third-party skills under their own licenses (never served). | — |
 
-`make check` runs every component's check side by side, each writing its output to
-`platform/_build/check/<gate>.log`, and fails when any fails; the
-[platform README](platform/README.md#checks) explains the platform's and which run in
-turn.
-`make release` runs them on the committed tree, then builds and starts the release
-image; see [Release](platform/README.md#release).
-
-## Start
-
-1. Follow the [platform quickstart](platform/README.md#quickstart) to create the
-   local database, load Privy credentials and start the server.
-
-2. Run `gh auth login` once and install `uv` and ripgrep (`rg`): `make check` runs
-   the design system's style check with ripgrep, fetches the
-   required-fixes list from GitHub, runs regents-cli's command description
-   checker with `uv`, and reads the newest regents-cli release from PyPI and the
-   newest SIWA library change from elixir-utils.
+Run `make check` from the repository root to execute all self-contained quality gates (`check-style`, `mix precommit`, `check-required-fixes`, `check-contracts`) in parallel with no GitHub authentication required.
 
 ## Shared dependencies
 
-The platform takes its shared libraries from three Regent repositories, each
-pinned to one commit in `platform/mix.exs`: `design-system` (the shared UI),
-`elixir-utils` (Privy verification, agent access, formatting and lint checks)
-and `regents/identity` (the shared profile domain served at `/api/v1/profile`).
-`security/required-fixes.json` lists the shared libraries, where each must come
-from, and the security fixes every Regent site must carry. `make check` fails when
-a library is not pinned to an inspectable commit of its repository or lacks a fix. The
-[platform README](platform/README.md#shared-dependencies) explains both.
-
-<!-- template-only -->
-`make pins` lists every site's shared-library pins (elixir-utils, design-system,
-ash_postgres, SIWA and regents-cli), read from each site's main branch on GitHub, and
-how far each is behind the template's pin and the library's main. `make drift` runs it
-after comparing the sites' shared files. Both print one JSON document, which the daily
-jobs read; each script's opening comment describes its fields. `scripts/harvest.sh`
-lists the commits each site added to its main since the harvest ledger last read it,
-for the inbound job.
-
-The two daily jobs are cloud agents that follow [automation/harvest.md](automation/harvest.md)
-(inbound: site work every site should have, as pull requests on this repository) and
-[automation/spread.md](automation/spread.md) (outbound: one pull request per site that
-brings it up to the template). They open pull requests only, and record each run in
-the harvest ledger, control's `automation/harvest.md`.
-<!-- /template-only -->
-
-Agent pairing also uses the shared [SIWA client](https://siwa.regents.sh/skill.md).
-Its local Touch ID page belongs to `siwa-server`, with the branded visual shell in
-`design-system/standalone/agent-key.html`; the Regents CLI embeds the same page.
-Do not copy it into a site's Phoenix app or elixir-utils. Keep the pairing guide in
-`platform/priv/public/llms.md` pointed at SIWA. On macOS, explain the local Touch ID
-step before opening it: the page confirms the passkey step, and the agent checks
-pairing separately with `me`. Updating SIWA's clients needs no site dependency pin.
+Shared packages (`regent_ui` from `regents-ai/design-system`, `regent_*` and `siwa` from `regents-ai/elixir-utils`) are public Git repositories pinned by commit in `platform/mix.exs`. `security/required-fixes.json` records minimum security commits/versions verified locally by `make check-required-fixes`.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Vendored dependencies retain their own licenses.
+MIT — see [LICENSE](LICENSE). Vendored and third-party files retain their own licenses.

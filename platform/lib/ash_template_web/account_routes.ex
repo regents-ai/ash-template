@@ -1,14 +1,9 @@
 defmodule AshTemplateWeb.AccountRoutes do
   @moduledoc """
-  The Account pages, the same on every Regent site: Account, Agents, Points,
-  Wallets and Connections, then Settings when the site has a Settings page of its
-  own (`AshTemplateWeb.AccountSite.settings/0`). The router routes them with
-  `account_routes/1`, and the route catalog and the page titles take them from
-  `pages/0`, so a tab, its route and its title never disagree.
-
-  Every site copies this file from ash-template unchanged (`scripts/drift.sh`
-  compares it). A page only one site has belongs in that site's own menu, never
-  under Account.
+  The Account pages: Account, Agents, Points, Wallets and Connections, plus
+  Settings when the site defines `AshTemplateWeb.AccountSite.settings/0`. The
+  router routes them with `account_routes/1`, and the route catalog and page
+  titles take them from `pages/0`, so a tab, its route and its title stay in sync.
   """
 
   alias AshTemplateWeb.AccountSite

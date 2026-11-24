@@ -13734,3 +13734,27 @@ For the template chief to release. No migration. No new package.
   every scene's page, baked file, card and item picture answer, and the three new baked
   files are served byte for byte. Not proven by the chief: the three scenes drawn live in
   a browser (the design chief looks after the release), Safari, Firefox, a phone.
+
+## 2026-11-24 — Standalone public OSS stack transition
+
+- Transitioned `ash-template` from an internal Regents fleet generator to a clean,
+  self-contained MIT open-source starter and reference stack for Ash Framework 3.x +
+  Phoenix LiveView 1.2 + agent-ready web apps (Regents' own production apps now live in
+  the unified `regents.sh` monorepo).
+- Removed Regents-internal fleet sync automation (`automation/{harvest,spread}.md`,
+  `scripts/{drift,pins,github,shared-files,harvest,stale-prs,regent-ui-update,check-dependency-parity,check-siwa-latest}*`)
+  and 7 Regents-internal skills (`checkpoint`, `patchbay-*`, `regent-notion`,
+  `regent-workflow`, `rollout-guidance-check`), keeping all 16 public engineering skills
+  and `skills/third-party/`.
+- Made local `:dev` boot zero-friction without Privy credentials (`Logger.warning` instead
+  of crashing when `PRIVY_APP_ID`/`PRIVY_VERIFICATION_KEY` are unset), removed hardcoded
+  Regents Fly Postgres cluster IDs from `AshTemplate.DatabaseConfig` (supporting standard
+  `DATABASE_URL`/`DATABASE_POOLED_URL` plus optional `ASH_TEMPLATE_ALLOWED_DB_HOSTS`,
+  `POOL_SIZE`, `DATABASE_SSL`, and `ECTO_IPV6`), and made `make check` self-contained using
+  local `security/required-fixes.json` with no GitHub auth required.
+- Updated `README.md`, `AGENTS.md`, `platform/README.md`, `scripts/init.sh`,
+  `HomeLive`, `about.md`, `llms.md`, and `skills/ash-data/references/migrations-and-concurrency.md`
+  to point at `https://regents.sh/*` and document the standalone OSS workflow cleanly.
+- Patched Hex security advisories in `platform/mix.lock`: `ash` `3.37.7` -> `3.38.1`
+  (`EEF-CVE-2026-124283`, `EEF-CVE-2026-120299`) and `db_connection` `2.10.2` -> `2.10.3`
+  (`EEF-CVE-2026-133555`).

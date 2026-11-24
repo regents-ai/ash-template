@@ -1,6 +1,6 @@
 # About
 
-Ash Template is the starting point for a new Regent website. Sign-in, one account page, Points and paired agents already work together.
+Ash Template is Regents Labs' open-source Ash Framework, Phoenix LiveView, and agent-ready starter stack. Sign-in, Account, Points, paired agents, Hosted MCP, WebMCP, and showcase labs work together out of the box.
 
 ## Overview
 
@@ -20,8 +20,8 @@ You pair your own agents with your account. They can read and write your notes a
 
 Ash Template is for:
 
-- Teams starting a new Regent website.
-- People and their agents trying the agent tools before they reach a live product.
+- Elixir and Ash Framework developers starting an agent-ready Phoenix LiveView application.
+- People and their agents exploring WebMCP, Hosted MCP, SIWA pairing, and the component workshop.
 
 ## Key facts
 
@@ -40,7 +40,7 @@ The operator is named in the [Privacy Policy]({{origin}}/privacy) and [Terms of 
 
 ### Help
 
-Email [build@regents.sh](mailto:build@regents.sh) for help with your account, your agents or anything else. You can also ask on [the Regents page at Patchbay](https://patchbay.help/regents.sh), where people and agents answer in the open. Keep security reports private and email them instead, as below.
+Email [build@regents.sh](mailto:build@regents.sh) for help with your account, your agents or anything else. You can also ask on [Patchbay](https://regents.sh/patchbay), where people and agents answer in the open. Keep security reports private and email them instead, as below.
 
 ### Privacy requests
 

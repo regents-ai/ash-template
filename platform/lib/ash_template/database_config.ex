@@ -1,37 +1,34 @@
 defmodule AshTemplate.DatabaseConfig do
   @moduledoc false
 
-  @cluster_id "dzx6qo6xqzvojpv5"
-  @cluster_name "regents-platform-prod"
-  @production_database_host "direct.dzx6qo6xqzvojpv5.flympg.net"
-  # Superseded identities refused in production configuration: the legacy
-  # platform application and the retired rehearsal cluster.
-  @production_identities ["platform-phx", "regents-pg-test", "nvwq9ozp9ye03kl1"]
-  @staging_hosts ["regents-staging-db.flycast", "regents-staging-db.internal"]
-  # Staging can never reach production, so it refuses production's cluster, database
-  # host and web application anywhere in a URL (host, database or credentials). These
-  # terms are staging's alone: production runs as the Fly application regents-sh-web,
-  # so refusing that name on the production role would refuse its own release commands.
-  @staging_refusals [
-    @cluster_id,
-    @production_database_host,
-    "regents-sh-web" | @production_identities
-  ]
   @deployment_role_error ~s(ASH_TEMPLATE_DEPLOYMENT_ROLE must be set to "production" or "staging")
-  @remote_target_error "remote database access requires cluster dzx6qo6xqzvojpv5 named regents-platform-prod"
-  # Serving and development each hold 5 connections: the database queues
-  # (`default` and `points`, config/config.exs) take 3 at most, which leaves 2 for
-  # pages in development as in production.
+  # Serving and development each hold 5 connections by default: background queues
+  # share this pool with LiveView pages.
   @pool_size 5
 
   def runtime_config!(:prod) do
-    role = deployment_role!()
-    "DATABASE_POOLED_URL" |> database_url!(role) |> serving()
+    _role = deployment_role!()
+    first_env!(["DATABASE_POOLED_URL", "DATABASE_URL"]) |> database_url!() |> serving()
   end
 
   def runtime_config!(:dev) do
     case remote_target() do
       :local ->
+        local_dev_config()
+
+      :remote ->
+        first_env!(["DATABASE_POOLED_URL", "DATABASE_URL"])
+        |> database_url!()
+        |> Keyword.put(:pool_size, @pool_size)
+    end
+  end
+
+  defp local_dev_config do
+    case System.get_env("DATABASE_URL") do
+      value when is_binary(value) and value != "" ->
+        {"DATABASE_URL", value} |> database_url!() |> Keyword.put(:pool_size, @pool_size)
+
+      _unset ->
         partition = System.get_env("ASH_TEMPLATE_DEV_PARTITION") || ""
 
         unless Regex.match?(~r/\A[a-z0-9_]*\z/, partition),
@@ -45,15 +42,10 @@ defmodule AshTemplate.DatabaseConfig do
           database: "ash_template#{partition}_dev",
           pool_size: @pool_size
         ]
-
-      :remote ->
-        "DATABASE_POOLED_URL"
-        |> database_url!(:remote)
-        |> Keyword.put(:pool_size, @pool_size)
     end
   end
 
-  @doc "Whether a developer's machine is set to use the remote database instead of its own."
+  @doc "Whether a developer's machine is set to use a remote database instead of local Postgres."
   def remote?, do: remote_target() == :remote
 
   @doc """
@@ -77,22 +69,13 @@ defmodule AshTemplate.DatabaseConfig do
   end
 
   def release_config! do
-    role = deployment_role!()
-    if role == :production, do: require_production_target!()
-    database_url!("DATABASE_DIRECT_URL", role)
+    _role = deployment_role!()
+    first_env!(["DATABASE_DIRECT_URL", "DATABASE_URL"]) |> database_url!()
   end
 
-  # The serving connection shares one database with every other site, so it holds
-  # five connections, names itself in pg_stat_activity, keeps connection details out
-  # of its errors, and gives up on a statement, a lock wait or an idle open
-  # transaction before it can stall anyone else. Each connection is replaced after
-  # nine to ten minutes, spread so the pool never reconnects at once: when Fly's
-  # proxy in front of the database restarts, it closes any connection still open ten
-  # minutes later, and Fly's guide for Ecto recycles on this schedule to stay ahead
-  # of it. Release commands connect with their own login and none of these limits.
   defp serving(options) do
     Keyword.merge(options,
-      pool_size: @pool_size,
+      pool_size: pool_size(),
       max_lifetime: 540_000..600_000,
       show_sensitive_data_on_connection_error: false,
       parameters: [
@@ -104,8 +87,19 @@ defmodule AshTemplate.DatabaseConfig do
     )
   end
 
-  # No default and no fallback between roles: an unset or unrecognized role stops
-  # the boot before any database URL is read.
+  defp pool_size do
+    case System.get_env("POOL_SIZE") do
+      value when is_binary(value) and value != "" ->
+        case Integer.parse(value) do
+          {n, ""} when n > 0 -> n
+          _invalid -> raise "POOL_SIZE must be a positive integer"
+        end
+
+      _unset ->
+        @pool_size
+    end
+  end
+
   defp deployment_role! do
     case System.get_env("ASH_TEMPLATE_DEPLOYMENT_ROLE") do
       "production" -> :production
@@ -114,31 +108,43 @@ defmodule AshTemplate.DatabaseConfig do
     end
   end
 
-  # The hosts a venue admits (any, for a developer's remote target) and the terms
-  # its URL may not name anywhere. Production serves and runs its release commands
-  # on the database's direct address.
-  defp venue(:production), do: {[@production_database_host], @production_identities}
-  defp venue(:staging), do: {@staging_hosts, @staging_refusals}
-  defp venue(:remote), do: {nil, @production_identities}
+  defp first_env!(variables) do
+    Enum.find_value(variables, fn name ->
+      case System.get_env(name) do
+        value when is_binary(value) and value != "" -> {name, value}
+        _unset -> nil
+      end
+    end) || raise("#{Enum.join(variables, " or ")} is required")
+  end
 
-  defp database_url!(variable, venue) do
-    {admitted_hosts, refused_terms} = venue(venue)
+  defp database_url!({variable, value}) do
+    admitted_hosts = allowed_hosts()
 
-    with value when is_binary(value) and value != "" <- System.get_env(variable),
-         {:ok, %URI{scheme: scheme, host: host, path: "/" <> database, userinfo: userinfo} = uri}
+    with {:ok, %URI{scheme: scheme, host: host, path: "/" <> database, userinfo: userinfo} = uri}
          when scheme in ["postgres", "postgresql"] <- URI.new(value),
          true <- present?(host) and present?(database) and valid_userinfo?(userinfo),
-         false <- refused_identity?(uri, refused_terms),
          {:ok, url, admitted_host} <- admit(value, uri, admitted_hosts),
          true <- fixed_endpoint?(uri) and valid_ecto_url?(value) do
       connection_options(url, admitted_host)
     else
-      value when value in [nil, ""] -> raise "#{variable} is required"
-      _ -> raise "#{variable} must be a valid PostgreSQL URL for the approved target"
+      _ -> raise "#{variable} must be a valid PostgreSQL URL"
     end
   end
 
-  defp admit(value, %URI{host: host}, nil), do: {:ok, value, host}
+  defp allowed_hosts do
+    case System.get_env("ASH_TEMPLATE_ALLOWED_DB_HOSTS") do
+      value when is_binary(value) and value != "" ->
+        value
+        |> String.split(",", trim: true)
+        |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
+        |> Enum.reject(&(&1 == ""))
+
+      _unset ->
+        nil
+    end
+  end
+
+  defp admit(value, %URI{host: host}, nil), do: {:ok, value, String.downcase(host)}
 
   defp admit(_value, %URI{host: host} = uri, admitted_hosts) do
     admitted_host = String.downcase(host)
@@ -155,29 +161,24 @@ defmodule AshTemplate.DatabaseConfig do
     _error -> false
   end
 
-  # Every host an allowlist admits is fixed by its hostname alone, so none may carry
-  # a port other than PostgreSQL's or any query option: Ecto turns every URL query key
-  # into an atom and merges parsed URL options after the explicit Repo configuration,
-  # so even encoded or future aliases could otherwise weaken TLS or replace the
-  # endpoint after this module's checks.
+  # Managed Fly Postgres hosts are fixed by hostname alone without URL query overrides.
   defp fixed_endpoint?(%URI{host: host, port: port, query: query}) do
-    not (fly_mpg_host?(host) or String.downcase(host) in @staging_hosts) or
-      (port in [nil, 5432] and query in [nil, ""])
+    not fly_mpg_host?(host) or (port in [nil, 5432] and query in [nil, ""])
   end
 
-  # A URL without a port connects to PostgreSQL's, not the disabled placeholder
-  # port in config.exs, which an explicit option would otherwise keep.
   defp connection_options(url, host) do
-    options = [url: url, port: URI.parse(url).port || 5432, socket_options: [:inet6]]
-    if fly_mpg_host?(host), do: fly_mpg_options(host) ++ options, else: options
+    socket_options = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
+    options = [url: url, port: URI.parse(url).port || 5432, socket_options: socket_options]
+
+    if fly_mpg_host?(host) or System.get_env("DATABASE_SSL") in ~w(true 1),
+      do: tls_options(host) ++ options,
+      else: options
   end
 
-  # The direct address presents a public certificate for its own name.
-  defp fly_mpg_options(host) do
+  defp tls_options(host) do
     [
       ssl: [
         verify: :verify_peer,
-        # Read before the application loads castore into `cacerts_get/0`.
         cacertfile: CAStore.file_path(),
         server_name_indication: String.to_charlist(host),
         customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
@@ -191,45 +192,13 @@ defmodule AshTemplate.DatabaseConfig do
   end
 
   defp remote_target do
-    cluster_id = System.get_env("ASH_TEMPLATE_DATABASE_CLUSTER_ID")
-    cluster_name = System.get_env("ASH_TEMPLATE_DATABASE_CLUSTER_NAME")
-
-    cond do
-      production_identity?(System.get_env("FLY_APP_NAME")) -> raise @remote_target_error
-      is_nil(cluster_id) and is_nil(cluster_name) -> :local
-      cluster_id == @cluster_id and cluster_name == @cluster_name -> :remote
-      true -> raise @remote_target_error
-    end
-  end
-
-  defp require_production_target! do
-    if System.get_env("ASH_TEMPLATE_DATABASE_TARGET_MODE") == "production" and
-         System.get_env("ASH_TEMPLATE_DATABASE_CLUSTER_ID") == @cluster_id and
-         System.get_env("ASH_TEMPLATE_DATABASE_CLUSTER_NAME") == @cluster_name and
-         not production_identity?(System.get_env("FLY_APP_NAME")) do
-      :ok
-    else
-      raise "database migration requires production mode for cluster dzx6qo6xqzvojpv5 named regents-platform-prod"
-    end
+    if System.get_env("ASH_TEMPLATE_REMOTE_DB") in ~w(true 1), do: :remote, else: :local
   end
 
   defp valid_userinfo?(userinfo) when is_binary(userinfo),
     do: userinfo |> String.split(":", parts: 2) |> Enum.map(&present?/1) == [true, true]
 
   defp valid_userinfo?(_userinfo), do: false
-
-  defp refused_identity?(%URI{} = uri, refused_terms) do
-    Enum.any?([uri.host, uri.path, uri.userinfo], &names_any?(&1, refused_terms))
-  end
-
-  defp production_identity?(value), do: names_any?(value, @production_identities)
-
-  defp names_any?(value, terms) when is_binary(value) do
-    decoded = value |> URI.decode() |> String.downcase()
-    Enum.any?(terms, &String.contains?(decoded, &1))
-  end
-
-  defp names_any?(_value, _terms), do: false
 
   defp present?(value), do: is_binary(value) and String.trim(value) != ""
 end

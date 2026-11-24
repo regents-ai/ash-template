@@ -167,52 +167,27 @@ table is refused even against a local database. Reset local data with a fresh
 database, never by emptying a listed table. Agents do not edit the
 guard's settings or ask it to allow a command.
 
-## Connections to the shared production database
+## Connections to a shared PostgreSQL database
 
-The template, the five sites, `keyfleet-code` and Sentinel share one production database
-(`regents-platform-prod`, Fly Managed Postgres on the Starter plan) with 97 connections
-for their logins. During a release a site's old and new machines are both connected, so
-its connections briefly double. On 27 October 2026 four releases swapped at once and
-every site lost the database for 20 seconds.
+When multiple services share a managed PostgreSQL instance with a fixed connection
+budget, remember that during a rolling release old and new machines are connected at
+once, briefly doubling connections per app.
 
-Serve through the database's pooler (`pgbouncer.dzx6qo6xqzvojpv5.flympg.net`) nowhere;
-Proximal is the one site still on it, and moves to the direct address next.
-It keeps at least 5 real connections open for each login on every one of its processes
-that holds one of that login's clients (Min Pool Size, fixed in Fly's dashboard), so a
-pooled site costs 5 for every pooler process its clients reach, not its pool size. The
-template served through it until November 2026: 10 real connections for its 7 clients
-on 30 October (two processes), then 15 on 11 November (three), where the same seven
-clients on the direct address cost 7 (`control/rollouts/2026-10-29-db-pooler.md` in
-the workspace). This holds until the founder changes the database plan.
-
-- **Serving: the direct address.** The serving connection uses
-  `direct.dzx6qo6xqzvojpv5.flympg.net` (from `DATABASE_POOLED_URL` in the template,
-  Keyfleet, Patchbay, Regents and Techtree; Autolaunch reads `DATABASE_URL`; Proximal's
-  `DATABASE_POOLED_URL` still names the pooler)
-  with a pool of 5 (never leave `pool_size` unset: Ecto's default is 10), names itself
-  with `application_name`, and sends the three limits that keep one site from stalling
-  the others as startup settings: `statement_timeout` 15000, `lock_timeout` 5000 and
-  `idle_in_transaction_session_timeout` 15000 (`AshTemplate.DatabaseConfig.serving/1`).
-  It replaces each connection after nine to ten minutes
-  (`max_lifetime: 540_000..600_000`): when Fly's proxy in front of the database
-  restarts it closes any connection still open ten minutes later, and Fly's guide for
-  Ecto recycles on this schedule to stay ahead of it
-  (docs.fly.io/mpg/client-configuration); the range spreads the reconnects so they
-  never land at once. Everything a site runs shares this one pool: pages, Oban, the
-  health check (`AshTemplate.Health.database_ready?/0`) and the shared libraries,
-  which take the site's repository from its configuration and start none of their
-  own (the Claude connector's sign-in, `RegentOAuth`, since November 2026). Only
-  `/healthz` runs the health query; a page takes whether the database answers from
-  its own reads (ash-frontend, public figures, "Quiet pages"). The health query
-  never waits for a connection (`queue: false`) and must not mark the machine down
-  because the pool is busy: none free within 30 seconds of a query that succeeded
-  is a busy, healthy site, and a machine marked down for that is restarted when it
-  is serving most. The template holds six connections at rest: five serving and
-  one listening.
-- **Listening: one connection per machine.** The template opens one
-  `Postgrex.Notifications` connection with the serving login, outside the pool
-  (`AshTemplate.DatabaseConfig.notifications_config!/1`), and `RegentAgents.Listener`
-  and any listener of its own share it under one `:rest_for_one` supervisor
+- **Know how your pooler allocates backend connections.** Some hosted poolers keep a
+  minimum number of real backend connections open per login per pooler process — which can
+  exceed a small Ecto `pool_size` on direct connections. Measure actual `pg_stat_activity`
+  counts before enabling a pooler.
+- **Serving connections:** Size `pool_size` explicitly (never rely on Ecto's default of 10
+  blindly), set `application_name`, and configure startup guardrails
+  (`statement_timeout: "15000"`, `lock_timeout: "5000"`,
+  `idle_in_transaction_session_timeout: "15000"`) so one runaway query cannot stall the
+  cluster (`AshTemplate.DatabaseConfig`). Spread connection recycling with
+  `max_lifetime: 540_000..600_000` to stay ahead of managed proxy restarts. Share one
+  pool across pages, Oban, and health checks; run health checks with `queue: false` so a
+  busy pool does not trigger false machine restarts.
+- **Listening: one connection per machine.** Open one `Postgrex.Notifications` connection
+  outside the pool (`AshTemplate.DatabaseConfig.notifications_config!/1`) and share it
+  across listeners under a `:rest_for_one` supervisor.
   (`AshTemplate.SharedChanges`). Never open a second listening connection, and never
   listen through the repository.
 - **Release commands: the release login.** Migrations run with the release login on
