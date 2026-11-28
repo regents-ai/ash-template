@@ -31,23 +31,23 @@ defmodule AshTemplate.SiteTools do
   @sites %{
     "regents" => %{name: "regents.sh", url: "https://regents.sh/capabilities.json", scopes: :home},
     "patchbay" => %{
-      name: "patchbay.help",
-      url: "https://patchbay.help/forum/capabilities",
+      name: "regents.sh/patchbay",
+      url: "https://regents.sh/api/v1/patchbay/capabilities",
       scopes: :every
     },
     "techtree" => %{
-      name: "techtree.sh",
-      url: "https://techtree.sh/capabilities.json",
+      name: "regents.sh/techtree",
+      url: "https://regents.sh/api/v1/techtree/capabilities",
       scopes: :home
     },
     "autolaunch" => %{
-      name: "autolaunch.sh",
-      url: "https://autolaunch.sh/capabilities.json",
+      name: "regents.sh/autolaunch",
+      url: "https://regents.sh/api/v1/autolaunch/capabilities",
       scopes: :home
     },
     "keyfleet" => %{
-      name: "keyfleet.ai",
-      url: "https://keyfleet.ai/capabilities.json",
+      name: "regents.sh/keyfleet",
+      url: "https://regents.sh/api/v1/keyfleet/capabilities",
       scopes: :home
     }
   }
